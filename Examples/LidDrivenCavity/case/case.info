@@ -1,0 +1,15 @@
+; Test case for the 2D lid driven cavity
+
+CaseName LidDrivenCavity2D
+
+Solver
+{
+	timeDependent Off
+	maxIterations 100
+}
+
+Grid
+{
+	type Rectilinear
+	args (2,1,100,100)
+}

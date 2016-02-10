@@ -1,0 +1,6 @@
+add_subdirectory(InputOutput)
+add_subdirectory(Geometry)
+add_subdirectory(FiniteVolumeGrid2D)
+add_subdirectory(Solvers)
+add_subdirectory(FiniteVolume)
+add_subdirectory(Viewers)
