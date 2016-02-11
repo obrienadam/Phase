@@ -49,7 +49,7 @@ void TecplotViewer::createTecplotHeader()
     fout_ << "\n";
 }
 
-void TecplotViewer::writeTec360(Scalar solutionTime)
+void TecplotViewer::write(Scalar solutionTime)
 {
     bool writeMesh = false;
 

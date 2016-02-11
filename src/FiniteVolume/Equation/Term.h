@@ -14,6 +14,8 @@ class Term
 {
 public:
 
+    typedef Eigen::Triplet<Scalar> Triplet;
+
     Term() {}
     Term(const FiniteVolumeGrid2D& grid);
 
@@ -22,33 +24,26 @@ public:
     Term& operator*=(Scalar rhs);
     Term& operator/=(Scalar rhs);
 
+    int nNonZeros() const { return coefficients_.size(); }
+    const std::vector<Triplet>& coefficients() const { return coefficients_; }
+    const std::vector<Scalar>& sources() const { return sources_; }
+
 protected:
 
-    class Triplet : public Eigen::Triplet<Scalar>
-    {
-    public:
-
-        using Eigen::Triplet<Scalar>::Triplet;
-
-        Triplet& operator+=(const Triplet& other);
-        Triplet& operator-=(const Triplet& other);
-        Triplet& operator*=(Scalar rhs);
-        Triplet& operator/=(Scalar rhs);
-    };
-
-    std::vector<Term::Triplet> coefficients_;
+    std::vector<Triplet> coefficients_;
     std::vector<Scalar> sources_;
+
+    friend Term operator==(Term term, Scalar rhs);
+    friend Term operator==(Term term, const Term& rhs);
 };
+
+Term operator==(Term term, Scalar rhs);
+Term operator==(Term term, const Term& rhs);
 
 Term operator+(Term lhs, const Term& rhs);
 Term operator-(Term lhs, const Term& rhs);
 Term operator*(Term lhs, Scalar rhs);
 Term operator*(Scalar lhs, Term rhs);
 Term operator/(Term lhs, Scalar rhs);
-
-Term div(const ScalarFiniteVolumeField& coeff, const ScalarFiniteVolumeField& var);
-Term div(const ScalarFiniteVolumeField& coeff, const VectorFiniteVolumeField& var);
-Term grad(const ScalarFiniteVolumeField& coeff, const ScalarFiniteVolumeField& var);
-Term grad(const ScalarFiniteVolumeField& coeff, const VectorFiniteVolumeField& var);
 
 #endif

@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp
 
 # Includes
 set(INCLUDE_DIR src/Types
-                src/InputOutput
+                src/System
                 src/Geometry
                 src/FiniteVolumeGrid2D
                 src/FiniteVolume

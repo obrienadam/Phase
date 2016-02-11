@@ -19,7 +19,7 @@ public:
     void addFieldToOutput(const ScalarFiniteVolumeField& field);
     void addFieldToOutput(const VectorFiniteVolumeField& field);
 
-    void writeTec360(Scalar solutionTime);
+    void write(Scalar solutionTime);
 
 private:
 

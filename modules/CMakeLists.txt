@@ -1,2 +1,2 @@
 add_executable(phase phase.cpp)
-target_link_libraries(phase FiniteVolumeGrid2D Solvers Viewers)
+target_link_libraries(phase System FiniteVolumeGrid2D Viewers Solvers)

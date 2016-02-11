@@ -10,6 +10,8 @@ Solver
 
 Grid
 {
-	type Rectilinear
-	args (2,1,100,100)
+	type Equidistant
+	spacing 0.1
+	nCellsI 100
+	nCellsJ 100
 }

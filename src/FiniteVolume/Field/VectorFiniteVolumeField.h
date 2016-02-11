@@ -2,6 +2,7 @@
 #define VECTOR_FINITE_VOLUME_FIELD_H
 
 #include "FiniteVolumeField.h"
+#include "SparseVector.h"
 
 class VectorFiniteVolumeField : public FiniteVolumeField<Vector2D>
 {

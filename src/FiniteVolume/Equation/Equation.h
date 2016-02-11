@@ -12,12 +12,20 @@ public:
 
     Equation(const FiniteVolumeGrid2D& grid, T&field);
 
-    void operator==(const Term& term);
+    Equation<T>& operator=(const Term& term);
+
+    void solve();
+
+    Scalar error() const { return spMat_.error(); }
+    int iterations() const { return spMat_.nIterations(); }
 
 private:
     SparseMatrix spMat_;
+    SparseVector x_, b_;
     const FiniteVolumeGrid2D& grid_;
     T& field_;
 };
+
+#include "Equation.tpp"
 
 #endif

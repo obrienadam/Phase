@@ -11,12 +11,7 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(int nCellsI, int nCellsJ)
       faceNodesJ_(nCellsI, nCellsJ + 1, "FaceNodesJ"),
       cellIndices_(nCellsI, nCellsJ, "CellIndices")
 {
-    int id = 0;
-    for(int j = 0; j < cellIndices_.sizeJ(); ++j)
-        for(int i = 0; i < cellIndices_.sizeI(); ++i)
-        {
-            cellIndices_(i, j) = i++;
-        }
+    initCellIndices();
 }
 
 const Point2D& FiniteVolumeGrid2D::cornerNode(int i, int j, Node node) const
@@ -39,4 +34,17 @@ bool FiniteVolumeGrid2D::inRange(int i, int j) const
 int FiniteVolumeGrid2D::cellIndex(int i, int j) const
 {
     return cellIndices_(i, j);
+}
+
+void FiniteVolumeGrid2D::initCellIndices()
+{
+    int id = 0;
+    nActiveCells_ = 0;
+
+    for(int j = 0; j < cellIndices_.sizeJ(); ++j)
+        for(int i = 0; i < cellIndices_.sizeI(); ++i)
+        {
+            cellIndices_(i, j) = id++;
+            ++nActiveCells_;
+        }
 }

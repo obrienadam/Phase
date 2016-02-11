@@ -1,4 +1,4 @@
-add_subdirectory(InputOutput)
+add_subdirectory(System)
 add_subdirectory(Geometry)
 add_subdirectory(FiniteVolumeGrid2D)
 add_subdirectory(Solvers)

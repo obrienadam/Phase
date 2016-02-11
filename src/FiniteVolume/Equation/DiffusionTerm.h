@@ -10,4 +10,7 @@ public:
     DiffusionTerm(const FiniteVolumeGrid2D& grid);
 };
 
+DiffusionTerm laplacian(const ScalarFiniteVolumeField& var);
+DiffusionTerm laplacian(const ScalarFiniteVolumeField& coeffs, const ScalarFiniteVolumeField& var);
+
 #endif

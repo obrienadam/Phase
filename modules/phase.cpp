@@ -1,10 +1,11 @@
 #include <iostream>
+#include <memory>
 
 #include "Input.h"
 #include "CommandLine.h"
-#include "EquidistantGrid2D.h"
+#include "ConstructGrid.h"
 #include "TecplotViewer.h"
-#include "Simple.h"
+#include "Poisson.h"
 
 int main(int argc, const char* argv[])
 {
@@ -12,19 +13,20 @@ int main(int argc, const char* argv[])
 
     Input input;
     CommandLine cl(argc, argv, input);
-    EquidistantGrid2D grid(100, 100, 0.1);
 
     input.parseInputFile();
 
-    TecplotViewer viewer(grid, input);
-    Simple solver(grid, input);
+    shared_ptr<FiniteVolumeGrid2D> gridPtr = constructGrid(input);
 
-    viewer.addFieldToOutput(solver.u);
-    viewer.addFieldToOutput(solver.p);
+    TecplotViewer viewer(*gridPtr, input);
+    Poisson solver(*gridPtr, input);
 
-    viewer.writeTec360(0.);
-    viewer.writeTec360(1.);
-    viewer.writeTec360(2.);
+    viewer.addFieldToOutput(solver.phi);
+    viewer.write(0.);
+
+    Scalar error = solver.solve(0.1);
+
+    cout << "Error: " << error << "\n";
 
     return 0;
 }

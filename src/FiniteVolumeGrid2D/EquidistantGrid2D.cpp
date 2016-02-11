@@ -38,10 +38,10 @@ Vector2D EquidistantGrid2D::rc(int i, int j, Face face) const
 {
     switch (face)
     {
-    case EAST: return Vector2D(h_, 0.);
-    case WEST: return Vector2D(-h_, 0.);
-    case NORTH: return Vector2D(0., h_);
-    case SOUTH: return Vector2D(0., -h_);
+    case EAST: return i < uCellI() ? Vector2D(h_, 0.) : Vector2D(h_/2., 0.);
+    case WEST: return i > 0 ? Vector2D(-h_, 0.) : Vector2D(-h_/2., 0.);
+    case NORTH: return j < uCellJ() ? Vector2D(0., h_) : Vector2D(0., h_/2.);
+    case SOUTH: return j > 0 ? Vector2D(0., -h_) : Vector2D(0., -h_/2.);
     default: throw Exception("EquidistantGrid2D", "rc", "invalid cell to cell direction.");
     };
 }

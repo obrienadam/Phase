@@ -12,8 +12,3 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 {
 
 }
-
-Scalar Simple::solve(Scalar timeStep)
-{
-
-}

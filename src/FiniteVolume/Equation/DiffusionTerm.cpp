@@ -35,3 +35,10 @@ DiffusionTerm::DiffusionTerm(const FiniteVolumeGrid2D &grid)
             coefficients_.push_back(Triplet(row, row, a[0]));
         }
 }
+
+//- External functions
+DiffusionTerm laplacian(const ScalarFiniteVolumeField &var)
+{
+    DiffusionTerm term(var.grid());
+    return term;
+}

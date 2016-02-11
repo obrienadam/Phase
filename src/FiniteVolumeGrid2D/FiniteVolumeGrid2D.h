@@ -20,6 +20,9 @@ public:
     int nCellsI() const { return cellNodes_.sizeI(); }
     int nCellsJ() const { return cellNodes_.sizeJ(); }
 
+    int uCellI() const { return nCellsI() - 1; }
+    int uCellJ() const { return nCellsJ() - 1; }
+
     int nNodes() const { return cornerNodes_.size(); }
     int nNodesI() const { return cornerNodes_.sizeI(); }
     int nNodesJ() const { return cornerNodes_.sizeJ(); }
@@ -51,8 +54,13 @@ public:
 
     bool inRange(int i, int j) const;
     int cellIndex(int i, int j) const;
+    uint nActiveCells() const { return nActiveCells_; }
 
 protected:
+
+    void initCellIndices();
+
+    uint nActiveCells_;
 
     PointField cornerNodes_, cellNodes_, faceNodesI_, faceNodesJ_;
     IntegerField cellIndices_;
