@@ -13,8 +13,9 @@ public:
     Solver(const FiniteVolumeGrid2D& grid, const Input& input);
 
     virtual std::string info();
+    virtual Scalar solve(Scalar timeStep) = 0;
 
-private:
+protected:
 
     const FiniteVolumeGrid2D& grid_;
 

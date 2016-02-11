@@ -73,6 +73,9 @@ Thumbs.db
 
 # CMake files
 *.user
+*.cmake
+*CMake*
+!*Lists.txt
 
 # Tecplot files
 *.dat

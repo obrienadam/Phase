@@ -1,4 +1,5 @@
 #include <string>
+
 #include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
@@ -7,9 +8,15 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(int nCellsI, int nCellsJ)
       cornerNodes_(nCellsI + 1, nCellsJ + 1, "CornerNodes"),
       cellNodes_(nCellsI, nCellsJ, 0., "CellNodes"),
       faceNodesI_(nCellsI + 1, nCellsJ, "FaceNodesI"),
-      faceNodesJ_(nCellsI, nCellsJ + 1, "FaceNodesJ")
+      faceNodesJ_(nCellsI, nCellsJ + 1, "FaceNodesJ"),
+      cellIndices_(nCellsI, nCellsJ, "CellIndices")
 {
-
+    int id = 0;
+    for(int j = 0; j < cellIndices_.sizeJ(); ++j)
+        for(int i = 0; i < cellIndices_.sizeI(); ++i)
+        {
+            cellIndices_(i, j) = i++;
+        }
 }
 
 const Point2D& FiniteVolumeGrid2D::cornerNode(int i, int j, Node node) const
@@ -27,4 +34,9 @@ const Point2D& FiniteVolumeGrid2D::cornerNode(int i, int j, Node node) const
 bool FiniteVolumeGrid2D::inRange(int i, int j) const
 {
     return i >= 0 && j >= 0 && i < nCellsI() && j < nCellsJ();
+}
+
+int FiniteVolumeGrid2D::cellIndex(int i, int j) const
+{
+    return cellIndices_(i, j);
 }

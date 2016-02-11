@@ -2,12 +2,16 @@ set(HEADERS Equation.h
             Matrix.h
             SparseMatrix.h
             SparseVector.h
-            Diffusion.h)
+            Term.h
+            AdvectionTerm.h
+            DiffusionTerm.h)
 
 set(SOURCES Equation.cpp
             Matrix.cpp
             SparseMatrix.cpp
             SparseVector.cpp
-            Diffusion.cpp)
+            Term.cpp
+            AdvectionTerm.cpp
+            DiffusionTerm.cpp)
 
 add_library(Equation ${HEADERS} ${SOURCES})

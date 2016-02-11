@@ -17,7 +17,7 @@ public:
     void addEntry(int row, int col, Scalar entry);
     void addEntries(const std::vector<int>& rows, const std::vector<int>& cols, const std::vector<Scalar>& entries);
 
-    void assemble();
+    void assemble(const std::vector< Eigen::Triplet<Scalar> >& entries);
 
     SparseVector solve(const SparseVector& b) const;
     SparseVector solve(const SparseVector &b, const SparseVector &x0) const;
@@ -27,7 +27,6 @@ public:
 
 private:
 
-    std::vector< Eigen::Triplet<Scalar> > entries_;
     Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solver_;
 };
 
