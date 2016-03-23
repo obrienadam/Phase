@@ -10,6 +10,7 @@ public:
     Quadrilateral() {}
     Quadrilateral(const Point2D& v1, const Point2D& v2, const Point2D& v3, const Point2D& v4);
 
+    Point2D centroid() const;
     Scalar area() const;
 
     virtual bool isInside(const Point2D& testPoint) const;

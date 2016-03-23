@@ -1,11 +1,16 @@
+#include <boost/algorithm/string.hpp>
+
 #include "Solver.h"
 
 Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       grid_(grid)
 {
-    timeDependent_ = input.get<std::string>("Solver.timeDependent") == "ON" ? ON : OFF;
-    maxIterations_ = input.get<int>("Solver.maxIterations");
+    std::string timeDependentOpt = input.caseInput().get<std::string>("Solver.timeDependent");
+    boost::to_lower(timeDependentOpt);
+
+    timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
+    maxIterations_ = input.caseInput().get<int>("Solver.maxIterations");
 }
 
 std::string Solver::info()

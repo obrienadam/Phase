@@ -1,21 +1,27 @@
 #include <string>
 
 #include "ConstructGrid.h"
-#include "EquidistantGrid2D.h"
+#include "RectilinearGrid2D.h"
+#include "Exception.h"
 
 std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
 {
     using namespace std;
 
-    string gridType = input.get<string>("Grid.type");
+    int nCellsI = input.caseInput().get<int>("Grid.nCellsI");
+    int nCellsJ = input.caseInput().get<int>("Grid.nCellsJ");
 
-    if(gridType == "Equidistant")
+    string gridType = input.caseInput().get<string>("Grid.type");
+
+    if(gridType == "rectilinear")
     {
-        int nCellsI = input.get<int>("Grid.nCellsI");
-        int nCellsJ = input.get<int>("Grid.nCellsJ");
-        Scalar h = input.get<Scalar>("Grid.spacing");
+        Scalar hx = input.caseInput().get<Scalar>("Grid.spacingX");
+        Scalar hy = input.caseInput().get<Scalar>("Grid.spacingY");
 
-        return shared_ptr<EquidistantGrid2D>(new EquidistantGrid2D(nCellsI, nCellsJ, h));
+        return shared_ptr<RectilinearGrid2D>(new RectilinearGrid2D(nCellsI, nCellsJ, hx, hy));
     }
-
+    else
+    {
+        throw Exception("", "constructGrid", "invalid grid type \"" + gridType + "\".");
+    }
 }

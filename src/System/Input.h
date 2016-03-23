@@ -5,17 +5,23 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-class Input : public boost::property_tree::ptree
+class Input
 {
 public:
 
-    Input(const std::string& caseFileName = "case/case.info", const std::string& outputPath = "solution");
+    Input(const std::string& caseDirectory = "case", const std::string& outputPath = "solution");
 
     void parseInputFile();
 
-    std::string caseFileName, outputPath;
+    std::string caseDirectory, outputPath;
+
+    const boost::property_tree::ptree& caseInput() const { return caseInput_; }
+    const boost::property_tree::ptree& boundaryInput() const { return boundaryInput_; }
 
 private:
+
+    boost::property_tree::ptree caseInput_;
+    boost::property_tree::ptree boundaryInput_;
 
 };
 

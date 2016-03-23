@@ -3,7 +3,7 @@
 Term::Term(const FiniteVolumeGrid2D &grid)
 {
     coefficients_.reserve(grid.nActiveCells());
-    sources_.resize(grid.nActiveCells());
+    sources_.reserve(grid.nActiveCells());
 }
 
 Term& Term::operator +=(const Term& rhs)

@@ -4,14 +4,52 @@ CaseName LidDrivenCavity2D
 
 Solver
 {
+	type Poisson
 	timeDependent Off
 	maxIterations 100
 }
 
 Grid
 {
-	type Equidistant
-	spacing 0.1
-	nCellsI 100
-	nCellsJ 100
+	type rectilinear
+	nCellsI 3
+	nCellsJ 3
+
+	; Rectilinear parameters
+	spacingX 0.01
+	spacingY 0.01
+}
+
+Boundaries
+{
+	East
+	{
+		type constantFixed
+		value 0
+	}
+
+	West
+	{
+		type constantFixed
+		value 1
+	}
+
+	North
+	{
+		type constantFixed
+		value 0
+	}
+
+	South
+	{
+		type constantFixed
+		value 0
+	}
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u,gradP
+	scalarFields p,pCorr,m
 }

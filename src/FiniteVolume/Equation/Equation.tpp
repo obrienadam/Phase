@@ -1,7 +1,9 @@
 #include "Equation.h"
+#include "Exception.h"
 
 template<class T>
-void Equation<T>::solve()
+Scalar Equation<T>::solve()
 {
     field_ = spMat_.solve(b_);
+    return error();
 }

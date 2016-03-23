@@ -1,4 +1,5 @@
 #include "Simple.h"
+#include "Exception.h"
 
 Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     :

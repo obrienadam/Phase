@@ -29,7 +29,35 @@ Vector2D Vector2D::unitVec() const
 
 Vector2D Vector2D::normalVec() const
 {
-    return Vector2D(-y, x);
+    return Vector2D(y, -x);
+}
+
+Scalar Vector2D::angle() const
+{
+    return atan2(y, x);
+}
+
+Scalar Vector2D::angle(const Vector2D& other) const
+{
+    return atan2(y - other.y, x - other.x);
+}
+
+Vector2D Vector2D::rotate(Scalar theta) const
+{
+    Scalar cosTheta = cos(theta), sinTheta = sin(theta);
+    return Vector2D(x*cosTheta - y*sinTheta, x*sinTheta + y*cosTheta);
+}
+
+Vector2D Vector2D::transform(const Vector2D &uPrime) const
+{
+    return rotate((*this - uPrime).angle());
+}
+
+std::string Vector2D::toString() const
+{
+    using namespace std;
+
+    return "(" + to_string(x) + ", " + to_string(y) + ")";
 }
 
 //- Operators
@@ -82,6 +110,11 @@ Vector2D& Vector2D::operator /=(Scalar other)
     return *this;
 }
 
+bool Vector2D::operator <(const Vector2D& rhs)
+{
+    return x < rhs.x || (x == rhs.x && y < rhs.y) ? true : false;
+}
+
 //- External functions
 
 std::ostream& operator<<(std::ostream& os, const Vector2D& vec)
@@ -99,6 +132,11 @@ Vector2D operator-(Vector2D lhs, const Vector2D& rhs)
 {
     lhs -= rhs;
     return lhs;
+}
+
+Vector2D operator-(const Vector2D& rhs)
+{
+    return Vector2D(-rhs.x, -rhs.y);
 }
 
 Vector2D operator*(Vector2D lhs, Scalar rhs)
@@ -126,6 +164,11 @@ Scalar dot(const Vector2D &u, const Vector2D &v)
 Scalar cross(const Vector2D &u, const Vector2D &v)
 {
     return u.x*v.y - u.y*v.x;
+}
+
+std::string to_string(const Vector2D &vec)
+{
+    return "(" + std::to_string(vec.x) + ", " + std::to_string(vec.y) + ")";
 }
 
 

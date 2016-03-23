@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+PHASE_PROJECT_DIR = $HOME/Projects/Phase

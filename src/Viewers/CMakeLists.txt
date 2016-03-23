@@ -1,7 +1,9 @@
-set(HEADERS TecplotViewer.h
+set(HEADERS Viewer.h
+            TecplotViewer.h
             MatplotlibViewer.h)
 
-set(SOURCE TecplotViewer.cpp
+set(SOURCE Viewer.cpp
+           TecplotViewer.cpp
            MatplotlibViewer.cpp)
 
 add_library(Viewers ${HEADERS} ${SOURCE})

@@ -1,6 +1,7 @@
 set(HEADERS Input.h
             CommandLine.h
             Exception.h)
+
 set(SOURCES Input.cpp
             CommandLine.cpp
             Exception.cpp)

@@ -16,6 +16,13 @@ public:
 
     Vector2D unitVec() const;
     Vector2D normalVec() const;
+    Scalar angle() const;
+    Scalar angle(const Vector2D &other) const;
+
+    Vector2D rotate(Scalar theta) const;
+    Vector2D transform(const Vector2D& uPrime) const;
+
+    std::string toString() const;
 
     // Operators
     Scalar& operator()(int component);
@@ -25,6 +32,8 @@ public:
     Vector2D& operator *=(Scalar other);
     Vector2D& operator /=(Scalar other);
 
+    bool operator<(const Vector2D& rhs);
+
     Scalar x, y;
 
 private:
@@ -33,11 +42,14 @@ private:
 std::ostream& operator<<(std::ostream& os, const Vector2D& vec);
 Vector2D operator+(Vector2D lhs, const Vector2D& rhs);
 Vector2D operator-(Vector2D lhs, const Vector2D& rhs);
+Vector2D operator-(const Vector2D& rhs);
 Vector2D operator*(Vector2D lhs, Scalar rhs);
 Vector2D operator*(Scalar lhs, Vector2D rhs);
 Vector2D operator/(Vector2D lhs, Scalar rhs);
 
 Scalar dot(const Vector2D& u, const Vector2D& v);
 Scalar cross(const Vector2D& u, const Vector2D& v);
+
+std::string to_string(const Vector2D& vec);
 
 #endif

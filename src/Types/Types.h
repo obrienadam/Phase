@@ -2,9 +2,11 @@
 #define TYPES_H
 // This file can be used to alter the working precision of the code
 
-#include <complex>
+#include <functional>
 
 typedef double Scalar;
-typedef std::complex<Scalar> Complex;
+
+template <class T>
+using Ref = std::reference_wrapper<T>;
 
 #endif

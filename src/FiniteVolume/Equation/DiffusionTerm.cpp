@@ -1,44 +1,55 @@
 #include "DiffusionTerm.h"
+#include "Exception.h"
 
-DiffusionTerm::DiffusionTerm(const FiniteVolumeGrid2D &grid)
+DiffusionTerm::DiffusionTerm(const ScalarFiniteVolumeField& var)
     :
-      Term(grid)
+      Term(var.grid)
 {
-    Scalar a[5];
+    sources_.resize(var.grid.nActiveCells(), 0.);
 
-    for(int j = 0; j < grid.nCellsJ(); ++j)
-        for(int i = 0; i < grid.nCellsI(); ++i)
+    for(const Cell& cell: var.grid.cells)
+    {
+        size_t row = cell.globalIndex();
+        Scalar centralCoeff = 0.;
+
+        const auto &neighbours = cell.neighbours();
+
+        for(const InteriorLink &nb: neighbours)
         {
-            int row = grid.cellIndex(i, j);
+            size_t col = nb.cell().globalIndex();
+            Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            centralCoeff -= coeff;
 
-            if (row == FiniteVolumeGrid2D::INACTIVE)
-                continue;
-
-            a[1] = dot(grid.sfe(i, j), grid.sfe(i, j))/dot(grid.rce(i, j), grid.sfe(i, j));
-            a[2] = dot(grid.sfw(i, j), grid.sfw(i, j))/dot(grid.rcw(i, j), grid.sfw(i, j));
-            a[3] = dot(grid.sfn(i, j), grid.sfn(i, j))/dot(grid.rcn(i, j), grid.sfn(i, j));
-            a[4] = dot(grid.sfs(i, j), grid.sfs(i, j))/dot(grid.rcs(i, j), grid.sfs(i, j));
-            a[0] = -(a[1] + a[2] + a[3] + a[4]);
-
-            if(grid.inRange(i + 1, j))
-                coefficients_.push_back(Triplet(row, grid.cellIndex(i + 1, j), a[1]));
-
-            if(grid.inRange(i - 1, j))
-                coefficients_.push_back(Triplet(row, grid.cellIndex(i - 1, j), a[2]));
-
-            if(grid.inRange(i, j + 1))
-                coefficients_.push_back(Triplet(row, grid.cellIndex(i, j + 1), a[3]));
-
-            if(grid.inRange(i, j - 1))
-                coefficients_.push_back(Triplet(row, grid.cellIndex(i, j - 1), a[4]));
-
-            coefficients_.push_back(Triplet(row, row, a[0]));
+            coefficients_.push_back(Triplet(row, col, coeff));
         }
+
+        const auto &boundaries = cell.boundaries();
+
+        for(const BoundaryLink &bd: boundaries)
+        {
+            Scalar coeff = dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+
+            switch(var.boundaryType(bd.face().id()))
+            {
+            case ScalarFiniteVolumeField::FIXED:
+                centralCoeff -= coeff;
+                sources_[row] -= coeff*var.faces()[bd.face().id()];
+                break;
+
+            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                break;
+
+            default:
+                throw Exception("DiffusionTerm", "DiffusionTerm", "unrecognized or unspecified boundary type.");
+            }
+        }
+
+        coefficients_.push_back(Triplet(row, row, centralCoeff));
+    }
 }
 
 //- External functions
 DiffusionTerm laplacian(const ScalarFiniteVolumeField &var)
 {
-    DiffusionTerm term(var.grid());
-    return term;
+    return DiffusionTerm(var);
 }

@@ -1,69 +1,68 @@
 #ifndef FINITE_VOLUME_GRID_2D_H
 #define FINITE_VOLUME_GRID_2D_H
 
-#include "Point2D.h"
-#include "PointField.h"
-#include "IntegerField.h"
+#include <vector>
+#include <utility>
+#include <map>
 
-enum Face{EAST = 0, WEST = 1, NORTH = 2, SOUTH = 3};
+#include "Node.h"
+#include "Cell.h"
+#include "Face.h"
+#include "Patch.h"
+#include "BoundingBox.h"
+#include "ScalarFiniteVolumeField.h"
+#include "VectorFiniteVolumeField.h"
 
 class FiniteVolumeGrid2D
 {
 public:
 
-    enum Node{SW = 0, SE = 1, NE = 2, NW = 3};
-    enum {INACTIVE = -1};
+    FiniteVolumeGrid2D(size_t nNodes = 0, size_t nCells = 0, size_t nFaces = 0);
 
-    FiniteVolumeGrid2D(int nCellsI, int nCellsJ);
+    size_t nNodes() const { return nodes.size(); }
+    size_t nCells() const { return cells.size(); }
+    size_t nFaces() const { return faces.size(); }
 
-    int nCells() const { return cellNodes_.size(); }
-    int nCellsI() const { return cellNodes_.sizeI(); }
-    int nCellsJ() const { return cellNodes_.sizeJ(); }
+    size_t nActiveCells() const { return cells.size(); }
 
-    int uCellI() const { return nCellsI() - 1; }
-    int uCellJ() const { return nCellsJ() - 1; }
+    size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
+    size_t createCell(const std::vector<size_t>& faceIds);
 
-    int nNodes() const { return cornerNodes_.size(); }
-    int nNodesI() const { return cornerNodes_.sizeI(); }
-    int nNodesJ() const { return cornerNodes_.sizeJ(); }
+    bool faceExists(size_t lNodeId, size_t rNodeId) const;
+    size_t findFace(size_t lNodeId, size_t rNodeId) const;
 
-    const Point2D& cellNode(int i, int j) const { return cellNodes_(i, j); }
-    const Point2D& cornerNode(int i, int j, Node node) const;
-    const Point2D& cornerNode(int i, int j) const { return cornerNodes_(i, j); }
+    std::string gridInfo() const;
 
-    virtual Vector2D sf(int i, int j, Face face) const = 0;
-    virtual Vector2D rf(int i, int j, Face face) const = 0;
-    virtual Vector2D rc(int i, int j, Face face) const = 0;
+    void computeCellAdjacency();
 
-    Vector2D sfe(int i, int j) const { return sf(i, j, EAST); }
-    Vector2D sfw(int i, int j) const { return sf(i, j, WEST); }
-    Vector2D sfn(int i, int j) const { return sf(i, j, NORTH); }
-    Vector2D sfs(int i, int j) const { return sf(i, j, SOUTH); }
+    void addPatch(const std::string& patchName);
+    const std::vector<Patch>& patches() const { return patches_; }
 
-    Vector2D rfe(int i, int j) const { return rf(i, j, EAST); }
-    Vector2D rfw(int i, int j) const { return rf(i, j, WEST); }
-    Vector2D rfn(int i, int j) const { return rf(i, j, NORTH); }
-    Vector2D rfs(int i, int j) const { return rf(i, j, SOUTH); }
+    ScalarFiniteVolumeField& addScalarField(const std::string& fieldName) const;
+    VectorFiniteVolumeField& addVectorField(const std::string& fieldName) const;
 
-    Vector2D rce(int i, int j) const { return rc(i, j, EAST); }
-    Vector2D rcw(int i, int j) const { return rc(i, j, WEST); }
-    Vector2D rcn(int i, int j) const { return rc(i, j, NORTH); }
-    Vector2D rcs(int i, int j) const { return rc(i, j, SOUTH); }
+    ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& fieldName) const;
 
-    virtual Scalar cellVolume(int i, int j) const = 0;
-
-    bool inRange(int i, int j) const;
-    int cellIndex(int i, int j) const;
-    uint nActiveCells() const { return nActiveCells_; }
+    std::vector<Node> nodes;
+    std::vector<Cell> cells;
+    std::vector<Face> faces;
 
 protected:
 
-    void initCellIndices();
+    void computeBoundingBox();
+    void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
 
-    uint nActiveCells_;
+    std::map<std::pair<size_t, size_t>, size_t> faceDirectory_;
 
-    PointField cornerNodes_, cellNodes_, faceNodesI_, faceNodesJ_;
-    IntegerField cellIndices_;
+    std::vector<size_t> interiorFaces_;
+    std::vector<size_t> boundaryFaces_;
+
+    std::vector<Patch> patches_;
+
+    mutable std::map<std::string, ScalarFiniteVolumeField> scalarFields_;
+    mutable std::map<std::string, VectorFiniteVolumeField> vectorFields_;
+
+    BoundingBox bBox_;
 };
 
 #endif

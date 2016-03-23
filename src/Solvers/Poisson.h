@@ -11,7 +11,7 @@ public:
     Poisson(const FiniteVolumeGrid2D& grid, const Input& input);
     virtual Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField phi;
+    ScalarFiniteVolumeField& phi;
 
 protected:
 

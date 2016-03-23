@@ -2,9 +2,9 @@
 
 #include "Input.h"
 
-Input::Input(const std::string &caseFileName, const std::string &outputPath)
+Input::Input(const std::string &caseDirectory, const std::string &outputPath)
     :
-      caseFileName(caseFileName),
+      caseDirectory(caseDirectory),
       outputPath(outputPath)
 {
 
@@ -14,5 +14,6 @@ void Input::parseInputFile()
 {
     using namespace boost::property_tree;
 
-    read_info(caseFileName, *((ptree*)this));
+    read_info(caseDirectory + "/case.info", caseInput_);
+    read_info(caseDirectory + "/boundaries.info", boundaryInput_);
 }

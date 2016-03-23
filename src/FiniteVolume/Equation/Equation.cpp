@@ -27,9 +27,9 @@ template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator =(const Term& term)
 {
     spMat_.assemble(term.coefficients());
-    const std::vector<Scalar>& sources = term.sources();
+    const auto &sources = term.sources();
 
-    for(int i = 0, end = sources.size(); i < end; ++i)
+    for(int i = 0, end = b_.size(); i < end; ++i)
         b_[i] = sources[i];
 
     return *this;

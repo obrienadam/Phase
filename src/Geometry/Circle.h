@@ -10,6 +10,7 @@ public:
 
     Circle(Point2D center, Scalar radius);
 
+    Point2D centroid() const { return center_; }
     Scalar area() const;
 
     bool isInside(const Point2D &testPoint) const;

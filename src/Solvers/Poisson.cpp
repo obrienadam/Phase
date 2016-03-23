@@ -4,10 +4,10 @@
 Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
-      phi(grid, "phi"),
+      phi(grid.addScalarField(input, "phi")),
       phiEqn_(grid, phi)
 {
-    gamma_ = input.get<Scalar>("Solver.gamma", 1.);
+    gamma_ = input.caseInput().get<Scalar>("Solver.gamma", 1.);
 }
 
 Scalar Poisson::solve(Scalar timeStep)

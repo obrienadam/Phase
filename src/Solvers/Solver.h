@@ -15,6 +15,8 @@ public:
     virtual std::string info();
     virtual Scalar solve(Scalar timeStep) = 0;
 
+    const FiniteVolumeGrid2D& grid() const { return grid_; }
+
 protected:
 
     const FiniteVolumeGrid2D& grid_;

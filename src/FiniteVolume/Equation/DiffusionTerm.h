@@ -7,7 +7,7 @@
 class DiffusionTerm : public Term
 {
 public:
-    DiffusionTerm(const FiniteVolumeGrid2D& grid);
+    DiffusionTerm(const ScalarFiniteVolumeField& var);
 };
 
 DiffusionTerm laplacian(const ScalarFiniteVolumeField& var);

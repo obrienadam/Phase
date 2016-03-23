@@ -1,9 +1,19 @@
-set(HEADERS FiniteVolumeGrid2D.h
-            EquidistantGrid2D.h
+set(HEADERS Node.h
+            Cell.h
+            Face.h
+            Link.h
+	    Patch.h
+            FiniteVolumeGrid2D.h
+            RectilinearGrid2D.h
             ConstructGrid.h)
 
-set(SOURCES FiniteVolumeGrid2D.cpp
-            EquidistantGrid2D.cpp
+set(SOURCES Node.cpp
+            Cell.cpp
+            Face.cpp
+            Link.cpp
+            Patch.cpp
+            FiniteVolumeGrid2D.cpp
+            RectilinearGrid2D.cpp
             ConstructGrid.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})

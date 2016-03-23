@@ -1,0 +1,39 @@
+; Boundary conditions for the 2D lid driven cavity
+
+Boundaries
+{
+  u
+  {
+  }
+
+  p
+  {
+  }
+
+  phi
+  {
+    x-
+    {
+      type fixed;
+      value 1;
+    }
+
+    x+
+    {
+      type fixed;
+      value 0;
+    }
+
+    y-
+    {
+      type fixed;
+      value 0;
+    }
+
+    y+
+    {
+      type fixed;
+      value 0;
+    }
+  }
+}

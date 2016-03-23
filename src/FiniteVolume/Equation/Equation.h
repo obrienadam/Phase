@@ -14,7 +14,7 @@ public:
 
     Equation<T>& operator=(const Term& term);
 
-    void solve();
+    Scalar solve();
 
     Scalar error() const { return spMat_.error(); }
     int iterations() const { return spMat_.nIterations(); }
