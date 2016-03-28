@@ -5,7 +5,10 @@
 
 class AdvectionTerm : public Term
 {
-
+public:
+    AdvectionTerm(const ScalarFiniteVolumeField& var);
 };
+
+AdvectionTerm div(const ScalarFiniteVolumeField& var);
 
 #endif

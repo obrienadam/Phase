@@ -4,6 +4,8 @@
 #include "SparseMatrix.h"
 #include "FiniteVolumeGrid2D.h"
 #include "Term.h"
+#include "DiffusionTerm.h"
+#include "AdvectionTerm.h"
 
 template<class T>
 class Equation

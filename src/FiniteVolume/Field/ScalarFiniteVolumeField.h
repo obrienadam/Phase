@@ -18,8 +18,7 @@ public:
     ScalarFiniteVolumeField(const FiniteVolumeGrid2D& grid, const std::string& name);
     ScalarFiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
 
-    Scalar max() const;
-    Scalar min() const;
+    void fill(Scalar val);
 
     ScalarFiniteVolumeField& operator =(const SparseVector& rhs);
 
@@ -27,6 +26,8 @@ public:
     std::vector<Scalar>& faces() { return faces_; }
 
     BoundaryType boundaryType(size_t faceId) const;
+
+    ScalarFiniteVolumeField& operator*=(const ScalarFiniteVolumeField& rhs);
 
     const FiniteVolumeGrid2D& grid;
 
@@ -37,5 +38,7 @@ protected:
 
     std::vector<Scalar> faces_;
 };
+
+ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFiniteVolumeField rhs);
 
 #endif

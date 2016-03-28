@@ -18,7 +18,10 @@ int main(int argc, const char* argv[])
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
 
     Poisson solver(*gridPtr, input);
-    solver.solve(1e-5);
+    TecplotViewer viewer(solver, input);
+
+    solver.solve(0.);
+    viewer.write(0.);
 
     return 0;
 }

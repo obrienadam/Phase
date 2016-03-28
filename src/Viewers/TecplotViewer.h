@@ -16,6 +16,8 @@ public:
 
 private:
 
+    std::string varLocation();
+
     void createTecplotHeader();
 
 };

@@ -17,13 +17,12 @@ public:
 
     virtual void write(Scalar solutionTime) = 0;
 
-    void addFieldToOutput(const ScalarFiniteVolumeField& field);
-    void addFieldToOutput(const VectorFiniteVolumeField& field);
-
 protected:
 
+    void openFile();
+
     const FiniteVolumeGrid2D& grid_;
-    std::vector<const ScalarFiniteVolumeField*> scalarFields_;
+    std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
     std::vector<const VectorFiniteVolumeField*> vectorFields_;
 
     std::string caseName_, outputFilename_;

@@ -16,10 +16,15 @@ public:
 
     virtual Scalar solve(Scalar timeStep) {}
 
-    VectorFiniteVolumeField u, gradP;
-    ScalarFiniteVolumeField p, pCorr;
+    VectorFiniteVolumeField &u;
+    ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m;
 
 protected:
+
+    Vector2D g_;
+
+    Scalar solveUEqn();
+    Scalar solvePCorrEqn();
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pCorrEqn_;

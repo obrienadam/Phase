@@ -19,10 +19,12 @@ Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces)
         if (face1.rNode() == face2.lNode() || face1.rNode() == face2.rNode())
         {
             vertices.push_back(face1.rNode());
+            nodeIds_.push_back(face1.rNode().id());
         }
         else if(face1.lNode() == face2.lNode() || face1.lNode() == face2.rNode())
         {
             vertices.push_back(face1.lNode());
+            nodeIds_.push_back(face1.lNode().id());
         }
         else
         {

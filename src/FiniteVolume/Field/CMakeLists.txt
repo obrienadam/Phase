@@ -3,10 +3,12 @@ set(HEADERS Field.h
             ScalarField.h
             VectorField.h
             PointField.h
+            FiniteVolumeField.h
             ScalarFiniteVolumeField.h
             VectorFiniteVolumeField.h)
 
 set(SOURCES Field.tpp
+            FiniteVolumeField.tpp
             ScalarFiniteVolumeField.cpp
             VectorFiniteVolumeField.cpp)
 

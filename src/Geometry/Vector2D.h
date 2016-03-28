@@ -10,6 +10,7 @@ class Vector2D
 public:
 
     Vector2D(Scalar x = 0., Scalar y = 0.);
+    Vector2D(std::string vecStr);
 
     Scalar magSqr() const;
     Scalar mag() const;

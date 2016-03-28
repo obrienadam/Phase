@@ -29,18 +29,8 @@ Viewer::~Viewer()
         fout_.close();
 }
 
-void Viewer::addFieldToOutput(const ScalarFiniteVolumeField &field)
+void Viewer::openFile()
 {
-    if(fout_.is_open())
-        throw Exception("Viewer", "addFieldToOutput", "cannot add fields to output after first write.");
-
-    scalarFields_.push_back(&field);
-}
-
-void Viewer::addFieldToOutput(const VectorFiniteVolumeField &field)
-{
-    if(fout_.is_open())
-        throw Exception("Viewer", "addFieldToOutput", "cannot add fields to output after first write.");
-
-    vectorFields_.push_back(&field);
+    if(!fout_.is_open())
+        fout_.open(outputFilename_.c_str());
 }

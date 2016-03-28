@@ -15,6 +15,9 @@ ScalarFiniteVolumeField::ScalarFiniteVolumeField(const Input &input, const Finit
     :
       ScalarFiniteVolumeField(grid, name)
 {
+    auto &self = *this;
+
+    //- Boundary condition association to patches is done by patch id
     for(const Patch& patch: grid.patches())
     {
         std::string root = "Boundaries." + name + "." + patch.name;
@@ -34,35 +37,16 @@ ScalarFiniteVolumeField::ScalarFiniteVolumeField(const Input &input, const Finit
         }
 
         boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>(root + ".value"));
+
+        for(const Face& face: patch.faces())
+            self.faces()[face.id()] = boundaryRefValues_.back();
     }
 }
 
-Scalar ScalarFiniteVolumeField::max() const
+void ScalarFiniteVolumeField::fill(Scalar val)
 {
-    const auto &self = *this;
-    Scalar max = self[0];
-
-    for(int i = 1, size = grid.cells.size(); i < size; ++i)
-        max = std::max(self[i], max);
-
-    for(int i = 0, size = grid.faces.size(); i < size; ++i)
-        max = std::max(self.faces_[i], max);
-
-    return max;
-}
-
-Scalar ScalarFiniteVolumeField::min() const
-{
-    const auto &self = *this;
-    Scalar min = self[0];
-
-    for(int i = 1, size = grid.cells.size(); i < size; ++i)
-        min = std::min(self[i], min);
-
-    for(int i = 0, size = grid.faces.size(); i < size; ++i)
-        min = std::min(self.faces_[i], min);
-
-    return min;
+    std::fill(begin(), end(), val);
+    std::fill(faces_.begin(), faces_.end(), val);
 }
 
 ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector& rhs)
@@ -78,4 +62,22 @@ ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector&
 ScalarFiniteVolumeField::BoundaryType ScalarFiniteVolumeField::boundaryType(size_t faceId) const
 {
     return boundaryTypes_[grid.faces[faceId].patch().id()];
+}
+
+ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator *=(const ScalarFiniteVolumeField& rhs)
+{
+    auto &self = *this;
+
+    for(int i = 0, end = self.size(); i < end; ++i)
+        self[i] *= rhs[i];
+
+    return self;
+}
+
+//- External functions
+
+ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFiniteVolumeField rhs)
+{
+    rhs *= lhs;
+    return rhs;
 }

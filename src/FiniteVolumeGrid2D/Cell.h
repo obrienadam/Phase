@@ -24,6 +24,7 @@ public:
     int globalIndex() const { return globalIndex_; }
 
     const std::vector< Ref<const Face> >& faces() const { return faces_; }
+    const std::vector<size_t>& nodeIds() const { return nodeIds_; }
     const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
     const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
 
@@ -43,11 +44,10 @@ private:
     int globalIndex_;
 
     std::vector< Ref<const Face> > faces_;
+    std::vector<size_t> nodeIds_;
 
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
-
-
 
     friend class FiniteVolumeGrid2D;
 };

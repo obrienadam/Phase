@@ -5,22 +5,25 @@ TecplotViewer::TecplotViewer(const Solver &solver, const Input &input)
     :
       Viewer(solver, input)
 {
-
+    createTecplotHeader();
 }
 
 void TecplotViewer::createTecplotHeader()
 {   
-    fout_ << "TITLE = \"" << caseName_ << "\"\n"
-          << "VARIABLES = \"x\", \"y\"";
+    openFile();
 
-    for(const ScalarFiniteVolumeField* scalarFieldPtr: scalarFields_)
+    fout_ << "Title = \"" << caseName_ << "\"\n"
+          << "Variables = \"x\", \"y\"";
+
+    for(const auto& field: grid_.scalarFields())
     {
-        fout_ << ", \"" << scalarFieldPtr->name << "\"";
+        fout_ << ", \"" << field.first << "\"";
+        scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
     }
 
-    for(const VectorFiniteVolumeField* vectorFieldPtr: vectorFields_)
+    for(const auto& field: grid_.vectorFields())
     {
-        fout_ << ", \"" << vectorFieldPtr->name + "_x\", \"" << vectorFieldPtr->name + "_y\"";
+        fout_ << ", \"" << field.first << "_x\", \"" << field.first << "_y\"";
     }
 
     fout_ << "\n";
@@ -28,45 +31,29 @@ void TecplotViewer::createTecplotHeader()
 
 void TecplotViewer::write(Scalar solutionTime)
 {
-    bool writeMesh = false;
+    fout_ << "Zone T = \"" << caseName_ << "_" << solutionTime << "s\"\n"
+          << "N = " << grid_.nodes.size() << ", E = " << grid_.cells.size() << ", ZoneType = FeQuadrilateral, Datapacking = Block\n"
+          << "Varlocation=(" << varLocation() << "=CellCentered)\n";
 
-    if(!fout_.is_open())
+    for(const Node& node: grid_.nodes)
+        fout_ << node.x << "\n";
+
+    for(const Node& node: grid_.nodes)
+        fout_ << node.y << "\n";
+
+    for(const ScalarFiniteVolumeField& field: scalarFields_)
+        for(Scalar val: field)
+            fout_ << val << "\n";
+
+    for(const Cell& cell: grid_.cells)
     {
-        writeMesh = true;
-        fout_.open(outputFilename_.c_str());
-        createTecplotHeader();
+        const auto &nodeIds = cell.nodeIds();
+        fout_ << nodeIds[0] + 1 << " " << nodeIds[1] + 1 << " " << nodeIds[2] + 1 << " " << nodeIds[3] + 1 << "\n";
     }
+}
 
-//    fout_ << "ZONE T = \"" << caseName_ << "_time:" << solutionTime << "s\", I = " << grid_.nNodesI() << ", J = " << grid_.nNodesJ() << ", F = BLOCK\n"
-//          << "STRANDID = 1, SOLUTIONTIME = " << solutionTime << "\n";
-
-//    uint nOutputVariables = scalarFields_.size() + 2*vectorFields_.size();
-
-//    switch (nOutputVariables)
-//    {
-//    case 0:
-//        break;
-//    case 1:
-//        fout_ << "VARLOCATION = ([3] = CELLCENTERED)\n";
-//        break;
-//    default:
-//        fout_ << "VARLOCATION = ([3-" << nOutputVariables + 2 << "] = CELLCENTERED)\n";
-//    }
-
-//    if(writeMesh)
-//    {
-//        for(int component = 0; component < 2; ++component)
-//            for(int j = 0; j < grid_.nNodesJ(); ++j)
-//            {
-//                for(int i = 0; i < grid_.nNodesI(); ++i)
-//                {
-//                    fout_ << grid_.cornerNode(i, j)(component) << " ";
-//                }
-//                fout_ << "\n";
-//            }
-//    }
-    else
-    {
-        fout_ << "VARSHARELIST = ([1-2] = 1)\n";
-    }
+std::string TecplotViewer::varLocation()
+{
+    size_t nCellCenteredVariables = scalarFields_.size() + 2*vectorFields_.size();
+    return nCellCenteredVariables == 1 ? "[3]" : nCellCenteredVariables == 2 ? "[3,4]" : "[3-" + std::to_string(nCellCenteredVariables + 2) + "]";
 }

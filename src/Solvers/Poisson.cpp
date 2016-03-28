@@ -1,5 +1,6 @@
 #include "Poisson.h"
 #include "DiffusionTerm.h"
+#include <stdio.h>
 
 Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -13,8 +14,6 @@ Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
 Scalar Poisson::solve(Scalar timeStep)
 {
     phiEqn_ = (gamma_*laplacian(phi) == 0.);
-
     phiEqn_.solve();
-
     return phiEqn_.error();
 }

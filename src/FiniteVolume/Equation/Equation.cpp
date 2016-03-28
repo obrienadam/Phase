@@ -18,19 +18,8 @@ Equation<VectorFiniteVolumeField>::Equation(const FiniteVolumeGrid2D &grid, Vect
     :
       grid_(grid),
       spMat_(2*grid.nActiveCells(), 2*grid.nActiveCells(), 5),
+      b_(2*grid.nActiveCells()),
       field_(field)
 {
 
-}
-
-template<>
-Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator =(const Term& term)
-{
-    spMat_.assemble(term.coefficients());
-    const auto &sources = term.sources();
-
-    for(int i = 0, end = b_.size(); i < end; ++i)
-        b_[i] = sources[i];
-
-    return *this;
 }

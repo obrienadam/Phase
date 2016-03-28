@@ -1,13 +1,24 @@
+#include <assert.h>
+
 #include "Term.h"
 
-Term::Term(const FiniteVolumeGrid2D &grid)
+Term::Term(const ScalarFiniteVolumeField &var)
 {
-    coefficients_.reserve(grid.nActiveCells());
-    sources_.reserve(grid.nActiveCells());
+    coefficients_.reserve(var.grid.nActiveCells());
+    sources_.resize(var.grid.nActiveCells());
+}
+
+Term::Term(const VectorFiniteVolumeField& var)
+{
+    coefficients_.reserve(2*var.grid.nActiveCells());
+    sources_.resize(var.grid.nActiveCells());
 }
 
 Term& Term::operator +=(const Term& rhs)
 {
+    assert(coefficients_.size() == rhs.coefficients_.size());
+    assert(sources_.size() == rhs.sources_.size());
+
     for(int i = 0, end = coefficients_.size(); i < end; ++i)
     {
         int row = coefficients_[i].row();
@@ -25,6 +36,9 @@ Term& Term::operator +=(const Term& rhs)
 
 Term& Term::operator -=(const Term& rhs)
 {
+    assert(coefficients_.size() == rhs.coefficients_.size());
+    assert(sources_.size() == rhs.sources_.size());
+
     for(int i = 0, end = coefficients_.size(); i < end; ++i)
     {
         int row = coefficients_[i].row();
@@ -74,12 +88,42 @@ Term& Term::operator /=(Scalar rhs)
     return *this;
 }
 
+Term& Term::operator*=(const ScalarFiniteVolumeField& rhs)
+{
+    assert(coefficients_.size()%rhs.size() == 0);
+    assert(sources_.size()%rhs.size() == 0);
+
+    const size_t nScalars = rhs.size();
+
+    for(int i = 0, end = coefficients_.size(); i < end; ++i)
+    {
+        int row = coefficients_[i].row();
+        int col = coefficients_[i].col();
+        Scalar value = coefficients_[i].value()*rhs[i%nScalars];
+
+        coefficients_[i] = Triplet(row, col, value);
+    }
+
+    for(int i = 0, end = sources_.size(); i < end; ++i)
+        sources_[i] *= rhs[i%nScalars];
+}
+
 //- External functions
 Term operator==(Term term, Scalar rhs)
 {
     for(int i = 0, end = term.sources_.size(); i < end; ++i)
     {
         term.sources_[i] += rhs;
+    }
+
+    return term;
+}
+
+Term operator==(Term term, const ScalarFiniteVolumeField& field)
+{
+    for(int i = 0, end = term.sources_.size(); i < end; ++i)
+    {
+        term.sources_[i] += field[i];
     }
 
     return term;
@@ -107,6 +151,18 @@ Term operator*(Scalar lhs, Term rhs)
 {
     rhs *= lhs;
     return rhs;
+}
+
+Term operator*(const ScalarFiniteVolumeField& field, Term rhs)
+{
+    rhs *= field;
+    return rhs;
+}
+
+Term operator*(Term lhs, const ScalarFiniteVolumeField& field)
+{
+    lhs *= field;
+    return lhs;
 }
 
 Term operator/(Term lhs, Scalar rhs)

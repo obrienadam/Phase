@@ -10,7 +10,6 @@ Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
     boost::to_lower(timeDependentOpt);
 
     timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
-    maxIterations_ = input.caseInput().get<int>("Solver.maxIterations");
 }
 
 std::string Solver::info()

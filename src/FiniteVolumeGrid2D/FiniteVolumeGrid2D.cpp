@@ -83,6 +83,13 @@ ScalarFiniteVolumeField& FiniteVolumeGrid2D::addScalarField(const Input& input, 
     return (scalarFields_.insert(Key(fieldName, ScalarFiniteVolumeField(input, *this, fieldName))).first)->second;
 }
 
+VectorFiniteVolumeField& FiniteVolumeGrid2D::addVectorField(const Input &input, const std::string &fieldName) const
+{
+    typedef std::pair< std::string, VectorFiniteVolumeField> Key;
+
+    return (vectorFields_.insert(Key(fieldName, VectorFiniteVolumeField(input, *this, fieldName))).first)->second;
+}
+
 VectorFiniteVolumeField& FiniteVolumeGrid2D::addVectorField(const std::string &fieldName) const
 {
     typedef std::pair< std::string, VectorFiniteVolumeField> Key;

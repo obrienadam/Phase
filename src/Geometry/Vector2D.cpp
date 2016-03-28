@@ -1,5 +1,7 @@
 #include <math.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include "Vector2D.h"
 #include "Exception.h"
 
@@ -9,6 +11,20 @@ Vector2D::Vector2D(Scalar x, Scalar y)
       y(y)
 {
 
+}
+
+Vector2D::Vector2D(std::string vecStr)
+{
+    using namespace std;
+    using namespace boost::algorithm;
+
+    vecStr = vecStr.substr(vecStr.find_first_of("(") + 1, vecStr.find_last_of(")") - 1);
+
+    vector<string> components;
+    split(components, vecStr, is_any_of(", \t"), token_compress_on);
+
+    x = stod(components[0]);
+    y = stod(components[1]);
 }
 
 Scalar Vector2D::mag() const

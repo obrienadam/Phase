@@ -24,6 +24,8 @@ class Patch
     void addFaces(FiniteVolumeGrid2D& grid, const BoundingBox& bBox);
     void addFaces(const std::vector< Ref<Face> >& faces);
 
+    const std::vector< Ref<const Face> >& faces() const { return faces_; }
+
     std::string name;
 
 private:
