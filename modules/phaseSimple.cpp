@@ -4,6 +4,7 @@
 #include "CommandLine.h"
 #include "ConstructGrid.h"
 #include "Simple.h"
+#include "TecplotViewer.h"
 
 int main(int argc, const char* argv[])
 {
@@ -16,6 +17,7 @@ int main(int argc, const char* argv[])
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
     Simple solver(*gridPtr, input);
+    TecplotViewer viewer(solver, input);
 
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
     Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
@@ -24,6 +26,8 @@ int main(int argc, const char* argv[])
     {
         solver.solve(timeStep);
     }
+
+    viewer.write(0.);
 
     return 0;
 }

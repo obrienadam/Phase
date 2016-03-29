@@ -24,6 +24,7 @@ void TecplotViewer::createTecplotHeader()
     for(const auto& field: grid_.vectorFields())
     {
         fout_ << ", \"" << field.first << "_x\", \"" << field.first << "_y\"";
+        vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
     }
 
     fout_ << "\n";
@@ -44,6 +45,15 @@ void TecplotViewer::write(Scalar solutionTime)
     for(const ScalarFiniteVolumeField& field: scalarFields_)
         for(Scalar val: field)
             fout_ << val << "\n";
+
+    for(const VectorFiniteVolumeField& field: vectorFields_)
+    {
+        for(const Vector2D& vec: field)
+            fout_ << vec.x << "\n";
+
+        for(const Vector2D& vec: field)
+            fout_ << vec.y << "\n";
+    }
 
     for(const Cell& cell: grid_.cells)
     {

@@ -18,9 +18,19 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 }
 
+Scalar Simple::solve(Scalar timeStep)
+{
+    solveUEqn();
+    //solvePCorrEqn();
+    return 0.;
+}
+
+//- Protected methods
+
 Scalar Simple::solveUEqn()
 {
     uEqn_ = (mu*laplacian(u) == 0.);
+    return uEqn_.solve();
 }
 
 Scalar Simple::solvePCorrEqn()

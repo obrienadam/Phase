@@ -14,7 +14,7 @@ public:
 
     Simple(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    virtual Scalar solve(Scalar timeStep) {}
+    virtual Scalar solve(Scalar timeStep);
 
     VectorFiniteVolumeField &u;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m;

@@ -11,7 +11,7 @@ Term::Term(const ScalarFiniteVolumeField &var)
 Term::Term(const VectorFiniteVolumeField& var)
 {
     coefficients_.reserve(2*var.grid.nActiveCells());
-    sources_.resize(var.grid.nActiveCells());
+    sources_.resize(2*var.grid.nActiveCells());
 }
 
 Term& Term::operator +=(const Term& rhs)
@@ -90,10 +90,9 @@ Term& Term::operator /=(Scalar rhs)
 
 Term& Term::operator*=(const ScalarFiniteVolumeField& rhs)
 {
-    assert(coefficients_.size()%rhs.size() == 0);
-    assert(sources_.size()%rhs.size() == 0);
-
     const size_t nScalars = rhs.size();
+
+    assert(sources_.size()%nScalars == 0);
 
     for(int i = 0, end = coefficients_.size(); i < end; ++i)
     {
@@ -106,6 +105,8 @@ Term& Term::operator*=(const ScalarFiniteVolumeField& rhs)
 
     for(int i = 0, end = sources_.size(); i < end; ++i)
         sources_[i] *= rhs[i%nScalars];
+
+    return *this;
 }
 
 //- External functions

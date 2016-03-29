@@ -40,7 +40,10 @@ VectorFiniteVolumeField::VectorFiniteVolumeField(const Input &input, const Finit
         boundaryRefValues_.push_back(Vector2D(refValStr));
 
         for(const Face& face: patch.faces())
+        {
+            int id = face.id();
             self.faces()[face.id()] = boundaryRefValues_.back();
+        }
     }
 }
 

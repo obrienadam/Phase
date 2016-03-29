@@ -19,8 +19,6 @@ Viewer::Viewer(const Solver &solver, const Input &input)
     vector<string> vectorFieldNames, scalarFieldNames;
     split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
     split(scalarFieldNames, scalarFields, is_any_of(", "), token_compress_on);
-
-
 }
 
 Viewer::~Viewer()

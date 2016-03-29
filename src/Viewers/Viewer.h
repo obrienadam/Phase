@@ -23,7 +23,7 @@ protected:
 
     const FiniteVolumeGrid2D& grid_;
     std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
-    std::vector<const VectorFiniteVolumeField*> vectorFields_;
+    std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;
 
     std::string caseName_, outputFilename_;
     std::ofstream fout_;
