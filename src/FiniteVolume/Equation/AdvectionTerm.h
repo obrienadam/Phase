@@ -6,9 +6,11 @@
 class AdvectionTerm : public Term
 {
 public:
-    AdvectionTerm(const ScalarFiniteVolumeField& var);
+    AdvectionTerm(const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& var);
+    AdvectionTerm(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField &var);
 };
 
-AdvectionTerm div(const ScalarFiniteVolumeField& var);
+AdvectionTerm div(const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& var);
+AdvectionTerm div(const VectorFiniteVolumeField& u, const VectorFiniteVolumeField& var);
 
 #endif

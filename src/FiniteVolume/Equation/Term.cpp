@@ -120,6 +120,28 @@ Term operator==(Term term, Scalar rhs)
     return term;
 }
 
+Term operator==(Term term, const Term& rhs)
+{
+    for(int i = 0, end = term.coefficients().size(); i < end; ++i)
+    {
+        int row = term.coefficients_[i].row();
+        int col = term.coefficients_[i].col();
+
+        assert(row == rhs.coefficients_[i].row());
+        assert(col == rhs.coefficients_[i].col());
+
+        Scalar val = term.coefficients_[i].value() - rhs.coefficients_[i].value();
+        term.coefficients_[i] = Term::Triplet(row, col, val);
+    }
+
+    for(int i = 0, end = term.sources().size(); i < end; ++i)
+    {
+        term.sources_[i] += rhs.sources_[i];
+    }
+
+    return term;
+}
+
 Term operator==(Term term, const ScalarFiniteVolumeField& field)
 {
     for(int i = 0, end = term.sources_.size(); i < end; ++i)
