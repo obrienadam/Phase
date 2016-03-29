@@ -4,7 +4,8 @@ set(HEADERS Equation.h
             SparseVector.h
             Term.h
             AdvectionTerm.h
-            DiffusionTerm.h)
+            DiffusionTerm.h
+            TemporalTerm.h)
 
 set(SOURCES Equation.cpp
             Equation.tpp
@@ -13,7 +14,8 @@ set(SOURCES Equation.cpp
             SparseVector.cpp
             Term.cpp
             AdvectionTerm.cpp
-            DiffusionTerm.cpp)
+            DiffusionTerm.cpp
+            TemporalTerm.cpp)
 
 add_library(Equation ${HEADERS} ${SOURCES})
 target_link_libraries(Equation Field)

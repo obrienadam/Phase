@@ -10,6 +10,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       rho(grid.addScalarField("rho")),
       mu(grid.addScalarField("mu")),
       m(grid.addScalarField("m")),
+      d(grid.addScalarField("d")),
       uEqn_(grid, u),
       pCorrEqn_(grid, pCorr)
 {
@@ -29,12 +30,12 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn()
 {
-    uEqn_ = (mu*laplacian(u) == 0.);
+    uEqn_ = (rho*div(u, u) == mu*laplacian(u));
     return uEqn_.solve();
 }
 
 Scalar Simple::solvePCorrEqn()
 {
-    pCorrEqn_ = (rho*laplacian(pCorr) == m);
+    pCorrEqn_ = (rho*d*laplacian(pCorr) == m);
     return pCorrEqn_.solve();
 }

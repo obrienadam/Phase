@@ -10,3 +10,15 @@ Field<T>::Field(size_t size, const T &initialValue, const std::string &name)
 {
 
 }
+
+template <class T>
+void Field<T>::save()
+{
+    prev_ = std::vector<T>(*this);
+}
+
+template <class T>
+bool Field<T>::previousFieldAvailable() const
+{
+    return prev_.size() == this->size() ? true : false;
+}
