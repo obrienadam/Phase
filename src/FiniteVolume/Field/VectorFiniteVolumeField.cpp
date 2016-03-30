@@ -41,7 +41,6 @@ VectorFiniteVolumeField::VectorFiniteVolumeField(const Input &input, const Finit
 
         for(const Face& face: patch.faces())
         {
-            int id = face.id();
             self.faces()[face.id()] = boundaryRefValues_.back();
         }
     }
@@ -59,6 +58,21 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
         self[i].y = rhs[i + nActiveCells];
 
     return self;
+}
+
+VectorFiniteVolumeField& VectorFiniteVolumeField::operator =(const VectorFiniteVolumeField& rhs)
+{
+    if(this == &rhs)
+        return *this;
+
+    assert(&grid == &rhs.grid);
+
+    boundaryTypes_ = rhs.boundaryTypes_;
+    boundaryRefValues_ = rhs.boundaryRefValues_;
+    faces_ = rhs.faces_;
+    Field<Vector2D>::operator =(rhs);
+
+    return *this;
 }
 
 VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size_t faceId) const
@@ -86,4 +100,19 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
     }
 
     return gradField;
+}
+
+void interpolateFaces(VectorFiniteVolumeField& field)
+{
+    for(const Face& face: field.grid.faces)
+    {
+        if(face.isBoundary())
+            continue;
+
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+    }
 }

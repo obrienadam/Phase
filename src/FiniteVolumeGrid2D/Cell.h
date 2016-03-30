@@ -17,6 +17,8 @@ public:
 
     Cell(const std::vector<size_t>& faceIds, std::vector<Face>& faces);
 
+    bool isActive() const { return isActive_; }
+
     Scalar volume() const { return volume_; }
     const Point2D& centroid() const { return centroid_; }
 
@@ -36,6 +38,8 @@ public:
 private:
 
     void computeCellAdjacency();
+
+    bool isActive_;
 
     Scalar volume_;
     Point2D centroid_;

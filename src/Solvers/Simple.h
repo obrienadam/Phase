@@ -16,15 +16,22 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
-    VectorFiniteVolumeField &u;
+    VectorFiniteVolumeField &u, &h;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:
 
-    Vector2D g_;
-
     Scalar solveUEqn(Scalar timeStep);
     Scalar solvePCorrEqn();
+
+    void computeD();
+    void computeH();
+    void rhieChowInterpolation();
+    void correctPressure();
+    void correctVelocity();
+    void correctMassFlow();
+
+    Vector2D g_;
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pCorrEqn_;

@@ -41,4 +41,6 @@ protected:
 
 ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFiniteVolumeField rhs);
 
+void interpolateFaces(ScalarFiniteVolumeField& field);
+
 #endif

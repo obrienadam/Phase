@@ -5,6 +5,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
       u(grid.addVectorField(input, "u")),
+      h(grid.addVectorField(input, "h")),
       p(grid.addScalarField(input, "p")),
       pCorr(grid.addScalarField("pCorr")),
       rho(grid.addScalarField("rho")),
@@ -30,6 +31,7 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
+    interpolateFaces(u);
     uEqn_ = (rho*ddt(u, timeStep) + rho*div(u, u) == mu*laplacian(u) - grad(p));
     return uEqn_.solve();
 }
@@ -38,4 +40,19 @@ Scalar Simple::solvePCorrEqn()
 {
     pCorrEqn_ = (rho*d*laplacian(pCorr) == m);
     return pCorrEqn_.solve();
+}
+
+void Simple::computeD()
+{
+    const auto diag = uEqn_.matrix().diagonal();
+
+    for(const Cell& cell: d.grid.cells)
+        d[cell.id()] = cell.volume()/diag[cell.id()];
+}
+
+void Simple::rhieChowInterpolation()
+{
+    computeD();
+
+    h = u;
 }

@@ -15,10 +15,11 @@ AdvectionTerm::AdvectionTerm(const VectorFiniteVolumeField &u, const ScalarFinit
         for(const InteriorLink &nb: cell.neighbours())
         {
             size_t col = nb.cell().globalIndex();
-            const Vector2D& uf = u.faces()[nb.face().id()];
 
-            Scalar coeff = std::min(dot(uf, nb.outwardNorm()), 0.);
-            centralCoeff += std::max(dot(uf, nb.outwardNorm()), 0.);
+            Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
+
+            Scalar coeff = std::min(faceFlux, 0.);
+            centralCoeff += std::max(faceFlux, 0.);
 
             coefficients_.push_back(Triplet(row, col, coeff));
         }
@@ -61,10 +62,10 @@ AdvectionTerm::AdvectionTerm(const VectorFiniteVolumeField &u, const VectorFinit
             size_t colX = nb.cell().globalIndex();
             size_t colY = colX + nActiveCells;
 
-            const Vector2D& uf = u.faces()[nb.face().id()];
+            Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
-            Scalar coeff = std::min(dot(uf, nb.outwardNorm()), 0.);
-            centralCoeff += std::max(dot(uf, nb.outwardNorm()), 0.);
+            Scalar coeff = std::min(faceFlux, 0.);
+            centralCoeff += std::max(faceFlux, 0.);
 
             coefficients_.push_back(Triplet(rowX, colX, coeff));
             coefficients_.push_back(Triplet(rowY, colY, coeff));

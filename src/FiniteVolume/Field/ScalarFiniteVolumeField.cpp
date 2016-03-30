@@ -81,3 +81,18 @@ ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFini
     rhs *= lhs;
     return rhs;
 }
+
+void interpolateFaces(ScalarFiniteVolumeField& field)
+{
+    for(const Face& face: field.grid.faces)
+    {
+        if(face.isBoundary())
+            continue;
+
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+    }
+}

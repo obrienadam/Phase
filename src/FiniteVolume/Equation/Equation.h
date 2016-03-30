@@ -22,6 +22,8 @@ public:
     Scalar error() const { return spMat_.error(); }
     int iterations() const { return spMat_.nIterations(); }
 
+    const SparseMatrix& matrix() const { return spMat_; }
+
 private:
     SparseMatrix spMat_;
     SparseVector x_, b_;

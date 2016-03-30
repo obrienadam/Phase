@@ -3,7 +3,9 @@
 #include "Exception.h"
 
 Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces)
-{
+{   
+    isActive_ = true;
+
     for (size_t faceId: faceIds)
     {
         Ref<const Face> face = faces[faceId];

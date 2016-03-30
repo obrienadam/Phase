@@ -25,7 +25,7 @@ Boundaries
     y+
     {
       type fixed
-      value (10,0)
+      value (1.5,0)
     }
   }
 
