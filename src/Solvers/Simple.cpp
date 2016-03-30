@@ -21,16 +21,16 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Simple::solve(Scalar timeStep)
 {
-    solveUEqn();
+    solveUEqn(timeStep);
     //solvePCorrEqn();
     return 0.;
 }
 
 //- Protected methods
 
-Scalar Simple::solveUEqn()
+Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (rho*div(u, u) == mu*laplacian(u));
+    uEqn_ = (rho*ddt(u, timeStep) + rho*div(u, u) == mu*laplacian(u) - grad(p));
     return uEqn_.solve();
 }
 

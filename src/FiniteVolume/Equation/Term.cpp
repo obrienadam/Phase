@@ -16,17 +16,12 @@ Term::Term(const VectorFiniteVolumeField& var)
 
 Term& Term::operator +=(const Term& rhs)
 {
-    assert(coefficients_.size() == rhs.coefficients_.size());
     assert(sources_.size() == rhs.sources_.size());
 
-    for(int i = 0, end = coefficients_.size(); i < end; ++i)
-    {
-        int row = coefficients_[i].row();
-        int col = coefficients_[i].col();
-        Scalar value = coefficients_[i].value() + rhs.coefficients_[i].value();
+    coefficients_.reserve(coefficients_.size() + rhs.coefficients_.size());
 
-        coefficients_[i] = Triplet(row, col, value);
-    }
+    for(const Triplet& entry: rhs.coefficients_)
+        coefficients_.push_back(entry);
 
     for(int i = 0, end = sources_.size(); i < end; ++i)
         sources_[i] += rhs.sources_[i];
@@ -36,17 +31,12 @@ Term& Term::operator +=(const Term& rhs)
 
 Term& Term::operator -=(const Term& rhs)
 {
-    assert(coefficients_.size() == rhs.coefficients_.size());
     assert(sources_.size() == rhs.sources_.size());
 
-    for(int i = 0, end = coefficients_.size(); i < end; ++i)
-    {
-        int row = coefficients_[i].row();
-        int col = coefficients_[i].col();
-        Scalar value = coefficients_[i].value() - rhs.coefficients_[i].value();
+    coefficients_.reserve(coefficients_.size() + rhs.coefficients_.size());
 
-        coefficients_[i] = Triplet(row, col, value);
-    }
+    for(const Triplet& entry: rhs.coefficients_)
+        coefficients_.push_back(Triplet(entry.row(), entry.col(), -entry.value()));
 
     for(int i = 0, end = sources_.size(); i < end; ++i)
         sources_[i] -= rhs.sources_[i];
@@ -122,23 +112,7 @@ Term operator==(Term term, Scalar rhs)
 
 Term operator==(Term term, const Term& rhs)
 {
-    for(int i = 0, end = term.coefficients().size(); i < end; ++i)
-    {
-        int row = term.coefficients_[i].row();
-        int col = term.coefficients_[i].col();
-
-        assert(row == rhs.coefficients_[i].row());
-        assert(col == rhs.coefficients_[i].col());
-
-        Scalar val = term.coefficients_[i].value() - rhs.coefficients_[i].value();
-        term.coefficients_[i] = Term::Triplet(row, col, val);
-    }
-
-    for(int i = 0, end = term.sources().size(); i < end; ++i)
-    {
-        term.sources_[i] += rhs.sources_[i];
-    }
-
+    term -= rhs;
     return term;
 }
 

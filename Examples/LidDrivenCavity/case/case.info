@@ -7,8 +7,8 @@ Solver
 	type Poisson
 	timeDependent Off
 	maxIterations 100
-	timeStep 1e-2
-	maxTime 1
+	timeStep 1
+	maxTime 100
 
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
@@ -17,7 +17,7 @@ Solver
 Properties
 {
 	rho 1.2
-	mu 1e-2
+	mu 1e-3
 	g (0,-9.81)
 }
 

@@ -6,6 +6,7 @@
 #include "Term.h"
 #include "DiffusionTerm.h"
 #include "AdvectionTerm.h"
+#include "TemporalTerm.h"
 
 template<class T>
 class Equation

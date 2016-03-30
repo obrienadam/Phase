@@ -5,6 +5,7 @@
 #include "Vector2D.h"
 #include "SparseVector.h"
 #include "Input.h"
+#include "ScalarFiniteVolumeField.h"
 
 class FiniteVolumeGrid2D;
 
@@ -34,5 +35,7 @@ protected:
     std::vector<Vector2D> faces_;
 
 };
+
+VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& scalarField);
 
 #endif

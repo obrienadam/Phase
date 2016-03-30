@@ -23,7 +23,7 @@ protected:
 
     Vector2D g_;
 
-    Scalar solveUEqn();
+    Scalar solveUEqn(Scalar timeStep);
     Scalar solvePCorrEqn();
 
     Equation<VectorFiniteVolumeField> uEqn_;

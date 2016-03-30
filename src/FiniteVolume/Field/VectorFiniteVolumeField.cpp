@@ -65,3 +65,25 @@ VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size
 {
     return boundaryTypes_[grid.faces[faceId].patch().id()];
 }
+
+//- External functions
+
+VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
+{
+    VectorFiniteVolumeField gradField(scalarField.grid, "grad_" + scalarField.name);
+
+    for(const Cell& cell: scalarField.grid.cells)
+    {
+        Vector2D &gradPhi = gradField[cell.id()];
+
+        for(const InteriorLink& nb: cell.neighbours())
+            gradPhi += scalarField.faces()[nb.face().id()]*nb.outwardNorm();
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            gradPhi += scalarField.faces()[bd.face().id()]*bd.outwardNorm();
+
+        gradPhi /= cell.volume();
+    }
+
+    return gradField;
+}
