@@ -116,3 +116,27 @@ void interpolateFaces(VectorFiniteVolumeField& field)
         field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
     }
 }
+
+VectorFiniteVolumeField operator+(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+VectorFiniteVolumeField operator-(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs)
+{
+    rhs *= lhs;
+    return rhs;
+}
+
+VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}

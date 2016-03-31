@@ -20,6 +20,7 @@ public:
 
     VectorFiniteVolumeField& operator =(const SparseVector& rhs);
     VectorFiniteVolumeField& operator =(const VectorFiniteVolumeField& rhs);
+
     std::vector<Vector2D>& faces() { return faces_; }
     const std::vector<Vector2D>& faces() const { return faces_; }
 
@@ -37,7 +38,11 @@ protected:
 };
 
 VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& scalarField);
-
 void interpolateFaces(VectorFiniteVolumeField& field);
+
+VectorFiniteVolumeField operator+(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs);
+VectorFiniteVolumeField operator-(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs);
+VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs);
+VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
 
 #endif

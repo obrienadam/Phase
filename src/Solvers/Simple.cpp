@@ -5,7 +5,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
       u(grid.addVectorField(input, "u")),
-      h(grid.addVectorField(input, "h")),
+      h(grid.addVectorField("h")),
       p(grid.addScalarField(input, "p")),
       pCorr(grid.addScalarField("pCorr")),
       rho(grid.addScalarField("rho")),
@@ -31,13 +31,16 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    interpolateFaces(u);
+    interpolateFaces(p);
+
     uEqn_ = (rho*ddt(u, timeStep) + rho*div(u, u) == mu*laplacian(u) - grad(p));
     return uEqn_.solve();
 }
 
 Scalar Simple::solvePCorrEqn()
 {
+    rhieChowInterpolation();
+
     pCorrEqn_ = (rho*d*laplacian(pCorr) == m);
     return pCorrEqn_.solve();
 }
@@ -54,5 +57,38 @@ void Simple::rhieChowInterpolation()
 {
     computeD();
 
-    h = u;
+    h = u + d*grad(p);
+
+    interpolateFaces(h);
+    interpolateFaces(d);
+
+    for(const Face& face: u.grid.faces)
+    {
+        if(face.isBoundary())
+            continue;
+
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Vector2D sf = face.outwardNorm(lCell.centroid());
+        Vector2D rc = rCell.centroid() - lCell.centroid();
+
+        size_t faceId = face.id();
+
+        u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+
+    }
+
+    for(const Cell& cell: m.grid.cells)
+    {
+        size_t id = cell.id();
+
+        m[id] = 0.;
+
+        for(const InteriorLink& nb: cell.neighbours())
+            m[id] += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            m[id] += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+    }
 }

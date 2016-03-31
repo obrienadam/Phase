@@ -19,8 +19,11 @@ public:
     const std::vector<T>& prev() const { return prev_; }
     bool previousFieldAvailable() const;
 
-    Field<T>& operator+=(const Field<T>& rhs);
-    Field<T>& operator-=(const Field<T>& rhs);
+    virtual Field<T>& operator+=(const Field<T>& rhs);
+    virtual Field<T>& operator-=(const Field<T>& rhs);
+
+    template <class T2>
+    Field<T>& operator*=(const Field<T2>& rhs);
 
     std::string name;
 

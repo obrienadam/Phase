@@ -45,6 +45,18 @@ Field<T>& Field<T>::operator -=(const Field<T>& rhs)
     return self;
 }
 
+template <class T>
+template <class T2>
+Field<T>& Field<T>::operator *=(const Field<T2>& rhs)
+{
+    auto& self = *this;
+
+    for(int i = 0, end = self.size(); i < end; ++i)
+        self[i] *= rhs[i];
+
+    return self;
+}
+
 //- External functions
 
 template <class T>
