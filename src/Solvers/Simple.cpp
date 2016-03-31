@@ -76,7 +76,6 @@ void Simple::rhieChowInterpolation()
         size_t faceId = face.id();
 
         u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
-
     }
 
     for(const Cell& cell: m.grid.cells)
