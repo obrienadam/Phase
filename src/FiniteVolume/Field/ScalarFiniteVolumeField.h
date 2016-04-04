@@ -20,6 +20,8 @@ public:
 
     void fill(Scalar val);
 
+    void copyBoundaryTypes(const ScalarFiniteVolumeField& other);
+
     ScalarFiniteVolumeField& operator =(const SparseVector& rhs);
 
     const std::vector<Scalar>& faces() const { return faces_; }

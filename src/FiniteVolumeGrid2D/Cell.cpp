@@ -2,9 +2,9 @@
 #include "Polygon.h"
 #include "Exception.h"
 
-Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces)
+Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces, bool isActive)
 {   
-    isActive_ = true;
+    isActive_ = isActive;
 
     for (size_t faceId: faceIds)
     {

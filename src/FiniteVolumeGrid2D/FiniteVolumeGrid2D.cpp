@@ -69,6 +69,16 @@ void FiniteVolumeGrid2D::computeCellAdjacency()
         cell.computeCellAdjacency();
 }
 
+size_t FiniteVolumeGrid2D::computeGlobalIndices()
+{
+    size_t globalIndex = 0;
+
+    for(Cell& cell: cells)
+        cell.globalIndex_ = cell.isActive() ? globalIndex++ : Cell::INACTIVE;
+
+    return globalIndex;
+}
+
 ScalarFiniteVolumeField& FiniteVolumeGrid2D::addScalarField(const std::string &fieldName) const
 {
     typedef std::pair< std::string, ScalarFiniteVolumeField> Key;

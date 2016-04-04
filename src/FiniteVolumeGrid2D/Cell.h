@@ -15,7 +15,7 @@ public:
 
     enum {NO_NEIGHBOUR = -1, INACTIVE = -1};
 
-    Cell(const std::vector<size_t>& faceIds, std::vector<Face>& faces);
+    Cell(const std::vector<size_t>& faceIds, std::vector<Face>& faces, bool isActive = true);
 
     bool isActive() const { return isActive_; }
 

@@ -49,6 +49,12 @@ void ScalarFiniteVolumeField::fill(Scalar val)
     std::fill(faces_.begin(), faces_.end(), val);
 }
 
+void ScalarFiniteVolumeField::copyBoundaryTypes(const ScalarFiniteVolumeField &other)
+{
+    boundaryTypes_ = other.boundaryTypes_;
+    boundaryRefValues_.resize(other.boundaryRefValues_.size());
+}
+
 ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector& rhs)
 {
     auto &self = *this;
@@ -70,6 +76,9 @@ ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator *=(const ScalarFinite
 
     for(int i = 0, end = self.size(); i < end; ++i)
         self[i] *= rhs[i];
+
+    for(int i = 0, end = self.faces().size(); i < end; ++i)
+        self.faces()[i] *= rhs.faces()[i];
 
     return self;
 }

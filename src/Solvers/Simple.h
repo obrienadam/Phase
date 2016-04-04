@@ -27,6 +27,8 @@ protected:
     void computeD();
     void computeH();
     void rhieChowInterpolation();
+
+    void correctAll();
     void correctPressure();
     void correctVelocity();
     void correctMassFlow();
@@ -35,6 +37,8 @@ protected:
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pCorrEqn_;
+
+    Scalar momentumOmega_, pCorrOmega_;
 };
 
 #endif

@@ -34,6 +34,7 @@ public:
     std::string gridInfo() const;
 
     void computeCellAdjacency();
+    size_t computeGlobalIndices();
 
     void addPatch(const std::string& patchName);
     const std::vector<Patch>& patches() const { return patches_; }
