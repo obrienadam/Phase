@@ -29,6 +29,8 @@ Scalar Simple::solve(Scalar timeStep)
 {
     solveUEqn(timeStep);
     solvePCorrEqn();
+    correctPressure();
+    correctVelocity();
     return 0.;
 }
 
@@ -41,6 +43,8 @@ Scalar Simple::solveUEqn(Scalar timeStep)
     interpolateFaces(p);
 
     uEqn_ = (rho*ddt(u, timeStep) + rho*div(u, u) == mu*laplacian(u) - grad(p));
+    uEqn_.relax(momentumOmega_);
+
     return uEqn_.solve();
 }
 
@@ -111,4 +115,6 @@ void Simple::correctVelocity()
 
     for(const Cell& cell: u.grid.cells)
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
+
+    rhieChowInterpolation();
 }

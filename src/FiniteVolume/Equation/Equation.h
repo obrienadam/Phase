@@ -24,6 +24,8 @@ public:
 
     const SparseMatrix& matrix() const { return spMat_; }
 
+    void relax(Scalar relaxationFactor);
+
 private:
     SparseMatrix spMat_;
     SparseVector x_, b_;
