@@ -13,6 +13,9 @@ class SparseMatrix : public Eigen::SparseMatrix<Scalar>
 public:
 
     SparseMatrix(int nRows, int nCols, int nnz);
+    SparseMatrix(const SparseMatrix& other);
+
+    SparseMatrix& operator=(const SparseMatrix& rhs);
 
     void addEntry(int row, int col, Scalar entry);
     void addEntries(const std::vector<int>& rows, const std::vector<int>& cols, const std::vector<Scalar>& entries);
@@ -27,7 +30,7 @@ public:
 
 private:
 
-    Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solver_;
+    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solver_;
 };
 
 #endif

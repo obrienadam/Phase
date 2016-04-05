@@ -3,19 +3,29 @@
 
 #include "SparseMatrix.h"
 #include "FiniteVolumeGrid2D.h"
-#include "Term.h"
-#include "DiffusionTerm.h"
-#include "AdvectionTerm.h"
-#include "TemporalTerm.h"
 
 template<class T>
 class Equation
 {
 public:
 
-    Equation(const FiniteVolumeGrid2D& grid, T&field);
+    typedef Eigen::Triplet<Scalar> Triplet;
 
-    Equation<T>& operator=(const Term& term);
+    Equation(T& field);
+    Equation(const Equation<T>& other);
+
+    Equation<T>& operator+=(const Equation<T>& rhs);
+    Equation<T>& operator-=(const Equation<T>& rhs);
+    Equation<T>& operator+=(const T& rhs);
+    Equation<T>& operator-=(const T& rhs);
+
+    Equation<T>& operator=(const Equation<T>& rhs);
+
+    Equation<T>& operator*=(Scalar rhs);
+    Equation<T>& operator*=(const ScalarFiniteVolumeField& rhs);
+
+    Equation<T>& operator==(const Scalar rhs);
+    Equation<T>& operator==(const Equation<T>& rhs);
 
     Scalar solve();
 
@@ -29,9 +39,53 @@ public:
 private:
     SparseMatrix spMat_;
     SparseVector x_, b_;
-    const FiniteVolumeGrid2D& grid_;
     T& field_;
+
+    friend Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, ScalarFiniteVolumeField& field);
+    friend Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, VectorFiniteVolumeField& field);
+
+    friend Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+    friend Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFiniteVolumeField& field);
+
+    friend Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep);
+    friend Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep);
 };
+
+template<class T>
+Equation<T> operator+(Equation<T> lhs, const Equation<T>& rhs);
+
+template<class T>
+Equation<T> operator-(Equation<T> lhs, const Equation<T>& rhs);
+
+template<class T>
+Equation<T> operator+(Equation<T> lhs, const T& rhs);
+
+template<class T>
+Equation<T> operator+(const T& lhs, Equation<T> rhs);
+
+template<class T>
+Equation<T> operator-(Equation<T> lhs, const T& rhs);
+
+template<class T>
+Equation<T> operator-(const T& lhs, Equation<T> rhs);
+
+template<class T>
+Equation<T> operator-(Equation<T> lhs, const T& rhs);
+
+template<class T>
+Equation<T> operator*(Equation<T> lhs, Scalar rhs);
+
+template<class T>
+Equation<T> operator*(Scalar lhs, Equation<T> rhs);
+
+Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& coeff, ScalarFiniteVolumeField& field);
+Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& coeff, VectorFiniteVolumeField& field);
+
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFiniteVolumeField& field);
+
+Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep);
+Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep);
 
 #include "Equation.tpp"
 

@@ -11,11 +11,10 @@ public:
     Poisson(const FiniteVolumeGrid2D& grid, const Input& input);
     virtual Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField& phi;
+    ScalarFiniteVolumeField& phi, &gamma;
 
 protected:
 
-    Scalar gamma_;
     Equation<ScalarFiniteVolumeField> phiEqn_;
 };
 

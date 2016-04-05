@@ -12,8 +12,8 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(grid.addScalarField("mu")),
       m(grid.addScalarField("m")),
       d(grid.addScalarField("d")),
-      uEqn_(grid, u),
-      pCorrEqn_(grid, pCorr)
+      uEqn_(u),
+      pCorrEqn_(pCorr)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho"));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu"));
@@ -30,7 +30,7 @@ Scalar Simple::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePCorrEqn();
     correctPressure();
-    correctVelocity();
+    //correctVelocity();
     return 0.;
 }
 
@@ -40,9 +40,11 @@ Scalar Simple::solveUEqn(Scalar timeStep)
 {
     interpolateFaces(rho);
     interpolateFaces(mu);
-    interpolateFaces(p);
 
-    uEqn_ = (rho*ddt(u, timeStep) + rho*div(u, u) == mu*laplacian(u) - grad(p));
+    interpolateFaces(p);
+    VectorFiniteVolumeField gradP = grad(p);
+
+    uEqn_ = (ddt(rho, u, timeStep) + div(rho*u, u) == laplacian(mu, u) - grad(p));
     uEqn_.relax(momentumOmega_);
 
     return uEqn_.solve();
@@ -52,7 +54,7 @@ Scalar Simple::solvePCorrEqn()
 {
     rhieChowInterpolation();
 
-    pCorrEqn_ = (laplacian(rho*d*pCorr) == m);
+    pCorrEqn_ = (laplacian(rho*d, pCorr) == m);
     return pCorrEqn_.solve();
 }
 
@@ -111,10 +113,14 @@ void Simple::correctPressure()
 
 void Simple::correctVelocity()
 {
+    interpolateFaces(pCorr);
     VectorFiniteVolumeField gradPCorr = grad(pCorr);
 
     for(const Cell& cell: u.grid.cells)
-        u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
+    {
+        if(cell.isActive())
+            u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
+    }
 
     rhieChowInterpolation();
 }
