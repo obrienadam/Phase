@@ -80,7 +80,7 @@ Boundaries
 
     y+
     {
-      type fixed;
+      type normal_gradient;
       value 2;
     }
   }

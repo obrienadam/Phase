@@ -8,7 +8,7 @@ Solver
 	timeDependent Off
 	maxIterations 100
 	timeStep 0.01
-	maxTime 0.02
+	maxTime 1
 
 	momentumRelaxation 0.1
 	pressureCorrectionRelaxation 0.1
@@ -25,8 +25,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 100
-	nCellsJ 100
+	nCellsI 50
+	nCellsJ 50
 
 	; Rectilinear parameters
 	spacingX 0.01

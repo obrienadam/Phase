@@ -54,8 +54,8 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
     for(int i = 0, end = nActiveCells; i < end; ++i)
         self[i].x = rhs[i];
 
-    for(int i = 0, end = nActiveCells; i < end; ++i)
-        self[i].y = rhs[i + nActiveCells];
+    for(int i = nActiveCells, end = 2*nActiveCells; i < end; ++i)
+        self[i - nActiveCells].y = rhs[i];
 
     return self;
 }
@@ -75,8 +75,24 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator =(const VectorFiniteV
     return *this;
 }
 
+VectorFiniteVolumeField& VectorFiniteVolumeField::operator *=(const ScalarFiniteVolumeField& rhs)
+{
+    auto &self = *this;
+
+    for(int i = 0, end = self.size(); i < end; ++i)
+        self[i] *= rhs[i];
+
+    for(int i = 0, end = self.faces().size(); i < end; ++i)
+        self.faces()[i] *= rhs.faces()[i];
+
+    return self;
+}
+
 VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size_t faceId) const
 {
+    if(boundaryTypes_.size() == 0)
+        return VectorFiniteVolumeField::NORMAL_GRADIENT;
+
     return boundaryTypes_[grid.faces[faceId].patch().id()];
 }
 

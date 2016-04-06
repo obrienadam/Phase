@@ -30,7 +30,7 @@ Scalar Simple::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePCorrEqn();
     correctPressure();
-    //correctVelocity();
+    correctVelocity();
     return 0.;
 }
 
@@ -38,13 +38,9 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    interpolateFaces(rho);
-    interpolateFaces(mu);
-
     interpolateFaces(p);
-    VectorFiniteVolumeField gradP = grad(p);
 
-    uEqn_ = (ddt(rho, u, timeStep) + div(rho*u, u) == laplacian(mu, u) - grad(p));
+    uEqn_ = (fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p));
     uEqn_.relax(momentumOmega_);
 
     return uEqn_.solve();
@@ -54,7 +50,7 @@ Scalar Simple::solvePCorrEqn()
 {
     rhieChowInterpolation();
 
-    pCorrEqn_ = (laplacian(rho*d, pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(rho*d, pCorr) == m);
     return pCorrEqn_.solve();
 }
 
@@ -98,10 +94,10 @@ void Simple::rhieChowInterpolation()
         m[id] = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            m[id] += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            m[id] -= rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            m[id] += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            m[id] -= rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 }
 

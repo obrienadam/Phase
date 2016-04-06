@@ -9,7 +9,7 @@ Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field)
       b_(field.grid.nActiveCells()),
       field_(field)
 {
-
+    b_.setZero();
 }
 
 template<>
@@ -19,7 +19,7 @@ Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field)
       b_(2*field.grid.nActiveCells()),
       field_(field)
 {
-
+    b_.setZero();
 }
 
 template<>
@@ -91,6 +91,9 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     for(const Cell& cell: field_.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t idx = cell.globalIndex();
 
         spMat_.coeffRef(idx, idx) /= relaxationFactor;
@@ -105,6 +108,9 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 
     for(const Cell& cell: field_.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t idxX = cell.globalIndex();
         size_t idxY = idxX + nActiveCells;
 
@@ -118,6 +124,8 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 
 //- External functions
 
+namespace fv
+{
 Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, ScalarFiniteVolumeField& field)
 {
     const size_t nCells = field.grid.nActiveCells();
@@ -129,6 +137,9 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
@@ -149,7 +160,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.b_[row] -= coeff*field.faces()[bd.face().id()];
+                eqn.rhs()[row] = -coeff*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -163,7 +174,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
 }
 
@@ -178,6 +189,9 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -203,8 +217,8 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.b_[rowX] -= coeff*field.faces()[bd.face().id()].x;
-                eqn.b_[rowY] -= coeff*field.faces()[bd.face().id()].y;
+                eqn.rhs()(rowX) = -coeff*field.faces()[bd.face().id()].x;
+                eqn.rhs()(rowY) = -coeff*field.faces()[bd.face().id()].y;
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -219,7 +233,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeff));
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
 }
 
@@ -234,6 +248,9 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
@@ -254,7 +271,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.b_[row] -= dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()];
+                eqn.rhs()[row] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -268,7 +285,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
 }
 
@@ -283,6 +300,9 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
         Scalar centralCoeff = 0.;
@@ -306,8 +326,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
             switch(field.boundaryType(bd.face().id()))
             {
             case VectorFiniteVolumeField::FIXED:
-                eqn.b_[rowX] -= dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].x;
-                eqn.b_[rowY] -= dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].y;
+                eqn.rhs()[rowX] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].x;
+                eqn.rhs()[rowY] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].y;
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
@@ -322,7 +342,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeff));
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
 }
 
@@ -337,15 +357,18 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t row = cell.globalIndex();
 
         Scalar coeff = a[cell.id()]*cell.volume()/timeStep;
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, coeff));
-        eqn.b_[row] = coeff*field[cell.id()];
+        eqn.rhs()[row] = coeff*field[cell.id()];
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
 }
 
@@ -360,6 +383,9 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 
     for(const Cell& cell: field.grid.cells)
     {
+        if(!cell.isActive())
+            continue;
+
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -368,10 +394,32 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, coeff));
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, coeff));
 
-        eqn.b_[rowX] = coeff*field[cell.id()].x;
-        eqn.b_[rowY] = coeff*field[cell.id()].y;
+        eqn.rhs()[rowX] = coeff*field[cell.id()].x;
+        eqn.rhs()[rowY] = coeff*field[cell.id()].y;
     }
 
-    eqn.spMat_.assemble(entries);
+    eqn.matrix().assemble(entries);
     return eqn;
+}
+
+VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
+{
+    VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name);
+
+    for(const Cell& cell: gradField.grid.cells)
+    {
+        if(!cell.isActive())
+            continue;
+
+        Vector2D &gradVec = gradField[cell.id()];
+
+        for(const InteriorLink& nb: cell.neighbours())
+            gradVec += field.faces()[nb.face().id()]*nb.outwardNorm();
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            gradVec += field.faces()[bd.face().id()]*bd.outwardNorm();
+    }
+
+    return gradField;
+}
 }

@@ -34,5 +34,6 @@ SparseVector SparseMatrix::solve(const SparseVector &b) const
 
 SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0) const
 {
+    solver_.compute(*this);
     return solver_.solveWithGuess(b, x0);
 }

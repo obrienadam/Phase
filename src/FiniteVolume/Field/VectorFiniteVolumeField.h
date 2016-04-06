@@ -20,6 +20,7 @@ public:
 
     VectorFiniteVolumeField& operator =(const SparseVector& rhs);
     VectorFiniteVolumeField& operator =(const VectorFiniteVolumeField& rhs);
+    VectorFiniteVolumeField& operator *=(const ScalarFiniteVolumeField& rhs);
 
     std::vector<Vector2D>& faces() { return faces_; }
     const std::vector<Vector2D>& faces() const { return faces_; }

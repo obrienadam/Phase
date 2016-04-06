@@ -5,7 +5,6 @@ template<class T>
 Equation<T>::Equation(const Equation<T>& other)
     :
       spMat_(other.spMat_),
-      x_(other.x_),
       b_(other.b_),
       field_(other.field_)
 {
@@ -43,7 +42,6 @@ Equation<T>& Equation<T>::operator =(const Equation<T>& rhs)
     if(this != &rhs)
     {
         spMat_ = rhs.spMat_;
-        x_ = rhs.x_;
         b_ = rhs.b_;
     }
 
@@ -60,7 +58,7 @@ Equation<T>& Equation<T>::operator *=(Scalar rhs)
 }
 
 template<class T>
-Equation<T>& Equation<T>::operator==(const Scalar rhs)
+Equation<T>& Equation<T>::operator==(Scalar rhs)
 {
     for(int i = 0, end = b_.rows(); i < end; ++i)
         b_[i] += rhs;
@@ -71,10 +69,13 @@ Equation<T>& Equation<T>::operator==(const Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 {
-    for(int i = 0, end = b_.rows(); i < end; ++i)
-        b_[i] += rhs.b_[i];
+    return Equation<T>::operator -=(rhs);
+}
 
-    return *this;
+template<class T>
+Equation<T>& Equation<T>::operator ==(const T& rhs)
+{
+    return Equation<T>::operator -=(rhs);
 }
 
 //- External functions

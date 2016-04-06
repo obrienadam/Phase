@@ -67,6 +67,9 @@ ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector&
 
 ScalarFiniteVolumeField::BoundaryType ScalarFiniteVolumeField::boundaryType(size_t faceId) const
 {
+    if(boundaryTypes_.size() == 0)
+        return ScalarFiniteVolumeField::NORMAL_GRADIENT;
+
     return boundaryTypes_[grid.faces[faceId].patch().id()];
 }
 
@@ -95,13 +98,21 @@ void interpolateFaces(ScalarFiniteVolumeField& field)
 {
     for(const Face& face: field.grid.faces)
     {
-        if(face.isBoundary())
-            continue;
+        if(face.isInterior())
+        {
+            const Cell& lCell = face.lCell();
+            const Cell& rCell = face.rCell();
 
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
-
-        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+            Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+            field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+        }
+        else if(face.isBoundary())
+        {
+            if(field.boundaryType(face.id()) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
+            {
+                const Cell& cell = face.lCell();
+                field.faces()[face.id()] = field[cell.id()];
+            }
+        }
     }
 }
