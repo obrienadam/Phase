@@ -69,7 +69,7 @@ Equation<T>& Equation<T>::operator==(Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 {
-    return Equation<T>::operator -=(rhs);
+    return operator+=(rhs);
 }
 
 template<class T>

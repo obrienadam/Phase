@@ -73,18 +73,22 @@ void Simple::rhieChowInterpolation()
 
     for(const Face& face: u.grid.faces)
     {
-        if(face.isBoundary())
-            continue;
-
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
-
-        Vector2D sf = face.outwardNorm(lCell.centroid());
-        Vector2D rc = rCell.centroid() - lCell.centroid();
-
         size_t faceId = face.id();
 
-        u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+        if(!face.isBoundary())
+        {
+            const Cell& lCell = face.lCell();
+            const Cell& rCell = face.rCell();
+
+            Vector2D sf = face.outwardNorm(lCell.centroid());
+            Vector2D rc = rCell.centroid() - lCell.centroid();
+
+            u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+        }
+        else
+        {
+            u.faces()[faceId] = h.faces()[faceId];
+        }
     }
 
     for(const Cell& cell: m.grid.cells)
@@ -94,10 +98,10 @@ void Simple::rhieChowInterpolation()
         m[id] = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            m[id] -= rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            m[id] += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            m[id] -= rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            m[id] += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 }
 
@@ -114,9 +118,27 @@ void Simple::correctVelocity()
 
     for(const Cell& cell: u.grid.cells)
     {
-        if(cell.isActive())
-            u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
+        if(!cell.isActive())
+            continue;
+
+        u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
     }
 
-    rhieChowInterpolation();
+    for(const Face& face: u.grid.faces)
+    {
+        if(face.isBoundary())
+            continue;
+
+        const size_t faceId = face.id();
+
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Vector2D sf = face.outwardNorm(lCell.centroid());
+        Vector2D rc = rCell.centroid() - lCell.centroid();
+
+        u.faces()[faceId] += d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+    }
+
+    //rhieChowInterpolation();
 }

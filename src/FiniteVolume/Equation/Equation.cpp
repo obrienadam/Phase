@@ -146,7 +146,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         for(const InteriorLink &nb: cell.neighbours())
         {
             size_t col = nb.cell().globalIndex();
-            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            Scalar coeff = -gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
@@ -154,7 +154,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            Scalar coeff = -gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face().id()))
             {
@@ -202,7 +202,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             size_t colX = nb.cell().globalIndex();
             size_t colY = colX + nActiveCells;
 
-            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            Scalar coeff = -gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, coeff));
@@ -211,7 +211,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            Scalar coeff = -gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face().id()))
             {
