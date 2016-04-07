@@ -10,14 +10,14 @@ Solver
 	timeStep 0.01
 	maxTime 0.25
 
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.1
+	pressureCorrectionRelaxation 0.05
 }
 
 Properties
 {
-	rho 1
-	mu 1e-1
+	rho 1.2
+	mu 1e-2
 	g (0,-9.81)
 	gamma 0.001
 }
@@ -25,8 +25,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 50
-	nCellsJ 50
+	nCellsI 45
+	nCellsJ 45
 
 	; Rectilinear parameters
 	spacingX 0.01

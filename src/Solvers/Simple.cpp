@@ -30,7 +30,7 @@ Scalar Simple::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePCorrEqn();
     correctPressure();
-    correctVelocity();
+    //correctVelocity();
     return 0.;
 }
 
@@ -137,7 +137,7 @@ void Simple::correctVelocity()
         Vector2D sf = face.outwardNorm(lCell.centroid());
         Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u.faces()[faceId] += d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+        u.faces()[faceId] += d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
     }
 
     //rhieChowInterpolation();
