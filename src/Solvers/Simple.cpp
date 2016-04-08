@@ -30,7 +30,7 @@ Scalar Simple::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePCorrEqn();
     correctPressure();
-    //correctVelocity();
+    correctVelocity();
     return 0.;
 }
 
@@ -85,9 +85,9 @@ void Simple::rhieChowInterpolation()
 
             u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
         }
-        else
+        else if(u.boundaryType(faceId) == VectorFiniteVolumeField::NORMAL_GRADIENT)
         {
-            u.faces()[faceId] = h.faces()[faceId];
+            u.faces()[faceId] = u[face.lCell().id()];
         }
     }
 
@@ -126,19 +126,23 @@ void Simple::correctVelocity()
 
     for(const Face& face: u.grid.faces)
     {
-        if(face.isBoundary())
-            continue;
-
         const size_t faceId = face.id();
 
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
+        if(face.isInterior())
+        {
+            const Cell& lCell = face.lCell();
+            const Cell& rCell = face.rCell();
 
-        Vector2D sf = face.outwardNorm(lCell.centroid());
-        Vector2D rc = rCell.centroid() - lCell.centroid();
+            Vector2D sf = face.outwardNorm(lCell.centroid());
+            Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u.faces()[faceId] += d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
+            u.faces()[faceId] += d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
+        }
+        else if(u.boundaryType(faceId) == VectorFiniteVolumeField::NORMAL_GRADIENT)
+        {
+            u.faces()[faceId] = u[face.lCell().id()];
+        }
     }
 
-    //rhieChowInterpolation();
+    //rhieChowInterpolation(); // This can be used instead of the velocity face correction, but is probably more expensive
 }
