@@ -1,0 +1,41 @@
+; Test case for the 2D lid driven cavity
+
+CaseName LidDrivenCavity2D
+
+Solver
+{
+	type Poisson
+	timeDependent Off
+	maxIterations 100
+	timeStep 0.01
+	maxTime 0.25
+
+	momentumRelaxation 0.1
+	pressureCorrectionRelaxation 0.05
+}
+
+Properties
+{
+	rho 1.2
+	mu 1e-2
+	g (0,-9.81)
+	gamma 0.001
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 80
+	nCellsJ 40
+
+	; Rectilinear parameters
+	spacingX 0.01
+	spacingY 0.01
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u,gradP
+	scalarFields p,pCorr,m
+}

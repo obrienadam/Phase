@@ -268,13 +268,16 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
+            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.rhs()[row] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()];
+                eqn.rhs()(row) = -faceFlux*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                centralCoeff += faceFlux;
                 break;
 
             default:
@@ -323,14 +326,17 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
+            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+
             switch(field.boundaryType(bd.face().id()))
             {
             case VectorFiniteVolumeField::FIXED:
-                eqn.rhs()[rowX] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].x;
-                eqn.rhs()[rowY] = -dot(u.faces()[bd.face().id()], bd.outwardNorm())*field.faces()[bd.face().id()].y;
+                eqn.rhs()(rowX) = -faceFlux*field.faces()[bd.face().id()].x;
+                eqn.rhs()(rowY) = -faceFlux*field.faces()[bd.face().id()].y;
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                centralCoeff += faceFlux;
                 break;
 
             default:
