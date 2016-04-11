@@ -25,6 +25,8 @@ public:
     template <class T2>
     Field<T>& operator*=(const Field<T2>& rhs);
 
+    T max() const;
+
     std::string name;
 
 protected:

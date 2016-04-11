@@ -57,6 +57,17 @@ Field<T>& Field<T>::operator *=(const Field<T2>& rhs)
     return self;
 }
 
+template<class T>
+T Field<T>::max() const
+{
+    T maxVal();
+
+    for(const T& val: *this)
+        maxVal = val > maxVal ? val : maxVal;
+
+    return maxVal;
+}
+
 //- External functions
 
 template <class T>
