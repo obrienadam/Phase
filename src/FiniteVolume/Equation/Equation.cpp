@@ -3,23 +3,31 @@
 #include "VectorFiniteVolumeField.h"
 
 template<>
-Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field)
+Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field, const std::string& name)
     :
+      name(name),
       spMat_(field.grid.nActiveCells(), field.grid.nActiveCells(), 5),
-      b_(field.grid.nActiveCells()),
+      boundaries_(field.grid.nActiveCells()),
+      sources_(field.grid.nActiveCells()),
       field_(field)
 {
-    b_.setZero();
+    spMat_.setZero();
+    boundaries_.setZero();
+    sources_.setZero();
 }
 
 template<>
-Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field)
+Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, const std::string& name)
     :
+      name(name),
       spMat_(2*field.grid.nActiveCells(), 2*field.grid.nActiveCells(), 5),
-      b_(2*field.grid.nActiveCells()),
+      boundaries_(2*field.grid.nActiveCells()),
+      sources_(2*field.grid.nActiveCells()),
       field_(field)
 {
-    b_.setZero();
+    spMat_.setZero();
+    boundaries_.setZero();
+    sources_.setZero();
 }
 
 template<>
@@ -30,7 +38,7 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +
         if(!cell.isActive())
             continue;
 
-        b_[cell.globalIndex()] += rhs[cell.id()];
+        sources_(cell.globalIndex()) += rhs[cell.id()];
     }
 
     return *this;
@@ -44,7 +52,7 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -
         if(!cell.isActive())
             continue;
 
-        b_[cell.globalIndex()] -= rhs[cell.id()];
+        sources_(cell.globalIndex()) -= rhs[cell.id()];
     }
 
     return *this;
@@ -61,8 +69,8 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + rhs.grid.nActiveCells();
 
-        b_[rowX] += rhs[cell.id()].x;
-        b_[rowY] += rhs[cell.id()].y;
+        sources_(rowX) += rhs[cell.id()].x;
+        sources_(rowY) += rhs[cell.id()].y;
     }
 
     return *this;
@@ -79,8 +87,8 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + rhs.grid.nActiveCells();
 
-        b_[rowX] -= rhs[cell.id()].x;
-        b_[rowY] -= rhs[cell.id()].y;
+        sources_(rowX) -= rhs[cell.id()].x;
+        sources_(rowY) -= rhs[cell.id()].y;
     }
 
     return *this;
@@ -97,7 +105,7 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
         size_t idx = cell.globalIndex();
 
         spMat_.coeffRef(idx, idx) /= relaxationFactor;
-        b_(idx) += (1. - relaxationFactor)*spMat_.coeff(idx, idx)*field_[cell.id()];
+        boundaries_(idx) += (1. - relaxationFactor)*spMat_.coeff(idx, idx)*field_[cell.id()];
     }
 }
 
@@ -115,10 +123,10 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
         size_t idxY = idxX + nActiveCells;
 
         spMat_.coeffRef(idxX, idxX) /= relaxationFactor;
-        b_(idxX) += (1. - relaxationFactor)*spMat_.coeff(idxX, idxX)*field_[cell.id()].x;
+        boundaries_(idxX) += (1. - relaxationFactor)*spMat_.coeff(idxX, idxX)*field_[cell.id()].x;
 
         spMat_.coeffRef(idxY, idxY) /= relaxationFactor;
-        b_(idxY) += (1. - relaxationFactor)*spMat_.coeff(idxY, idxY)*field_[cell.id()].y;
+        boundaries_(idxY) += (1. - relaxationFactor)*spMat_.coeff(idxY, idxY)*field_[cell.id()].y;
     }
 }
 
@@ -146,7 +154,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         for(const InteriorLink &nb: cell.neighbours())
         {
             size_t col = nb.cell().globalIndex();
-            Scalar coeff = -gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
@@ -154,20 +162,20 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = -gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.rhs()[row] = -coeff*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= coeff*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 break;
 
             default:
-                throw Exception("", "laplacian", "unrecognized or unspecified boundary type.");
+                throw Exception("fv", "laplacian", "unrecognized or unspecified boundary type.");
             }
         }
 
@@ -202,7 +210,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             size_t colX = nb.cell().globalIndex();
             size_t colY = colX + nActiveCells;
 
-            Scalar coeff = -gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, coeff));
@@ -211,21 +219,21 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = -gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.rhs()(rowX) = -coeff*field.faces()[bd.face().id()].x;
-                eqn.rhs()(rowY) = -coeff*field.faces()[bd.face().id()].y;
+                eqn.boundaries()(rowX) -= coeff*field.faces()[bd.face().id()].x; // THIS IS THE MOTHER FUCKING PROBLEM O_O
+                eqn.boundaries()(rowY) -= coeff*field.faces()[bd.face().id()].y;
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 break;
 
             default:
-                throw Exception("", "laplacian", "unrecognized or unspecified boundary type.");
+                throw Exception("fv", "laplacian", "unrecognized or unspecified boundary type.");
             }
         }
 
@@ -273,7 +281,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.rhs()(row) = -faceFlux*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= faceFlux*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -281,7 +289,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
                 break;
 
             default:
-                throw Exception("", "div", "unrecognized or unspecified boundary type.");
+                throw Exception("fv", "div", "unrecognized or unspecified boundary type.");
             }
         }
 
@@ -331,8 +339,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
             switch(field.boundaryType(bd.face().id()))
             {
             case VectorFiniteVolumeField::FIXED:
-                eqn.rhs()(rowX) = -faceFlux*field.faces()[bd.face().id()].x;
-                eqn.rhs()(rowY) = -faceFlux*field.faces()[bd.face().id()].y;
+                eqn.boundaries()(rowX) -= faceFlux*field.faces()[bd.face().id()].x;
+                eqn.boundaries()(rowY) -= faceFlux*field.faces()[bd.face().id()].y;
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
@@ -340,7 +348,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
                 break;
 
             default:
-                throw Exception("", "div", "unrecognized or unspecified boundary type.");
+                throw Exception("fv", "div", "unrecognized or unspecified boundary type.");
             }
         }
 
@@ -371,7 +379,7 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
         Scalar coeff = a[cell.id()]*cell.volume()/timeStep;
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, coeff));
-        eqn.rhs()[row] = coeff*field[cell.id()];
+        eqn.boundaries()[row] = coeff*field[cell.id()];
     }
 
     eqn.matrix().assemble(entries);
@@ -400,8 +408,8 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, coeff));
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, coeff));
 
-        eqn.rhs()[rowX] = coeff*field[cell.id()].x;
-        eqn.rhs()[rowY] = coeff*field[cell.id()].y;
+        eqn.boundaries()[rowX] = coeff*field[cell.id()].x;
+        eqn.boundaries()[rowY] = coeff*field[cell.id()].y;
     }
 
     eqn.matrix().assemble(entries);

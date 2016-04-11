@@ -15,16 +15,14 @@ void TecplotViewer::createTecplotHeader()
     fout_ << "Title = \"" << caseName_ << "\"\n"
           << "Variables = \"x\", \"y\"";
 
-    for(const auto& field: grid_.scalarFields())
+    for(const ScalarFiniteVolumeField& field: scalarFields_)
     {
-        fout_ << ", \"" << field.first << "\"";
-        scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
+        fout_ << ", \"" << field.name << "\"";
     }
 
-    for(const auto& field: grid_.vectorFields())
+    for(const VectorFiniteVolumeField& field: vectorFields_)
     {
-        fout_ << ", \"" << field.first << "_x\", \"" << field.first << "_y\"";
-        vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
+        fout_ << ", \"" << field.name << "_x\", \"" << field.name << "_y\"";
     }
 
     fout_ << "\n";

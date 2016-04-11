@@ -22,6 +22,7 @@ protected:
     void openFile();
 
     const FiniteVolumeGrid2D& grid_;
+
     std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
     std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;
 

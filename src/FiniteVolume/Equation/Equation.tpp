@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "Equation.h"
 #include "Exception.h"
 
@@ -5,7 +7,8 @@ template<class T>
 Equation<T>::Equation(const Equation<T>& other)
     :
       spMat_(other.spMat_),
-      b_(other.b_),
+      boundaries_(other.boundaries_),
+      sources_(other.sources_),
       field_(other.field_)
 {
 
@@ -14,7 +17,8 @@ Equation<T>::Equation(const Equation<T>& other)
 template<class T>
 Scalar Equation<T>::solve()
 {
-    field_ = spMat_.solve(b_);
+    field_ = spMat_.solve(boundaries_ + sources_);
+    printf("Solved %s equation, error = %lf, number of iterations = %d\n", this->name.c_str(), error(), iterations());
     return error();
 }
 
@@ -22,7 +26,8 @@ template<class T>
 Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
     spMat_ += rhs.spMat_;
-    b_ += rhs.b_;
+    boundaries_ += rhs.boundaries_;
+    sources_ += rhs.sources_;
 
     return *this;
 }
@@ -31,7 +36,8 @@ template<class T>
 Equation<T>& Equation<T>::operator -=(const Equation<T>& rhs)
 {
     spMat_ -= rhs.spMat_;
-    b_ -= rhs.b_;
+    boundaries_ -= rhs.boundaries_;
+    sources_ -= rhs.sources_;
 
     return *this;
 }
@@ -42,7 +48,8 @@ Equation<T>& Equation<T>::operator =(const Equation<T>& rhs)
     if(this != &rhs)
     {
         spMat_ = rhs.spMat_;
-        b_ = rhs.b_;
+        boundaries_ = rhs.boundaries_;
+        sources_ = rhs.sources_;
     }
 
     return *this;
@@ -52,7 +59,8 @@ template<class T>
 Equation<T>& Equation<T>::operator *=(Scalar rhs)
 {
     spMat_ *= rhs;
-    b_ *= rhs;
+    boundaries_ *= rhs;
+    sources_ *= rhs;
 
     return *this;
 }
@@ -60,8 +68,8 @@ Equation<T>& Equation<T>::operator *=(Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(Scalar rhs)
 {
-    for(int i = 0, end = b_.rows(); i < end; ++i)
-        b_[i] += rhs;
+    for(int i = 0, end = boundaries_.rows(); i < end; ++i)
+        sources_(i) += rhs;
 
     return *this;
 }
@@ -69,13 +77,24 @@ Equation<T>& Equation<T>::operator==(Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 {
-    return operator+=(rhs);
+    spMat_ -= rhs.spMat_;
+    boundaries_ -= rhs.boundaries_;
+    sources_ = rhs.sources_ - sources_;
+    return *this;
 }
 
 template<class T>
 Equation<T>& Equation<T>::operator ==(const T& rhs)
 {
-    return Equation<T>::operator -=(rhs);
+    for(const Cell& cell: rhs.grid.cells)
+    {
+        if(!cell.isActive())
+            continue;
+
+        sources_(cell.globalIndex()) += rhs[cell.globalIndex()];
+    }
+
+    return *this;
 }
 
 //- External functions

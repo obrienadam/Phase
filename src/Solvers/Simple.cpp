@@ -12,8 +12,10 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(grid.addScalarField("mu")),
       m(grid.addScalarField("m")),
       d(grid.addScalarField("d")),
-      uEqn_(u),
-      pCorrEqn_(pCorr)
+      ids(grid.addScalarField("ids")),
+      globalIndices(grid.addScalarField("globalIndices")),
+      uEqn_(u, "momentum"),
+      pCorrEqn_(pCorr, "pressure correction")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho"));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu"));
@@ -23,6 +25,12 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
 
     pCorr.copyBoundaryTypes(p);
+
+    for(const Cell& cell: ids.grid.cells)
+    {
+        ids[cell.id()] = cell.id();
+        globalIndices[cell.id()] = cell.globalIndex();
+    }
 }
 
 Scalar Simple::solve(Scalar timeStep)
@@ -38,20 +46,25 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    interpolateFaces(p);
-
     uEqn_ = (fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p));
     uEqn_.relax(momentumOmega_);
 
-    return uEqn_.solve();
+    Scalar error = uEqn_.solve();
+
+    rhieChowInterpolation();
+
+    return error;
 }
 
 Scalar Simple::solvePCorrEqn()
 {
-    rhieChowInterpolation();
-
     pCorrEqn_ = (fv::laplacian(rho*d, pCorr) == m);
-    return pCorrEqn_.solve();
+
+    Scalar error = pCorrEqn_.solve();
+
+    interpolateFaces(pCorr);
+
+    return error;
 }
 
 void Simple::computeD()
@@ -59,7 +72,10 @@ void Simple::computeD()
     const auto diag = uEqn_.matrix().diagonal();
 
     for(const Cell& cell: d.grid.cells)
-        d[cell.id()] = cell.volume()/diag[cell.id()];
+    {
+        if(cell.isActive())
+            d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
+    }
 
     interpolateFaces(d);
 }
@@ -109,11 +125,12 @@ void Simple::correctPressure()
 {
     for(const Cell& cell: p.grid.cells)
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
+
+    interpolateFaces(p);
 }
 
 void Simple::correctVelocity()
 {
-    interpolateFaces(pCorr);
     VectorFiniteVolumeField gradPCorr = grad(pCorr);
 
     for(const Cell& cell: u.grid.cells)
@@ -123,7 +140,7 @@ void Simple::correctVelocity()
 
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
     }
-
+    /*
     for(const Face& face: u.grid.faces)
     {
         const size_t faceId = face.id();
@@ -143,6 +160,20 @@ void Simple::correctVelocity()
             u.faces()[faceId] = u[face.lCell().id()];
         }
     }
+    */
 
-    //rhieChowInterpolation(); // This can be used instead of the velocity face correction, but is probably more expensive
+    rhieChowInterpolation(); // This can be used instead of the velocity face correction, but is probably more expensive
+
+    //- Update mass source for the purpose of error checking
+
+    for(const Cell& cell: m.grid.cells)
+    {
+        Scalar &mDot = m[cell.id()] = 0.;
+
+        for(const InteriorLink& nb: cell.neighbours())
+            mDot += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            mDot += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+    }
 }

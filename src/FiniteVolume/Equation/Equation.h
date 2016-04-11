@@ -11,11 +11,12 @@ public:
 
     typedef Eigen::Triplet<Scalar> Triplet;
 
-    Equation(T& field);
+    Equation(T& field, const std::string& name = "Unknown");
     Equation(const Equation<T>& other);
 
     SparseMatrix& matrix(){ return spMat_; }
-    SparseVector& rhs(){ return b_; }
+    SparseVector& boundaries(){ return boundaries_; }
+    SparseVector& sources(){ return sources_; }
 
     Equation<T>& operator+=(const Equation<T>& rhs);
     Equation<T>& operator-=(const Equation<T>& rhs);
@@ -40,9 +41,11 @@ public:
 
     void relax(Scalar relaxationFactor);
 
+    std::string name;
+
 private:
     SparseMatrix spMat_;
-    SparseVector b_;
+    SparseVector boundaries_, sources_;
     T& field_;
 };
 

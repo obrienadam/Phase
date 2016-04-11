@@ -19,6 +19,18 @@ Viewer::Viewer(const Solver &solver, const Input &input)
     vector<string> vectorFieldNames, scalarFieldNames;
     split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
     split(scalarFieldNames, scalarFields, is_any_of(", "), token_compress_on);
+
+    for(const auto& field: grid_.scalarFields())
+    {
+        if(std::find(scalarFieldNames.begin(), scalarFieldNames.end(), field.first) != scalarFieldNames.end())
+            scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
+    }
+
+    for(const auto& field: grid_.vectorFields())
+    {
+        if(std::find(vectorFieldNames.begin(), vectorFieldNames.end(), field.first) != vectorFieldNames.end())
+            vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
+    }
 }
 
 Viewer::~Viewer()
