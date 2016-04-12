@@ -17,9 +17,9 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       uEqn_(u, "momentum"),
       pCorrEqn_(pCorr, "pressure correction")
 {
-    rho.fill(input.caseInput().get<Scalar>("Properties.rho"));
-    mu.fill(input.caseInput().get<Scalar>("Properties.mu"));
-    g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
+    rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
+    mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
+    g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
 
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");

@@ -1,0 +1,6 @@
+; Inital conditions for the 2D lid driven cavity
+
+InitialConditions
+{
+
+}

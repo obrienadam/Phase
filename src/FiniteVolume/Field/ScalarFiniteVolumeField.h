@@ -28,6 +28,7 @@ public:
     std::vector<Scalar>& faces() { return faces_; }
 
     BoundaryType boundaryType(size_t faceId) const;
+    Scalar boundaryRefValue(size_t faceId) const;
 
     ScalarFiniteVolumeField& operator*=(const ScalarFiniteVolumeField& rhs);
 

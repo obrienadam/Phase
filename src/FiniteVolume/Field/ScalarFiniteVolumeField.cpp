@@ -15,31 +15,53 @@ ScalarFiniteVolumeField::ScalarFiniteVolumeField(const Input &input, const Finit
     :
       ScalarFiniteVolumeField(grid, name)
 {
+    using namespace std;
+
     auto &self = *this;
 
-    //- Boundary condition association to patches is done by patch id
+    //- Check for a default patch
+
+    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + name + ".*");
+
+    if(defBoundary)
+    {
+        std::string type = input.boundaryInput().get<string>("Boundaries." + name + ".*.type");
+
+        for(int i = 0; i < grid.patches().size(); ++i)
+        {
+            if(type == "fixed")
+                boundaryTypes_.push_back(FIXED);
+            else if(type == "normal_gradient")
+                boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else
+                throw Exception("ScalarFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
+
+            boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>("Boundaries." + name + ".*.value"));
+        }
+    }
+    else
+    {
+        //- Boundary condition association to patches is done by patch id
+        for(const Patch& patch: grid.patches())
+        {
+            string root = "Boundaries." + name + "." + patch.name;
+            string type = input.boundaryInput().get<string>(root + ".type");
+
+            if(type == "fixed")
+                boundaryTypes_.push_back(FIXED);
+            else if (type == "normal_gradient")
+                boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else
+                throw Exception("ScalarFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
+
+            boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>(root + ".value"));
+        }
+    }
+
     for(const Patch& patch: grid.patches())
     {
-        std::string root = "Boundaries." + name + "." + patch.name;
-        std::string type = input.boundaryInput().get<std::string>(root + ".type");
-
-        if(type == "fixed")
-        {
-            boundaryTypes_.push_back(FIXED);
-        }
-        else if (type == "normal_gradient")
-        {
-            boundaryTypes_.push_back(NORMAL_GRADIENT);
-        }
-        else
-        {
-            throw Exception("ScalarFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
-        }
-
-        boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>(root + ".value"));
-
         for(const Face& face: patch.faces())
-            self.faces()[face.id()] = boundaryRefValues_.back();
+            self.faces()[face.id()] = boundaryRefValue(face.id());
     }
 }
 
@@ -71,6 +93,14 @@ ScalarFiniteVolumeField::BoundaryType ScalarFiniteVolumeField::boundaryType(size
         return ScalarFiniteVolumeField::NORMAL_GRADIENT;
 
     return boundaryTypes_[grid.faces[faceId].patch().id()];
+}
+
+Scalar ScalarFiniteVolumeField::boundaryRefValue(size_t faceId) const
+{
+    if(boundaryRefValues_.size() == 0)
+        return 0;
+
+    return boundaryRefValues_[grid.faces[faceId].patch().id()];
 }
 
 ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator *=(const ScalarFiniteVolumeField& rhs)

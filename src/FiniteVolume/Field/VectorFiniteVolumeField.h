@@ -18,6 +18,8 @@ public:
     VectorFiniteVolumeField(const FiniteVolumeGrid2D& grid, const std::string &name);
     VectorFiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
 
+    void fill(const Vector2D& val);
+
     VectorFiniteVolumeField& operator =(const SparseVector& rhs);
     VectorFiniteVolumeField& operator =(const VectorFiniteVolumeField& rhs);
     VectorFiniteVolumeField& operator *=(const ScalarFiniteVolumeField& rhs);
@@ -26,6 +28,7 @@ public:
     const std::vector<Vector2D>& faces() const { return faces_; }
 
     BoundaryType boundaryType(size_t faceId) const;
+    const Vector2D& boundaryRefValue(size_t faceId) const;
 
     const FiniteVolumeGrid2D &grid;
 

@@ -17,4 +17,6 @@ Scalar Piso::solve(Scalar timeStep)
         correctPressure();
         correctVelocity();
     }
+
+    return 0;
 }

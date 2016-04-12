@@ -15,35 +15,59 @@ VectorFiniteVolumeField::VectorFiniteVolumeField(const Input &input, const Finit
     :
       VectorFiniteVolumeField(grid, name)
 {
+    using namespace std;
+
     auto &self = *this;
 
-    //- Boundary condition association to patches is done by patch id
-    for(const Patch& patch: grid.patches())
+    //- Check for a default patch
+    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + name + ".*.type");
+
+    if(defBoundary)
     {
-        std::string root = "Boundaries." + name + "." + patch.name;
-        std::string type = input.boundaryInput().get<std::string>(root + ".type");
+        std::string type = input.boundaryInput().get<string>("Boundaries." + name + ".*.type");
 
-        if(type == "fixed")
+        for(const Patch& patch: grid.patches())
         {
-            boundaryTypes_.push_back(FIXED);
-        }
-        else if (type == "normal_gradient")
-        {
-            boundaryTypes_.push_back(NORMAL_GRADIENT);
-        }
-        else
-        {
-            throw Exception("VectorFiniteVolumeField", "VectorFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
-        }
+            if(type == "fixed")
+                boundaryTypes_.push_back(FIXED);
+            else if(type == "normal_gradient")
+                boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else
+                throw Exception("VectorFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
 
-        std::string refValStr = input.boundaryInput().get<std::string>(root + ".value");
-        boundaryRefValues_.push_back(Vector2D(refValStr));
-
-        for(const Face& face: patch.faces())
-        {
-            self.faces()[face.id()] = boundaryRefValues_.back();
+            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<string>("Boundaries." + name + ".*.value")));
         }
     }
+    else
+    {
+        //- Boundary condition association to patches is done by patch id
+        for(const Patch& patch: grid.patches())
+        {
+            string root = "Boundaries." + name + "." + patch.name;
+            string type = input.boundaryInput().get<string>(root + ".type");
+
+            if(type == "fixed")
+                boundaryTypes_.push_back(FIXED);
+            else if (type == "normal_gradient")
+                boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else
+                throw Exception("VectorFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
+
+            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<string>(root + ".value")));
+        }
+    }
+
+    for(const Patch& patch: grid.patches())
+    {
+        for(const Face& face: patch.faces())
+            self.faces()[face.id()] = boundaryRefValue(face.id());
+    }
+}
+
+void VectorFiniteVolumeField::fill(const Vector2D &val)
+{
+    std::fill(begin(), end(), val);
+    std::fill(faces_.begin(), faces_.end(), val);
 }
 
 VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& rhs)
@@ -94,6 +118,14 @@ VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size
         return VectorFiniteVolumeField::NORMAL_GRADIENT;
 
     return boundaryTypes_[grid.faces[faceId].patch().id()];
+}
+
+const Vector2D& VectorFiniteVolumeField::boundaryRefValue(size_t faceId) const
+{
+    if(boundaryRefValues_.size() == 0)
+        return this->faces()[faceId];
+
+    return boundaryRefValues_[grid.faces[faceId].patch().id()];
 }
 
 //- External functions

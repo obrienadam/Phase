@@ -45,8 +45,8 @@ public:
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& fieldName) const;
     VectorFiniteVolumeField& addVectorField(const Input& input, const std::string& fieldName) const;
 
-    const std::map<std::string, ScalarFiniteVolumeField>& scalarFields() const { return scalarFields_; }
-    const std::map<std::string, VectorFiniteVolumeField>& vectorFields() const { return vectorFields_; }
+    std::map<std::string, ScalarFiniteVolumeField>& scalarFields() const { return scalarFields_; }
+    std::map<std::string, VectorFiniteVolumeField>& vectorFields() const { return vectorFields_; }
 
     std::vector<Node> nodes;
     std::vector<Cell> cells;
