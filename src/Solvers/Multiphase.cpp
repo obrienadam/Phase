@@ -2,8 +2,9 @@
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
-      Simple(grid, input),
-      gamma(grid.addScalarField(input, "gamma"))
+      Piso(grid, input),
+      gamma(grid.addScalarField(input, "gamma")),
+      gammaEqn_(gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
@@ -15,6 +16,16 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     computeRho();
     computeMu();
+}
+
+Scalar Multiphase::solve(Scalar timeStep)
+{
+    computeRho();
+    computeMu();
+
+    Piso::solve(timeStep);
+
+    solveGammaEqn(timeStep);
 }
 
 //- Private methods
@@ -39,4 +50,11 @@ void Multiphase::computeMu()
     }
 
     interpolateFaces(mu);
+}
+
+Scalar Multiphase::solveGammaEqn(Scalar timeStep)
+{
+    gamma.save();
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + fv::div(u, gamma) == 0.);
+    return gammaEqn_.solve();
 }

@@ -13,7 +13,7 @@ public:
 
 private:
 
-    int nPCorrections_;
+    size_t nPCorrections_;
 };
 
 #endif

@@ -9,13 +9,18 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Piso::solve(Scalar timeStep)
 {
-    solveUEqn(timeStep);
+    u.save();
 
-    for(int i = 0; i < nPCorrections_; ++i)
+    for(size_t i = 0; i < nInnerIterations_; ++i)
     {
-        solvePCorrEqn();
-        correctPressure();
-        correctVelocity();
+        solveUEqn(timeStep);
+
+        for(size_t j = 0; j < nPCorrections_; ++j)
+        {
+            solvePCorrEqn();
+            correctPressure();
+            correctVelocity();
+        }
     }
 
     return 0;

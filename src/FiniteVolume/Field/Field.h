@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "Types.h"
 
@@ -12,12 +13,13 @@ class Field : public std::vector<T>
 public:
 
     Field(size_t size = 0, const T& initialValue = T(), const std::string& name = "N/A");
+    Field(const Field<T>& other) : std::vector<T>(other), name(other.name), prevFieldPtr_(nullptr) {}
 
     void save();
 
-    std::vector<T>& prev() { return prev_; }
-    const std::vector<T>& prev() const { return prev_; }
-    bool previousFieldAvailable() const;
+    Field<T>& prev() { return *prevFieldPtr_; }
+    Field<T>& prev() const { return *prevFieldPtr_; }
+    bool previousFieldAvailable() const { return prevFieldPtr_ != nullptr; }
 
     virtual Field<T>& operator+=(const Field<T>& rhs);
     virtual Field<T>& operator-=(const Field<T>& rhs);
@@ -31,7 +33,7 @@ public:
 
 protected:
 
-    std::vector<T> prev_;
+    std::shared_ptr< Field<T> > prevFieldPtr_;
 
 };
 

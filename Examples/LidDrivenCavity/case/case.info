@@ -9,6 +9,8 @@ Solver
 	timeStep 0.01
 	maxTime 10
 
+	numInnerIterations 2
+	numPressureCorrections 2
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
 }

@@ -21,8 +21,10 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
 
+    nInnerIterations_ = input.caseInput().get<size_t>("Solver.numInnerIterations");
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
+
 
     pCorr.copyBoundaryTypes(p);
 
@@ -35,10 +37,16 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Simple::solve(Scalar timeStep)
 {
-    solveUEqn(timeStep);
-    solvePCorrEqn();
-    correctPressure();
-    correctVelocity();
+    u.save();
+
+    for(size_t i = 0; i < nInnerIterations_; ++i)
+    {
+        solveUEqn(timeStep);
+        solvePCorrEqn();
+        correctPressure();
+        correctVelocity();
+    }
+
     return 0.;
 }
 
@@ -46,7 +54,7 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();

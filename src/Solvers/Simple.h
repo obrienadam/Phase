@@ -38,6 +38,7 @@ protected:
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pCorrEqn_;
 
+    size_t nInnerIterations_;
     Scalar momentumOmega_, pCorrOmega_;
 };
 

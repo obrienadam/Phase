@@ -363,6 +363,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
+    const Field<Scalar>& field0 = field.prev();
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -379,7 +380,34 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
         Scalar coeff = a[cell.id()]*cell.volume()/timeStep;
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, coeff));
-        eqn.boundaries()[row] = coeff*field[cell.id()];
+        eqn.boundaries()[row] = coeff*field0[cell.id()];
+    }
+
+    eqn.matrix().assemble(entries);
+    return eqn;
+}
+
+Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep)
+{
+    const size_t nActiveCells = field.grid.nActiveCells();
+    const Field<Scalar> &field0 = field.prev();
+
+    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
+    Equation<ScalarFiniteVolumeField> eqn(field);
+
+    entries.reserve(nActiveCells);
+
+    for(const Cell& cell: field.grid.cells)
+    {
+        if(!cell.isActive())
+            continue;
+
+        size_t row = cell.globalIndex();
+
+        Scalar coeff = cell.volume()/timeStep;
+
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, coeff));
+        eqn.boundaries()[row] = coeff*field0[cell.id()];
     }
 
     eqn.matrix().assemble(entries);
@@ -389,6 +417,7 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
 Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
+    const Field<Vector2D>& field0 = field.prev();
 
     std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -408,8 +437,8 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, coeff));
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, coeff));
 
-        eqn.boundaries()[rowX] = coeff*field[cell.id()].x;
-        eqn.boundaries()[rowY] = coeff*field[cell.id()].y;
+        eqn.boundaries()[rowX] = coeff*field0[cell.id()].x;
+        eqn.boundaries()[rowY] = coeff*field0[cell.id()].y;
     }
 
     eqn.matrix().assemble(entries);

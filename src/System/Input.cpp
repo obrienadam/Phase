@@ -41,10 +41,12 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
                 if(type == "circle")
                 {
                     Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
-                    setCircle(circle, icTree.get<Scalar>("innerValue"), field);
+                    setCircle(circle, icTree.get<Scalar>("value"), field);
                 }
                 else if(type == "uniform")
                     field.fill(icTree.get<Scalar>("value"));
+
+                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
             }
 
             continue;
@@ -58,19 +60,18 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
 
             for(const auto& ic: child.second)
             {
-                for(const auto& ic: child.second)
-                {
-                    const auto &icTree = ic.second;
-                    std::string type = icTree.get<string>("type");
+                const auto &icTree = ic.second;
+                std::string type = icTree.get<string>("type");
 
-                    if(type == "circle")
-                    {
-                        Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
-                        setCircle(circle, Vector2D(icTree.get<Scalar>("innerValue")), field);
-                    }
-                    else if(type == "uniform")
-                        field.fill(Vector2D(icTree.get<string>("value")));
+                if(type == "circle")
+                {
+                    Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
+                    setCircle(circle, Vector2D(icTree.get<string>("value")), field);
                 }
+                else if(type == "uniform")
+                    field.fill(Vector2D(icTree.get<string>("value")));
+
+                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
             }
         }
     }

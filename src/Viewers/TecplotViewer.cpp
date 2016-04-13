@@ -32,7 +32,8 @@ void TecplotViewer::write(Scalar solutionTime)
 {
     fout_ << "Zone T = \"" << caseName_ << "_" << solutionTime << "s\"\n"
           << "N = " << grid_.nodes.size() << ", E = " << grid_.cells.size() << ", ZoneType = FeQuadrilateral, Datapacking = Block\n"
-          << "Varlocation=(" << varLocation() << "=CellCentered)\n";
+          << "Varlocation=(" << varLocation() << "=CellCentered)\n"
+          << "StrandId = 1, SolutionTime = " << solutionTime << "\n";
 
     for(const Node& node: grid_.nodes)
         fout_ << node.x << "\n";
