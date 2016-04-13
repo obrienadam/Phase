@@ -58,3 +58,28 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     gammaEqn_ = (fv::ddt(gamma, timeStep) + fv::div(u, gamma) == 0.);
     return gammaEqn_.solve();
 }
+
+//- External functions
+
+namespace hc
+{
+
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field)
+{
+    Equation<ScalarFiniteVolumeField> eqn(field);
+
+    for(const Cell &cell: field.grid.cells)
+    {
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            if(dot(nb.rCellVec(), u.faces()[nb.face().id()]) < 0.) // check to see if current cell is a donor cell for this face
+                continue;
+
+
+        }
+    }
+
+    return eqn;
+}
+
+}

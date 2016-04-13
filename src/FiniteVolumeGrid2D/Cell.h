@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Types.h"
+#include "Polygon.h"
 
 #include "Node.h"
 #include "Face.h"
@@ -35,14 +36,18 @@ public:
     size_t nBoundaryFaces() const { return boundaryLinks_.size(); }
     size_t nNeighbours() const { return interiorLinks_.size(); }
 
+    bool isInCell(const Point2D& point) const;
+
 private:
 
     void computeCellAdjacency();
 
     bool isActive_;
 
+    Polygon cellShape_;
+
     Scalar volume_;
-    Point2D centroid_;
+    Vector2D centroid_;
 
     size_t id_;
     int globalIndex_;

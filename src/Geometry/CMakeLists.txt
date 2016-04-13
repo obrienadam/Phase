@@ -1,4 +1,5 @@
-set(HEADERS Vector2D.h
+set(HEADERS Geometry.h
+            Vector2D.h
             Point2D.h
             Line2D.h
             Shape2D.h
@@ -16,3 +17,4 @@ set(SOURCES Vector2D.cpp
             BoundingBox.cpp)
 
 add_library(Geometry ${HEADERS} ${SOURCES})
+target_link_libraries(Geometry CGAL gmp)

@@ -1,40 +1,38 @@
 #include <math.h>
 
+#include <CGAL/centroid.h>
+
 #include "Polygon.h"
+
+Polygon::Polygon()
+{
+
+}
 
 Polygon::Polygon(const std::vector<Point2D> &vertices)
 {
-    vertices_ = vertices;
-    const int nPts = vertices_.size();
+    typedef CGAL::Point_2<geometry::Kernel> Point;
 
-    area_ = 0.;
+    for(const Point2D& vtx: vertices)
+        this->push_back(Point(vtx.x, vtx.y));
 
-    for(int i = 0; i < nPts; ++i)
-        area_ += vertices_[i].x*vertices_[(i + 1)%nPts].y - vertices_[(i + 1)%nPts].x*vertices_[i].y;
+    isSimple_ = this->is_simple();
+    isConvex_ = this->is_convex();
 
-    area_ *= 0.5;
+    area_ = CGAL::Polygon_2<geometry::Kernel>::area();
 
-    Scalar coeff = 1./(6.*area_), ai;
-    centroid_ = Point2D(0., 0.);
-
-    for(int i = 0; i < nPts; ++i)
-    {
-        ai = vertices_[i].x*vertices_[(i + 1)%nPts].y - vertices_[(i + 1)%nPts].x*vertices_[i].y;
-        centroid_.x += (vertices_[i].x + vertices_[(i + 1)%nPts].x)*ai;
-        centroid_.y += (vertices_[i].y + vertices_[(i + 1)%nPts].y)*ai;
-    }
-
-    centroid_ *= coeff;
+    Point centroid = CGAL::centroid(container().begin(), container().end(), CGAL::Dimension_tag<0>());
+    centroid_ = Point2D(centroid.x(), centroid.y());
 }
 
 bool Polygon::isInside(const Point2D& testPoint) const
 {
-
+    return has_on_bounded_side(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y));
 }
 
 bool Polygon::isOnEdge(const Point2D& testPoint) const
 {
-
+    return has_on_boundary(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y));
 }
 
 Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
@@ -42,32 +40,12 @@ Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
 
 }
 
-void Polygon::operator+=(const Vector2D& translationVec)
+bool Polygon::isSimple() const
 {
-    centroid_ += translationVec;
-
-    for(Point2D& pt: vertices_)
-        pt += translationVec;
-}
-
-void Polygon::operator-=(const Vector2D& translationVec)
-{
-    operator +=(-translationVec);
+    return isSimple_;
 }
 
 bool Polygon::isConvex() const
 {
-    Vector2D prevVec = vertices_[1] - vertices_[0];
-
-    for(int i = 1, nPts = vertices_.size(); i < nPts; ++i)
-    {
-        Vector2D currVec = vertices_[(i + 1)%nPts] - vertices_[i];
-
-        if(cross(prevVec, currVec) < 0.)
-            return false;
-
-        prevVec = currVec;
-    }
-
-    return true;
+    return isConvex_;
 }

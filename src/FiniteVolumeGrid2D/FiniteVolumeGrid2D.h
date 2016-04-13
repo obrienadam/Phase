@@ -48,6 +48,8 @@ public:
     std::map<std::string, ScalarFiniteVolumeField>& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField>& vectorFields() const { return vectorFields_; }
 
+    const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
+
     std::vector<Node> nodes;
     std::vector<Cell> cells;
     std::vector<Face> faces;

@@ -16,6 +16,8 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
+    Scalar computeMaxTimeStep(Scalar maxCo) const;
+
     VectorFiniteVolumeField &u, &h;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d, &ids, &globalIndices;
 
@@ -32,6 +34,8 @@ protected:
     void correctPressure();
     void correctVelocity();
     void correctMassFlow();
+
+    Scalar courantNumber(Scalar timeStep);
 
     Vector2D g_;
 

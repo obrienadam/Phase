@@ -47,7 +47,25 @@ Scalar Simple::solve(Scalar timeStep)
         correctVelocity();
     }
 
+    printf("Max Co = %lf\n", courantNumber(timeStep));
+
     return 0.;
+}
+
+Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
+{
+    Scalar maxTimeStep = std::numeric_limits<Scalar>::infinity();
+
+    for(const Cell &cell: u.grid.cells)
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            Scalar deltaX = nb.rCellVec().mag();
+            Scalar magU = u.faces()[nb.face().id()].mag();
+
+            maxTimeStep = std::min(maxTimeStep, maxCo*deltaX/magU);
+        }
+
+    return maxTimeStep;
 }
 
 //- Protected methods
@@ -184,4 +202,20 @@ void Simple::correctVelocity()
         for(const BoundaryLink& bd: cell.boundaries())
             mDot += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
+}
+
+Scalar Simple::courantNumber(Scalar timeStep)
+{
+    Scalar maxCo = 0.;
+
+    for(const Cell &cell: u.grid.cells)
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            Scalar deltaX = nb.rCellVec().mag();
+            Scalar magU = u.faces()[nb.face().id()].mag();
+
+            maxCo = std::max(maxCo, magU*timeStep/deltaX);
+        }
+
+    return maxCo;
 }

@@ -23,4 +23,16 @@ private:
     Equation<ScalarFiniteVolumeField> gammaEqn_;
 };
 
+namespace hc
+{
+
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+
+}
+
+namespace uq
+{
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+}
+
 #endif

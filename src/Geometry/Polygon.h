@@ -3,12 +3,17 @@
 
 #include <vector>
 
-#include "Shape2D.h"
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polygon_2.h>
 
-class Polygon : public Shape2D
+#include "Shape2D.h"
+#include "Geometry.h"
+
+class Polygon : public CGAL::Polygon_2<geometry::Kernel>
 {
 public:
 
+    Polygon();
     Polygon(const std::vector<Point2D>& vertices);
 
     Point2D centroid() const { return centroid_; }
@@ -19,16 +24,15 @@ public:
 
     virtual Point2D nearestIntersect(const Point2D& testPoint) const;
 
-    virtual void operator+=(const Vector2D& translationVec);
-    virtual void operator-=(const Vector2D& translationVec);
-
+    bool isSimple() const;
     bool isConvex() const;
 
 private:
 
+    bool isSimple_, isConvex_;
+
     Point2D centroid_;
     Scalar area_;
-    std::vector<Point2D> vertices_;
 };
 
 #endif

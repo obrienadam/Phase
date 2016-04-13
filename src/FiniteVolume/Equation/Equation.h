@@ -91,6 +91,11 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& field);
 }
 
+namespace cn // Crank-Nicholson schemes
+{
+Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep);
+}
+
 #include "Equation.tpp"
 
 #endif

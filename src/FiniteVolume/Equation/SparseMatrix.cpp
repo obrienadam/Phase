@@ -6,8 +6,8 @@ SparseMatrix::SparseMatrix(int nRows, int nCols, int nnz)
       Eigen::SparseMatrix<Scalar>(nRows, nCols)
 {
     reserve(nRows*nnz);
-    solver_.setMaxIterations(50);
-    solver_.setTolerance(1e-14);
+    solver_.setMaxIterations(500);
+    solver_.setTolerance(1e-12);
 }
 
 SparseMatrix::SparseMatrix(const SparseMatrix &other)

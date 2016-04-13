@@ -23,5 +23,7 @@ Scalar Piso::solve(Scalar timeStep)
         }
     }
 
+    printf("time step = %lf, max Co = %lf\n", timeStep, courantNumber(timeStep));
+
     return 0;
 }

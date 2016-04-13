@@ -41,5 +41,7 @@ message(STATUS "C release flags: ${CMAKE_C_FLAGS_RELEASE}")
 message(STATUS "CXX debug flags: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "C debug flags: ${CMAKE_C_FLAGS_DEBUG}")
 
+find_package(CGAL REQUIRED)
+
 add_subdirectory(src)
 add_subdirectory(modules)

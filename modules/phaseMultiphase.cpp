@@ -20,10 +20,12 @@ int main(int argc, const char* argv[])
     TecplotViewer viewer(solver, input);
 
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
-    Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
+    Scalar maxCo = input.caseInput().get<Scalar>("Solver.maxCo");
     Scalar time = 0.;
 
-    for(time = 0.; time < maxTime; time += timeStep)
+    Scalar timeStep = solver.computeMaxTimeStep(maxCo);
+
+    for(time = 0.; time < maxTime; time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo))
     {
         viewer.write(time);
         solver.solve(timeStep);

@@ -34,16 +34,21 @@ Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces, bool is
         }
     }
 
-    Polygon cellShape(vertices);
+    cellShape_ = Polygon(vertices);
 
-    if(!cellShape.isConvex())
+    if(!cellShape_.isConvex())
         throw Exception("Cell", "Cell", "non-convex cells are not allowed.");
 
-    volume_ = cellShape.area();
-    centroid_ = cellShape.centroid();
+    volume_ = cellShape_.area();
+    centroid_ = cellShape_.centroid();
 
     if(volume_ < 0.)
         throw Exception("Cell", "Cell", "faces are not oriented in a counter-clockwise manner.");
+}
+
+bool Cell::isInCell(const Point2D &point) const
+{
+    return cellShape_.isInside(point);
 }
 
 //- Private methods

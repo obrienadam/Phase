@@ -1,4 +1,5 @@
 #include "FiniteVolumeGrid2D.h"
+#include "Exception.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(size_t nNodes, size_t nCells, size_t nFaces)
 {
@@ -105,6 +106,23 @@ VectorFiniteVolumeField& FiniteVolumeGrid2D::addVectorField(const std::string &f
     typedef std::pair< std::string, VectorFiniteVolumeField> Key;
 
     return (vectorFields_.insert(Key(fieldName, VectorFiniteVolumeField(*this, fieldName))).first)->second;
+}
+
+const Cell& FiniteVolumeGrid2D::findContainingCell(const Point2D &point, const Cell &guess) const
+{
+    if(guess.isInCell(point))
+        return guess;
+
+    for(const InteriorLink &nb: guess.neighbours())
+    {
+        if(nb.cell().isInCell(point))
+            return nb.cell();
+    }
+
+    for(const InteriorLink &nb: guess.neighbours())
+        return findContainingCell(point, nb.cell());
+
+    throw Exception("FiniteVolumeGrid2D", "findContainingCell", "specified point is not contained within any cell.");
 }
 
 //- Protected methods
