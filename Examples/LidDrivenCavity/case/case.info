@@ -9,16 +9,16 @@ Solver
 	timeStep 0.01
 	maxTime 10
 
-	numInnerIterations 2
-	numPressureCorrections 2
-	momentumRelaxation 0.5
-	pressureCorrectionRelaxation 0.5
+	numInnerIterations 1
+	numPressureCorrections 1
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
 }
 
 Properties
 {
 	rho 1
-	mu 0.0001
+	mu 0.001
 	g (0,-9.81)
 	gamma 0.001
 }

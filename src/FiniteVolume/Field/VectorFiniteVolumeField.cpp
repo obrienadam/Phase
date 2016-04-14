@@ -192,3 +192,16 @@ VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFinit
     lhs *= rhs;
     return lhs;
 }
+
+VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vector2D& rhs)
+{
+    VectorFiniteVolumeField result(lhs.grid, lhs.name);
+
+    for(const Cell& cell: lhs.grid.cells)
+        result[cell.id()] = lhs[cell.id()]*rhs;
+
+    for(const Face &face: lhs.grid.faces)
+        result.faces()[face.id()] = lhs.faces()[face.id()]*rhs;
+
+    return result;
+}

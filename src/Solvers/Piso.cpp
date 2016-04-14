@@ -11,6 +11,9 @@ Scalar Piso::solve(Scalar timeStep)
 {
     u.save();
 
+    if(!(timeDependent_ == Solver::OFF))
+        timeStep = std::numeric_limits<Scalar>::infinity();
+
     for(size_t i = 0; i < nInnerIterations_; ++i)
     {
         solveUEqn(timeStep);

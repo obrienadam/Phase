@@ -465,4 +465,13 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
 
     return gradField;
 }
+
+VectorFiniteVolumeField source(VectorFiniteVolumeField field)
+{
+    for(const Cell &cell: field.grid.cells)
+        field[cell.id()] *= cell.volume();
+
+    return field;
+}
+
 }

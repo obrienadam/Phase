@@ -166,7 +166,7 @@ void Simple::correctVelocity()
 
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
     }
-    /*
+
     for(const Face& face: u.grid.faces)
     {
         const size_t faceId = face.id();
@@ -179,16 +179,13 @@ void Simple::correctVelocity()
             Vector2D sf = face.outwardNorm(lCell.centroid());
             Vector2D rc = rCell.centroid() - lCell.centroid();
 
-            u.faces()[faceId] += d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
+            u.faces()[faceId] -= d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
         }
         else if(u.boundaryType(faceId) == VectorFiniteVolumeField::NORMAL_GRADIENT)
         {
             u.faces()[faceId] = u[face.lCell().id()];
         }
     }
-    */
-
-    rhieChowInterpolation(); // This can be used instead of the velocity face correction, but is probably more expensive
 
     //- Update mass source for the purpose of error checking
 
