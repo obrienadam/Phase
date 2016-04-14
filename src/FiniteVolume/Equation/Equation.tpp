@@ -18,7 +18,7 @@ template<class T>
 Scalar Equation<T>::solve()
 {
     field_ = spMat_.solve(boundaries_ + sources_);
-    printf("Solved %s equation, error = %lf, number of iterations = %d\n", this->name.c_str(), error(), iterations());
+    printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
     return error();
 }
 

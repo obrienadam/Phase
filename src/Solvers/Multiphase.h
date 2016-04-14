@@ -26,13 +26,25 @@ private:
 namespace hc
 {
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+Scalar betaFace(Scalar gammaD, Scalar gammaA, Scalar gammaU, Scalar coD);
+
+}
+
+namespace sc
+{
 
 }
 
 namespace uq
 {
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
+
+}
+
+namespace cicsam
+{
+enum Type{HC, SC, UQ};
+
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep);
 }
 
 #endif

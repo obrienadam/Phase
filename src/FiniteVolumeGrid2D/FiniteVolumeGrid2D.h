@@ -50,6 +50,8 @@ public:
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
+    const BoundingBox& boundingBox() const { return bBox_; }
+
     std::vector<Node> nodes;
     std::vector<Cell> cells;
     std::vector<Face> faces;

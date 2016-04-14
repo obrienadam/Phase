@@ -36,8 +36,8 @@ Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces, bool is
 
     cellShape_ = Polygon(vertices);
 
-    if(!cellShape_.isConvex())
-        throw Exception("Cell", "Cell", "non-convex cells are not allowed.");
+    if(!(cellShape_.isSimple() && cellShape_.isConvex()))
+        throw Exception("Cell", "Cell", "cell shape must be a simple, convex polygon.");
 
     volume_ = cellShape_.area();
     centroid_ = cellShape_.centroid();

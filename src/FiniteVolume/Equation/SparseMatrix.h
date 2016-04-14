@@ -30,7 +30,7 @@ public:
 
 private:
 
-    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IdentityPreconditioner > solver_;
+    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solver_;
 };
 
 #endif

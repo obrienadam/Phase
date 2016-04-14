@@ -27,12 +27,12 @@ Polygon::Polygon(const std::vector<Point2D> &vertices)
 
 bool Polygon::isInside(const Point2D& testPoint) const
 {
-    return has_on_bounded_side(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y));
+    return bounded_side(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y)) == CGAL::ON_BOUNDED_SIDE;
 }
 
 bool Polygon::isOnEdge(const Point2D& testPoint) const
 {
-    return has_on_boundary(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y));
+    return bounded_side(CGAL::Point_2<geometry::Kernel>(testPoint.x, testPoint.y)) == CGAL::ON_BOUNDARY;
 }
 
 Point2D Polygon::nearestIntersect(const Point2D& testPoint) const

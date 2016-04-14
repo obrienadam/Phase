@@ -6,13 +6,13 @@ cmake_minimum_required(VERSION 2.8)
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 	
         set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -O0")
-	set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -Ofast")
+        set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -O3")
 	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_RELEASE})
 
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
 
 	set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g -qopenmp -O0")
-	set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -qopenmp -Ofast")
+        set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -qopenmp -O3")
 	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_RELEASE})
 
 endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
