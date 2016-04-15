@@ -28,7 +28,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
     pCorr.copyBoundaryTypes(p);
 
-    for(const Cell& cell: ids.grid.cells)
+    for(const Cell& cell: ids.grid.cells())
     {
         ids[cell.id()] = cell.id();
         globalIndices[cell.id()] = cell.globalIndex();
@@ -56,7 +56,7 @@ Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 {
     Scalar maxTimeStep = std::numeric_limits<Scalar>::infinity();
 
-    for(const Cell &cell: u.grid.cells)
+    for(const Cell &cell: u.grid.cells())
         for(const InteriorLink &nb: cell.neighbours())
         {
             Scalar deltaX = nb.rCellVec().mag();
@@ -72,7 +72,7 @@ Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -97,7 +97,7 @@ void Simple::computeD()
 {
     const auto diag = uEqn_.matrix().diagonal();
 
-    for(const Cell& cell: d.grid.cells)
+    for(const Cell& cell: d.grid.cells())
     {
         if(cell.isActive())
             d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
@@ -113,27 +113,32 @@ void Simple::rhieChowInterpolation()
     h = u + d*grad(p);
     interpolateFaces(h);
 
-    for(const Face& face: u.grid.faces)
+    for(const Face& face: u.grid.interiorFaces())
     {
         size_t faceId = face.id();
 
-        if(!face.isBoundary())
-        {
-            const Cell& lCell = face.lCell();
-            const Cell& rCell = face.rCell();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
 
-            Vector2D sf = face.outwardNorm(lCell.centroid());
-            Vector2D rc = rCell.centroid() - lCell.centroid();
+        Vector2D sf = face.outwardNorm(lCell.centroid());
+        Vector2D rc = rCell.centroid() - lCell.centroid();
 
-            u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
-        }
-        else if(u.boundaryType(faceId) == VectorFiniteVolumeField::NORMAL_GRADIENT)
+        u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+    }
+
+    for(const Face& face: u.grid.boundaryFaces())
+    {
+        switch(u.boundaryType(face.id()))
         {
-            u.faces()[faceId] = u[face.lCell().id()];
+        case VectorFiniteVolumeField::FIXED:
+            break;
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            u.faces()[face.id()] = u[face.lCell().id()];
+            break;
         }
     }
 
-    for(const Cell& cell: m.grid.cells)
+    for(const Cell& cell: m.grid.cells())
     {
         size_t id = cell.id();
 
@@ -149,7 +154,7 @@ void Simple::rhieChowInterpolation()
 
 void Simple::correctPressure()
 {
-    for(const Cell& cell: p.grid.cells)
+    for(const Cell& cell: p.grid.cells())
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
     interpolateFaces(p);
@@ -159,7 +164,7 @@ void Simple::correctVelocity()
 {
     VectorFiniteVolumeField gradPCorr = grad(pCorr);
 
-    for(const Cell& cell: u.grid.cells)
+    for(const Cell& cell: u.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -167,29 +172,34 @@ void Simple::correctVelocity()
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
     }
 
-    for(const Face& face: u.grid.faces)
+    for(const Face& face: u.grid.interiorFaces())
     {
         const size_t faceId = face.id();
 
-        if(face.isInterior())
-        {
-            const Cell& lCell = face.lCell();
-            const Cell& rCell = face.rCell();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
 
-            Vector2D sf = face.outwardNorm(lCell.centroid());
-            Vector2D rc = rCell.centroid() - lCell.centroid();
+        Vector2D sf = face.outwardNorm(lCell.centroid());
+        Vector2D rc = rCell.centroid() - lCell.centroid();
 
-            u.faces()[faceId] -= d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
-        }
-        else if(u.boundaryType(faceId) == VectorFiniteVolumeField::NORMAL_GRADIENT)
+        u.faces()[faceId] -= d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
+    }
+
+    for(const Face& face: u.grid.boundaryFaces())
+    {
+        switch(u.boundaryType(face.id()))
         {
-            u.faces()[faceId] = u[face.lCell().id()];
+        case VectorFiniteVolumeField::FIXED:
+            break;
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            u.faces()[face.id()] = u[face.lCell().id()];
+            break;
         }
     }
 
     //- Update mass source for the purpose of error checking
 
-    for(const Cell& cell: m.grid.cells)
+    for(const Cell& cell: m.grid.cells())
     {
         Scalar &mDot = m[cell.id()] = 0.;
 
@@ -205,7 +215,7 @@ Scalar Simple::courantNumber(Scalar timeStep)
 {
     Scalar maxCo = 0.;
 
-    for(const Cell &cell: u.grid.cells)
+    for(const Cell &cell: u.grid.cells())
         for(const InteriorLink &nb: cell.neighbours())
         {
             Scalar deltaX = nb.rCellVec().mag();

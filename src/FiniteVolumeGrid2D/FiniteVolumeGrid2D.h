@@ -19,11 +19,11 @@ public:
 
     FiniteVolumeGrid2D(size_t nNodes = 0, size_t nCells = 0, size_t nFaces = 0);
 
-    size_t nNodes() const { return nodes.size(); }
-    size_t nCells() const { return cells.size(); }
-    size_t nFaces() const { return faces.size(); }
+    size_t nNodes() const { return nodes_.size(); }
+    size_t nCells() const { return cells_.size(); }
+    size_t nFaces() const { return faces_.size(); }
 
-    size_t nActiveCells() const { return cells.size(); }
+    size_t nActiveCells() const { return cells_.size(); }
 
     size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
     size_t createCell(const std::vector<size_t>& faceIds);
@@ -52,19 +52,26 @@ public:
 
     const BoundingBox& boundingBox() const { return bBox_; }
 
-    std::vector<Node> nodes;
-    std::vector<Cell> cells;
-    std::vector<Face> faces;
+    const std::vector<Cell>& cells() const { return cells_; }
+    const std::vector<Node>& nodes() const { return nodes_; }
+
+    const std::vector<Face>& faces() const { return faces_; }
+    const std::vector< Ref<const Face> >& interiorFaces() const { return interiorFaces_; }
+    const std::vector< Ref<const Face> >& boundaryFaces() const { return boundaryFaces_; }
 
 protected:
 
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
 
+    std::vector<Node> nodes_;
+    std::vector<Cell> cells_;
+    std::vector<Face> faces_;
+
     std::map<std::pair<size_t, size_t>, size_t> faceDirectory_;
 
-    std::vector<size_t> interiorFaces_;
-    std::vector<size_t> boundaryFaces_;
+    std::vector< Ref<const Face> > interiorFaces_;
+    std::vector< Ref<const Face> > boundaryFaces_;
 
     std::vector<Patch> patches_;
 

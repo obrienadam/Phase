@@ -20,18 +20,6 @@ void Patch::addFace(Face &face)
     }
 }
 
-void Patch::addFaces(FiniteVolumeGrid2D &grid, const BoundingBox &bBox)
-{
-    for(Face& face: grid.faces)
-    {
-        if(face.isBoundary() && bBox.isInBox(face.centroid()))
-        {
-            faces_.push_back(Ref<const Face>(face));
-            face.addToPatch(*this);
-        }
-    }
-}
-
 void Patch::addFaces(const std::vector<Ref<Face> > &faces)
 {
     for(Face& face: faces)

@@ -19,6 +19,7 @@ public:
     ScalarFiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
 
     void fill(Scalar val);
+    void fillInterior(Scalar val);
 
     void copyBoundaryTypes(const ScalarFiniteVolumeField& other);
 

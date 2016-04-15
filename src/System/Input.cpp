@@ -44,7 +44,7 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
                     setCircle(circle, icTree.get<Scalar>("value"), field);
                 }
                 else if(type == "uniform")
-                    field.fill(icTree.get<Scalar>("value"));
+                    field.fillInterior(icTree.get<Scalar>("value"));
 
                 printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
             }
@@ -69,7 +69,7 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
                     setCircle(circle, Vector2D(icTree.get<string>("value")), field);
                 }
                 else if(type == "uniform")
-                    field.fill(Vector2D(icTree.get<string>("value")));
+                    field.fillInterior(Vector2D(icTree.get<string>("value")));
 
                 printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
             }
@@ -81,13 +81,13 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
 
 void Input::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolumeField &field) const
 {
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(circle.isInside(cell.centroid()))
             field[cell.id()] = innerValue;
     }
 
-    for(const Face& face: field.grid.faces)
+    for(const Face& face: field.grid.interiorFaces())
     {
         if(circle.isInside(face.centroid()))
             field.faces()[face.id()] = innerValue;
@@ -96,13 +96,13 @@ void Input::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolum
 
 void Input::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field) const
 {
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(circle.isInside(cell.centroid()))
             field[cell.id()] = innerValue;
     }
 
-    for(const Face& face: field.grid.faces)
+    for(const Face& face: field.grid.faces())
     {
         if(circle.isInside(face.centroid()))
             field.faces()[face.id()] = innerValue;

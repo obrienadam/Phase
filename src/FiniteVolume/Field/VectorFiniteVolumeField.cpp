@@ -4,8 +4,8 @@
 
 VectorFiniteVolumeField::VectorFiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name)
     :
-      Field<Vector2D>::Field(grid.cells.size(), Vector2D(), name),
-      faces_(grid.faces.size(), Vector2D()),
+      Field<Vector2D>::Field(grid.cells().size(), Vector2D(), name),
+      faces_(grid.faces().size(), Vector2D()),
       grid(grid)
 {
 
@@ -70,6 +70,14 @@ void VectorFiniteVolumeField::fill(const Vector2D &val)
     std::fill(faces_.begin(), faces_.end(), val);
 }
 
+void VectorFiniteVolumeField::fillInterior(const Vector2D &val)
+{
+    std::fill(begin(), end(), val);
+
+    for(const Face &face: grid.interiorFaces())
+        faces_[face.id()] = val;
+}
+
 VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& rhs)
 {
     auto &self = *this;
@@ -117,7 +125,7 @@ VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size
     if(boundaryTypes_.size() == 0)
         return VectorFiniteVolumeField::NORMAL_GRADIENT;
 
-    return boundaryTypes_[grid.faces[faceId].patch().id()];
+    return boundaryTypes_[grid.faces()[faceId].patch().id()];
 }
 
 const Vector2D& VectorFiniteVolumeField::boundaryRefValue(size_t faceId) const
@@ -125,7 +133,7 @@ const Vector2D& VectorFiniteVolumeField::boundaryRefValue(size_t faceId) const
     if(boundaryRefValues_.size() == 0)
         return this->faces()[faceId];
 
-    return boundaryRefValues_[grid.faces[faceId].patch().id()];
+    return boundaryRefValues_[grid.faces()[faceId].patch().id()];
 }
 
 //- External functions
@@ -134,7 +142,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
 {
     VectorFiniteVolumeField gradField(scalarField.grid, "grad_" + scalarField.name);
 
-    for(const Cell& cell: scalarField.grid.cells)
+    for(const Cell& cell: scalarField.grid.cells())
     {
         Vector2D &gradPhi = gradField[cell.id()];
 
@@ -152,19 +160,25 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
 
 void interpolateFaces(VectorFiniteVolumeField& field)
 {
-    for(const Face& face: field.grid.faces)
+    for(const Face& face: field.grid.interiorFaces())
     {
-        if(face.isInterior())
-        {
-            const Cell& lCell = face.lCell();
-            const Cell& rCell = face.rCell();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
 
-            Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-            field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
-        }
-        else if(field.boundaryType(face.id()) == VectorFiniteVolumeField::NORMAL_GRADIENT)
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
         {
+        case VectorFiniteVolumeField::FIXED:
+            break;
+
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
             field.faces()[face.id()] = field[face.lCell().id()];
+            break;
         }
     }
 }
@@ -197,10 +211,10 @@ VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vect
 {
     VectorFiniteVolumeField result(lhs.grid, lhs.name);
 
-    for(const Cell& cell: lhs.grid.cells)
+    for(const Cell& cell: lhs.grid.cells())
         result[cell.id()] = lhs[cell.id()]*rhs;
 
-    for(const Face &face: lhs.grid.faces)
+    for(const Face &face: lhs.grid.faces())
         result.faces()[face.id()] = lhs.faces()[face.id()]*rhs;
 
     return result;

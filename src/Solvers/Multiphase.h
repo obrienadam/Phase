@@ -10,7 +10,7 @@ public:
 
     Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &gamma;
+    ScalarFiniteVolumeField &gamma, &kappa;
 
 private:
 

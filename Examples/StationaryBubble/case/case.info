@@ -4,16 +4,16 @@ CaseName StationaryBubble2D
 
 Solver
 {
-	timeDependent Off
+	timeDependent On
 	maxIterations 100
-	timeStep maxCo ; For a fixed time step, enter a number
-	maxCo 0.15
-	maxTime 0.2
+	timeStep 1e-2
+	maxCo 0.25
+	maxTime 5
 
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
-	numInnerIterations 3
-	numPressureCorrections 1
+	numInnerIterations 2
+	numPressureCorrections 2
 }
 
 Properties
@@ -23,7 +23,7 @@ Properties
 	mu1 0.01
 	mu2 0.01
 	sigma 0.07
-	g (0,-9.81)
+	g (0,0)
 }
 
 Grid
@@ -42,4 +42,10 @@ Viewer
 	type tecplot
 	vectorFields u
 	scalarFields p,pCorr,m,gamma,rho,mu
+}
+
+System
+{
+  fileWriteFrequency 30
+  consoleOutputFrequency 1
 }

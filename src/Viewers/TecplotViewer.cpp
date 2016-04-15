@@ -31,14 +31,14 @@ void TecplotViewer::createTecplotHeader()
 void TecplotViewer::write(Scalar solutionTime)
 {
     fout_ << "Zone T = \"" << caseName_ << "_" << solutionTime << "s\"\n"
-          << "N = " << grid_.nodes.size() << ", E = " << grid_.cells.size() << ", ZoneType = FeQuadrilateral, Datapacking = Block\n"
+          << "N = " << grid_.nodes().size() << ", E = " << grid_.cells().size() << ", ZoneType = FeQuadrilateral, Datapacking = Block\n"
           << "Varlocation=(" << varLocation() << "=CellCentered)\n"
           << "StrandId = 1, SolutionTime = " << solutionTime << "\n";
 
-    for(const Node& node: grid_.nodes)
+    for(const Node& node: grid_.nodes())
         fout_ << node.x << "\n";
 
-    for(const Node& node: grid_.nodes)
+    for(const Node& node: grid_.nodes())
         fout_ << node.y << "\n";
 
     for(const ScalarFiniteVolumeField& field: scalarFields_)
@@ -54,7 +54,7 @@ void TecplotViewer::write(Scalar solutionTime)
             fout_ << vec.y << "\n";
     }
 
-    for(const Cell& cell: grid_.cells)
+    for(const Cell& cell: grid_.cells())
     {
         const auto &nodeIds = cell.nodeIds();
         fout_ << nodeIds[0] + 1 << " " << nodeIds[1] + 1 << " " << nodeIds[2] + 1 << " " << nodeIds[3] + 1 << "\n";

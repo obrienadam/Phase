@@ -86,7 +86,7 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator ==(const T& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells)
+    for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;

@@ -3,9 +3,9 @@
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(size_t nNodes, size_t nCells, size_t nFaces)
 {
-    nodes.reserve(nNodes);
-    cells.reserve(nCells);
-    faces.reserve(nFaces);
+    nodes_.reserve(nNodes);
+    cells_.reserve(nCells);
+    faces_.reserve(nFaces);
     patches_.reserve(4);
 }
 
@@ -14,10 +14,10 @@ size_t FiniteVolumeGrid2D::createFace(size_t lNodeId, size_t rNodeId, Face::Type
     using namespace std;
     typedef pair<size_t, size_t> Key;
 
-    Face face(lNodeId, rNodeId, nodes, type);
-    face.id_ = faces.size();
+    Face face(lNodeId, rNodeId, nodes_, type);
+    face.id_ = faces_.size();
 
-    faces.push_back(face);
+    faces_.push_back(face);
 
     Key key1(lNodeId, rNodeId), key2(rNodeId, lNodeId);
 
@@ -25,22 +25,22 @@ size_t FiniteVolumeGrid2D::createFace(size_t lNodeId, size_t rNodeId, Face::Type
     faceDirectory_.insert(pair<Key, size_t>(key2, face.id()));
 
     if(type == Face::INTERIOR)
-        interiorFaces_.push_back(face.id());
+        interiorFaces_.push_back(Ref<const Face>(faces_.back()));
     else if (type == Face::BOUNDARY)
-        boundaryFaces_.push_back(face.id());
+        boundaryFaces_.push_back(Ref<const Face>(faces_.back()));
 
     return face.id();
 }
 
 size_t FiniteVolumeGrid2D::createCell(const std::vector<size_t> &faceIds)
 {
-    Cell cell(faceIds, faces);
-    cell.id_ = cells.size();
+    Cell cell(faceIds, faces_);
+    cell.id_ = cells_.size();
     cell.globalIndex_ = cell.id();
-    cells.push_back(cell);
+    cells_.push_back(cell);
 
     for(size_t faceId: faceIds)
-        faces[faceId].addCell(cells.back());
+        faces_[faceId].addCell(cells_.back());
 
     return cell.id();
 }
@@ -56,17 +56,17 @@ std::string FiniteVolumeGrid2D::gridInfo() const
 
     return "Finite volume grid info:\n"
             "------------------------\n"
-            "Number of nodes: " + to_string(nodes.size()) + "\n"
-            "Number of cells: " + to_string(cells.size()) + "\n"
+            "Number of nodes: " + to_string(nodes_.size()) + "\n"
+            "Number of cells: " + to_string(cells_.size()) + "\n"
             "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n"
             "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n"
-            "Number of faces total: " + to_string(faces.size()) + "\n"
+            "Number of faces total: " + to_string(faces_.size()) + "\n"
             "Bounding box: " + bBox_.toString() + "\n";
 }
 
 void FiniteVolumeGrid2D::computeCellAdjacency()
 {
-    for(Cell& cell: cells)
+    for(Cell& cell: cells_)
         cell.computeCellAdjacency();
 }
 
@@ -74,7 +74,7 @@ size_t FiniteVolumeGrid2D::computeGlobalIndices()
 {
     size_t globalIndex = 0;
 
-    for(Cell& cell: cells)
+    for(Cell& cell: cells_)
         cell.globalIndex_ = cell.isActive() ? globalIndex++ : Cell::INACTIVE;
 
     return globalIndex;
@@ -129,7 +129,7 @@ const Cell& FiniteVolumeGrid2D::findContainingCell(const Point2D &point, const C
 
 void FiniteVolumeGrid2D::computeBoundingBox()
 {
-    bBox_ = BoundingBox(nodes.data(), nodes.size());
+    bBox_ = BoundingBox(nodes_.data(), nodes_.size());
 }
 
 void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Ref<Face> > &faces)

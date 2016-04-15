@@ -19,6 +19,7 @@ public:
     VectorFiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
 
     void fill(const Vector2D& val);
+    void fillInterior(const Vector2D& val);
 
     VectorFiniteVolumeField& operator =(const SparseVector& rhs);
     VectorFiniteVolumeField& operator =(const VectorFiniteVolumeField& rhs);

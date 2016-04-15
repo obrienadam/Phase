@@ -4,8 +4,8 @@
 
 ScalarFiniteVolumeField::ScalarFiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name)
     :
-      Field<Scalar>::Field(grid.cells.size(), 0., name),
-      faces_(grid.faces.size(), 0.),
+      Field<Scalar>::Field(grid.cells().size(), 0., name),
+      faces_(grid.faces().size(), 0.),
       grid(grid)
 {
 
@@ -71,6 +71,14 @@ void ScalarFiniteVolumeField::fill(Scalar val)
     std::fill(faces_.begin(), faces_.end(), val);
 }
 
+void ScalarFiniteVolumeField::fillInterior(Scalar val)
+{
+    std::fill(begin(), end(), val);
+
+    for(const Face &face: grid.interiorFaces())
+        faces_[face.id()] = val;
+}
+
 void ScalarFiniteVolumeField::copyBoundaryTypes(const ScalarFiniteVolumeField &other)
 {
     boundaryTypes_ = other.boundaryTypes_;
@@ -92,7 +100,7 @@ ScalarFiniteVolumeField::BoundaryType ScalarFiniteVolumeField::boundaryType(size
     if(boundaryTypes_.size() == 0)
         return ScalarFiniteVolumeField::NORMAL_GRADIENT;
 
-    return boundaryTypes_[grid.faces[faceId].patch().id()];
+    return boundaryTypes_[grid.faces()[faceId].patch().id()];
 }
 
 Scalar ScalarFiniteVolumeField::boundaryRefValue(size_t faceId) const
@@ -100,7 +108,7 @@ Scalar ScalarFiniteVolumeField::boundaryRefValue(size_t faceId) const
     if(boundaryRefValues_.size() == 0)
         return 0;
 
-    return boundaryRefValues_[grid.faces[faceId].patch().id()];
+    return boundaryRefValues_[grid.faces()[faceId].patch().id()];
 }
 
 ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator *=(const ScalarFiniteVolumeField& rhs)
@@ -126,23 +134,25 @@ ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFini
 
 void interpolateFaces(ScalarFiniteVolumeField& field)
 {
-    for(const Face& face: field.grid.faces)
+    for(const Face& face: field.grid.interiorFaces())
     {
-        if(face.isInterior())
-        {
-            const Cell& lCell = face.lCell();
-            const Cell& rCell = face.rCell();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
 
-            Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-            field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
-        }
-        else if(face.isBoundary())
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
         {
-            if(field.boundaryType(face.id()) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
-            {
-                const Cell& cell = face.lCell();
-                field.faces()[face.id()] = field[cell.id()];
-            }
+        case ScalarFiniteVolumeField::FIXED:
+            break;
+
+        case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
         }
     }
 }

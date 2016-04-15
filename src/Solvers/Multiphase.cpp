@@ -5,6 +5,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Piso(grid, input),
       gamma(grid.addScalarField(input, "gamma")),
+      kappa(grid.addScalarField("kappa")),
       gammaEqn_(gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
@@ -33,7 +34,7 @@ Scalar Multiphase::solve(Scalar timeStep)
 
 void Multiphase::computeRho()
 {
-    for(const Cell& cell: rho.grid.cells)
+    for(const Cell& cell: rho.grid.cells())
     {
         size_t id = cell.id();
         rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
@@ -44,7 +45,7 @@ void Multiphase::computeRho()
 
 void Multiphase::computeMu()
 {
-    for(const Cell& cell: mu.grid.cells)
+    for(const Cell& cell: mu.grid.cells())
     {
         size_t id = cell.id();
         mu[id] = mu1_*(1. - gamma[id]) + mu2_*gamma[id];
@@ -122,7 +123,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
     entries.reserve(5*field.grid.nActiveCells());
 
-    for(const Cell &cell: field.grid.cells)
+    for(const Cell &cell: field.grid.cells())
     {
         Scalar centralCoeff = 0.;
         size_t row = cell.globalIndex();

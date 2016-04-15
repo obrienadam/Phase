@@ -16,17 +16,17 @@ RectilinearGrid2D::RectilinearGrid2D(int nCellsI, int nCellsJ, Scalar hx, Scalar
     for(int j = 0; j < nNodesJ; ++j)
         for(int i = 0; i < nNodesI; ++i)
         {
-            nodes.push_back(Node(i*hx_, j*hy_, nodeId(i, j)));
+            nodes_.push_back(Node(i*hx_, j*hy_, nodeId(i, j)));
 
             if(i > 0)
             {
                 createFace(nodeId(i - 1, j), nodeId(i, j), j == 0 || j == uNodeJ ? Face::BOUNDARY : Face::INTERIOR);
 
                 if(j == 0)
-                    bottomFaces_.push_back(faces.back());
+                    bottomFaces_.push_back(faces_.back());
 
                 else if(j == uNodeJ)
-                    topFaces_.push_back(faces.back());
+                    topFaces_.push_back(faces_.back());
             }
 
             if(j > 0)
@@ -34,10 +34,10 @@ RectilinearGrid2D::RectilinearGrid2D(int nCellsI, int nCellsJ, Scalar hx, Scalar
                 createFace(nodeId(i, j - 1), nodeId(i, j), i == 0 || i == uNodeI ? Face::BOUNDARY : Face::INTERIOR);
 
                 if(i == 0)
-                    leftFaces_.push_back(faces.back());
+                    leftFaces_.push_back(faces_.back());
 
                 else if(i == uNodeI)
-                    rightFaces_.push_back(faces.back());
+                    rightFaces_.push_back(faces_.back());
             }
         }
 

@@ -7,7 +7,7 @@ Solver
 	timeDependent Off
 	maxIterations 100
 	timeStep 0.01
-	maxTime 10
+	maxTime 30
 
 	numInnerIterations 1
 	numPressureCorrections 1
@@ -18,8 +18,8 @@ Solver
 Properties
 {
 	rho 1
-	mu 0.001
-	g (0,-9.81)
+	mu 0.01
+	g (0,0)
 	gamma 0.001
 }
 

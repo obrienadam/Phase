@@ -33,7 +33,7 @@ Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, cons
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells)
+    for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -47,7 +47,7 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells)
+    for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -61,7 +61,7 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +=(const VectorFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells)
+    for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -79,7 +79,7 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -=(const VectorFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells)
+    for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -97,7 +97,7 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 template<>
 void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.cells)
+    for(const Cell& cell: field_.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -114,7 +114,7 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     const size_t nActiveCells = field_.grid.nActiveCells();
 
-    for(const Cell& cell: field_.grid.cells)
+    for(const Cell& cell: field_.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -143,7 +143,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     entries.reserve(5*nCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -195,7 +195,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     entries.reserve(10*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -254,7 +254,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
     entries.reserve(5*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -309,7 +309,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
     entries.reserve(5*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -370,7 +370,7 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
 
     entries.reserve(nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -397,7 +397,7 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
 
     entries.reserve(nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -424,7 +424,7 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 
     entries.reserve(2*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells)
+    for(const Cell& cell: field.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -449,7 +449,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
 {
     VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name);
 
-    for(const Cell& cell: gradField.grid.cells)
+    for(const Cell& cell: gradField.grid.cells())
     {
         if(!cell.isActive())
             continue;
@@ -468,7 +468,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
 
 VectorFiniteVolumeField source(VectorFiniteVolumeField field)
 {
-    for(const Cell &cell: field.grid.cells)
+    for(const Cell &cell: field.grid.cells())
         field[cell.id()] *= cell.volume();
 
     return field;
