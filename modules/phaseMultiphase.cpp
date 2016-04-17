@@ -26,7 +26,11 @@ int main(int argc, const char* argv[])
     Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
 
     viewer.write(time);
-    for(time = 0.; time < maxTime; time += timeStep, timeStep = std::min(solver.computeMaxTimeStep(maxCo), input.caseInput().get<Scalar>("Solver.timeStep")))
+    for(
+        time = 0.;
+        time < maxTime;
+        time += timeStep, timeStep = std::min(solver.computeMaxTimeStep(maxCo), input.caseInput().get<Scalar>("Solver.timeStep"))
+        )
     {
         viewer.write(time);
         solver.solve(timeStep);

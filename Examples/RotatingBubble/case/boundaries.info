@@ -1,4 +1,4 @@
-; Boundary conditions for the 2D stationary bubble
+; Boundary conditions for the 2D rotating bubble
 
 Boundaries
 {
@@ -17,7 +17,7 @@ Boundaries
     {
       type fixed
       value 0
-    } 
+    }    
   }
   
   gamma

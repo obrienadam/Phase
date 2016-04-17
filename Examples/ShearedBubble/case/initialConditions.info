@@ -1,4 +1,4 @@
-; Initial conditions for the 2D stationary bubble
+; Initial conditions for the 2D sheared bubble
 
 InitialConditions
 {
@@ -7,7 +7,7 @@ InitialConditions
     bubble
     {
       type circle
-      radius 0.2
+      radius 0.25
       center (0.5,0.5)
       value 1
     }
