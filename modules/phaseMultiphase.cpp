@@ -23,16 +23,20 @@ int main(int argc, const char* argv[])
     Scalar maxCo = input.caseInput().get<Scalar>("Solver.maxCo");
     Scalar time = 0.;
 
-    Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
+    Scalar maxTimeStep = input.caseInput().get<Scalar>("Solver.timeStep");
+    Scalar timeStep = maxTimeStep;
 
-    viewer.write(time);
+    size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
+
     for(
-        time = 0.;
+        time = 0., iterNo = 0;
         time < maxTime;
-        time += timeStep, timeStep = std::min(solver.computeMaxTimeStep(maxCo), input.caseInput().get<Scalar>("Solver.timeStep"))
+        time += timeStep, timeStep = std::min(solver.computeMaxTimeStep(maxCo), maxTimeStep), ++iterNo
         )
     {
-        viewer.write(time);
+        if(iterNo%fileWriteFrequency == 0)
+            viewer.write(time);
+
         solver.solve(timeStep);
         printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
     }

@@ -2,16 +2,12 @@
 #define FINITE_VOLUME_GRID_2D_H
 
 #include <vector>
-#include <utility>
-#include <map>
 
 #include "Node.h"
 #include "Cell.h"
 #include "Face.h"
 #include "Patch.h"
 #include "BoundingBox.h"
-#include "ScalarFiniteVolumeField.h"
-#include "VectorFiniteVolumeField.h"
 
 class FiniteVolumeGrid2D
 {
@@ -39,15 +35,6 @@ public:
     void addPatch(const std::string& patchName);
     const std::vector<Patch>& patches() const { return patches_; }
 
-    ScalarFiniteVolumeField& addScalarField(const std::string& fieldName) const;
-    VectorFiniteVolumeField& addVectorField(const std::string& fieldName) const;
-
-    ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& fieldName) const;
-    VectorFiniteVolumeField& addVectorField(const Input& input, const std::string& fieldName) const;
-
-    std::map<std::string, ScalarFiniteVolumeField>& scalarFields() const { return scalarFields_; }
-    std::map<std::string, VectorFiniteVolumeField>& vectorFields() const { return vectorFields_; }
-
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
     const BoundingBox& boundingBox() const { return bBox_; }
@@ -74,9 +61,6 @@ protected:
     std::vector< Ref<const Face> > boundaryFaces_;
 
     std::vector<Patch> patches_;
-
-    mutable std::map<std::string, ScalarFiniteVolumeField> scalarFields_;
-    mutable std::map<std::string, VectorFiniteVolumeField> vectorFields_;
 
     BoundingBox bBox_;
 };

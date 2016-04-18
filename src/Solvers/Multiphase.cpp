@@ -4,8 +4,8 @@
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Piso(grid, input),
-      gamma(grid.addScalarField(input, "gamma")),
-      kappa(grid.addScalarField("kappa")),
+      gamma(addScalarField(input, "gamma")),
+      kappa(addScalarField("kappa")),
       gammaEqn_(gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
@@ -14,7 +14,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
 
-    input.setInitialConditions(grid);
+    input.setInitialConditions(*this);
 
     computeRho();
     computeMu();

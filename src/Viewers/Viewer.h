@@ -21,7 +21,7 @@ protected:
 
     void openFile();
 
-    const FiniteVolumeGrid2D& grid_;
+    const Solver& solver_;
 
     std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
     std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;

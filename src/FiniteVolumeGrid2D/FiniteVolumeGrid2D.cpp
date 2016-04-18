@@ -80,34 +80,6 @@ size_t FiniteVolumeGrid2D::computeGlobalIndices()
     return globalIndex;
 }
 
-ScalarFiniteVolumeField& FiniteVolumeGrid2D::addScalarField(const std::string &fieldName) const
-{
-    typedef std::pair< std::string, ScalarFiniteVolumeField> Key;
-
-    return (scalarFields_.insert(Key(fieldName, ScalarFiniteVolumeField(*this, fieldName))).first)->second;
-}
-
-ScalarFiniteVolumeField& FiniteVolumeGrid2D::addScalarField(const Input& input, const std::string &fieldName) const
-{
-    typedef std::pair< std::string, ScalarFiniteVolumeField> Key;
-
-    return (scalarFields_.insert(Key(fieldName, ScalarFiniteVolumeField(input, *this, fieldName))).first)->second;
-}
-
-VectorFiniteVolumeField& FiniteVolumeGrid2D::addVectorField(const Input &input, const std::string &fieldName) const
-{
-    typedef std::pair< std::string, VectorFiniteVolumeField> Key;
-
-    return (vectorFields_.insert(Key(fieldName, VectorFiniteVolumeField(input, *this, fieldName))).first)->second;
-}
-
-VectorFiniteVolumeField& FiniteVolumeGrid2D::addVectorField(const std::string &fieldName) const
-{
-    typedef std::pair< std::string, VectorFiniteVolumeField> Key;
-
-    return (vectorFields_.insert(Key(fieldName, VectorFiniteVolumeField(*this, fieldName))).first)->second;
-}
-
 const Cell& FiniteVolumeGrid2D::findContainingCell(const Point2D &point, const Cell &guess) const
 {
     if(guess.isInCell(point))

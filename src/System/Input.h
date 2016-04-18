@@ -7,7 +7,7 @@
 
 #include "Circle.h"
 
-class FiniteVolumeGrid2D;
+class Solver;
 class ScalarFiniteVolumeField;
 class VectorFiniteVolumeField;
 
@@ -25,7 +25,7 @@ public:
     const boost::property_tree::ptree& boundaryInput() const { return boundaryInput_; }
     const boost::property_tree::ptree& initialConditionInput() const { return initialConditionInput_; }
 
-    void setInitialConditions(const FiniteVolumeGrid2D& grid) const;
+    void setInitialConditions(const Solver &solver) const;
 
 private:
 

@@ -3,7 +3,7 @@
 #include <boost/property_tree/info_parser.hpp>
 
 #include "Input.h"
-#include "FiniteVolumeGrid2D.h"
+#include "Solver.h"
 #include "Exception.h"
 
 Input::Input(const std::string &caseDirectory, const std::string &outputPath)
@@ -23,16 +23,16 @@ void Input::parseInputFile()
     read_info(caseDirectory + "/initialConditions.info", initialConditionInput_);
 }
 
-void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
+void Input::setInitialConditions(const Solver &solver) const
 {
     using namespace std;
     using namespace boost::property_tree;
 
     for(const auto& child: initialConditionInput_.get_child("InitialConditions"))
     {
-        auto scalarFieldIt = grid.scalarFields().find(child.first);
+        auto scalarFieldIt = solver.scalarFields().find(child.first);
 
-        if(scalarFieldIt != grid.scalarFields().end())
+        if(scalarFieldIt != solver.scalarFields().end())
         {
             ScalarFiniteVolumeField &field = scalarFieldIt->second;
 
@@ -62,9 +62,9 @@ void Input::setInitialConditions(const FiniteVolumeGrid2D &grid) const
             continue;
         }
 
-        auto vectorFieldIt = grid.vectorFields().find(child.first);
+        auto vectorFieldIt = solver.vectorFields().find(child.first);
 
-        if(vectorFieldIt != grid.vectorFields().end())
+        if(vectorFieldIt != solver.vectorFields().end())
         {
             VectorFiniteVolumeField &field = vectorFieldIt->second;
 

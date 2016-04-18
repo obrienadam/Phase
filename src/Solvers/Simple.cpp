@@ -4,16 +4,16 @@
 Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
-      u(grid.addVectorField(input, "u")),
-      h(grid.addVectorField("h")),
-      p(grid.addScalarField(input, "p")),
-      pCorr(grid.addScalarField("pCorr")),
-      rho(grid.addScalarField("rho")),
-      mu(grid.addScalarField("mu")),
-      m(grid.addScalarField("m")),
-      d(grid.addScalarField("d")),
-      ids(grid.addScalarField("ids")),
-      globalIndices(grid.addScalarField("globalIndices")),
+      u(addVectorField(input, "u")),
+      h(addVectorField("h")),
+      p(addScalarField(input, "p")),
+      pCorr(addScalarField("pCorr")),
+      rho(addScalarField("rho")),
+      mu(addScalarField("mu")),
+      m(addScalarField("m")),
+      d(addScalarField("d")),
+      ids(addScalarField("ids")),
+      globalIndices(addScalarField("globalIndices")),
       uEqn_(u, "momentum"),
       pCorrEqn_(pCorr, "pressure correction")
 {

@@ -3,6 +3,8 @@
 
 #include "SparseMatrix.h"
 #include "FiniteVolumeGrid2D.h"
+#include "ScalarFiniteVolumeField.h"
+#include "VectorFiniteVolumeField.h"
 
 template<class T>
 class Equation

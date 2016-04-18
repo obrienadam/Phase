@@ -1,11 +1,10 @@
 #include "Poisson.h"
-#include <stdio.h>
 
 Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
-      phi(grid.addScalarField(input, "phi")),
-      gamma(grid.addScalarField("gamma")),
+      phi(addScalarField(input, "phi")),
+      gamma(addScalarField("phi")),
       phiEqn_(phi, "phi")
 {
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
