@@ -14,7 +14,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
 
-    input.setInitialConditions(*this);
+    setInitialConditions(input);
 
     computeRho();
     computeMu();

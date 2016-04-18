@@ -1,83 +1,7 @@
 #include "VectorFiniteVolumeField.h"
-#include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
-VectorFiniteVolumeField::VectorFiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name)
-    :
-      Field<Vector2D>::Field(grid.cells().size(), Vector2D(), name),
-      faces_(grid.faces().size(), Vector2D()),
-      grid(grid)
-{
-
-}
-
-VectorFiniteVolumeField::VectorFiniteVolumeField(const Input &input, const FiniteVolumeGrid2D &grid, const std::string &name)
-    :
-      VectorFiniteVolumeField(grid, name)
-{
-    using namespace std;
-
-    auto &self = *this;
-
-    //- Check for a default patch
-    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + name + ".*.type");
-
-    if(defBoundary)
-    {
-        std::string type = input.boundaryInput().get<string>("Boundaries." + name + ".*.type");
-
-        for(const Patch& patch: grid.patches())
-        {
-            if(type == "fixed")
-                boundaryTypes_.push_back(FIXED);
-            else if(type == "normal_gradient")
-                boundaryTypes_.push_back(NORMAL_GRADIENT);
-            else
-                throw Exception("VectorFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
-
-            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<string>("Boundaries." + name + ".*.value")));
-        }
-    }
-    else
-    {
-        //- Boundary condition association to patches is done by patch id
-        for(const Patch& patch: grid.patches())
-        {
-            string root = "Boundaries." + name + "." + patch.name;
-            string type = input.boundaryInput().get<string>(root + ".type");
-
-            if(type == "fixed")
-                boundaryTypes_.push_back(FIXED);
-            else if (type == "normal_gradient")
-                boundaryTypes_.push_back(NORMAL_GRADIENT);
-            else
-                throw Exception("VectorFiniteVolumeField", "ScalarFiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
-
-            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<string>(root + ".value")));
-        }
-    }
-
-    for(const Patch& patch: grid.patches())
-    {
-        for(const Face& face: patch.faces())
-            self.faces()[face.id()] = boundaryRefValue(face.id());
-    }
-}
-
-void VectorFiniteVolumeField::fill(const Vector2D &val)
-{
-    std::fill(begin(), end(), val);
-    std::fill(faces_.begin(), faces_.end(), val);
-}
-
-void VectorFiniteVolumeField::fillInterior(const Vector2D &val)
-{
-    std::fill(begin(), end(), val);
-
-    for(const Face &face: grid.interiorFaces())
-        faces_[face.id()] = val;
-}
-
+template<>
 VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& rhs)
 {
     auto &self = *this;
@@ -92,48 +16,39 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
     return self;
 }
 
-VectorFiniteVolumeField& VectorFiniteVolumeField::operator =(const VectorFiniteVolumeField& rhs)
+//- Protected methods
+
+template<>
+void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 {
-    if(this == &rhs)
-        return *this;
+    using namespace std;
 
-    assert(&grid == &rhs.grid);
-
-    boundaryTypes_ = rhs.boundaryTypes_;
-    boundaryRefValues_ = rhs.boundaryRefValues_;
-    faces_ = rhs.faces_;
-    Field<Vector2D>::operator =(rhs);
-
-    return *this;
-}
-
-VectorFiniteVolumeField& VectorFiniteVolumeField::operator *=(const ScalarFiniteVolumeField& rhs)
-{
     auto &self = *this;
 
-    for(int i = 0, end = self.size(); i < end; ++i)
-        self[i] *= rhs[i];
+    //- Check for a default patch
 
-    for(int i = 0, end = self.faces().size(); i < end; ++i)
-        self.faces()[i] *= rhs.faces()[i];
+    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + name + ".*");
 
-    return self;
-}
+    if(defBoundary)
+    {
+        for(int i = 0; i < grid.patches().size(); ++i)
+            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<std::string>("Boundaries." + name + ".*.value")));
+    }
+    else
+    {
+        //- Boundary condition association to patches is done by patch id
+        for(const Patch& patch: grid.patches())
+        {
+            string root = "Boundaries." + name + "." + patch.name;
+            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<std::string>(root + ".value")));
+        }
+    }
 
-VectorFiniteVolumeField::BoundaryType VectorFiniteVolumeField::boundaryType(size_t faceId) const
-{
-    if(boundaryTypes_.size() == 0)
-        return VectorFiniteVolumeField::NORMAL_GRADIENT;
-
-    return boundaryTypes_[grid.faces()[faceId].patch().id()];
-}
-
-const Vector2D& VectorFiniteVolumeField::boundaryRefValue(size_t faceId) const
-{
-    if(boundaryRefValues_.size() == 0)
-        return this->faces()[faceId];
-
-    return boundaryRefValues_[grid.faces()[faceId].patch().id()];
+    for(const Patch& patch: grid.patches())
+    {
+        for(const Face& face: patch.faces())
+            self.faces()[face.id()] = boundaryRefValue(face.id());
+    }
 }
 
 //- External functions
@@ -156,43 +71,6 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
     }
 
     return gradField;
-}
-
-void interpolateFaces(VectorFiniteVolumeField& field)
-{
-    for(const Face& face: field.grid.interiorFaces())
-    {
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
-
-        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
-    }
-
-    for(const Face& face: field.grid.boundaryFaces())
-    {
-        switch(field.boundaryType(face.id()))
-        {
-        case VectorFiniteVolumeField::FIXED:
-            break;
-
-        case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-        }
-    }
-}
-
-VectorFiniteVolumeField operator+(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs)
-{
-    lhs += rhs;
-    return lhs;
-}
-
-VectorFiniteVolumeField operator-(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs)
-{
-    lhs -= rhs;
-    return lhs;
 }
 
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs)

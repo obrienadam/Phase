@@ -1,8 +1,4 @@
 set(HEADERS Field.h
-            IntegerField.h
-            ScalarField.h
-            VectorField.h
-            PointField.h
             FiniteVolumeField.h
             ScalarFiniteVolumeField.h
             VectorFiniteVolumeField.h)

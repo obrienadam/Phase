@@ -1,52 +1,14 @@
 #ifndef VECTOR_FINITE_VOLUME_FIELD_H
 #define VECTOR_FINITE_VOLUME_FIELD_H
 
-#include "Field.h"
+#include "FiniteVolumeField.h"
 #include "Vector2D.h"
-#include "SparseVector.h"
-#include "Input.h"
 #include "ScalarFiniteVolumeField.h"
 
-class FiniteVolumeGrid2D;
-
-class VectorFiniteVolumeField : public Field<Vector2D>
-{
-public:
-
-    enum BoundaryType{FIXED, NORMAL_GRADIENT};
-
-    VectorFiniteVolumeField(const FiniteVolumeGrid2D& grid, const std::string &name);
-    VectorFiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
-
-    void fill(const Vector2D& val);
-    void fillInterior(const Vector2D& val);
-
-    VectorFiniteVolumeField& operator =(const SparseVector& rhs);
-    VectorFiniteVolumeField& operator =(const VectorFiniteVolumeField& rhs);
-    VectorFiniteVolumeField& operator *=(const ScalarFiniteVolumeField& rhs);
-
-    std::vector<Vector2D>& faces() { return faces_; }
-    const std::vector<Vector2D>& faces() const { return faces_; }
-
-    BoundaryType boundaryType(size_t faceId) const;
-    const Vector2D& boundaryRefValue(size_t faceId) const;
-
-    const FiniteVolumeGrid2D &grid;
-
-protected:
-
-    std::vector<BoundaryType> boundaryTypes_;
-    std::vector<Vector2D> boundaryRefValues_;
-
-    std::vector<Vector2D> faces_;
-
-};
+typedef FiniteVolumeField<Vector2D> VectorFiniteVolumeField;
 
 VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& scalarField);
-void interpolateFaces(VectorFiniteVolumeField& field);
 
-VectorFiniteVolumeField operator+(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs);
-VectorFiniteVolumeField operator-(VectorFiniteVolumeField lhs, const VectorFiniteVolumeField& rhs);
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs);
 VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vector2D& rhs);

@@ -5,6 +5,7 @@
 #include "Input.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "Circle.h"
 
 class Solver
 {
@@ -27,7 +28,15 @@ public:
     std::map<std::string, ScalarFiniteVolumeField >& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField >& vectorFields() const { return vectorFields_; }
 
+    void setInitialConditions(const Input& input);
+
 protected:
+
+    void setCircle(const Circle& circle, Scalar innerValue, ScalarFiniteVolumeField& field);
+    void setCircle(const Circle& circle, const Vector2D& innerValue, VectorFiniteVolumeField& field);
+
+    void setRotating(const std::string& function, Scalar amplitude, const Vector2D& center, ScalarFiniteVolumeField& field);
+    void setRotating(const std::string& xFunction, const std::string& yFunction, const Vector2D& amplitude, const Vector2D& center, VectorFiniteVolumeField& field);
 
     const FiniteVolumeGrid2D& grid_;
 
