@@ -59,6 +59,9 @@ protected:
 template<class T>
 void interpolateFaces(FiniteVolumeField<T>& field);
 
+template<class T>
+FiniteVolumeField<T> smooth(const Field<T>& field);
+
 #include "FiniteVolumeField.tpp"
 
 #endif

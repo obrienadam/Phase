@@ -8,7 +8,7 @@ Solver
 	maxIterations 100
 	timeStep 1e-2
 	maxCo 0.25
-	maxTime 5
+	maxTime 20
 
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
@@ -40,12 +40,12 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u
-	scalarFields p,pCorr,m,gamma,rho,mu
+	vectorFields u,n
+	scalarFields p,pCorr,m,gamma,rho,mu,kappa
 }
 
 System
 {
-  fileWriteFrequency 30
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

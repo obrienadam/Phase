@@ -11,12 +11,18 @@ public:
     Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &gamma, &kappa;
+    VectorFiniteVolumeField &n;
 
-private:
+protected:
 
     void computeRho();
     void computeMu();
+
+    Scalar solveUEqn(Scalar timeStep);
     Scalar solveGammaEqn(Scalar timeStep);
+
+    void computeInterfaceNormals();
+    void computeCurvature();
 
     Scalar rho1_, rho2_, mu1_, mu2_, sigma_;
 

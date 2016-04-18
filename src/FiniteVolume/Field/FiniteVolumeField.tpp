@@ -234,6 +234,27 @@ FiniteVolumeField<T> operator-(FiniteVolumeField<T> lhs, const FiniteVolumeField
     return lhs;
 }
 
+template<class T>
+FiniteVolumeField<T> operator*(FiniteVolumeField<T> lhs, Scalar rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+template<class T>
+FiniteVolumeField<T> operator*(Scalar lhs, FiniteVolumeField<T> rhs)
+{
+    rhs *= lhs;
+    return rhs;
+}
+
+template<class T>
+FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
 //- External functions
 
 template<class T>
@@ -260,4 +281,17 @@ void interpolateFaces(FiniteVolumeField<T>& field)
             break;
         }
     }
+}
+
+template<class T>
+FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field)
+{
+    FiniteVolumeField<T> smoothedField(field.grid, field.name);
+
+    for(const Cell &cell: field.grid.cells())
+    {
+
+    }
+
+    return smoothedField;
 }

@@ -23,7 +23,7 @@ public:
 
 protected:
 
-    Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
     Scalar solvePCorrEqn();
 
     void computeD();

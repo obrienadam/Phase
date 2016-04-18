@@ -6,6 +6,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
       kappa(addScalarField("kappa")),
+      n(addVectorField("n")),
       gammaEqn_(gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
@@ -30,7 +31,7 @@ Scalar Multiphase::solve(Scalar timeStep)
     solveGammaEqn(timeStep);
 }
 
-//- Private methods
+//- Protected methods
 
 void Multiphase::computeRho()
 {
@@ -54,6 +55,18 @@ void Multiphase::computeMu()
     interpolateFaces(mu);
 }
 
+Scalar Multiphase::solveUEqn(Scalar timeStep)
+{
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*n));
+    uEqn_.relax(momentumOmega_);
+
+    Scalar error = uEqn_.solve();
+
+    rhieChowInterpolation();
+
+    return error;
+}
+
 Scalar Multiphase::solveGammaEqn(Scalar timeStep)
 {
     interpolateFaces(gamma);
@@ -65,7 +78,41 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     if(isnan(error))
         throw Exception("Multiphase", "solveGammaEqn", "a nan value was detected.");
 
+    computeInterfaceNormals();
+    computeCurvature();
+
     return error;
+}
+
+void Multiphase::computeInterfaceNormals()
+{
+    n = grad(gamma);
+
+    for(Vector2D &vec: n)
+        if(vec.mag() > 1e-4)
+            vec = -vec.unitVec();
+
+    interpolateFaces(n);
+}
+
+void Multiphase::computeCurvature()
+{
+    for(const Cell &cell: kappa.grid.cells())
+    {
+        Scalar &k = kappa[cell.id()] = 0.;
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            k += dot(n.faces()[nb.face().id()], nb.outwardNorm());
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            k += dot(n.faces()[bd.face().id()], bd.outwardNorm());
+        }
+
+        k /= -cell.volume();
+    }
 }
 
 //- External functions
