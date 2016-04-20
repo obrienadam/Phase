@@ -284,13 +284,60 @@ void interpolateFaces(FiniteVolumeField<T>& field)
 }
 
 template<class T>
-FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field)
+void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
+{
+    for(const Face& face: field.grid.interiorFaces())
+    {
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = 2./(2.*(alpha/field[face.lCell().id()] + (1. - alpha)/field[face.rCell().id()]));
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
+        {
+        case FiniteVolumeField<T>::FIXED:
+            break;
+
+        case FiniteVolumeField<T>::NORMAL_GRADIENT:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+        }
+    }
+}
+
+template<class T>
+FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const RangeSearch& rangeSearch, Scalar h)
 {
     FiniteVolumeField<T> smoothedField(field.grid, field.name);
+
+    auto pow4 = [](Scalar x) { return x*x*x*x; };
+    auto pow2 = [](Scalar x) { return x*x; };
+    auto kr = [&pow2, &pow4](Scalar r, Scalar h)
+    {
+        return pow4(1. - pow2(std::min(r/h, 1.)));
+    };
 
     for(const Cell &cell: field.grid.cells())
     {
 
+        Scalar totalVol = 0., intKr = 0.;
+
+        for(const Cell &kCell: rangeSearch.getResult(cell.id()))
+        {
+            totalVol += kCell.volume();
+            intKr += kr((cell.centroid() - kCell.centroid()).mag(), h);
+        }
+
+        for(const Cell &kCell: rangeSearch.getResult(cell.id()))
+        {
+            smoothedField[cell.id()] += field[kCell.id()]*kr((cell.centroid() - kCell.centroid()).mag(), h)/intKr;
+        }
+
+        //smoothedField[cell.id()] = std::min(field[cell.id()], std::max(field[cell.id()], smoothedField[cell.id()]));
     }
 
     return smoothedField;

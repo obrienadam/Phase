@@ -7,12 +7,12 @@ Circle::Circle(Point2D center, Scalar radius)
       center_(center),
       radius_(radius)
 {
-
+    area_ = M_PI*radius_*radius_;
 }
 
 Scalar Circle::area() const
 {
-    return M_PI*radius_*radius_;
+    return area_;
 }
 
 bool Circle::isInside(const Point2D &testPoint) const
@@ -40,3 +40,5 @@ void Circle::operator -=(const Vector2D& translationVec)
 {
     center_ -= translationVec;
 }
+
+//- External functions

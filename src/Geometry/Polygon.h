@@ -3,20 +3,20 @@
 
 #include <vector>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_2.h>
 
 #include "Shape2D.h"
 #include "Geometry.h"
 
-class Polygon : public CGAL::Polygon_2<geometry::Kernel>
+class Polygon : public CGAL::Polygon_2<Kernel>
 {
 public:
 
     Polygon();
     Polygon(const std::vector<Point2D>& vertices);
+    Polygon(const CGAL::Polygon_2<Kernel>& other);
 
-    Point2D centroid() const { return centroid_; }
+    const Point2D& centroid() const { return centroid_; }
     Scalar area() const { return area_; }
 
     virtual bool isInside(const Point2D& testPoint) const;
@@ -29,10 +29,14 @@ public:
 
 private:
 
+    void init();
+
     bool isSimple_, isConvex_;
 
     Point2D centroid_;
     Scalar area_;
 };
+
+Polygon intersectionPolygon(const Polygon& poly1, const Polygon& poly2);
 
 #endif

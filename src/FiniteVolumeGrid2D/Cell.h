@@ -14,7 +14,7 @@ class Cell
 {
 public:
 
-    enum {NO_NEIGHBOUR = -1, INACTIVE = -1};
+    enum {INACTIVE = -1};
 
     Cell(const std::vector<size_t>& faceIds, std::vector<Face>& faces, bool isActive = true);
 
@@ -28,6 +28,7 @@ public:
 
     const std::vector< Ref<const Face> >& faces() const { return faces_; }
     const std::vector<size_t>& nodeIds() const { return nodeIds_; }
+    const Polygon& shape() const { return cellShape_; }
     const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
     const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
 

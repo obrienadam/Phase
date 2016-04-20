@@ -1,10 +1,10 @@
 #include "Multiphase.h"
-#include "LineSegment2D.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
+      gammaTilde(addScalarField("gammaTilde")),
       kappa(addScalarField("kappa")),
       n(addVectorField("n")),
       gammaEqn_(gamma, "gamma")
@@ -19,6 +19,10 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     computeRho();
     computeMu();
+
+    //- Construct the range search
+    kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
+    cellRangeSearch_.search(grid, kernelWidth_);
 }
 
 Scalar Multiphase::solve(Scalar timeStep)
@@ -57,7 +61,7 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*n));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -86,11 +90,17 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
 
 void Multiphase::computeInterfaceNormals()
 {
-    n = grad(gamma);
+    gammaTilde = smooth(gamma, cellRangeSearch_, kernelWidth_);
+    interpolateFaces(gammaTilde);
+    n = grad(gammaTilde);
 
     for(Vector2D &vec: n)
-        if(vec.mag() > 1e-4)
-            vec = -vec.unitVec();
+    {
+        if(vec.mag() > 1e-5)
+            vec = vec.unitVec();
+        else
+            vec = Vector2D(0., 0.);
+    }
 
     interpolateFaces(n);
 }
@@ -103,15 +113,15 @@ void Multiphase::computeCurvature()
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            k += dot(n.faces()[nb.face().id()], nb.outwardNorm());
+            k -= dot(n.faces()[nb.face().id()], nb.outwardNorm());
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            k += dot(n.faces()[bd.face().id()], bd.outwardNorm());
+            k -= dot(n.faces()[bd.face().id()], bd.outwardNorm());
         }
 
-        k /= -cell.volume();
+        k /= cell.volume();
     }
 }
 

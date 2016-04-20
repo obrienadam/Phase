@@ -2,6 +2,7 @@
 #define MULTIPHASE_H
 
 #include "Piso.h"
+#include "RangeSearch.h"
 
 class Multiphase : public Piso
 {
@@ -10,7 +11,7 @@ public:
 
     Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &gamma, &kappa;
+    ScalarFiniteVolumeField &gamma, &gammaTilde, &kappa;
     VectorFiniteVolumeField &n;
 
 protected:
@@ -27,6 +28,9 @@ protected:
     Scalar rho1_, rho2_, mu1_, mu2_, sigma_;
 
     Equation<ScalarFiniteVolumeField> gammaEqn_;
+
+    RangeSearch cellRangeSearch_;
+    Scalar kernelWidth_;
 };
 
 namespace hc

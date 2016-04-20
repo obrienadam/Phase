@@ -16,7 +16,7 @@ std::string Solver::info()
 {
     return "Solver info:\n"
            "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n"
-           "Max Iterations: " + std::to_string(maxIterations_) + "\n";
+                                                                                     "Max Iterations: " + std::to_string(maxIterations_) + "\n";
 }
 
 ScalarFiniteVolumeField& Solver::addScalarField(const Input& input, const std::string& name)
@@ -121,30 +121,26 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if(circle.isInside(cell.centroid()))
+        if (circle.isInside(cell.centroid()))
+        {
             field[cell.id()] = innerValue;
+        }
     }
 
-    for(const Face& face: field.grid.interiorFaces())
-    {
-        if(circle.isInside(face.centroid()))
-            field.faces()[face.id()] = innerValue;
-    }
+    interpolateFaces(field);
 }
 
 void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if(circle.isInside(cell.centroid()))
+        if (circle.isInside(cell.centroid()))
+        {
             field[cell.id()] = innerValue;
+        }
     }
 
-    for(const Face& face: field.grid.faces())
-    {
-        if(circle.isInside(face.centroid()))
-            field.faces()[face.id()] = innerValue;
-    }
+    interpolateFaces(field);
 }
 
 void Solver::setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field)

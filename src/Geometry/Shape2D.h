@@ -7,7 +7,7 @@ class Shape2D
 {
 public:
 
-    virtual Point2D centroid() const = 0;
+    virtual const Point2D& centroid() const = 0;
     virtual Scalar area() const = 0;
 
     virtual bool isInside(const Point2D& testPoint) const = 0;

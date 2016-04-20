@@ -6,14 +6,16 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-2
+	timeStep 5e-2
 	maxCo 0.25
-	maxTime 20
+	maxTime 25
 
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
-	numInnerIterations 2
+	numInnerIterations 1
 	numPressureCorrections 2
+
+	smoothingKernelRadius 0.0201
 }
 
 Properties
@@ -41,7 +43,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u,n
-	scalarFields p,pCorr,m,gamma,rho,mu,kappa
+	scalarFields p,pCorr,m,gamma,rho,mu,kappa,gammaTilde
 }
 
 System

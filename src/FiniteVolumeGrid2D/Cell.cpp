@@ -63,7 +63,7 @@ void Cell::computeCellAdjacency()
         if(face.isInterior())
         {
             const Cell& cell = this == &face.lCell() ? face.rCell() : face.lCell();
-            InteriorLink link(*this, face, cell);
+            InteriorLink link(*this, face, cell, this == &face.lCell() ? InteriorLink::OUTGOING : InteriorLink::INGOING);
             interiorLinks_.push_back(link);
         }
         else if(face.isBoundary())
