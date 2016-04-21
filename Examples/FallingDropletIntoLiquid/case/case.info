@@ -1,0 +1,53 @@
+; Test case for the 2D falling droplet into liquid
+
+CaseName FallingDropletIntoLiquid2D
+
+Solver
+{
+	timeDependent On
+	maxIterations 100
+	timeStep 5e-2
+	maxCo 0.25
+	maxTime 2
+
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
+	numInnerIterations 2
+	numPressureCorrections 1
+
+	smoothingKernelRadius 0.02
+}
+
+Properties
+{
+	rho1 0.1
+	rho2 1
+	mu1 0.002
+	mu2 0.01
+	sigma 0.07
+	g (0,-9.8065)
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 200
+	nCellsJ 100
+
+	; Rectilinear parameters
+	spacingX 0.01
+	spacingY 0.01
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u,n
+	scalarFields p,pCorr,m,gamma,rho,mu,kappa,gammaTilde
+}
+
+System
+{
+  fileWriteFrequency 10
+  consoleOutputFrequency 1
+}
