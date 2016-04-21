@@ -1,0 +1,34 @@
+; Test case for the 2D flat plate
+
+CaseName FlatPlate2D
+
+Solver
+{
+	timeDependent Off
+	maxIterations 100
+	timeStep 0.01
+	maxTime 30
+}
+
+Properties
+{
+	gamma 1
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 100
+	nCellsJ 100
+
+	; Rectilinear parameters
+	spacingX 0.01
+	spacingY 0.01
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields
+	scalarFields phi
+}

@@ -61,13 +61,15 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +=(const VectorFiniteVolumeField& rhs)
 {
+    const size_t nActiveCells = rhs.grid.nActiveCells();
+
     for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
 
         size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + rhs.grid.nActiveCells();
+        size_t rowY = rowX + nActiveCells;
 
         sources_(rowX) += rhs[cell.id()].x;
         sources_(rowY) += rhs[cell.id()].y;
@@ -79,13 +81,15 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -=(const VectorFiniteVolumeField& rhs)
 {
+    const size_t nActiveCells = rhs.grid.nActiveCells();
+
     for(const Cell& cell: rhs.grid.cells())
     {
         if(!cell.isActive())
             continue;
 
         size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + rhs.grid.nActiveCells();
+        size_t rowY = rowX + nActiveCells;
 
         sources_(rowX) -= rhs[cell.id()].x;
         sources_(rowY) -= rhs[cell.id()].y;
@@ -172,6 +176,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                eqn.boundaries()(row) -= bd.outwardNorm().mag()/coeff*field.boundaryRefValue(bd.face().id());
                 break;
 
             default:
@@ -220,6 +225,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         for(const BoundaryLink &bd: cell.boundaries())
         {
             Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            Vector2D source;
 
             switch(field.boundaryType(bd.face().id()))
             {
@@ -230,6 +236,9 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                source = bd.outwardNorm().mag()/coeff*field.boundaryRefValue(bd.face().id());
+                eqn.boundaries()(rowX) -= source.x;
+                eqn.boundaries()(rowY) -= source.y;
                 break;
 
             default:
@@ -286,6 +295,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 centralCoeff += faceFlux;
+                eqn.boundaries()(row) -= bd.outwardNorm().mag()*field.boundaryRefValue(bd.face().id());
                 break;
 
             default:
@@ -345,6 +355,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 centralCoeff += faceFlux;
+                eqn.boundaries()(rowX) -= bd.outwardNorm().mag()*field.boundaryRefValue(bd.face().id()).x;
+                eqn.boundaries()(rowY) -= bd.outwardNorm().mag()*field.boundaryRefValue(bd.face().id()).y;
                 break;
 
             default:

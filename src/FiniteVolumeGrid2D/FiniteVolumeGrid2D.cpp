@@ -70,6 +70,18 @@ void FiniteVolumeGrid2D::computeCellAdjacency()
         cell.computeCellAdjacency();
 }
 
+void FiniteVolumeGrid2D::constructActiveCellList()
+{
+    activeCells_.clear();
+    activeCells_.reserve(cells_.size());
+
+    for(const Cell &cell: cells_)
+    {
+        if(cell.isActive())
+            activeCells_.push_back(Ref<const Cell>(cell));
+    }
+}
+
 size_t FiniteVolumeGrid2D::computeGlobalIndices()
 {
     size_t globalIndex = 0;

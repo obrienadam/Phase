@@ -61,7 +61,7 @@ Boundaries
     *
     {
       type normal_gradient
-      value 0
+      value 0.5774 ; Contact angle of approximately 60 degrees
     }
   }
 }

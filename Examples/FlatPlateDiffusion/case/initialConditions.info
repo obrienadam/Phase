@@ -1,0 +1,13 @@
+; Inital conditions for the 2D flat plate
+
+InitialConditions
+{
+  phi
+  {
+    uniform
+    {
+      type uniform
+      value 0
+    }
+  }
+}

@@ -8,7 +8,7 @@ InitialConditions
     {
       type circle
       radius 0.1
-      center (0.5,0.5)
+      center (1,0.5)
       value 1
     }
   }

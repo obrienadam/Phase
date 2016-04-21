@@ -30,6 +30,8 @@ public:
     std::string gridInfo() const;
 
     void computeCellAdjacency();
+    void constructActiveCellList();
+
     size_t computeGlobalIndices();
 
     void addPatch(const std::string& patchName);
@@ -39,10 +41,12 @@ public:
 
     const BoundingBox& boundingBox() const { return bBox_; }
 
-    const std::vector<Cell>& cells() const { return cells_; }
     const std::vector<Node>& nodes() const { return nodes_; }
-
+    const std::vector<Cell>& cells() const { return cells_; }
     const std::vector<Face>& faces() const { return faces_; }
+
+    const std::vector< Ref<const Cell> >& activeCells() const { return activeCells_; }
+
     const std::vector< Ref<const Face> >& interiorFaces() const { return interiorFaces_; }
     const std::vector< Ref<const Face> >& boundaryFaces() const { return boundaryFaces_; }
 
@@ -54,6 +58,8 @@ protected:
     std::vector<Node> nodes_;
     std::vector<Cell> cells_;
     std::vector<Face> faces_;
+
+    std::vector< Ref<const Cell> > activeCells_;
 
     std::map<std::pair<size_t, size_t>, size_t> faceDirectory_;
 

@@ -260,6 +260,8 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
 template<class T>
 void interpolateFaces(FiniteVolumeField<T>& field)
 {
+    Vector2D rf, sf;
+
     for(const Face& face: field.grid.interiorFaces())
     {
         const Cell& lCell = face.lCell();
@@ -277,7 +279,9 @@ void interpolateFaces(FiniteVolumeField<T>& field)
             break;
 
         case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            field.faces()[face.id()] = field[face.lCell().id()];
+            rf = face.centroid() - face.lCell().centroid();
+            sf = face.outwardNorm(face.lCell().centroid());
+            field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
             break;
         }
     }
@@ -286,6 +290,8 @@ void interpolateFaces(FiniteVolumeField<T>& field)
 template<class T>
 void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
 {
+    Vector2D rf, sf;
+
     for(const Face& face: field.grid.interiorFaces())
     {
         const Cell& lCell = face.lCell();
@@ -303,7 +309,9 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
             break;
 
         case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            field.faces()[face.id()] = field[face.lCell().id()];
+            rf = face.centroid() - face.lCell().centroid();
+            sf = face.outwardNorm(face.lCell().centroid());
+            field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
             break;
         }
     }
