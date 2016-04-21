@@ -1,4 +1,4 @@
-; Boundary conditions for the 2D stationary bubble
+; Boundary conditions for the 2D square bubble
 
 Boundaries
 {

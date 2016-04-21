@@ -45,7 +45,7 @@ void Multiphase::computeRho()
         rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
     }
 
-    interpolateFaces(rho);
+    harmonicInterpolateFaces(rho);
 }
 
 void Multiphase::computeMu()
@@ -53,7 +53,7 @@ void Multiphase::computeMu()
     for(const Cell& cell: mu.grid.cells())
     {
         size_t id = cell.id();
-        mu[id] = mu1_*(1. - gamma[id]) + mu2_*gamma[id];
+        mu[id] = rho[id]/((1. - gamma[id])*rho1_/mu1_ + gamma[id]*rho2_/mu2_);
     }
 
     interpolateFaces(mu);
@@ -61,6 +61,9 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep)
 {
+    computeInterfaceNormals();
+    computeCurvature();
+
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)));
     uEqn_.relax(momentumOmega_);
 
@@ -81,9 +84,6 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
 
     if(isnan(error))
         throw Exception("Multiphase", "solveGammaEqn", "a nan value was detected.");
-
-    computeInterfaceNormals();
-    computeCurvature();
 
     return error;
 }
@@ -112,14 +112,10 @@ void Multiphase::computeCurvature()
         Scalar &k = kappa[cell.id()] = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
-        {
             k -= dot(n.faces()[nb.face().id()], nb.outwardNorm());
-        }
 
         for(const BoundaryLink &bd: cell.boundaries())
-        {
             k -= dot(n.faces()[bd.face().id()], bd.outwardNorm());
-        }
 
         k /= cell.volume();
     }

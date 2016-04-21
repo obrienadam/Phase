@@ -292,7 +292,7 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
         const Cell& rCell = face.rCell();
 
         Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-        field.faces()[face.id()] = 2./(2.*(alpha/field[face.lCell().id()] + (1. - alpha)/field[face.rCell().id()]));
+        field.faces()[face.id()] = 1./(alpha/field[lCell.id()] + (1. - alpha)/field[rCell.id()]);
     }
 
     for(const Face& face: field.grid.boundaryFaces())

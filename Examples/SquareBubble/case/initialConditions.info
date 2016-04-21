@@ -1,4 +1,4 @@
-; Initial conditions for the 2D stationary bubble
+; Initial conditions for the 2D square bubble
 
 InitialConditions
 {

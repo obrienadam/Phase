@@ -1,6 +1,6 @@
-; Test case for the 2D stationary bubble
+; Test case for the 2D square bubble
 
-CaseName StationaryBubble2D
+CaseName SquareBubble2D
 
 Solver
 {
@@ -21,9 +21,9 @@ Solver
 Properties
 {
 	rho1 1
-	rho2 1
+	rho2 0.1
 	mu1 0.01
-	mu2 0.01
+	mu2 0.002
 	sigma 0.07
 	g (0,0)
 }
