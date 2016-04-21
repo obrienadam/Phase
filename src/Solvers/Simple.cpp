@@ -84,7 +84,7 @@ Scalar Simple::solveUEqn(Scalar timeStep)
 
 Scalar Simple::solvePCorrEqn()
 {
-    pCorrEqn_ = (fv::laplacian(rho*d, pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(d, pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
 
@@ -145,10 +145,10 @@ void Simple::rhieChowInterpolation()
         m[id] = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            m[id] += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            m[id] += dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            m[id] += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            m[id] += dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 }
 
