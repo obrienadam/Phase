@@ -64,7 +64,7 @@ Scalar Multiphase::solveUEqn(Scalar timeStep)
     computeInterfaceNormals();
     computeCurvature();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
