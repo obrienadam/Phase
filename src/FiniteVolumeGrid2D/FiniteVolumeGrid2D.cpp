@@ -82,6 +82,22 @@ void FiniteVolumeGrid2D::constructActiveCellList()
     }
 }
 
+void FiniteVolumeGrid2D::setCellsInactive(const std::vector<size_t>& cellIds)
+{
+    for(size_t cellId: cellIds)
+        cells_[cellId].isActive_ = false;
+
+    constructActiveCellList();
+}
+
+void FiniteVolumeGrid2D::setCellsActive(const std::vector<size_t>& cellIds)
+{
+    for(size_t cellId: cellIds)
+        cells_[cellId].isActive_ = true;
+
+    constructActiveCellList();
+}
+
 size_t FiniteVolumeGrid2D::computeGlobalIndices()
 {
     size_t globalIndex = 0;

@@ -17,7 +17,7 @@ void RangeSearch::search(const FiniteVolumeGrid2D &grid, Scalar radius)
     CGAL::Point_set_2<Kernel> pointSet;
 
     //- Construct a point set consisting of the cell centroids
-    for(const Cell &cell: grid.cells())
+    for(const Cell &cell: grid.activeCells())
     {
         auto centroid = cell.centroid().cgalPoint();
 
@@ -29,7 +29,7 @@ void RangeSearch::search(const FiniteVolumeGrid2D &grid, Scalar radius)
     result_.resize(centroids.size());
 
     //- For each cell, find the neighbouring centroids, and then use the directory to construct the result
-    for(const Cell &cell: grid.cells())
+    for(const Cell &cell: grid.activeCells())
     {
         std::vector<VertexHandle> lv;
         Kernel::Circle_2 circle(cell.centroid().cgalPoint(), radius*radius);

@@ -15,22 +15,28 @@ public:
 
     FiniteVolumeGrid2D(size_t nNodes = 0, size_t nCells = 0, size_t nFaces = 0);
 
+    //- Size info
     size_t nNodes() const { return nodes_.size(); }
     size_t nCells() const { return cells_.size(); }
     size_t nFaces() const { return faces_.size(); }
 
-    size_t nActiveCells() const { return cells_.size(); }
+    size_t nActiveCells() const { return activeCells_.size(); }
 
+    //- Create grid entities
     size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
     size_t createCell(const std::vector<size_t>& faceIds);
 
+    //- Check face directories
     bool faceExists(size_t lNodeId, size_t rNodeId) const;
     size_t findFace(size_t lNodeId, size_t rNodeId) const;
 
     std::string gridInfo() const;
 
+    //- Cell related methods
     void computeCellAdjacency();
     void constructActiveCellList();
+    void setCellsInactive(const std::vector<size_t>& cellIds);
+    void setCellsActive(const std::vector<size_t>& cellIds);
 
     size_t computeGlobalIndices();
 

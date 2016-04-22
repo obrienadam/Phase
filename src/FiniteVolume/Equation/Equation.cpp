@@ -33,13 +33,8 @@ Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, cons
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells())
-    {
-        if(!cell.isActive())
-            continue;
-
+    for(const Cell& cell: rhs.grid.activeCells())
         sources_(cell.globalIndex()) += rhs[cell.id()];
-    }
 
     return *this;
 }
@@ -47,13 +42,8 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.cells())
-    {
-        if(!cell.isActive())
-            continue;
-
+    for(const Cell& cell: rhs.grid.activeCells())
         sources_(cell.globalIndex()) -= rhs[cell.id()];
-    }
 
     return *this;
 }
@@ -63,11 +53,8 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
 {
     const size_t nActiveCells = rhs.grid.nActiveCells();
 
-    for(const Cell& cell: rhs.grid.cells())
+    for(const Cell& cell: rhs.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -83,11 +70,8 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 {
     const size_t nActiveCells = rhs.grid.nActiveCells();
 
-    for(const Cell& cell: rhs.grid.cells())
+    for(const Cell& cell: rhs.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -101,11 +85,8 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 template<>
 void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.cells())
+    for(const Cell& cell: field_.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t idx = cell.globalIndex();
 
         spMat_.coeffRef(idx, idx) /= relaxationFactor;
@@ -118,11 +99,8 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     const size_t nActiveCells = field_.grid.nActiveCells();
 
-    for(const Cell& cell: field_.grid.cells())
+    for(const Cell& cell: field_.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t idxX = cell.globalIndex();
         size_t idxY = idxX + nActiveCells;
 
@@ -147,11 +125,8 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     entries.reserve(5*nCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
@@ -200,11 +175,8 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     entries.reserve(10*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -263,11 +235,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
     entries.reserve(5*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
@@ -319,11 +288,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
     entries.reserve(5*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
         Scalar centralCoeff = 0.;
@@ -382,11 +348,8 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
 
     entries.reserve(nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t row = cell.globalIndex();
 
         Scalar coeff = a[cell.id()]*cell.volume()/timeStep;
@@ -409,11 +372,8 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
 
     entries.reserve(nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t row = cell.globalIndex();
 
         Scalar coeff = cell.volume()/timeStep;
@@ -436,11 +396,8 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 
     entries.reserve(2*nActiveCells);
 
-    for(const Cell& cell: field.grid.cells())
+    for(const Cell& cell: field.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
@@ -461,11 +418,8 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
 {
     VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name);
 
-    for(const Cell& cell: gradField.grid.cells())
+    for(const Cell& cell: gradField.grid.activeCells())
     {
-        if(!cell.isActive())
-            continue;
-
         Vector2D &gradVec = gradField[cell.id()];
 
         for(const InteriorLink& nb: cell.neighbours())
@@ -480,7 +434,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field)
 
 VectorFiniteVolumeField source(VectorFiniteVolumeField field)
 {
-    for(const Cell &cell: field.grid.cells())
+    for(const Cell &cell: field.grid.activeCells())
         field[cell.id()] *= cell.volume();
 
     return field;

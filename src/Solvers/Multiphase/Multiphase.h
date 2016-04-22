@@ -33,28 +33,4 @@ protected:
     Scalar kernelWidth_;
 };
 
-namespace hc
-{
-
-Scalar betaFace(Scalar gammaD, Scalar gammaA, Scalar gammaU, Scalar coD);
-
-}
-
-namespace sc
-{
-
-}
-
-namespace uq
-{
-
-}
-
-namespace cicsam
-{
-enum Type{HC, SC, UQ};
-
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep);
-}
-
 #endif

@@ -27,6 +27,7 @@ set(INCLUDE_DIR src/Types
                 src/FiniteVolume/BoundaryCondition
                 src/FiniteVolume/Equation
                 src/Solvers
+                src/Solvers/Multiphase
                 src/Viewers)
 
 include_directories(${INCLUDE_DIR})

@@ -27,7 +27,7 @@ public:
     bool isSimple() const;
     bool isConvex() const;
 
-private:
+protected:
 
     void init();
 
@@ -37,6 +37,7 @@ private:
     Scalar area_;
 };
 
+bool doIntersect(const CGAL::Polygon_2<Kernel> &poly1, const CGAL::Polygon_2<Kernel> &poly2);
 Polygon intersectionPolygon(const Polygon& poly1, const Polygon& poly2);
 
 #endif

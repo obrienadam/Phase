@@ -67,6 +67,11 @@ void Polygon::init()
 
 //- External functions
 
+bool doIntersect(const CGAL::Polygon_2<Kernel> &poly1, const CGAL::Polygon_2<Kernel> &poly2)
+{
+    return CGAL::do_intersect(poly1, poly2);
+}
+
 Polygon intersectionPolygon(const Polygon& poly1, const Polygon& poly2)
 {
     std::vector< CGAL::Polygon_with_holes_2<Kernel> > result;
