@@ -11,14 +11,14 @@ InitialConditions
       center (1,0.5)
       value 1
     }
-  }
 
-  reservoir
-  {
-    type square
-    width 2
-    center (1,-0.35)
-    value 1
+    reservoir
+    {
+      type square
+      width 2
+      center (1,-0.8)
+      value 1
+    }
   }
 
   u

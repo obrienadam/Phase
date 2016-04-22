@@ -204,10 +204,10 @@ void Simple::correctVelocity()
         Scalar &mDot = m[cell.id()] = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            mDot += rho.faces()[nb.face().id()]*dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            mDot += dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            mDot += rho.faces()[bd.face().id()]*dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            mDot += dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 }
 
