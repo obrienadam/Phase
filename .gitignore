@@ -83,3 +83,7 @@ Thumbs.db
 
 # Valgrind files
 *callgrind*
+
+# Build directories
+bin
+lib

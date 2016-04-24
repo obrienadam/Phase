@@ -18,8 +18,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 100
-	nCellsJ 100
+	nCellsI 1000
+	nCellsJ 1000
 
 	; Rectilinear parameters
 	spacingX 0.01

@@ -1,6 +1,11 @@
 project(Phase)
 cmake_minimum_required(VERSION 2.8)
 
+# Output paths
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
 # Compiler flags
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
