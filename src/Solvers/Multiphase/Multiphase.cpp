@@ -40,7 +40,7 @@ Scalar Multiphase::solve(Scalar timeStep)
 
 void Multiphase::computeRho()
 {
-    for(const Cell& cell: rho.grid.activeCells())
+    for(const Cell& cell: rho.grid.fluidCells())
     {
         size_t id = cell.id();
         rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
@@ -51,7 +51,7 @@ void Multiphase::computeRho()
 
 void Multiphase::computeMu()
 {
-    for(const Cell& cell: mu.grid.activeCells())
+    for(const Cell& cell: mu.grid.fluidCells())
     {
         size_t id = cell.id();
         mu[id] = rho[id]/((1. - gamma[id])*rho1_/mu1_ + gamma[id]*rho2_/mu2_);
@@ -108,7 +108,7 @@ void Multiphase::computeInterfaceNormals()
 
 void Multiphase::computeCurvature()
 {
-    for(const Cell &cell: kappa.grid.activeCells())
+    for(const Cell &cell: kappa.grid.fluidCells())
     {
         Scalar &k = kappa[cell.id()] = 0.;
 

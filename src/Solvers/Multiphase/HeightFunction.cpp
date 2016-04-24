@@ -25,7 +25,7 @@ Scalar HeightFunction::computeHeight(const ScalarFiniteVolumeField &field)
 {
     Scalar vof = 0.;
 
-    for(const Cell &cell: field.grid.activeCells())
+    for(const Cell &cell: field.grid.fluidCells())
     {
         const Polygon &pgn = cell.shape();
 

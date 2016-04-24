@@ -53,7 +53,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
     entries.reserve(5*field.grid.nActiveCells());
 
-    for(const Cell &cell: field.grid.activeCells())
+    for(const Cell &cell: field.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
         size_t row = cell.globalIndex();

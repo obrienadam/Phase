@@ -329,7 +329,7 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const RangeSearch
         return pow4(1. - pow2(std::min(r/h, 1.)));
     };
 
-    for(const Cell &cell: field.grid.activeCells())
+    for(const Cell &cell: field.grid.fluidCells())
     {
         Scalar totalVol = 0., intKr = 0.;
 

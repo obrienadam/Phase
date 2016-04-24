@@ -86,7 +86,7 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator ==(const T& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.fluidCells())
         sources_(cell.globalIndex()) += rhs[cell.globalIndex()];
 
     return *this;

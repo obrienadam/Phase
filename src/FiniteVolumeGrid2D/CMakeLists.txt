@@ -3,6 +3,7 @@ set(HEADERS Node.h
             Face.h
             Link.h
 	    Patch.h
+            CellGroup.h
             FiniteVolumeGrid2D.h
             RectilinearGrid2D.h
             ConstructGrid.h
@@ -13,6 +14,7 @@ set(SOURCES Node.cpp
             Face.cpp
             Link.cpp
             Patch.cpp
+            CellGroup.cpp
             FiniteVolumeGrid2D.cpp
             RectilinearGrid2D.cpp
             ConstructGrid.cpp

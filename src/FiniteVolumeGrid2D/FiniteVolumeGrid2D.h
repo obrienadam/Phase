@@ -2,12 +2,14 @@
 #define FINITE_VOLUME_GRID_2D_H
 
 #include <vector>
+#include <map>
 
 #include "Node.h"
 #include "Cell.h"
 #include "Face.h"
 #include "Patch.h"
 #include "BoundingBox.h"
+#include "CellGroup.h"
 
 class FiniteVolumeGrid2D
 {
@@ -22,55 +24,69 @@ public:
 
     size_t nActiveCells() const { return activeCells_.size(); }
 
+    std::string gridInfo() const;
+
     //- Create grid entities
     size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
     size_t createCell(const std::vector<size_t>& faceIds);
 
-    //- Check face directories
-    bool faceExists(size_t lNodeId, size_t rNodeId) const;
-    size_t findFace(size_t lNodeId, size_t rNodeId) const;
-
-    std::string gridInfo() const;
+    //- Node related methods
+    const std::vector<Node>& nodes() const { return nodes_; }
 
     //- Cell related methods
+    const std::vector<Cell>& cells() const { return cells_; }
+    const std::vector< Ref<const Cell> >& activeCells() const { return activeCells_; }
+    const std::vector< Ref<const Cell> >& fluidCells() const { return fluidCells_.cells(); }
+    const std::vector< Ref<const Cell> >& cellGroup(const std::string& name) const { return cellGroups_.find(name)->second.cells(); }
+
     void computeCellAdjacency();
-    void constructActiveCellList();
-    void setCellsInactive(const std::vector<size_t>& cellIds);
-    void setCellsActive(const std::vector<size_t>& cellIds);
-
-    size_t computeGlobalIndices();
-
-    void addPatch(const std::string& patchName);
-    const std::vector<Patch>& patches() const { return patches_; }
-
+    void setFluidCells(const std::vector<size_t>& cellIds);
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    const BoundingBox& boundingBox() const { return bBox_; }
+    CellGroup& createNewCellGroup(const std::string& name);
+    void addToCellGroup(const std::string& name, const std::vector<size_t>& cellIds);
 
-    const std::vector<Node>& nodes() const { return nodes_; }
-    const std::vector<Cell>& cells() const { return cells_; }
+    //- Face related methods
     const std::vector<Face>& faces() const { return faces_; }
-
-    const std::vector< Ref<const Cell> >& activeCells() const { return activeCells_; }
 
     const std::vector< Ref<const Face> >& interiorFaces() const { return interiorFaces_; }
     const std::vector< Ref<const Face> >& boundaryFaces() const { return boundaryFaces_; }
 
+    bool faceExists(size_t lNodeId, size_t rNodeId) const;
+    size_t findFace(size_t lNodeId, size_t rNodeId) const { return faceDirectory_.find(std::pair<size_t, size_t>(lNodeId, rNodeId))->second; }
+
+    //- Patch related methods
+    void addPatch(const std::string& patchName);
+    const std::vector<Patch>& patches() const { return patches_; }
+
+    //- Misc
+    const BoundingBox& boundingBox() const { return bBox_; }
+
 protected:
 
+    void setAllCellsAsFluidCells();
+    void constructActiveCellList();
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
 
+    //- Node related data
     std::vector<Node> nodes_;
+
+    //- Cell related data
     std::vector<Cell> cells_;
+
+    std::vector< Ref<const Cell> > activeCells_; // Stores all currently active cells for which a solution should be computed
+
+    CellGroup fluidCells_; // Contains all fluid cells for which the standard fv operators will be applied
+    std::map<std::string, CellGroup> cellGroups_; // Unique cell groups specified by the solver
+
+    //- Face related data
     std::vector<Face> faces_;
 
-    std::vector< Ref<const Cell> > activeCells_;
+    std::map<std::pair<size_t, size_t>, size_t> faceDirectory_; // A directory that can find a face given the two node ids
 
-    std::map<std::pair<size_t, size_t>, size_t> faceDirectory_;
-
-    std::vector< Ref<const Face> > interiorFaces_;
-    std::vector< Ref<const Face> > boundaryFaces_;
+    std::vector< Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
+    std::vector< Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell
 
     std::vector<Patch> patches_;
 
