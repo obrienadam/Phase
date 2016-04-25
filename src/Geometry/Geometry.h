@@ -1,8 +1,10 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Cartesian.h>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+#include "Types.h"
+
+typedef CGAL::Cartesian<Scalar> Kernel;
 
 #endif

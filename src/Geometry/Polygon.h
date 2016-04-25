@@ -16,6 +16,9 @@ public:
     Polygon(const std::vector<Point2D>& vertices);
     Polygon(const CGAL::Polygon_2<Kernel>& other);
 
+    template<class T>
+    Polygon(T begin, T end);
+
     const Point2D& centroid() const { return centroid_; }
     Scalar area() const { return area_; }
 

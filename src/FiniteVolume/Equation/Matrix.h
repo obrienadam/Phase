@@ -5,7 +5,7 @@
 
 #include "Types.h"
 
-class Matrix : private std::vector<Scalar>
+class Matrix : protected std::vector<Scalar>
 {
 public:
 
@@ -13,6 +13,7 @@ public:
 
     void resize(size_t nRows, size_t nCols);
     void zero();
+    void init(const Scalar *begin, const Scalar *end);
 
     size_t nRows() const { return nRows_; }
     size_t nCols() const { return nCols_; }
@@ -35,6 +36,8 @@ public:
 
     Scalar* data() { return std::vector<Scalar>::data(); }
     const Scalar* data() const { return std::vector<Scalar>::data(); }
+
+    std::vector<Scalar> containerCopy() const { return std::vector<Scalar>(*this); }
 
 private:
 

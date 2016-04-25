@@ -31,6 +31,11 @@ void Matrix::zero()
     std::fill(begin(), end(), 0.);
 }
 
+void Matrix::init(const Scalar *begin, const Scalar *end)
+{
+    std::vector<Scalar>::assign(begin, end);
+}
+
 Scalar& Matrix::operator()(size_t m, size_t n)
 {
     return std::vector<Scalar>::operator [](m*nCols_ + n);
