@@ -1,0 +1,56 @@
+; Test case for the 2D immersed boundary cylinder
+
+CaseName ImmersedBoundaryCylinder2D
+
+Solver
+{
+	timeDependent On
+	maxIterations 100
+	timeStep 1.5e-2
+	maxCo 0.25
+	maxTime 3.5
+
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
+	numInnerIterations 2
+	numPressureCorrections 2
+	smoothingKernelRadius 0.0201
+}
+
+Properties
+{
+	rho1 1
+	rho2 0.3
+	mu1 0.001
+	mu2 0.001
+	sigma 0.07
+	g (0,0)
+
+	; Piso parameters
+	rho 1
+	mu 0.001
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 100
+	nCellsJ 50
+
+	; Rectilinear parameters
+	spacingX 0.02
+	spacingY 0.02
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,pCorr,m,gamma,rho,mu
+}
+
+System
+{
+  fileWriteFrequency 30
+  consoleOutputFrequency 1
+}

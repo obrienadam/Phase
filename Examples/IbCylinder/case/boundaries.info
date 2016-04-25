@@ -1,0 +1,98 @@
+; Boundary conditions for the 2D immersed boundary cylinder
+
+Boundaries
+{
+  u
+  {
+    x+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    y+
+    {
+      type fixed
+      value (0,0)
+    }
+
+    x-
+    {
+      type fixed
+      value (1,0)
+    }
+
+    y-
+    {
+      type fixed
+      value (0,0)
+    }
+  }
+
+  p
+  {
+    x+
+    {
+      type fixed
+      value 0
+    }
+
+    y+
+    {
+      type normal_gradient
+      value 0
+    }
+
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y-
+    {
+      type normal_gradient
+      value 0
+    }    
+  }
+  
+  gamma
+  {
+    *
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}
+
+ImmersedBoundaries
+{
+  Cylinder1
+  {
+    geometry
+    {
+      type circle
+      center (1.2,0.5)
+      radius 0.1
+    }
+
+    u
+    {
+      type fixed
+      value (0,0)
+    }
+
+    p
+    {
+      type normal_gradient
+      value 0
+    }
+
+    gamma
+    {
+      type normal_gradient
+      value 0.573
+    }
+  }
+}
