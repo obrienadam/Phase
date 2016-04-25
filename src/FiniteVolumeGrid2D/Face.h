@@ -2,11 +2,9 @@
 #define FACE_H
 
 #include <vector>
-#include <functional>
 #include <memory>
 
 #include "Node.h"
-#include "BoundaryCondition.h"
 #include "Patch.h"
 
 class Cell;

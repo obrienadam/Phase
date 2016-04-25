@@ -52,3 +52,4 @@ find_package(CGAL REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(modules)
+add_subdirectory(test)

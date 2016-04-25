@@ -1,99 +1,242 @@
+#include <ostream>
+
+extern "C"
+{
+#define lapack_complex_float float _Complex
+#define lapack_complex_double double _Complex
+#include <lapacke/lapacke.h>
+
+#include <cblas.h>
+}
+
 #include "Matrix.h"
 
-Matrix::Matrix(int rows, int cols, Scalar val, Ordering ordering)
-    :
-      std::vector<Scalar>(rows*cols, val),
-      ordering_(ordering),
-      rows_(rows),
-      cols_(cols)
+Matrix::Matrix(size_t nRows, size_t nCols)
 {
-
+    resize(nRows, nCols);
 }
 
-Scalar& Matrix::operator ()(int row, int col)
+void Matrix::resize(size_t nRows, size_t nCols)
 {
-    switch (ordering_)
-    {
-    case ROW_MAJOR: return std::vector<Scalar>::operator [](col + cols_*row);
-    case COL_MAJOR: return std::vector<Scalar>::operator [](row + rows_*col);
-    }
-
-    throw std::exception();
+    nRows_ = nRows;
+    nCols_ = nCols;
+    isSquare_ = nRows_ == nCols_;
+    std::vector<Scalar>::resize(nRows*nCols);
+    ipiv_.resize(nRows_);
+    zero();
 }
 
-const Scalar& Matrix::operator ()(int row, int col) const
+void Matrix::zero()
 {
-    switch (ordering_)
-    {
-    case ROW_MAJOR: return std::vector<Scalar>::operator [](col + cols_*row);
-    case COL_MAJOR: return std::vector<Scalar>::operator [](row + rows_*col);
-    }
-
-    throw std::exception();
+    std::fill(begin(), end(), 0.);
 }
 
-void Matrix::resize(int rows, int cols)
+Scalar& Matrix::operator()(size_t m, size_t n)
 {
-    std::vector<Scalar>::resize(rows*cols);
-    rows_ = rows;
-    cols_ = cols;
+    return std::vector<Scalar>::operator [](m*nCols_ + n);
 }
 
+const Scalar& Matrix::operator()(size_t m, size_t n) const
+{
+    return std::vector<Scalar>::operator [](m*nCols_ + n);
+}
+
+//- Operators
 Matrix& Matrix::operator+=(const Matrix& rhs)
 {
-    for(int i = 0, end = size(); i < end; ++i)
-        operator [](i) += rhs[i];
+    for(size_t m = 0; m < nRows_; ++m)
+        for(size_t n = 0; n < nCols_; ++n)
+            operator ()(m, n) += rhs(m, n);
 
     return *this;
 }
 
 Matrix& Matrix::operator-=(const Matrix& rhs)
 {
-    for(int i = 0, end = size(); i < end; ++i)
-        operator [](i) -= rhs[i];
+    for(size_t m = 0; m < nRows_; ++m)
+        for(size_t n = 0; n < nCols_; ++n)
+            operator ()(m, n) -= rhs(m, n);
 
     return *this;
 }
 
 Matrix& Matrix::operator*=(Scalar rhs)
 {
-    for(int i = 0, end = size(); i < end; ++i)
-        operator [](i) *= rhs;
+    for(size_t m = 0; m < nRows_; ++m)
+        for(size_t n = 0; n < nCols_; ++n)
+            operator ()(m, n) *= rhs;
 
     return *this;
 }
 
 Matrix& Matrix::operator/=(Scalar rhs)
 {
-    for(int i = 0, end = size(); i < end; ++i)
-        operator [](i) /= rhs;
+    for(size_t m = 0; m < nRows_; ++m)
+        for(size_t n = 0; n < nCols_; ++n)
+            operator ()(m, n) /= rhs;
 
     return *this;
 }
 
+Matrix& Matrix::solve(Matrix& b)
+{
+    if(isSquare_)
+        LAPACKE_dgesv(LAPACK_ROW_MAJOR, nRows_, b.nCols_, data(), nCols_, ipiv_.data(), b.data(), b.nCols_);
+    else
+    {
+        LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', nRows_, nCols_, b.nCols_, data(), nCols_, b.data(), b.nCols_);
+        b.nRows_ = nCols_; // A bit hackish, but resizes b apropriately. Only works so long as the data format is row major
+    }
+
+    return b;
+}
+
+Matrix& Matrix::transpose()
+{
+    if(isSquare_) // Square matrices
+    {
+        auto &self = *this;
+
+        for(size_t m = 0; m < nRows_; ++m)
+            for(size_t n = m + 1; n < nCols_; ++n)
+                std::swap(self(m, n), self(n, m));
+    }
+    else // General non-square matrices
+    {
+        auto last = end();
+        auto first = begin();
+        int m = nCols_;
+
+        const int mn1 = (last - first - 1);
+        const int n   = (last - first) / m;
+        std::vector<bool> visited(last - first);
+        auto cycle = first;
+        while (++cycle != last)
+        {
+            if (visited[cycle - first])
+                continue;
+            int a = cycle - first;
+            do  {
+                a = a == mn1 ? mn1 : (n * a) % mn1;
+                std::swap(*(first + a), *cycle);
+                visited[a] = true;
+            } while ((first + a) != cycle);
+        }
+
+        std::swap(nRows_, nCols_);
+    }
+
+    return *this;
+}
+
+Matrix& Matrix::invert()
+{
+    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
+    LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
+
+    return *this;
+}
+
+Matrix Matrix::subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t endCol) const
+{
+    Matrix subMat(endRow - startRow, endCol - startCol);
+    auto &self = *this;
+
+    for(size_t m = startRow; m < endRow; ++m)
+        for(size_t n = startCol; n < endCol; ++n)
+            subMat(m - startRow, n - startCol) = self(m, n);
+
+    return subMat;
+}
+
 //- External functions
-
-Matrix operator+(Matrix A, const Matrix& B)
+Matrix eye(size_t nRows, size_t nCols)
 {
-    A += B;
-    return A;
+    Matrix mat(nRows, nCols);
+    for(size_t i = 0; i < nRows && i < nCols; ++i)
+        mat(i, i) = 1.;
+
+    return mat;
 }
 
-Matrix operator-(Matrix A, const Matrix& B)
+Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max)
 {
-    A -= B;
-    return B;
+    Matrix mat(nRows, nCols);
+
+    for(size_t m = 0; m < nRows; ++m)
+        for(size_t n = 0; n < nCols; ++n)
+            mat(m, n) = (double)rand()/RAND_MAX*(max - min) + min;
+
+    return mat;
 }
 
-Matrix operator*(Matrix A, Scalar a)
+Matrix transpose(Matrix mat)
 {
-    A *= a;
-    return A;
+    return mat.transpose();
 }
 
-Matrix operator*(Scalar a, Matrix A)
+Matrix inverse(Matrix mat)
 {
-    A *= a;
-    return A;
+    return mat.invert();
 }
 
+Matrix solve(Matrix A, Matrix b)
+{
+    return A.solve(b);
+}
+
+Matrix operator+(Matrix lhs, const Matrix& rhs)
+{
+    return lhs += rhs;
+}
+
+Matrix operator-(Matrix lhs, const Matrix& rhs)
+{
+    return lhs -= rhs;
+}
+
+Matrix operator*(Matrix lhs, Scalar rhs)
+{
+    return lhs *= rhs;
+}
+
+Matrix operator*(Scalar lhs, Matrix rhs)
+{
+    return rhs *= lhs;
+}
+
+Matrix operator*(const Matrix& A, const Matrix& B)
+{
+    Matrix C(A.nRows(), B.nCols());
+
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.nRows(), B.nCols(), A.nCols(), 1., A.data(), A.nCols(), B.data(), B.nCols(), 1., C.data(), C.nCols());
+
+    // Works for sure
+//    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
+
+//    for(int i = 0; i < nI; ++i)
+//        for(int j = 0; j < nJ; ++j)
+//            for(int k = 0; k < nK; ++k)
+//                C(i, j) += A(i, k)*B(k, j);
+
+    return C;
+}
+
+Matrix operator/(Matrix lhs, Scalar rhs)
+{
+    return lhs /= rhs;
+}
+
+std::ostream& operator<<(std::ostream& os, const Matrix& mat)
+{
+    for(size_t m = 0; m < mat.nRows(); ++m)
+    {
+        for(size_t n = 0; n < mat.nCols(); ++n)
+        {
+            os << mat(m, n) << ' ';
+        }
+        os << '\n';
+    }
+
+    return os;
+}

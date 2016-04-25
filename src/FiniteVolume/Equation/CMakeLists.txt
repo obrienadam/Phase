@@ -10,4 +10,4 @@ set(SOURCES Equation.cpp
             SparseVector.cpp)
 
 add_library(Equation ${HEADERS} ${SOURCES})
-target_link_libraries(Equation Field)
+target_link_libraries(Equation Field lapacke lapack openblas)
