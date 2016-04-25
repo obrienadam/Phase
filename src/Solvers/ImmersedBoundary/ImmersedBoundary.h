@@ -12,6 +12,7 @@ public:
 
 protected:
     std::vector<Circle> ibObjects_;
+    std::vector< std::vector< Ref<const Cell> > > kNN_;
 };
 
 #endif

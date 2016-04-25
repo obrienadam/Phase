@@ -7,7 +7,6 @@
 #include "FiniteVolumeGrid2D.h"
 #include "Input.h"
 #include "SparseVector.h"
-#include "RangeSearch.h"
 
 template<class T>
 class FiniteVolumeField : public Field<T>
@@ -64,7 +63,7 @@ template<class T>
 void harmonicInterpolateFaces(FiniteVolumeField<T>& field);
 
 template<class T>
-FiniteVolumeField<T> smooth(const Field<T>& field, const RangeSearch& rangeSearch, Scalar h);
+FiniteVolumeField<T> smooth(const Field<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar h);
 
 #include "FiniteVolumeField.tpp"
 

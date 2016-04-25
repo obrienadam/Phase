@@ -93,7 +93,6 @@ BOOST_AUTO_TEST_CASE(BilinearInterpolationTest)
     auto coeffs = bl(ip);
 
     Scalar sumCoeff = 0.;
-
     for(auto coeff: coeffs)
         sumCoeff += coeff;
 

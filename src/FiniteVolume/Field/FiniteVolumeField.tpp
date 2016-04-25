@@ -318,7 +318,7 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
 }
 
 template<class T>
-FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const RangeSearch& rangeSearch, Scalar h)
+FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar h)
 {
     FiniteVolumeField<T> smoothedField(field.grid, field.name);
 
@@ -333,13 +333,13 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const RangeSearch
     {
         Scalar totalVol = 0., intKr = 0.;
 
-        for(const Cell &kCell: rangeSearch.getResult(cell.id()))
+        for(const Cell &kCell: rangeSearch[cell.id()])
         {
             totalVol += kCell.volume();
             intKr += kr((cell.centroid() - kCell.centroid()).mag(), h);
         }
 
-        for(const Cell &kCell: rangeSearch.getResult(cell.id()))
+        for(const Cell &kCell: rangeSearch[cell.id()])
         {
             smoothedField[cell.id()] += field[kCell.id()]*kr((cell.centroid() - kCell.centroid()).mag(), h)/intKr;
         }

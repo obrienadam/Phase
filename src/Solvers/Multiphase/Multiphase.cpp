@@ -1,5 +1,6 @@
 #include "Multiphase.h"
 #include "Cicsam.h"
+#include "CellSearch.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -23,7 +24,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     //- Construct the range search
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    cellRangeSearch_.search(grid, kernelWidth_);
+    cellRangeSearch_ = rangeSearch(grid, kernelWidth_);
 }
 
 Scalar Multiphase::solve(Scalar timeStep)

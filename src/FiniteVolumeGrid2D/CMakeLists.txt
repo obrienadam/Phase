@@ -7,7 +7,7 @@ set(HEADERS Node.h
             FiniteVolumeGrid2D.h
             RectilinearGrid2D.h
             ConstructGrid.h
-            RangeSearch.h)
+            CellSearch.h)
 
 set(SOURCES Node.cpp
             Cell.cpp
@@ -18,7 +18,7 @@ set(SOURCES Node.cpp
             FiniteVolumeGrid2D.cpp
             RectilinearGrid2D.cpp
             ConstructGrid.cpp
-            RangeSearch.cpp)
+            CellSearch.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolumeGrid2D System Geometry)
