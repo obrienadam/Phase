@@ -1,24 +1,15 @@
-set(HEADERS Node.h
-            Cell.h
-            Face.h
-            Link.h
-	    Patch.h
-            CellGroup.h
-            FiniteVolumeGrid2D.h
+set(HEADERS FiniteVolumeGrid2D.h
             RectilinearGrid2D.h
-            ConstructGrid.h
-            CellSearch.h)
+            ConstructGrid.h)
 
-set(SOURCES Node.cpp
-            Cell.cpp
-            Face.cpp
-            Link.cpp
-            Patch.cpp
-            CellGroup.cpp
-            FiniteVolumeGrid2D.cpp
+set(SOURCES FiniteVolumeGrid2D.cpp
             RectilinearGrid2D.cpp
-            ConstructGrid.cpp
-            CellSearch.cpp)
+            ConstructGrid.cpp)
+
+add_subdirectory(Node)
+add_subdirectory(Cell)
+add_subdirectory(Face)
+add_subdirectory(Link)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
-target_link_libraries(FiniteVolumeGrid2D System Geometry)
+target_link_libraries(FiniteVolumeGrid2D System Geometry Cell Face Link Node)

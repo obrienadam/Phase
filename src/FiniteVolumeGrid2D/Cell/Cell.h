@@ -8,7 +8,8 @@
 
 #include "Node.h"
 #include "Face.h"
-#include "Link.h"
+#include "BoundaryLink.h"
+#include "InteriorLink.h"
 
 class Cell
 {
@@ -43,7 +44,8 @@ private:
 
     void computeCellAdjacency();
 
-    bool isActive_;
+    mutable bool isActive_;
+    mutable size_t globalIndex_;
 
     Polygon cellShape_;
 
@@ -51,7 +53,6 @@ private:
     Vector2D centroid_;
 
     size_t id_;
-    int globalIndex_;
 
     std::vector< Ref<const Face> > faces_;
     std::vector<size_t> nodeIds_;

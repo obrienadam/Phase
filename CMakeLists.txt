@@ -27,6 +27,10 @@ set(INCLUDE_DIR src/Types
                 src/System
                 src/Geometry
                 src/FiniteVolumeGrid2D
+                src/FiniteVolumeGrid2D/Node
+		src/FiniteVolumeGrid2D/Cell
+		src/FiniteVolumeGrid2D/Face
+		src/FiniteVolumeGrid2D/Link
                 src/FiniteVolume
                 src/FiniteVolume/Field
                 src/FiniteVolume/BoundaryCondition

@@ -58,8 +58,7 @@ RectilinearGrid2D::RectilinearGrid2D(int nCellsI, int nCellsJ, Scalar hx, Scalar
     applyLeftPatch("x-");
     applyRightPatch("x+");
 
-    computeCellAdjacency();
-    setAllCellsAsFluidCells();
+    initCells();
     computeBoundingBox();
 }
 

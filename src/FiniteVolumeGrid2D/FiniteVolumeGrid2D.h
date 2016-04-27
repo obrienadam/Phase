@@ -9,7 +9,7 @@
 #include "Face.h"
 #include "Patch.h"
 #include "BoundingBox.h"
-#include "CellGroup.h"
+#include "UniqueCellGroup.h"
 
 class FiniteVolumeGrid2D
 {
@@ -35,16 +35,17 @@ public:
 
     //- Cell related methods
     const std::vector<Cell>& cells() const { return cells_; }
-    const std::vector< Ref<const Cell> >& activeCells() const { return activeCells_; }
-    const std::vector< Ref<const Cell> >& fluidCells() const { return fluidCells_.cells(); }
-    const std::vector< Ref<const Cell> >& cellGroup(const std::string& name) const { return cellGroups_.find(name)->second.cells(); }
 
-    void computeCellAdjacency();
-    void setFluidCells(const std::vector<size_t>& cellIds);
+    const CellGroup& activeCells() const { return activeCells_; }
+    const UniqueCellGroup& fluidCells() const { return fluidCells_; }
+    const UniqueCellGroup& cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
+
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    CellGroup& createNewCellGroup(const std::string& name);
-    void addToCellGroup(const std::string& name, const std::vector<size_t>& cellIds);
+    UniqueCellGroup& moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const;
+    UniqueCellGroup& moveAllCellsToFluidCellGroup() const;
+    UniqueCellGroup& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids) const;
+    UniqueCellGroup& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids) const;
 
     //- Face related methods
     const std::vector<Face>& faces() const { return faces_; }
@@ -64,8 +65,9 @@ public:
 
 protected:
 
-    void setAllCellsAsFluidCells();
-    void constructActiveCellList();
+    void initCells();
+
+    void constructActiveCellGroup() const;
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
 
@@ -75,10 +77,11 @@ protected:
     //- Cell related data
     std::vector<Cell> cells_;
 
-    std::vector< Ref<const Cell> > activeCells_; // Stores all currently active cells for which a solution should be computed
+    mutable CellGroup activeCells_; // Stores all currently active cells for which a solution should be computed
 
-    CellGroup fluidCells_; // Contains all fluid cells for which the standard fv operators will be applied
-    std::map<std::string, CellGroup> cellGroups_; // Unique cell groups specified by the solver
+    mutable UniqueCellGroup fluidCells_; // Contains all fluid cells for which the standard fv operators will be applied
+    mutable UniqueCellGroup inactiveCells_;
+    mutable std::map<std::string, UniqueCellGroup> cellGroups_; // Unique cell groups specified by the solver
 
     //- Face related data
     std::vector<Face> faces_;

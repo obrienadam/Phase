@@ -63,29 +63,54 @@ size_t FiniteVolumeGrid2D::createCell(const std::vector<size_t> &faceIds)
 }
 
 //- Cell related methods
-void FiniteVolumeGrid2D::computeCellAdjacency()
-{
-    for(Cell& cell: cells_)
-        cell.computeCellAdjacency();
-}
 
-void FiniteVolumeGrid2D::setFluidCells(const std::vector<size_t> &cellIds)
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const
 {
-    fluidCells_.clear();
-    fluidCells_.reserve(cellIds.size());
-
-    for(size_t cellId: cellIds)
+    for(size_t id: ids)
     {
-        cells_[cellId].isActive_ = true;
-        fluidCells_.push_back(cells_[cellId]);
+        cells_[id].isActive_ = true;
+        fluidCells_.moveToGroup(cells_[id]);
     }
 
-    constructActiveCellList();
+    constructActiveCellGroup();
+    return fluidCells_;
 }
 
-CellGroup& FiniteVolumeGrid2D::createNewCellGroup(const std::string &name)
+UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup() const
 {
-    return (cellGroups_.insert(std::pair<std::string, CellGroup>(name, CellGroup(name))).first)->second;
+    for(const Cell &cell: cells_)
+        cell.isActive_ = true;
+
+    fluidCells_.moveAllCellsToThisGroup();
+
+    constructActiveCellGroup();
+    return fluidCells_;
+}
+
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vector<size_t>& ids) const
+{
+    for(size_t id: ids)
+    {
+        cells_[id].isActive_ = false;
+        inactiveCells_.moveToGroup(cells_[id]);
+    }
+
+    constructActiveCellGroup();
+    return inactiveCells_;
+}
+
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids) const
+{
+    UniqueCellGroup &group = (cellGroups_.insert(std::make_pair(name, UniqueCellGroup(name)))).first->second;
+
+    for(size_t id: ids)
+    {
+        cells_[id].isActive_ = true;
+        group.moveToGroup(cells_[id]);
+    }
+
+    constructActiveCellGroup();
+    return group;
 }
 
 //- Face related methods
@@ -105,31 +130,29 @@ void FiniteVolumeGrid2D::computeBoundingBox()
 
 //- Protected methods
 
-void FiniteVolumeGrid2D::setAllCellsAsFluidCells()
+void FiniteVolumeGrid2D::initCells()
 {
-    for(auto &cellGroup: cellGroups_) // clear all cell groups
-        cellGroup.second.clear();
-
     for(Cell &cell: cells_)
     {
+        cell.computeCellAdjacency();
         cell.isActive_ = true;
         fluidCells_.push_back(cell);
     }
 
-    constructActiveCellList();
+    constructActiveCellGroup();
 }
 
-void FiniteVolumeGrid2D::constructActiveCellList()
+void FiniteVolumeGrid2D::constructActiveCellGroup() const
 {
     size_t idx = 0;
     activeCells_.clear();
     activeCells_.reserve(cells_.size());
 
-    for(Cell &cell: cells_)
+    for(const Cell &cell: cells_)
     {
         if(cell.isActive())
         {
-            activeCells_.push_back(Ref<const Cell>(cell));
+            activeCells_.push_back(cell);
             cell.globalIndex_ = idx++; // compute the global index
         }
     }

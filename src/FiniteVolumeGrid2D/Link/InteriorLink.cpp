@@ -1,17 +1,5 @@
-#include "Link.h"
+#include "InteriorLink.h"
 #include "Cell.h"
-#include "Face.h"
-
-//- Boundary link
-
-BoundaryLink::BoundaryLink(const Cell& self, const Face &face)
-    :
-      Link(self),
-      face_(face)
-{
-    rFaceVec_ = face.centroid() - self.centroid();
-    outwardNorm_ = face.outwardNorm(self.centroid());
-}
 
 //- Interior link
 

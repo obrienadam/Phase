@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(BilinearInterpolationTest)
 
     Point2D ip(0.5, 1.1);
 
-    Scalar vals[] = {0.1, 1, 1, 0.5};
+    // Scalar vals[] = {0.1, 1, 1, 0.5};
 
     BilinearInterpolation bl(pts);
 
