@@ -20,6 +20,11 @@ BOOST_AUTO_TEST_CASE(CellGroupCreationTest)
     {
         std::cout << "Stencil for cell " << ibCell.cell().id() << ": " << ibCell.boundaryPoint() << " " << ibCell.imagePoint() << "\n";
     }
+
+    std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
+              << "Inactive cell group size : " << grid.inactiveCells().size() << "\n"
+              << "Fluid cell group size    : " << grid.fluidCells().size() << "\n"
+              << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

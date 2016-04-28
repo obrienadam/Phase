@@ -37,6 +37,7 @@ public:
     const std::vector<Cell>& cells() const { return cells_; }
 
     const CellGroup& activeCells() const { return activeCells_; }
+    const CellGroup& inactiveCells() const { return inactiveCells_; }
     const UniqueCellGroup& fluidCells() const { return fluidCells_; }
     const UniqueCellGroup& cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
 

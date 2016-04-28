@@ -20,14 +20,15 @@ void UniqueCellGroup::moveToGroup(const Cell &cell)
     else
     {
         UniqueCellGroup &group = (insertion.first)->second; // get the cell group that currently contains the cell
-        group.remove(cell); // remove the cell from the group
-        push_back(cell); // push back the cell into the new group
+        group.CellGroup::remove(cell);
+        CellGroup::push_back(cell);
+        (insertion.first)->second = std::ref(*this);
     }
 }
 
 void UniqueCellGroup::moveAllCellsToThisGroup()
 {
-    for(auto &entry: registry_)
+    for(auto &entry: registry_) // careful with this iterator
         moveToGroup(*(entry.first));
 }
 
