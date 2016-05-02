@@ -85,7 +85,7 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 template<>
 void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.fluidCells())
+    for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
     {
         size_t idx = cell.globalIndex();
 
@@ -99,7 +99,7 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     const size_t nActiveCells = field_.grid.nActiveCells();
 
-    for(const Cell& cell: field_.grid.fluidCells())
+    for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
     {
         size_t idxX = cell.globalIndex();
         size_t idxY = idxX + nActiveCells;

@@ -10,6 +10,13 @@ Circle::Circle(Point2D center, Scalar radius)
     area_ = M_PI*radius_*radius_;
 }
 
+void Circle::init(const Point2D &center, Scalar radius)
+{
+    center_ = center;
+    radius_ = radius;
+    area_ = M_PI*radius_*radius_;
+}
+
 Scalar Circle::area() const
 {
     return area_;

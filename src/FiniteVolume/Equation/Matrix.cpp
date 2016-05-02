@@ -136,10 +136,25 @@ Matrix& Matrix::transpose()
 
 Matrix& Matrix::invert()
 {
+    if(nRows_ != nCols_)
+        operator=(Matrix(*this).transpose()*(*this));
+
     LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
     LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
 
     return *this;
+}
+
+Scalar Matrix::norm(char type) const
+{
+    return LAPACKE_dlange(LAPACK_ROW_MAJOR, type, nRows_, nCols_, data(), nCols_);
+}
+
+Scalar Matrix::cond(char type) const
+{
+    Scalar rcond;
+    LAPACKE_dgecon(LAPACK_ROW_MAJOR, type, nRows_, data(), nCols_, norm(type), &rcond);
+    return rcond;
 }
 
 Matrix Matrix::subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t endCol) const
@@ -188,6 +203,26 @@ Matrix inverse(Matrix mat)
 Matrix solve(Matrix A, Matrix b)
 {
     return A.solve(b);
+}
+
+Matrix sum(const Matrix& A)
+{
+    Matrix result(1, A.nRows() == 1 ? 1 : A.nCols());
+    result.zero();
+
+    if(result.nCols() == 1)
+    {
+        for(int i = 0; i < A.nCols(); ++i)
+            result(0, 0) += A(0, i);
+    }
+    else
+    {
+        for(int i = 0; i < A.nRows(); ++i)
+            for(int j = 0; j < A.nCols(); ++j)
+                result(0, j) += A(i, j);
+    }
+
+    return result;
 }
 
 Matrix operator+(Matrix lhs, const Matrix& rhs)

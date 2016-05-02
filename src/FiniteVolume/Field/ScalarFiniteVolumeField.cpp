@@ -5,8 +5,8 @@ ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector&
 {
     auto &self = *this;
 
-    for(int i = 0, end = self.size(); i < end; ++i)
-        self[i] = rhs[i];
+    for(const Cell &cell: self.grid.activeCells())
+        self[cell.id()] = rhs[cell.globalIndex()];
 
     return self;
 }

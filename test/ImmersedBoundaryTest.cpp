@@ -25,6 +25,32 @@ BOOST_AUTO_TEST_CASE(CellGroupCreationTest)
               << "Inactive cell group size : " << grid.inactiveCells().size() << "\n"
               << "Fluid cell group size    : " << grid.fluidCells().size() << "\n"
               << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
+
+    grid.moveAllCellsToFluidCellGroup();
+
+    std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
+              << "Inactive cell group size : " << grid.inactiveCells().size() << "\n"
+              << "Fluid cell group size    : " << grid.fluidCells().size() << "\n"
+              << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
+
+
+    ImmersedBoundaryObject iObj2(grid, Point2D(0.5, 0.5), 0.25);
+    iObj2.constructStencils();
+
+    std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
+              << "Inactive cell group size : " << grid.inactiveCells().size() << "\n"
+              << "Fluid cell group size    : " << grid.fluidCells().size() << "\n"
+              << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
+
+    grid.moveAllCellsToFluidCellGroup(); // For some reason this has to be called to avoid seg fault. Why??
+
+    ImmersedBoundaryObject iObj3(grid, Point2D(0.5, 0.5), 0.41);
+    iObj3.constructStencils();
+
+    std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
+              << "Inactive cell group size : " << grid.inactiveCells().size() << "\n"
+              << "Fluid cell group size    : " << grid.fluidCells().size() << "\n"
+              << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

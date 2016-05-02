@@ -1,3 +1,5 @@
+#include <CGAL/Point_set_2.h>
+
 #include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
@@ -123,12 +125,25 @@ void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vec
         patches_.back().addFace(face);
 }
 
-void FiniteVolumeGrid2D::computeBoundingBox()
+const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
 {
-    bBox_ = BoundingBox(nodes_.data(), nodes_.size());
+    CGAL::Point_set_2<Kernel> pointSet;
+
+    for(const auto &entry: nodeMap_)
+        pointSet.push_back(entry.first);
+
+    auto nearestPt = pointSet.nearest_neighbor(pt.cgalPoint());
+
+    return nodeMap_.find(nearestPt->point())->second;
 }
 
 //- Protected methods
+
+void FiniteVolumeGrid2D::initNodes()
+{
+    for(const Node& node: nodes_)
+        nodeMap_.insert(std::make_pair(node.cgalPoint(), std::cref(node)));
+}
 
 void FiniteVolumeGrid2D::initCells()
 {
@@ -155,5 +170,12 @@ void FiniteVolumeGrid2D::constructActiveCellGroup() const
             activeCells_.push_back(cell);
             cell.globalIndex_ = idx++; // compute the global index
         }
+        else
+            cell.globalIndex_ = Cell::INACTIVE;
     }
+}
+
+void FiniteVolumeGrid2D::computeBoundingBox()
+{
+    bBox_ = BoundingBox(nodes_.data(), nodes_.size());
 }

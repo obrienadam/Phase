@@ -35,6 +35,8 @@ Scalar Multiphase::solve(Scalar timeStep)
     Piso::solve(timeStep);
 
     solveGammaEqn(timeStep);
+
+    return 0.; // just to get rid of warning
 }
 
 //- Protected methods

@@ -14,6 +14,8 @@ public:
 
     Circle(Point2D center, Scalar radius);
 
+    void init(const Point2D &center, Scalar radius);
+
     const Point2D& centroid() const { return center_; }
     Scalar area() const;
 

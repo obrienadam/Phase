@@ -6,14 +6,14 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1.5e-2
+	timeStep 1e-2
 	maxCo 0.25
-	maxTime 3.5
+	maxTime 200e-2
 
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.8
+	pressureCorrectionRelaxation 0.2
 	numInnerIterations 2
-	numPressureCorrections 2
+	numPressureCorrections 3
 	smoothingKernelRadius 0.0201
 }
 
@@ -34,23 +34,23 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 100
-	nCellsJ 50
+	nCellsI 120
+	nCellsJ 80
 
 	; Rectilinear parameters
-	spacingX 0.02
-	spacingY 0.02
+	spacingX 0.025
+	spacingY 0.025
 }
 
 Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields p,pCorr,m,gamma,rho,mu
+	scalarFields rho,mu,cell_status,p,pCorr
 }
 
 System
 {
-  fileWriteFrequency 30
+  fileWriteFrequency 5
   consoleOutputFrequency 1
 }

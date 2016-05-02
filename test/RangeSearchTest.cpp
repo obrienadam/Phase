@@ -31,18 +31,7 @@ BOOST_AUTO_TEST_CASE(KNearestNeighbourSearchTest)
 {
     RectilinearGrid2D grid(5, 5, 0.1, 0.1);
 
-    auto result = kNearestNeighbourSearch(grid, 5);
-
-    size_t i = 0;
-    for(const auto &nbList: result)
-    {
-        std::cout << "\nFor cell " << i++ << " we have: ";
-
-        for(const Cell &cell: nbList)
-        {
-            std::cout << cell.id() << ", ";
-        }
-    }
+    auto result = kNearestNeighbourSearch(grid, Point2D(0.3, 0.2), 5);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

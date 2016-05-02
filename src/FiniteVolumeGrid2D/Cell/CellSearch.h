@@ -8,7 +8,6 @@
 std::vector< Ref<const Cell> > rangeSearch(const FiniteVolumeGrid2D &grid, const Circle& circle);
 std::vector< std::vector< Ref<const Cell> > > rangeSearch(const FiniteVolumeGrid2D& grid, Scalar radius);
 
-std::vector< Ref<const Cell> > kNearestNeighbourSearch(const FiniteVolumeGrid2D &grid, const Cell& cell, size_t k);
-std::vector< std::vector< Ref<const Cell> > > kNearestNeighbourSearch(const FiniteVolumeGrid2D& grid, size_t k);
+std::vector< Ref<const Cell> > kNearestNeighbourSearch(const FiniteVolumeGrid2D &grid, const Point2D& pt, size_t k);
 
 #endif

@@ -7,11 +7,11 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
     auto &self = *this;
     const size_t nActiveCells = grid.nActiveCells();
 
-    for(int i = 0, end = nActiveCells; i < end; ++i)
-        self[i].x = rhs[i];
-
-    for(int i = nActiveCells, end = 2*nActiveCells; i < end; ++i)
-        self[i - nActiveCells].y = rhs[i];
+    for(const Cell &cell: grid.activeCells())
+    {
+        self[cell.id()].x = rhs[cell.globalIndex()];
+        self[cell.id()].y = rhs[cell.globalIndex() + nActiveCells];
+    }
 
     return self;
 }
@@ -57,7 +57,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
 {
     VectorFiniteVolumeField gradField(scalarField.grid, "grad_" + scalarField.name);
 
-    for(const Cell& cell: scalarField.grid.cells())
+    for(const Cell& cell: scalarField.grid.fluidCells())
     {
         Vector2D &gradPhi = gradField[cell.id()];
 

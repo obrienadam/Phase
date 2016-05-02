@@ -32,6 +32,9 @@ public:
     Matrix& transpose();
     Matrix& invert();
 
+    Scalar norm(char type = 'I') const;
+    Scalar cond(char type = 'I') const;
+
     Matrix subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t endCol) const;
 
     Scalar* data() { return std::vector<Scalar>::data(); }
@@ -53,6 +56,7 @@ Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max);
 Matrix transpose(Matrix mat);
 Matrix inverse(Matrix mat);
 Matrix solve(Matrix A, Matrix b);
+Matrix sum(const Matrix& A);
 
 Matrix operator+(Matrix lhs, const Matrix& rhs);
 Matrix operator-(Matrix lhs, const Matrix& rhs);

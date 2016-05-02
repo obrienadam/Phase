@@ -61,11 +61,15 @@ public:
     void addPatch(const std::string& patchName);
     const std::vector<Patch>& patches() const { return patches_; }
 
+    //- Entity searches
+    const Node& findNearestNode(const Point2D& pt) const;
+
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }
 
 protected:
 
+    void initNodes();
     void initCells();
 
     void constructActiveCellGroup() const;
@@ -95,6 +99,9 @@ protected:
     std::vector<Patch> patches_;
 
     BoundingBox bBox_;
+
+    //- CGAL stuff
+    std::map<Kernel::Point_2, Ref<const Node> > nodeMap_;
 };
 
 #endif

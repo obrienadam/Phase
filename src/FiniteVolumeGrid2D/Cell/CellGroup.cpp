@@ -22,5 +22,9 @@ void CellGroup::remove(const Cell &cell)
     {
         cells_.erase(cells_.begin() + entry->second);
         cellSet_.erase(entry);
+
+        size_t idx = 0;
+        for(const Cell &cell: cells_) // Must reset remaining cell indices, very expensive!
+            cellSet_[&cell] = idx++;
     }
 }

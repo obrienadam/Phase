@@ -8,7 +8,7 @@ class Multiphase : public Piso
 public:
     Multiphase(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    Scalar solve(Scalar timeStep);
+    virtual Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &gamma, &gammaTilde, &kappa;
     VectorFiniteVolumeField &n;
@@ -18,8 +18,8 @@ protected:
     void computeRho();
     void computeMu();
 
-    Scalar solveUEqn(Scalar timeStep);
-    Scalar solveGammaEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveGammaEqn(Scalar timeStep);
 
     void computeInterfaceNormals();
     void computeCurvature();

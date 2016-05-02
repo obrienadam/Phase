@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(LeastSquaresTest)
 
 BOOST_AUTO_TEST_CASE(BilinearInterpolationTest)
 {
-    Point2D pts[] = {
+    std::vector<Point2D> pts = {
         Point2D(0, 0),
         Point2D(1.2, 0),
         Point2D(0.9, 1.3),
@@ -97,6 +97,37 @@ BOOST_AUTO_TEST_CASE(BilinearInterpolationTest)
         sumCoeff += coeff;
 
     BOOST_REQUIRE_CLOSE(1., sumCoeff, 1e-10);
+}
+
+BOOST_AUTO_TEST_CASE(NormAndConditionNumberTest)
+{
+    std::vector<Point2D> pts = {
+        Point2D(0, 0),
+        Point2D(1, 0),
+        Point2D(0.5, -0.1),
+        Point2D(0.5, 1.2),
+    };
+
+    Matrix mat(pts.size(), 4), x(4, 1);
+
+    Point2D pt(0.5, 0.5);
+
+    for(int i = 0; i < pts.size(); ++i)
+    {
+        mat(i, 0) = 1;
+        mat(i, 1) = pts[i].x;
+        mat(i, 2) = pts[i].y;
+        mat(i, 3) = pts[i].x*pts[i].y;
+    }
+
+    x(0, 0) = 1;
+    x(1, 0) = pt.x;
+    x(2, 0) = pt.y;
+    x(3, 0) = pt.x*pt.y;
+
+    std::cout << "Infinity norm    : " << mat.norm('i') << "\n"
+              << "1-norm           : " << mat.norm('1') << "\n"
+              << "Condition number : " << mat.cond('i') << "\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

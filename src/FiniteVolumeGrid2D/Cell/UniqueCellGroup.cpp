@@ -29,7 +29,16 @@ void UniqueCellGroup::moveToGroup(const Cell &cell)
 void UniqueCellGroup::moveAllCellsToThisGroup()
 {
     for(auto &entry: registry_) // careful with this iterator
-        moveToGroup(*(entry.first));
+    {
+        UniqueCellGroup &group = entry.second;
+
+        if(&group == this)
+            continue;
+
+        group.::CellGroup::remove(*(entry.first));
+        CellGroup::push_back(*(entry.first));
+        entry.second = std::ref(*this);
+    }
 }
 
 void UniqueCellGroup::remove(const Cell &cell)

@@ -24,7 +24,7 @@ public:
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
-    Scalar solvePCorrEqn();
+    virtual Scalar solvePCorrEqn();
 
     void computeD();
     void computeH();
@@ -33,7 +33,6 @@ protected:
     void correctAll();
     void correctPressure();
     void correctVelocity();
-    void correctMassFlow();
 
     Scalar courantNumber(Scalar timeStep);
 

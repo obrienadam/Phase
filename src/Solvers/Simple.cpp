@@ -97,7 +97,7 @@ void Simple::computeD()
 {
     const auto diag = uEqn_.matrix().diagonal();
 
-    for(const Cell& cell: d.grid.cells())
+    for(const Cell& cell: d.grid.activeCells())
     {
         if(cell.isActive())
             d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
@@ -138,7 +138,7 @@ void Simple::rhieChowInterpolation()
         }
     }
 
-    for(const Cell& cell: m.grid.cells())
+    for(const Cell& cell: m.grid.fluidCells())
     {
         size_t id = cell.id();
 
@@ -154,7 +154,7 @@ void Simple::rhieChowInterpolation()
 
 void Simple::correctPressure()
 {
-    for(const Cell& cell: p.grid.cells())
+    for(const Cell& cell: p.grid.activeCells())
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
     interpolateFaces(p);
@@ -164,13 +164,8 @@ void Simple::correctVelocity()
 {
     VectorFiniteVolumeField gradPCorr = grad(pCorr);
 
-    for(const Cell& cell: u.grid.cells())
-    {
-        if(!cell.isActive())
-            continue;
-
+    for(const Cell& cell: u.grid.fluidCells())
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
-    }
 
     for(const Face& face: u.grid.interiorFaces())
     {
@@ -199,7 +194,7 @@ void Simple::correctVelocity()
 
     //- Update mass source for the purpose of error checking
 
-    for(const Cell& cell: m.grid.cells())
+    for(const Cell& cell: m.grid.fluidCells())
     {
         Scalar &mDot = m[cell.id()] = 0.;
 
@@ -215,7 +210,7 @@ Scalar Simple::courantNumber(Scalar timeStep)
 {
     Scalar maxCo = 0.;
 
-    for(const Cell &cell: u.grid.cells())
+    for(const Cell &cell: u.grid.fluidCells())
         for(const InteriorLink &nb: cell.neighbours())
         {
             Scalar deltaX = nb.rCellVec().mag();

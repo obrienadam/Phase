@@ -2,14 +2,10 @@
 
 BilinearInterpolation::BilinearInterpolation(const FiniteVolumeGrid2D &grid)
 {
-    // Finite the four nearest neighbour cells
-    Point2D centroids[4];
 
-    // Construct
-    constructMatrix(centroids);
 }
 
-BilinearInterpolation::BilinearInterpolation(const Point2D pts[])
+BilinearInterpolation::BilinearInterpolation(const std::vector<Point2D>& pts)
 {
     constructMatrix(pts);
 }
@@ -18,7 +14,7 @@ Scalar BilinearInterpolation::operator()(const Scalar vals[], const Point2D& ip)
 {
     Matrix x(4, 1), phi(1, 4);
 
-    x(0, 0) = ip.x;
+    x(0, 0) = ip.x; 
     x(1, 0) = ip.y;
     x(2, 0) = ip.x*ip.y;
     x(3, 0) = 1.;
@@ -44,11 +40,11 @@ std::vector<Scalar> BilinearInterpolation::operator()(const Point2D& ip) const
 
 //- Private methods
 
-void BilinearInterpolation::constructMatrix(const Point2D pts[])
+void BilinearInterpolation::constructMatrix(const std::vector<Point2D> &pts)
 {
-    mat_.resize(4, 4);
+    mat_.resize(pts.size(), 4);
 
-    for(int i = 0; i < 4; ++i)
+    for(int i = 0; i < pts.size(); ++i)
     {
         mat_(i, 0) = pts[i].x;
         mat_(i, 1) = pts[i].y;

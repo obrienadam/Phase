@@ -11,7 +11,7 @@ public:
 
     Scalar solve(Scalar timeStep);
 
-private:
+protected:
 
     size_t nPCorrections_;
 };

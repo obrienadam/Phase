@@ -9,10 +9,19 @@ ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const C
       bp_(bp),
       ip_(2.*bp - cell.centroid())
 {
-    kNN_ = kNearestNeighbourSearch(grid, cell_, 4);
+    Point2D sp = grid.findNearestNode(ip_);
+    kNN_ = kNearestNeighbourSearch(grid, sp, 4);
 }
 
 //- Immersed boundary objectclass
+
+ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid)
+    :
+      Circle(Point2D(), 0.),
+      grid_(grid)
+{
+
+}
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const Point2D &center, Scalar radius)
     :
@@ -22,10 +31,22 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, c
 
 }
 
+void ImmersedBoundaryObject::init(const Point2D& center, Scalar radius)
+{
+    Circle::init(center, radius);
+}
+
+ImmersedBoundaryObject::ImmersedBoundaryStencil ImmersedBoundaryObject::constructStencil(const Cell &cell) const
+{
+    return ImmersedBoundaryStencil(cell, nearestIntersect(cell.centroid()), grid_);
+}
+
 void ImmersedBoundaryObject::constructStencils()
 {
+    grid().moveAllCellsToFluidCellGroup(); // This must happen first for some reason
+
     // Get a list of cells that are in immersed boundary
-    auto internalCells = rangeSearch(grid_, *this);
+    std::vector< Ref<const Cell> > internalCells = rangeSearch(grid_, *this);
 
     ibStencils_.clear();
     ibStencils_.reserve(internalCells.size());
@@ -34,8 +55,6 @@ void ImmersedBoundaryObject::constructStencils()
 
     inactiveCellIds.reserve(internalCells.size());
     ibCellIds.reserve(internalCells.size());
-
-    grid_.moveAllCellsToFluidCellGroup();
 
     for(const Cell &cell: internalCells)
     {
