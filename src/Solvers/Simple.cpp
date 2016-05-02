@@ -56,7 +56,7 @@ Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 {
     Scalar maxTimeStep = std::numeric_limits<Scalar>::infinity();
 
-    for(const Cell &cell: u.grid.cells())
+    for(const Cell &cell: u.grid.fluidCells())
         for(const InteriorLink &nb: cell.neighbours())
         {
             Scalar deltaX = nb.rCellVec().mag();

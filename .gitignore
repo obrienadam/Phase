@@ -87,3 +87,7 @@ Thumbs.db
 # Build directories
 bin
 lib
+
+# Misc
+*.mp4
+*.log

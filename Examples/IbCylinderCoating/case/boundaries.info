@@ -1,4 +1,4 @@
-; Boundary conditions for the 2D immersed boundary cylinder
+; Boundary conditions for the 2D immersed boundary cylinder coating
 
 Boundaries
 {
@@ -18,14 +18,14 @@ Boundaries
 
     x-
     {
-      type fixed
-      value (1,0)
+      type normal_gradient
+      value (0,0)
     }
 
     y-
     {
-      type normal_gradient
-      value (0,0)
+      type fixed
+      value (0,0.5)
     }
   }
 
@@ -33,7 +33,7 @@ Boundaries
   {
     x+
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 
@@ -51,18 +51,36 @@ Boundaries
 
     y-
     {
-      type fixed
+      type normal_gradient
       value 0
     }    
   }
   
   gamma
   {
-    *
+    x+
     {
       type normal_gradient
       value 0
     }
+
+    y+
+    {
+      type normal_gradient
+      value 0
+    }
+
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y-
+    {
+      type fixed
+      value 1
+    }  
   }
 }
 
@@ -73,8 +91,8 @@ ImmersedBoundaries
     geometry
     {
       type circle
-      center (0.75,1)
-      radius 0.2
+      center (1,0.7)
+      radius 0.15
     }
 
     u

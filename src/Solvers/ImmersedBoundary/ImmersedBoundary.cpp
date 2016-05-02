@@ -49,6 +49,8 @@ Scalar ImmersedBoundary::solve(Scalar timeStep)
         }
     }
 
+    solveGammaEqn(timeStep);
+
     printf("time step = %lf, max Co = %lf\n", timeStep, courantNumber(timeStep));
 
     return 0.;
@@ -60,7 +62,7 @@ Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
     computeCurvature();
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
-             == fv::laplacian(mu, u) - fv::grad(p));
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
 
     uEqn_.relax(momentumOmega_);
 
@@ -83,8 +85,8 @@ Scalar ImmersedBoundary::solvePCorrEqn()
 
 Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
 {
-    interpolateFaces(gamma);
     gamma.save();
+    interpolateFaces(gamma);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();

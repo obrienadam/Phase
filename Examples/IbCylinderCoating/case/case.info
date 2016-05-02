@@ -1,0 +1,52 @@
+; Test case for the 2D immersed boundary cylinder coating
+
+CaseName ImmersedBoundaryCylinderCoating2D
+
+Solver
+{
+	timeDependent On
+	maxIterations 100
+	timeStep 3.5e-3
+	maxCo 0.3
+	maxTime 50
+
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
+	numInnerIterations 1
+	numPressureCorrections 3
+	smoothingKernelRadius 0.0351
+}
+
+Properties
+{
+	rho1 998
+	rho2 958
+	mu1 8.94e-4
+	mu2 9e-2
+	sigma 0.0276
+	g (0,-9.81)
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 100
+	nCellsJ 100
+
+	; Rectilinear parameters
+	spacingX 0.02
+	spacingY 0.02
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields rho,mu,cell_status,p,pCorr,gamma
+}
+
+System
+{
+  fileWriteFrequency 10
+  consoleOutputFrequency 1
+}

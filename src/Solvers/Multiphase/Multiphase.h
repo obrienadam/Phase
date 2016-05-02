@@ -15,8 +15,8 @@ public:
 
 protected:
 
-    void computeRho();
-    void computeMu();
+    virtual void computeRho();
+    virtual void computeMu();
 
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solveGammaEqn(Scalar timeStep);
