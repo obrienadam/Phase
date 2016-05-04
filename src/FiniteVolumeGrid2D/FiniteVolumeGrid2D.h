@@ -10,6 +10,7 @@
 #include "Patch.h"
 #include "BoundingBox.h"
 #include "UniqueCellGroup.h"
+#include "Search.h"
 
 class FiniteVolumeGrid2D
 {
@@ -100,8 +101,8 @@ protected:
 
     BoundingBox bBox_;
 
-    //- CGAL stuff
-    std::map<Kernel::Point_2, Ref<const Node> > nodeMap_;
+    //- For node searches
+    Search<Node> nodeSearch_;
 };
 
 #endif

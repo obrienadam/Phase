@@ -6,15 +6,15 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 3.5e-3
+	timeStep 2.5e-3
 	maxCo 0.3
 	maxTime 50
 
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
-	numInnerIterations 1
+	numInnerIterations 2
 	numPressureCorrections 3
-	smoothingKernelRadius 0.0351
+	smoothingKernelRadius 0.0301
 }
 
 Properties
@@ -22,7 +22,7 @@ Properties
 	rho1 998
 	rho2 958
 	mu1 8.94e-4
-	mu2 9e-2
+	mu2 9e-3
 	sigma 0.0276
 	g (0,-9.81)
 }
@@ -34,8 +34,8 @@ Grid
 	nCellsJ 100
 
 	; Rectilinear parameters
-	spacingX 0.02
-	spacingY 0.02
+	spacingX 0.002
+	spacingY 0.002
 }
 
 Viewer

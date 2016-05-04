@@ -1,10 +1,5 @@
 #include <math.h>
 
-#include <CGAL/centroid.h>
-#include <CGAL/Polygon_with_holes_2.h>
-#include <CGAL/Boolean_set_operations_2.h>
-#include <CGAL/Polygon_2_algorithms.h>
-
 #include "Polygon.h"
 #include "Exception.h"
 
@@ -16,71 +11,88 @@ Polygon::Polygon()
 Polygon::Polygon(const std::vector<Point2D> &vertices)
 {
     for(const Point2D& vtx: vertices)
-        push_back(vtx.cgalPoint());
+        boost::geometry::append(poly_, vtx);
 
-    init();
-}
+    boost::geometry::append(poly_, vertices.front()); // weird that this is necessary
 
-Polygon::Polygon(const CGAL::Polygon_2<Kernel> &other)
-    :
-      CGAL::Polygon_2<Kernel>::Polygon_2(other)
-{
     init();
 }
 
 bool Polygon::isInside(const Point2D& testPoint) const
 {
-    return bounded_side(CGAL::Point_2<Kernel>(testPoint.cgalPoint())) == CGAL::ON_BOUNDED_SIDE;
+    return boost::geometry::within(testPoint, poly_);
 }
 
-bool Polygon::isOnEdge(const Point2D& testPoint) const
+bool Polygon::isOnEdge(const Point2D &testPoint) const
 {
-    return bounded_side(CGAL::Point_2<Kernel>(testPoint.cgalPoint())) == CGAL::ON_BOUNDARY;
+    return boost::geometry::covered_by(testPoint, poly_) && !isInside(testPoint);
 }
 
 Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
 {
-    throw Exception("Polygon", "nearestIntersect", "not yet implemented.");
+    auto vtxIter = begin();
+    Point2D vtx0 = *(vtxIter++);
+
+    Point2D currNearestIntersect(INFINITY, INFINITY);
+    for(; vtxIter != end(); vtxIter++)
+    {
+        Point2D vtx1 = *(vtxIter);
+
+        Point2D ptVec = testPoint - vtx0;
+        Point2D segmentVec = vtx1 - vtx0;
+
+        Scalar l = dot(ptVec, segmentVec.unitVec());
+
+        Point2D intersect;
+
+        if(l <= 0)
+            intersect = vtx0;
+        else if (l*l > segmentVec.magSqr())
+            intersect = vtx1;
+        else
+            intersect = vtx0 + l*segmentVec.unitVec();
+
+        currNearestIntersect = (intersect - testPoint).magSqr() < (currNearestIntersect - testPoint).magSqr() ? intersect : currNearestIntersect;
+
+        vtx0 = vtx1;
+    }
+
+    return currNearestIntersect;
 }
 
-bool Polygon::isSimple() const
+void Polygon::operator+=(const Vector2D& translationVec)
 {
-    return isSimple_;
+    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx += translationVec;
+
+    centroid_ += translationVec;
 }
 
-bool Polygon::isConvex() const
+void Polygon::operator-=(const Vector2D& translationVec)
 {
-    return isConvex_;
+    operator +=(-translationVec);
+}
+
+void Polygon::scale(Scalar factor)
+{
+    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx = factor*(vtx - centroid_) + centroid_;
+
+    area_ = boost::geometry::area(poly_);
+}
+
+void Polygon::rotate(Scalar theta)
+{
+    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx = (vtx - centroid_).rotate(theta) + centroid_;
 }
 
 //- Protected methods
 
 void Polygon::init()
 {
-    isSimple_ = is_simple();
-    isConvex_ = is_convex();
-
-    area_ = CGAL::Polygon_2<Kernel>::area();
-
-    centroid_ = CGAL::centroid(container().begin(), container().end(), CGAL::Dimension_tag<0>());
+    area_ = boost::geometry::area(poly_);
+    boost::geometry::centroid(poly_, centroid_);
 }
 
 //- External functions
-
-bool doIntersect(const CGAL::Polygon_2<Kernel> &poly1, const CGAL::Polygon_2<Kernel> &poly2)
-{
-    return CGAL::do_intersect(poly1, poly2);
-}
-
-Polygon intersectionPolygon(const Polygon& poly1, const Polygon& poly2)
-{
-    std::vector< CGAL::Polygon_with_holes_2<Kernel> > result;
-    CGAL::intersection(poly1, poly2, std::back_inserter(result));
-
-    if(result.empty())
-        throw Exception("", "intersectionPolygon", "polygons do not intersect.");
-    else if(result.size() > 1)
-        throw Exception("", "intersectionPolygon", "polygons intersect more than once.");
-
-    return Polygon(result[0].outer_boundary());
-}

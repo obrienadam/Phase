@@ -8,6 +8,7 @@ HeightFunction::HeightFunction(const Point2D &loc, const Vector2D &normal, Scala
       colWidth_(colWidth),
       colHeight_(colHeight)
 {
+    /*
     Kernel::Point_2 vertices[4] = {
         (loc_ - colHeight_*unitNormal_/2 - colWidth_*unitTangent_/2).cgalPoint(),
         (loc_ + colHeight_*unitNormal_/2 - colWidth_*unitTangent_/2).cgalPoint(),
@@ -19,6 +20,7 @@ HeightFunction::HeightFunction(const Point2D &loc, const Vector2D &normal, Scala
         push_back(vertices[i]);
 
     init();
+    */
 }
 
 Scalar HeightFunction::computeHeight(const ScalarFiniteVolumeField &field)
@@ -29,11 +31,11 @@ Scalar HeightFunction::computeHeight(const ScalarFiniteVolumeField &field)
     {
         const Polygon &pgn = cell.shape();
 
-        if(doIntersect(*this, pgn))
-        {
-            Scalar overlapArea = intersectionPolygon(*this, pgn).area();
-            vof += overlapArea*field[cell.id()];
-        }
+        //if(doIntersect(*this, pgn))
+        //{
+            //Scalar overlapArea = intersectionPolygon(*this, pgn).area();
+            //vof += overlapArea*field[cell.id()];
+        //}
     }
 
     return vof/colWidth_;

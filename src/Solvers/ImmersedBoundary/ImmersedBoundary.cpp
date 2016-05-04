@@ -26,20 +26,21 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
     }
 
     ibObj_.constructStencils();
+    Multiphase::constructSmoothingKernels();
     setCellStatus();
 }
 
-Scalar ImmersedBoundary::solve(Scalar timeStep)
+Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
 {
     computeRho();
     computeMu();
 
-    u.save();
+    u.save(2);
 
     Scalar avgError = 0.;
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
     {
-        avgError += solveUEqn(timeStep);
+        avgError += solveUEqn(timeStep, prevTimeStep);
 
         for(size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
         {
@@ -49,19 +50,19 @@ Scalar ImmersedBoundary::solve(Scalar timeStep)
         }
     }
 
-    solveGammaEqn(timeStep);
+    solveGammaEqn(timeStep, prevTimeStep);
 
     printf("time step = %lf, max Co = %lf\n", timeStep, courantNumber(timeStep));
 
     return 0.;
 }
 
-Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
+Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
     computeInterfaceNormals();
     computeCurvature();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
+    uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
              == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
 
     uEqn_.relax(momentumOmega_);
@@ -83,11 +84,11 @@ Scalar ImmersedBoundary::solvePCorrEqn()
     return error;
 }
 
-Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
+Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    gamma.save();
+    gamma.save(2);
     interpolateFaces(gamma);
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 

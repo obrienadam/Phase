@@ -25,9 +25,12 @@ int main(int argc, const char* argv[])
 
     Scalar maxTimeStep = input.caseInput().get<Scalar>("Solver.timeStep");
     Scalar timeStep = maxTimeStep;
+    Scalar prevTimeStep = timeStep;
 
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
 
+    solver.u.save(2);
+    solver.gamma.save(2);
     for(
         time = 0., iterNo = 0;
         time < maxTime;
@@ -37,8 +40,9 @@ int main(int argc, const char* argv[])
         if(iterNo%fileWriteFrequency == 0)
             viewer.write(time);
 
-        solver.solve(timeStep);
+        solver.solve(timeStep, prevTimeStep);
         printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
+        prevTimeStep = timeStep;
     }
 
     viewer.write(time);

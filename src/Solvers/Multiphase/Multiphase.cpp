@@ -1,5 +1,6 @@
 #include "Multiphase.h"
 #include "Cicsam.h"
+#include "Plic.h"
 #include "CellSearch.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
@@ -24,22 +25,37 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     //- Construct the range search
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    cellRangeSearch_ = rangeSearch(grid, kernelWidth_);
+    constructSmoothingKernels();
+
+    //- Configuration
+    interfaceAdvectionMethod_ = CICSAM;
+    curvatureEvaluationMethod_ = CSF;
 }
 
-Scalar Multiphase::solve(Scalar timeStep)
+Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
 {
     computeRho();
     computeMu();
 
-    Piso::solve(timeStep);
+    Piso::solve(timeStep, prevTimeStep);
 
-    solveGammaEqn(timeStep);
+    solveGammaEqn(timeStep, prevTimeStep);
 
     return 0.; // just to get rid of warning
 }
 
 //- Protected methods
+
+void Multiphase::constructSmoothingKernels()
+{
+    CellSearch cs(grid_.activeCells());
+
+    cellRangeSearch_.clear();
+    cellRangeSearch_.resize(grid_.cells().size());
+
+    for(const Cell &cell: grid_.activeCells())
+        cellRangeSearch_[cell.id()] = cs.rangeSearch(Circle(cell.centroid(), kernelWidth_));
+}
 
 void Multiphase::computeRho()
 {
@@ -63,12 +79,13 @@ void Multiphase::computeMu()
     interpolateFaces(mu);
 }
 
-Scalar Multiphase::solveUEqn(Scalar timeStep)
+Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
     computeInterfaceNormals();
     computeCurvature();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
+    uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -78,11 +95,22 @@ Scalar Multiphase::solveUEqn(Scalar timeStep)
     return error;
 }
 
-Scalar Multiphase::solveGammaEqn(Scalar timeStep)
-{
+Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
+{ 
+    gamma.save(2);
     interpolateFaces(gamma);
-    gamma.save();
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) == 0.);
+
+    switch(interfaceAdvectionMethod_)
+    {
+    case CICSAM:
+
+        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + cicsam::div(u, gamma, timeStep) == 0.);
+        break;
+    case PLIC:
+
+        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + plic::div(u, gamma) == 0.);
+        break;
+    }
 
     Scalar error = gammaEqn_.solve();
 

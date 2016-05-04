@@ -14,7 +14,7 @@ public:
 
     Simple(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    virtual Scalar solve(Scalar timeStep);
+    virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep);
 
     Scalar computeMaxTimeStep(Scalar maxCo) const;
 
@@ -23,7 +23,7 @@ public:
 
 protected:
 
-    virtual Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep, Scalar prevTimeStep);
     virtual Scalar solvePCorrEqn();
 
     void computeD();

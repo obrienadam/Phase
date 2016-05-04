@@ -1,109 +1,62 @@
-#include <CGAL/Point_set_2.h>
-
 #include "CellSearch.h"
 
-std::vector< Ref<const Cell> > rangeSearch(const FiniteVolumeGrid2D &grid, const Circle& circle)
+void CellSearch::constructRTree()
 {
-    typedef CGAL::Point_set_2<Kernel>::Vertex_handle VertexHandle;
-
-    std::vector<Kernel::Point_2> centroids(grid.cells().size());
-    std::map<Kernel::Point_2, const Cell* > directory;
-    std::vector< Ref<const Cell> > result;
-
-    CGAL::Point_set_2<Kernel> pointSet;
-
-    //- Construct a point set consisting of the cell centroids
-    for(const Cell &cell: grid.activeCells())
-    {
-        auto centroid = cell.centroid().cgalPoint();
-
-        centroids[cell.id()] = centroid;
-        directory.insert(std::pair<Kernel::Point_2, const Cell* >(centroid, &cell));
-    }
-
-    pointSet.insert(centroids.begin(), centroids.end());
-
-    //- Find all of the centroids within the circle
-
-    std::vector<VertexHandle> lv;
-    Kernel::Circle_2 cgalCircle = circle.cgalCircle();
-    pointSet.range_search(cgalCircle, std::back_inserter(lv));
-
-    for(const VertexHandle &vtxh: lv)
-        result.push_back(Ref<const Cell>(*directory[vtxh->point()]));
-
-    return result;
+    rTree_.clear();
+    for(const Cell &cell: cellGroup_)
+        rTree_.insert(Value(cell.centroid(), std::cref(cell)));
 }
 
-std::vector< std::vector< Ref<const Cell> > > rangeSearch(const FiniteVolumeGrid2D& grid, Scalar radius)
+std::vector< Ref<const Cell> >  CellSearch::rangeSearch(const Circle &circle) const
 {
-    typedef CGAL::Point_set_2<Kernel>::Vertex_handle VertexHandle;
+    auto inCircle = [&circle](const Value &val) { return circle.isInside(val.first); };
+    std::vector< Value > result;
 
-    std::vector<Kernel::Point_2> centroids(grid.cells().size());
-    std::map<Kernel::Point_2, const Cell* > directory;
-    std::vector< std::vector< Ref<const Cell> > > result;
+    boost::geometry::model::box<Point2D> box(Point2D(circle.centroid().x - circle.radius(),
+                                                     circle.centroid().y - circle.radius()),
+                                             Point2D(circle.centroid().x + circle.radius(),
+                                                     circle.centroid().y + circle.radius()));
 
-    CGAL::Point_set_2<Kernel> pointSet;
+    rTree_.query(boost::geometry::index::within(box)
+                 && boost::geometry::index::satisfies(inCircle)
+                 ,std::back_inserter(result));
 
-    //- Construct a point set consisting of the cell centroids
-    for(const Cell &cell: grid.activeCells())
-    {
-        auto centroid = cell.centroid().cgalPoint();
-
-        centroids[cell.id()] = centroid;
-        directory.insert(std::pair<Kernel::Point_2, const Cell* >(centroid, &cell));
-    }
-
-    pointSet.insert(centroids.begin(), centroids.end());
-    result.resize(centroids.size());
-
-    //- For each cell, find the neighbouring centroids, and then use the directory to construct the result
-
-    std::vector<VertexHandle> lv;
-    for(const Cell &cell: grid.activeCells())
-    {
-        Kernel::Circle_2 circle(cell.centroid().cgalPoint(), radius*radius);
-        pointSet.range_search(circle, std::back_inserter(lv));
-
-        for(const VertexHandle &vtxh: lv)
-            result[cell.id()].push_back(Ref<const Cell>(*directory[vtxh->point()]));
-
-        lv.clear();
-    }
-
-    return result;
+    return getRefs(result);
 }
 
-std::vector< Ref<const Cell> > kNearestNeighbourSearch(const FiniteVolumeGrid2D &grid, const Point2D &pt, size_t k)
+std::vector< Ref<const Cell> > CellSearch::rangeSearch(const Polygon &pgn) const
 {
-    typedef CGAL::Point_set_2<Kernel>::Vertex_handle VertexHandle;
+    auto inPgn = [&pgn](const Value &val) { return pgn.isInside(val.first); };
+    std::vector< Value > result;
 
-    std::vector<Kernel::Point_2> centroids(grid.activeCells().size());
-    std::map<Kernel::Point_2, const Cell* > directory;
-    std::vector< Ref<const Cell> > result;
+    boost::geometry::model::box<Point2D> box;
+    boost::geometry::envelope(pgn.boostPolygon(), box);
 
-    CGAL::Point_set_2<Kernel> pointSet;
+    rTree_.query(boost::geometry::index::within(box)
+                 && boost::geometry::index::satisfies(inPgn)
+                 ,std::back_inserter(result));
 
-    //- Construct a point set consisting of the cell centroids
-    for(const Cell &cell: grid.activeCells())
-    {
-        auto centroid = cell.centroid().cgalPoint();
-        centroids[cell.id()] = centroid;
-        directory.insert(std::pair<Kernel::Point_2, const Cell* >(centroid, &cell));
-    }
+    return getRefs(result);
+}
 
-    pointSet.insert(centroids.begin(), centroids.end());
-    result.reserve(k);
+std::vector< Ref<const Cell> > CellSearch::kNearestNeighbourSearch(const Point2D& point, size_t k) const
+{
+    std::vector< Value > result;
 
-    //- For each cell, find the neighbouring centroids, and then use the directory to construct the result
+    rTree_.query(boost::geometry::index::nearest(point, k),
+                 std::back_inserter(result));
 
-    std::vector<VertexHandle> lv;
+    return getRefs(result);
+}
 
-    lv.reserve(k);
-    pointSet.nearest_neighbors(pt.cgalPoint(), k, std::back_inserter(lv));
+//- Private methods
 
-    for(const VertexHandle &vtxh: lv)
-        result.push_back(Ref<const Cell>(*directory[vtxh->point()]));
+std::vector< Ref<const Cell> > CellSearch::getRefs(const std::vector<Value> &vals) const
+{
+    std::vector< Ref<const Cell> > refs;
 
-    return result;
+    for(const Value &val: vals)
+        refs.push_back(val.second);
+
+    return refs;
 }

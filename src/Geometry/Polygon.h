@@ -3,44 +3,46 @@
 
 #include <vector>
 
-#include <CGAL/Polygon_2.h>
+#include <boost/geometry/geometries/polygon.hpp>
 
 #include "Shape2D.h"
-#include "Geometry.h"
 
-class Polygon : public CGAL::Polygon_2<Kernel>
+class Polygon : public Shape2D
 {
 public:
 
     Polygon();
     Polygon(const std::vector<Point2D>& vertices);
-    Polygon(const CGAL::Polygon_2<Kernel>& other);
 
-    template<class T>
-    Polygon(T begin, T end);
+    //- Polygon properties
+    virtual const Point2D& centroid() const { return centroid_; }
+    virtual Scalar area() const { return area_; }
+    const boost::geometry::model::polygon<Point2D, false, true>& boostPolygon() const { return poly_; }
 
-    const Point2D& centroid() const { return centroid_; }
-    Scalar area() const { return area_; }
-
+    //- Tests
     virtual bool isInside(const Point2D& testPoint) const;
     virtual bool isOnEdge(const Point2D& testPoint) const;
 
+    //- Intersections
     virtual Point2D nearestIntersect(const Point2D& testPoint) const;
 
-    bool isSimple() const;
-    bool isConvex() const;
+    virtual void operator+=(const Vector2D& translationVec);
+    virtual void operator-=(const Vector2D& translationVec);
+    virtual void scale(Scalar factor);
+    virtual void rotate(Scalar theta);
+
+    //- Iterators
+    auto begin() const { return boost::geometry::exterior_ring(poly_).begin(); }
+    auto end() const { return boost::geometry::exterior_ring(poly_).end(); }
 
 protected:
 
     void init();
 
-    bool isSimple_, isConvex_;
+    boost::geometry::model::polygon<Point2D, false, true> poly_;
 
     Point2D centroid_;
     Scalar area_;
 };
-
-bool doIntersect(const CGAL::Polygon_2<Kernel> &poly1, const CGAL::Polygon_2<Kernel> &poly2);
-Polygon intersectionPolygon(const Polygon& poly1, const Polygon& poly2);
 
 #endif

@@ -14,7 +14,7 @@ Solver
 	pressureCorrectionRelaxation 0.3
 	numInnerIterations 2
 	numPressureCorrections 3
-	smoothingKernelRadius 0.0201
+	smoothingKernelRadius 0.0401
 }
 
 Properties

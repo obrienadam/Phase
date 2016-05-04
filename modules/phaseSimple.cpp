@@ -21,10 +21,13 @@ int main(int argc, const char* argv[])
 
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
     Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
+    Scalar prevTimeStep = timeStep;
 
+    solver.u.save(2);
     for(Scalar time = 0.; time < maxTime; time += timeStep)
     {
-        solver.solve(timeStep);
+        solver.solve(timeStep, prevTimeStep);
+        prevTimeStep = timeStep;
     }
 
     viewer.write(0.);

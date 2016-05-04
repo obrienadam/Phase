@@ -3,6 +3,7 @@
 
 #include "Circle.h"
 #include "FiniteVolumeGrid2D.h"
+#include "CellSearch.h"
 
 class ImmersedBoundaryObject : public Circle
 {
@@ -14,7 +15,10 @@ public:
     {
     public:
 
-        ImmersedBoundaryStencil(const Cell& cell, const Point2D& bp, const FiniteVolumeGrid2D& grid);
+        ImmersedBoundaryStencil(const Cell& cell,
+                                const Point2D& bp,
+                                const FiniteVolumeGrid2D& grid,
+                                const CellSearch &cs);
 
         const Cell& cell() const { return cell_; }
         const std::vector< Ref<const Cell> >& kNearestNeighbours() const { return kNN_; }
@@ -36,7 +40,6 @@ public:
 
     const FiniteVolumeGrid2D& grid() const { return grid_; }
 
-    ImmersedBoundaryStencil constructStencil(const Cell &cell) const;
     void constructStencils();
 
     const std::vector<ImmersedBoundaryStencil>& stencils() const { return ibStencils_; }

@@ -7,16 +7,16 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     nPCorrections_ = input.caseInput().get<int>("Solver.numPressureCorrections", 1);
 }
 
-Scalar Piso::solve(Scalar timeStep)
+Scalar Piso::solve(Scalar timeStep, Scalar prevTimeStep)
 {
-    u.save();
+    u.save(2);
 
     //if(!(timeDependent_ == Solver::OFF))
         //timeStep = std::numeric_limits<Scalar>::infinity();
 
     for(size_t i = 0; i < nInnerIterations_; ++i)
     {
-        solveUEqn(timeStep);
+        solveUEqn(timeStep, prevTimeStep);
 
         for(size_t j = 0; j < nPCorrections_; ++j)
         {

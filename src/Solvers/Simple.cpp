@@ -35,13 +35,13 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     }
 }
 
-Scalar Simple::solve(Scalar timeStep)
+Scalar Simple::solve(Scalar timeStep, Scalar prevTimeStep)
 {
-    u.save();
+    u.save(2);
 
     for(size_t i = 0; i < nInnerIterations_; ++i)
     {
-        solveUEqn(timeStep);
+        solveUEqn(timeStep, prevTimeStep);
         solvePCorrEqn();
         correctPressure();
         correctVelocity();
@@ -70,9 +70,9 @@ Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 
 //- Protected methods
 
-Scalar Simple::solveUEqn(Scalar timeStep)
+Scalar Simple::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(rho*g_));
+    uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();

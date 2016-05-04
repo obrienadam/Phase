@@ -1,6 +1,6 @@
 set(HEADERS Cell.h
             CellGroup.h
-	    UniqueCellGroup.h
+            UniqueCellGroup.h
             CellSearch.h)
 
 set(SOURCES Cell.cpp

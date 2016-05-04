@@ -1,9 +1,9 @@
-#include <CGAL/Point_set_2.h>
-
 #include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(size_t nNodes, size_t nCells, size_t nFaces)
+    :
+      nodeSearch_(nodes_)
 {
     nodes_.reserve(nNodes);
     cells_.reserve(nCells);
@@ -127,22 +127,14 @@ void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vec
 
 const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
 {
-    CGAL::Point_set_2<Kernel> pointSet;
-
-    for(const auto &entry: nodeMap_)
-        pointSet.push_back(entry.first);
-
-    auto nearestPt = pointSet.nearest_neighbor(pt.cgalPoint());
-
-    return nodeMap_.find(nearestPt->point())->second;
+    return nodeSearch_.kNearestNeighbourSearch(pt, 1)[0];
 }
 
 //- Protected methods
 
 void FiniteVolumeGrid2D::initNodes()
 {
-    for(const Node& node: nodes_)
-        nodeMap_.insert(std::make_pair(node.cgalPoint(), std::cref(node)));
+    nodeSearch_.constructRTree();
 }
 
 void FiniteVolumeGrid2D::initCells()

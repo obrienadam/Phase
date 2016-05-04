@@ -10,8 +10,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 	
-        set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -O0")
-        set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -O3")
+        set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -frounding-math -O0")
+        set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -frounding-math -O3")
 	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_RELEASE})
 
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")

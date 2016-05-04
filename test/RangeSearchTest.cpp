@@ -13,25 +13,22 @@ BOOST_AUTO_TEST_CASE(RangeSearchTest)
 {
     RectilinearGrid2D grid(10, 10, 0.1, 0.1);
 
-    auto result = rangeSearch(grid, 0.3);
+    CellSearch cellSearch(grid.activeCells());
 
-    size_t i = 0;
-    for(const auto &nbList: result)
-    {
-        std::cout << "\nFor cell " << i++ << " we have: ";
+    auto result = cellSearch.rangeSearch(Circle(Point2D(0.5, 0.5), 0.3));
 
-        for(const Cell &cell: nbList)
-        {
-            std::cout << cell.id() << ", ";
-        }
-    }
+    for(const Cell &cell: result)
+        std::cout << "Cell centroid: " << cell.centroid() << "\n";
 }
 
 BOOST_AUTO_TEST_CASE(KNearestNeighbourSearchTest)
 {
-    RectilinearGrid2D grid(5, 5, 0.1, 0.1);
+    RectilinearGrid2D grid(10, 10, 0.1, 0.1);
 
-    auto result = kNearestNeighbourSearch(grid, Point2D(0.3, 0.2), 5);
+    auto result = CellSearch(grid.activeCells()).kNearestNeighbourSearch(Point2D(0.5, 0.5), 4);
+
+    for(const Cell &cell: result)
+        std::cout << "Cell centroid: " << cell.centroid() << "\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

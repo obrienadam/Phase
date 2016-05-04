@@ -3,14 +3,17 @@
 
 //- Immersed boundary object stencil class
 
-ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const Cell &cell, const Point2D &bp, const FiniteVolumeGrid2D &grid)
+ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const Cell &cell,
+                                                                         const Point2D &bp,
+                                                                         const FiniteVolumeGrid2D &grid,
+                                                                         const CellSearch &cs)
     :
       cell_(cell),
       bp_(bp),
       ip_(2.*bp - cell.centroid())
 {
     Point2D sp = grid.findNearestNode(ip_);
-    kNN_ = kNearestNeighbourSearch(grid, sp, 4);
+    kNN_ = cs.kNearestNeighbourSearch(sp, 4);
 }
 
 //- Immersed boundary objectclass
@@ -36,17 +39,12 @@ void ImmersedBoundaryObject::init(const Point2D& center, Scalar radius)
     Circle::init(center, radius);
 }
 
-ImmersedBoundaryObject::ImmersedBoundaryStencil ImmersedBoundaryObject::constructStencil(const Cell &cell) const
-{
-    return ImmersedBoundaryStencil(cell, nearestIntersect(cell.centroid()), grid_);
-}
-
 void ImmersedBoundaryObject::constructStencils()
 {
     grid().moveAllCellsToFluidCellGroup(); // This must happen first for some reason
 
     // Get a list of cells that are in immersed boundary
-    std::vector< Ref<const Cell> > internalCells = rangeSearch(grid_, *this);
+    std::vector< Ref<const Cell> > internalCells = CellSearch(grid_.activeCells()).rangeSearch(*this);
 
     ibStencils_.clear();
     ibStencils_.reserve(internalCells.size());
@@ -75,7 +73,8 @@ void ImmersedBoundaryObject::constructStencils()
             ibStencils_.push_back(ImmersedBoundaryStencil(
                                       cell,
                                       nearestIntersect(cell.centroid()),
-                                      grid_));
+                                      grid_,
+                                      grid_.activeCells()));
         }
         else // the cell will be set to inactive
             inactiveCellIds.push_back(cell.id());

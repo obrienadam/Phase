@@ -1,7 +1,7 @@
 #ifndef FINITE_VOLUME_FIELD
 #define FINITE_VOLUME_FIELD
 
-#include <memory>
+#include <deque>
 
 #include "Field.h"
 #include "FiniteVolumeGrid2D.h"
@@ -29,9 +29,11 @@ public:
     const std::vector<T>& faces() const { return faces_; }
     std::vector<T>& faces() { return faces_; }
 
-    FiniteVolumeField& save();
-    FiniteVolumeField& prev() { return *prevFieldPtr_; }
-    const FiniteVolumeField& prev() const { return *prevFieldPtr_; }
+    FiniteVolumeField& save(int nPreviousFields);
+    size_t nPreviousFields() const { return previousFields_.size(); }
+
+    FiniteVolumeField& prev(int i = 0) { return previousFields_[i]; }
+    const FiniteVolumeField& prev(int i = 0) const { return previousFields_[i]; }
 
     FiniteVolumeField& operator=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator=(const SparseVector& rhs);
@@ -53,7 +55,7 @@ protected:
 
     std::vector<T> faces_;
 
-    std::shared_ptr<FiniteVolumeField> prevFieldPtr_;
+    std::deque< FiniteVolumeField<T> > previousFields_;
 };
 
 template<class T>

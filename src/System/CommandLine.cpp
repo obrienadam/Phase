@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "CommandLine.h"
 
 CommandLine::CommandLine()
@@ -17,7 +19,7 @@ CommandLine::CommandLine(int argc, const char *argv[], Input &input)
     :
       CommandLine()
 {
-    parseArguments(argc, argv, input);
+    //parseArguments(argc, argv, input);
 }
 
 void CommandLine::parseArguments(int argc, const char *argv[], Input& input)

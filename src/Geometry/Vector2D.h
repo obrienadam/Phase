@@ -4,7 +4,6 @@
 #include <ostream>
 
 #include "Types.h"
-#include "Geometry.h"
 
 class Vector2D
 {
@@ -12,7 +11,6 @@ public:
 
     Vector2D(Scalar x = 0., Scalar y = 0.);
     Vector2D(std::string vecStr);
-    Vector2D(const Kernel::Point_2& point) : Vector2D(point.x(), point.y()) {}
 
     Scalar magSqr() const;
     Scalar mag() const;
@@ -26,9 +24,6 @@ public:
     Vector2D transform(const Vector2D& uPrime) const;
 
     std::string toString() const;
-
-    Kernel::Point_2 cgalPoint() const { return Kernel::Point_2(x, y); }
-    Kernel::Vector_2 cgalVector() const { return Kernel::Vector_2(x, y); }
 
     // Operators
     Scalar& operator()(int component);

@@ -9,7 +9,7 @@ public:
 
     Piso(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    Scalar solve(Scalar timeStep);
+    Scalar solve(Scalar timeStep, Scalar prevTimeStep);
 
 protected:
 

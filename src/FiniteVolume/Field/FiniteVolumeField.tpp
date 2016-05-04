@@ -8,8 +8,7 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeGrid2D &grid, const st
     :
       Field<T>::Field(grid.cells().size(), 0., name),
       faces_(grid.faces().size(), 0.),
-      grid(grid),
-      prevFieldPtr_(nullptr)
+      grid(grid)
 {
 
 }
@@ -32,8 +31,7 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeField &other)
       grid(other.grid),
       boundaryTypes_(other.boundaryTypes_),
       boundaryRefValues_(other.boundaryRefValues_),
-      faces_(other.faces_),
-      prevFieldPtr_(nullptr)
+      faces_(other.faces_)
 {
 
 }
@@ -81,10 +79,14 @@ T FiniteVolumeField<T>::boundaryRefValue(size_t faceId) const
 }
 
 template<class T>
-FiniteVolumeField<T>& FiniteVolumeField<T>::save()
+FiniteVolumeField<T>& FiniteVolumeField<T>::save(int nPreviousFields)
 {
-    prevFieldPtr_ = std::shared_ptr<FiniteVolumeField>(new FiniteVolumeField<T>(*this));
-    return *prevFieldPtr_;
+    previousFields_.push_front(FiniteVolumeField<T>(*this));
+
+    while(previousFields_.size() > nPreviousFields)
+        previousFields_.pop_back();
+
+    return previousFields_.front();
 }
 
 //- Operators

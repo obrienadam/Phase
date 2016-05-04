@@ -16,7 +16,7 @@ public:
     Solver(const FiniteVolumeGrid2D& grid, const Input& input);
 
     virtual std::string info();
-    virtual Scalar solve(Scalar timeStep) = 0;
+    virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep) = 0;
 
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& name);
     ScalarFiniteVolumeField& addScalarField(const std::string& name);

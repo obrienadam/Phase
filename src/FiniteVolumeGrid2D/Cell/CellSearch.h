@@ -1,13 +1,35 @@
 #ifndef CELL_SEARCH_H
 #define CELL_SEARCH_H
 
-#include "Geometry.h"
-#include "FiniteVolumeGrid2D.h"
+#include <boost/geometry/index/rtree.hpp>
+
 #include "Circle.h"
+#include "CellGroup.h"
 
-std::vector< Ref<const Cell> > rangeSearch(const FiniteVolumeGrid2D &grid, const Circle& circle);
-std::vector< std::vector< Ref<const Cell> > > rangeSearch(const FiniteVolumeGrid2D& grid, Scalar radius);
+class CellSearch
+{
+public:
 
-std::vector< Ref<const Cell> > kNearestNeighbourSearch(const FiniteVolumeGrid2D &grid, const Point2D& pt, size_t k);
+    CellSearch(const CellGroup &cellGroup) : cellGroup_(cellGroup) { constructRTree(); }
+
+    void constructRTree();
+
+    std::vector< Ref<const Cell> > rangeSearch(const Circle &circle) const;
+    std::vector< Ref<const Cell> > rangeSearch(const Polygon &pgn) const;
+    std::vector< Ref<const Cell> > kNearestNeighbourSearch(const Point2D& point, size_t k) const;
+
+    const CellGroup& cellGroup() const { return cellGroup_; }
+
+private:
+
+    typedef std::pair< Point2D, Ref< const Cell > > Value;
+
+    std::vector< Ref<const Cell> > getRefs(const std::vector< Value >& vals) const;
+
+    boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<32> > rTree_;
+
+    const CellGroup &cellGroup_;
+
+};
 
 #endif
