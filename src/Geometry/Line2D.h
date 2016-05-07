@@ -8,12 +8,26 @@ class Line2D
 {
 public:
 
-    Line2D(const Vector2D& normal, Scalar c) : n_(normal.unitVec()), c_(c) {}
+    static Point2D intersection(const Line2D& lineA, const Line2D& lineB);
+
+    Line2D() {}
+    Line2D(const Point2D& r0, const Point2D& d);
+
+    Point2D operator()(Scalar t) const;
+
+    bool isApproximatelyOnLine(const Point2D& pt) const;
+    bool isAboveLine(const Point2D& pt) const;
+    bool isBelowLine(const Point2D& pt) const;
+    Scalar t(const Point2D& pt) const;
 
 private:
 
-    Vector2D n_;
-    Scalar c_;
+    Point2D r0_;
+    Vector2D d_, n_;
+
+    friend std::ostream& operator<<(std::ostream& os, const Line2D& line);
 };
+
+std::ostream& operator<<(std::ostream& os, const Line2D& line);
 
 #endif

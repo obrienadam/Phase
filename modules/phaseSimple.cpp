@@ -5,6 +5,7 @@
 #include "ConstructGrid.h"
 #include "Simple.h"
 #include "TecplotViewer.h"
+#include "RunControl.h"
 
 int main(int argc, const char* argv[])
 {
@@ -19,19 +20,7 @@ int main(int argc, const char* argv[])
     Simple solver(*gridPtr, input);
     TecplotViewer viewer(solver, input);
 
-    Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
-    Scalar timeStep = input.caseInput().get<Scalar>("Solver.timeStep");
-    Scalar prevTimeStep = timeStep;
-
-    solver.u.save(2);
-    for(Scalar time = 0.; time < maxTime; time += timeStep)
-    {
-        solver.solve(timeStep, prevTimeStep);
-        prevTimeStep = timeStep;
-    }
-
-    viewer.write(0.);
-
-    return 0;
+    RunControl runControl;
+    runControl.run(input, solver, viewer);
 }
 

@@ -16,4 +16,4 @@ set(SOURCES Vector2D.cpp
             Search.tpp)
 
 add_library(Geometry ${HEADERS} ${SOURCES})
-target_link_libraries(Geometry System)
+target_link_libraries(Geometry System Equation)

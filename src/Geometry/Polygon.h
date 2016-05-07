@@ -6,6 +6,7 @@
 #include <boost/geometry/geometries/polygon.hpp>
 
 #include "Shape2D.h"
+#include "Line2D.h"
 
 class Polygon : public Shape2D
 {
@@ -13,6 +14,7 @@ public:
 
     Polygon();
     Polygon(const std::vector<Point2D>& vertices);
+    Polygon(const boost::geometry::model::polygon<Point2D, false, true>& boostPgn);
 
     //- Polygon properties
     virtual const Point2D& centroid() const { return centroid_; }
@@ -44,5 +46,8 @@ protected:
     Point2D centroid_;
     Scalar area_;
 };
+
+Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB);
+Polygon clipPolygon(const Polygon& pgn, const Line2D& line);
 
 #endif

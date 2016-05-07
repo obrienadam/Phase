@@ -18,6 +18,13 @@ Polygon::Polygon(const std::vector<Point2D> &vertices)
     init();
 }
 
+Polygon::Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn)
+    :
+      poly_(boostPgn)
+{
+    init();
+}
+
 bool Polygon::isInside(const Point2D& testPoint) const
 {
     return boost::geometry::within(testPoint, poly_);
@@ -91,8 +98,56 @@ void Polygon::rotate(Scalar theta)
 
 void Polygon::init()
 {
+    boost::geometry::correct(poly_);
     area_ = boost::geometry::area(poly_);
     boost::geometry::centroid(poly_, centroid_);
 }
 
 //- External functions
+
+Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
+{
+    std::vector< boost::geometry::model::polygon<Point2D, false, true> > pgn;
+
+    boost::geometry::intersection(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
+
+    return Polygon(pgn.front());
+}
+
+Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
+{
+    boost::geometry::model::box<Point2D> box;
+    boost::geometry::envelope(pgn.boostPolygon(), box);
+
+    Point2D boxVerts[] = {
+        box.min_corner(),
+        Point2D(box.max_corner().x, box.min_corner().y),
+        box.max_corner(),
+        Point2D(box.min_corner().x, box.max_corner().y),
+    };
+
+    std::vector<Point2D> verts;
+
+    int nPtsFound = 0;
+    for(int i = 0; i < 4; ++i)
+    {
+        Line2D tmp(boxVerts[i], boxVerts[(i + 1)%4] - boxVerts[i]);
+        Point2D xc = Line2D::intersection(tmp, line);
+
+        if(line.isBelowLine(boxVerts[i]))
+            verts.push_back(boxVerts[i]);
+
+        if(nPtsFound < 2 && boost::geometry::covered_by(xc, box))
+        {
+            verts.push_back(xc);
+            nPtsFound++;
+        }
+    }
+
+    Polygon clippingPgn(verts);
+
+    std::vector< boost::geometry::model::polygon<Point2D, false, true> > result;
+    boost::geometry::intersection(pgn.boostPolygon(), clippingPgn.boostPolygon(), result);
+
+    return Polygon(result.front());
+}

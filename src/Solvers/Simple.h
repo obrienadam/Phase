@@ -15,7 +15,6 @@ public:
     Simple(const FiniteVolumeGrid2D& grid, const Input& input);
 
     virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep);
-
     Scalar computeMaxTimeStep(Scalar maxCo) const;
 
     VectorFiniteVolumeField &u, &h;

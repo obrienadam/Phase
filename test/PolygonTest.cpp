@@ -5,10 +5,11 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "Polygon.h"
+#include "Line2D.h"
 
 BOOST_AUTO_TEST_SUITE (PolygonTest)
 
-BOOST_AUTO_TEST_CASE(IntersectionTest)
+BOOST_AUTO_TEST_CASE(NearestIntersectionTest)
 {
     std::vector<Point2D> vertices = {
       Point2D(0, 0),
@@ -135,5 +136,77 @@ BOOST_AUTO_TEST_CASE(AirfoilTest)
     for(const Point2D &vtx: airfoil)
         std::cout << vtx.x << " " << vtx.y << "\n";
 }
+
+BOOST_AUTO_TEST_CASE(PolygonIntersectionTest)
+{
+    std::vector<Point2D> verts1 = {
+      Point2D(0, 0),
+        Point2D(0.452, -0.1),
+        Point2D(0.9, 0.1),
+        Point2D(0.75, 0.9),
+        Point2D(0.2, 0.6),
+        Point2D(-0.1, 0.3),
+    };
+
+    std::vector<Point2D> verts2 = {
+        Point2D(0, 0),
+          Point2D(0.2, -0.3),
+          Point2D(0.5, 0.4),
+          Point2D(1.2, 0.5),
+          Point2D(0.5, 1.2),
+          Point2D(0.1, 1),
+    };
+
+    Polygon pgnA(verts1), pgnB(verts2);
+
+    std::cout << "Area and centroid of polygon A: " << pgnA.centroid() << " " << pgnA.area() << "\n"
+              << "Area and centroid of polygon B: " << pgnB.centroid() << " " << pgnB.area() << "\n";
+
+    Polygon pgnC = intersectionPolygon(pgnA, pgnB);
+
+    std::cout << "Area and centroid of polygon C: " << pgnC.centroid() << " " << pgnC.area() << "\n\n";
+
+    for(const auto &vtx: pgnC)
+        std::cout << vtx << "\n";
+}
+
+BOOST_AUTO_TEST_CASE(PolygonSplitTest)
+{
+    std::vector<Point2D> verts1 = {
+      Point2D(0, 0),
+        Point2D(0.452, -0.1),
+        Point2D(0.9, 0.1),
+        Point2D(0.75, 0.9),
+        Point2D(0.2, 0.6),
+        Point2D(-0.1, 0.3),
+    };
+
+    Polygon pgn(verts1);
+
+    Line2D lA(Point2D(1, 1), Point2D(-1.342, 2)),
+            lB(Point2D(0.8, 0.4), Point2D(1.2, 0.7));
+
+    std::cout << "Line A: " << lA << "\n"
+              << "Line B: " << lB << "\n"
+              << "Intersection: " << Line2D::intersection(lA, lB) << "\n\n";
+
+    Point2D norm(-0.32, -2), o = pgn.centroid() + norm.unitVec()*0.2;;
+    Line2D split(o, norm.normalVec());
+
+    Polygon clippedPgn = clipPolygon(pgn, split);
+
+    for(const auto &vtx: pgn)
+        std::cout << vtx.x << " " << vtx.y << "\n";
+    std::cout << "\n";
+    for(const auto &vtx: clippedPgn)
+        std::cout << vtx.x << " " << vtx.y << "\n";
+
+    std::cout << "Clipped polygon vol frac: " << clippedPgn.area()/pgn.area() << "\n";
+
+    BOOST_REQUIRE_CLOSE(clipPolygon(pgn, Line2D(o, norm.normalVec())).area()/pgn.area(),
+                        1. - clipPolygon(pgn, Line2D(o, (-norm).normalVec())).area()/pgn.area(),
+                        1e-8);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

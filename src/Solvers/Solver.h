@@ -17,6 +17,7 @@ public:
 
     virtual std::string info();
     virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep) = 0;
+    virtual Scalar computeMaxTimeStep(Scalar maxCo) const = 0;
 
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& name);
     ScalarFiniteVolumeField& addScalarField(const std::string& name);
