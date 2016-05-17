@@ -342,11 +342,6 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const Field<Scalar> &prevField = field.prev(0);
-    const Field<Scalar> &prevPrevField = field.prev(1);
-
-    Scalar an = timeStep/(prevTimeStep*(prevTimeStep + timeStep)),
-            bn = -(timeStep + prevTimeStep)/(prevTimeStep*timeStep),
-            cn = (2.*timeStep + prevTimeStep)/(timeStep*(timeStep + prevTimeStep));
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -357,8 +352,8 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
     {
         size_t row = cell.globalIndex();
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, a[cell.id()]*cell.volume()*cn));
-        eqn.boundaries()[row] = -a[cell.id()]*cell.volume()*(an*prevPrevField[cell.id()] + bn*prevField[cell.id()]);
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, a[cell.id()]*cell.volume()/timeStep));
+        eqn.boundaries()(row) = -a[cell.id()]*cell.volume()*prevField[cell.id()]/timeStep;
     }
 
     eqn.matrix().assemble(entries);
@@ -369,11 +364,6 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const Field<Scalar> &prevField = field.prev(0);
-    const Field<Scalar> &prevPrevField = field.prev(1);
-
-    Scalar an = timeStep/(prevTimeStep*(prevTimeStep + timeStep)),
-            bn = -(timeStep + prevTimeStep)/(prevTimeStep*timeStep),
-            cn = (2.*timeStep + prevTimeStep)/(timeStep*(timeStep + prevTimeStep));
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -384,8 +374,8 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
     {
         size_t row = cell.globalIndex();
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, cell.volume()*cn));
-        eqn.boundaries()[row] = -cell.volume()*(an*prevPrevField[cell.id()] + bn*prevField[cell.id()]);
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, cell.volume()/timeStep));
+        eqn.boundaries()(row) = cell.volume()*prevField[cell.id()]/timeStep;
     }
 
     eqn.matrix().assemble(entries);
@@ -396,11 +386,6 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const FiniteVolumeField<Vector2D> &prevField = field.prev(0);
-    const FiniteVolumeField<Vector2D> &prevPrevField = field.prev(1);
-
-    Scalar an = timeStep/(prevTimeStep*(prevTimeStep + timeStep)),
-            bn = -(timeStep + prevTimeStep)/(prevTimeStep*timeStep),
-            cn = (2.*timeStep + prevTimeStep)/(timeStep*(timeStep + prevTimeStep));
 
     std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -412,11 +397,11 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + nActiveCells;
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, a[cell.id()]*cell.volume()*cn));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, a[cell.id()]*cell.volume()*cn));
+        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, a[cell.id()]*cell.volume()/timeStep));
+        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, a[cell.id()]*cell.volume()/timeStep));
 
-        eqn.boundaries()[rowX] = -a[cell.id()]*cell.volume()*(an*prevPrevField[cell.id()].x + bn*prevField[cell.id()].x);
-        eqn.boundaries()[rowY] = -a[cell.id()]*cell.volume()*(an*prevPrevField[cell.id()].y + bn*prevField[cell.id()].y);
+        eqn.boundaries()(rowX)= -a[cell.id()]*cell.volume()*prevField[cell.id()].x/timeStep;
+        eqn.boundaries()(rowY) = -a[cell.id()]*cell.volume()*prevField[cell.id()].y/timeStep;
     }
 
     eqn.matrix().assemble(entries);

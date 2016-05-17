@@ -35,7 +35,7 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
     computeRho();
     computeMu();
 
-    u.save(2);
+    u.save(1);
 
     Scalar avgError = 0.;
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)

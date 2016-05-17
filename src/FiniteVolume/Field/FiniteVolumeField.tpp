@@ -31,7 +31,8 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeField &other)
       grid(other.grid),
       boundaryTypes_(other.boundaryTypes_),
       boundaryRefValues_(other.boundaryRefValues_),
-      faces_(other.faces_)
+      faces_(other.faces_),
+      previousFields_()
 {
 
 }

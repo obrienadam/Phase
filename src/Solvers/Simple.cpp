@@ -37,7 +37,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Simple::solve(Scalar timeStep, Scalar prevTimeStep)
 {
-    u.save(2);
+    u.save(1);
 
     for(size_t i = 0; i < nInnerIterations_; ++i)
     {

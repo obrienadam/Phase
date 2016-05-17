@@ -9,7 +9,7 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Piso::solve(Scalar timeStep, Scalar prevTimeStep)
 {
-    u.save(2);
+    u.save(1);
 
     //if(!(timeDependent_ == Solver::OFF))
         //timeStep = std::numeric_limits<Scalar>::infinity();
