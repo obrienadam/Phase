@@ -34,8 +34,8 @@ public:
     virtual void rotate(Scalar theta);
 
     //- Iterators
-    auto begin() const { return boost::geometry::exterior_ring(poly_).begin(); }
-    auto end() const { return boost::geometry::exterior_ring(poly_).end(); }
+    std::vector<Point2D>::const_iterator begin() const { return boost::geometry::exterior_ring(poly_).begin(); }
+    std::vector<Point2D>::const_iterator end() const { return boost::geometry::exterior_ring(poly_).end(); }
 
 protected:
 
