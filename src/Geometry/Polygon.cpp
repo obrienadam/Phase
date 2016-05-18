@@ -128,19 +128,18 @@ Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
 
     std::vector<Point2D> verts;
 
-    int nPtsFound = 0;
     for(int i = 0; i < 4; ++i)
     {
-        Line2D tmp(boxVerts[i], boxVerts[(i + 1)%4] - boxVerts[i]);
-        Point2D xc = Line2D::intersection(tmp, line);
+        Line2D tmp(boxVerts[i], (boxVerts[(i + 1)%4] - boxVerts[i]).normalVec());
 
         if(line.isBelowLine(boxVerts[i]))
             verts.push_back(boxVerts[i]);
 
-        if(nPtsFound < 2 && boost::geometry::covered_by(xc, box))
+        std::pair<Point2D, bool> xc = Line2D::intersection(tmp, line);
+
+        if(xc.second /*&& nPtsFound < 2*/ && boost::geometry::covered_by(xc.first, box))
         {
-            verts.push_back(xc);
-            nPtsFound++;
+            verts.push_back(xc.first);
         }
     }
 

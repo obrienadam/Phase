@@ -8,22 +8,25 @@ class Line2D
 {
 public:
 
-    static Point2D intersection(const Line2D& lineA, const Line2D& lineB);
+    static std::pair<Point2D, bool> intersection(const Line2D& lineA, const Line2D& lineB);
 
     Line2D() {}
-    Line2D(const Point2D& r0, const Point2D& d);
+    Line2D(const Point2D& r0, const Point2D& n);
 
     Point2D operator()(Scalar t) const;
 
     bool isApproximatelyOnLine(const Point2D& pt) const;
     bool isAboveLine(const Point2D& pt) const;
     bool isBelowLine(const Point2D& pt) const;
-    Scalar t(const Point2D& pt) const;
+
+    const Point2D& r0() const { return r0_; }
+    const Vector2D& n() const { return n_; }
+    const Vector2D& d() const { return d_; }
 
 private:
 
     Point2D r0_;
-    Vector2D d_, n_;
+    Vector2D n_, d_;
 
     friend std::ostream& operator<<(std::ostream& os, const Line2D& line);
 };

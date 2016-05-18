@@ -7,16 +7,16 @@ InitialConditions
     bubble
     {
       type circle
-      radius 0.1
-      center (1,0.7)
+      radius 0.01
+      center (0.1,0.07)
       value 1
     }
 
     reservoir
     {
       type square
-      width 2
-      center (1,-0.8)
+      width 0.2
+      center (0.1,-0.08)
       value 1
     }
   }

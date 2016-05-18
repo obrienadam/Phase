@@ -188,10 +188,10 @@ BOOST_AUTO_TEST_CASE(PolygonSplitTest)
 
     std::cout << "Line A: " << lA << "\n"
               << "Line B: " << lB << "\n"
-              << "Intersection: " << Line2D::intersection(lA, lB) << "\n\n";
+              << "Intersection: " << Line2D::intersection(lA, lB).first << "\n\n";
 
     Point2D norm(-0.32, -2), o = pgn.centroid() + norm.unitVec()*0.2;;
-    Line2D split(o, norm.normalVec());
+    Line2D split(o, norm);
 
     Polygon clippedPgn = clipPolygon(pgn, split);
 

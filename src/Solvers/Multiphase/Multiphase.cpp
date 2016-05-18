@@ -97,7 +97,7 @@ Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 
 Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
 { 
-    gamma.save(2);
+    gamma.save(1);
     interpolateFaces(gamma);
 
     switch(interfaceAdvectionMethod_)
@@ -128,10 +128,11 @@ void Multiphase::computeInterfaceNormals()
 
     for(Vector2D &vec: n)
     {
-        if(vec.mag() > 1e-5)
-            vec = vec.unitVec();
-        else
-            vec = Vector2D(0., 0.);
+        vec = vec.unitVec();
+        Scalar magSqr = vec.magSqr();
+
+        if(!(fabs(magSqr - 1.) < 1e-2) || isnan(magSqr))
+            vec.x = vec.y = 0.;
     }
 
     interpolateFaces(n);
