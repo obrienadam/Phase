@@ -13,8 +13,6 @@ Polygon::Polygon(const std::vector<Point2D> &vertices)
     for(const Point2D& vtx: vertices)
         boost::geometry::append(poly_, vtx);
 
-    boost::geometry::append(poly_, vertices.front()); // weird that this is necessary
-
     init();
 }
 
@@ -98,9 +96,17 @@ void Polygon::rotate(Scalar theta)
 
 void Polygon::init()
 {
-    boost::geometry::correct(poly_);
-    area_ = boost::geometry::area(poly_);
-    boost::geometry::centroid(poly_, centroid_);
+    if(boost::geometry::exterior_ring(poly_).size() > 0)
+    {
+        boost::geometry::correct(poly_);
+        area_ = boost::geometry::area(poly_);
+        boost::geometry::centroid(poly_, centroid_);
+    }
+    else
+    {
+        area_ = 0.;
+        centroid_ = Point2D(0., 0.);
+    }
 }
 
 //- External functions
@@ -116,37 +122,25 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 
 Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
 {
-    boost::geometry::model::box<Point2D> box;
-    boost::geometry::envelope(pgn.boostPolygon(), box);
-
-    Point2D boxVerts[] = {
-        box.min_corner(),
-        Point2D(box.max_corner().x, box.min_corner().y),
-        box.max_corner(),
-        Point2D(box.min_corner().x, box.max_corner().y),
-    };
-
     std::vector<Point2D> verts;
 
-    for(int i = 0; i < 4; ++i)
+    for(auto vertIt = pgn.begin(); vertIt != pgn.end() - 1; ++vertIt)
     {
-        Line2D tmp(boxVerts[i], (boxVerts[(i + 1)%4] - boxVerts[i]).normalVec());
+        const Vector2D& vtx = *vertIt;
+        const Vector2D& nextVtx = *(vertIt + 1);
+        Line2D edgeLine = Line2D(vtx, (nextVtx - vtx).normalVec());
 
-        if(line.isBelowLine(boxVerts[i]))
-            verts.push_back(boxVerts[i]);
+        if(line.isBelowLine(vtx))
+            verts.push_back(vtx);
 
-        std::pair<Point2D, bool> xc = Line2D::intersection(tmp, line);
+        std::pair<Point2D, bool> xc = Line2D::intersection(line, edgeLine);
 
-        if(xc.second /*&& nPtsFound < 2*/ && boost::geometry::covered_by(xc.first, box))
+        if(xc.second) // the lines are not paralell, ie xc is valid
         {
-            verts.push_back(xc.first);
+            if((xc.first - vtx).magSqr() <= (nextVtx - vtx).magSqr()) // intersection is on the segment
+                verts.push_back(xc.first);
         }
     }
 
-    Polygon clippingPgn(verts);
-
-    std::vector< boost::geometry::model::polygon<Point2D, false, true> > result;
-    boost::geometry::intersection(pgn.boostPolygon(), clippingPgn.boostPolygon(), result);
-
-    return Polygon(result.front());
+    return Polygon(verts);
 }

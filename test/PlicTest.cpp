@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_SUITE (PlicTest)
 
 BOOST_AUTO_TEST_CASE(PlicConstruction)
 {
-    RectilinearGrid2D grid(100, 100, 0.2, 0.1);
+    RectilinearGrid2D grid(10, 10, 0.02, 0.01);
 
     Scalar gamma;
     Vector2D normal;
@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(PlicConstruction)
 
         phasePgn = plic::computeInterfacePolygon(cell, gamma, normal);
 
-        BOOST_REQUIRE_CLOSE(gamma, phasePgn.area()/cell.volume(), 1e-4); //- Seems to be the upper limit for accuracy
+        BOOST_REQUIRE_CLOSE(gamma, phasePgn.area()/cell.volume(), 1e-10); //- Seems to be the upper limit for accuracy
     }
 }
 

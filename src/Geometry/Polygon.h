@@ -37,6 +37,9 @@ public:
     std::vector<Point2D>::const_iterator begin() const { return boost::geometry::exterior_ring(poly_).begin(); }
     std::vector<Point2D>::const_iterator end() const { return boost::geometry::exterior_ring(poly_).end(); }
 
+    //- Verts
+    const std::vector<Point2D>& vertices() const { return boost::geometry::exterior_ring(poly_); }
+
 protected:
 
     void init();

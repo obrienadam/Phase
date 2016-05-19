@@ -23,6 +23,8 @@ public:
     const Vector2D& n() const { return n_; }
     const Vector2D& d() const { return d_; }
 
+    const Line2D adjust(Scalar c) const { return Line2D(r0_ + c*n_, n_); }
+
 private:
 
     Point2D r0_;
