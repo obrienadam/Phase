@@ -23,51 +23,54 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
         {
             const size_t col = nb.cell().globalIndex();
 
-            if(isInterfaceCell)
+            if(dot(u.faces()[nb.face().id()], nb.outwardNorm()) >= 0.)
             {
-                if(dot(u.faces()[nb.face().id()], nb.outwardNorm()) > 0.)
-                {
-                    //- Get the plic polygon
-                    Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
+                //- Get the plic polygon
+                Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
 
-                    //- Get the flux polygon
-                    Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep);
+                //- Get the flux polygon
+                Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep);
 
-                    //- Compute the flux
-                    Scalar faceFlux = intersectionPolygon(plicPgn, fluxPgn).area()/(timeStep);
+                //- Compute the flux
+                Scalar faceFlux = intersectionPolygon(plicPgn, fluxPgn).area();
 
-                    eqn.boundaries()(row) -= faceFlux;
-                    eqn.boundaries()(col) += faceFlux;
-                }
-            }
-            else
-            {
-                Scalar faceFlux = std::max(dot(u.faces()[nb.face().id()], nb.outwardNorm()), 0.);
-
-                eqn.boundaries()(row) -= faceFlux*field[cell.id()];
-                eqn.boundaries()(col) += faceFlux*field[cell.id()];
+                eqn.boundaries()(row) -= faceFlux;
+                eqn.boundaries()(col) += faceFlux;
             }
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep);
+            Polygon plicPgn;
+            Vector2D wt, n;
+            Scalar faceFlux;
 
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= faceFlux*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= fluxPgn.area()*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += faceFlux;
-                eqn.boundaries()(row) -= bd.outwardNorm().mag()*field.boundaryRefValue(bd.face().id());
+                wt = bd.outwardNorm().tangentVec();
+                n = dot(wt, gradField[cell.id()]) > 0 ? wt : -wt;
+
+                plicPgn = computeInterfacePolygon(cell, field[cell.id()], n);
+                fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep);
+                faceFlux = intersectionPolygon(plicPgn, fluxPgn).area();
+
+                eqn.boundaries()(row) -= faceFlux;
+
                 break;
 
             default:
                 throw Exception("plic", "div", "unrecognized or unspecified boundary type.");
             }
         }
+
+        centralCoeff += 1.;
+        eqn.boundaries()(row) += field[cell.id()];
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
@@ -78,6 +81,11 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
 Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D& interfaceNormal)
 {
+    if(gamma >= 1)
+        return cell.shape();
+    else if (gamma <= 0)
+        return Polygon();
+
     Line2D plic(cell.centroid(), interfaceNormal);
 
     auto f = [&cell, &plic, &gamma](Scalar c)
@@ -112,6 +120,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
     int iters = 0;
     //- find the bounds
     bracket(cMin, cMax);
+    //- Make a guess
 
     //- bisection
     while(true)
@@ -132,7 +141,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
     return clipPolygon(cell.shape(), plic.adjust(c)); // Return the clipped polygon that represents the shape of phase B
 }
 
-Polygon computeFluxPolygon(const InteriorLink &link, const Vector2D& uf, Scalar timeStep)
+Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar timeStep)
 {
     Vector2D off = -uf*timeStep;
 

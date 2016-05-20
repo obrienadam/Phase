@@ -48,6 +48,11 @@ Vector2D Vector2D::normalVec() const
     return Vector2D(y, -x);
 }
 
+Vector2D Vector2D::tangentVec() const
+{
+    return Vector2D(-y, x);
+}
+
 Scalar Vector2D::angle() const
 {
     return atan2(y, x);

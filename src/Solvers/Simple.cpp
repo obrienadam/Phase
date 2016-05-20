@@ -20,6 +20,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
+    Solver::setInitialConditions(input);
 
     nInnerIterations_ = input.caseInput().get<size_t>("Solver.numInnerIterations");
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");

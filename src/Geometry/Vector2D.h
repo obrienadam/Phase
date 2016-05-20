@@ -18,6 +18,7 @@ public:
 
     Vector2D unitVec() const;
     Vector2D normalVec() const;
+    Vector2D tangentVec() const;
     Vector2D abs() const { return Vector2D(fabs(x), fabs(y)); }
     Scalar angle() const;
     Scalar angle(const Vector2D &other) const;

@@ -81,11 +81,11 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    computeInterfaceNormals();
-    computeCurvature();
+    //computeInterfaceNormals();
+    //computeCurvature();
 
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_)*/);
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -108,7 +108,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
         break;
     case PLIC:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + plic::div(u, gamma, timeStep) == 0.);
+        gammaEqn_ = (plic::div(u, gamma, timeStep) == 0.);
         break;
     }
 
