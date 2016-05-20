@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_SUITE (PlicTest)
 
 BOOST_AUTO_TEST_CASE(PlicConstruction)
 {
-    RectilinearGrid2D grid(10, 10, 0.02, 0.01);
+    RectilinearGrid2D grid(40, 40, 0.0025, 0.0025);
 
     Scalar gamma;
     Vector2D normal;
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(PlicConstruction)
     for(const Cell &cell: grid.cells())
     {
         gamma = (Scalar)rand()/RAND_MAX;
-        normal = Vector2D(-RAND_MAX/3 + rand(), -RAND_MAX/3 + rand());
+        normal = Vector2D(-rand()/2 + RAND_MAX, -rand() + RAND_MAX);
 
         phasePgn = plic::computeInterfacePolygon(cell, gamma, normal);
 

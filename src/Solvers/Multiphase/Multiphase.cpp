@@ -28,7 +28,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     constructSmoothingKernels();
 
     //- Configuration
-    interfaceAdvectionMethod_ = CICSAM;
+    interfaceAdvectionMethod_ = PLIC;
     curvatureEvaluationMethod_ = CSF;
 }
 
@@ -108,7 +108,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
         break;
     case PLIC:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + plic::div(u, gamma) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + plic::div(u, gamma, timeStep) == 0.);
         break;
     }
 

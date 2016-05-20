@@ -28,7 +28,7 @@ bool Line2D::isAboveLine(const Point2D& pt) const
 
 bool Line2D::isBelowLine(const Point2D& pt) const
 {
-    return dot(pt - r0_, n_) < 0.;
+    return dot(pt - r0_, n_) <= 0.;
 }
 
 //- Static functions
@@ -38,7 +38,7 @@ std::pair<Point2D, bool> Line2D::intersection(const Line2D &lineA, const Line2D 
     Vector2D da = lineA.n().abs(),
             db = lineB.n().abs();
 
-    const double toler = 1e-12;
+    const double toler = 1e-14;
     if(fabs(da.x - db.x) < toler
             && fabs(da.y - db.y) < toler)
         return std::make_pair(Point2D(INFINITY, INFINITY), false);

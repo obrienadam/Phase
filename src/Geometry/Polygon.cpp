@@ -117,6 +117,9 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 
     boost::geometry::intersection(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
 
+    if(pgn.size() == 0)
+        return Polygon();
+
     return Polygon(pgn.front());
 }
 
@@ -137,7 +140,10 @@ Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
 
         if(xc.second) // the lines are not paralell, ie xc is valid
         {
-            if((xc.first - vtx).magSqr() <= (nextVtx - vtx).magSqr()) // intersection is on the segment
+            Scalar l = (nextVtx - vtx).magSqr();
+            Scalar x = dot(nextVtx - vtx, xc.first - vtx);
+
+            if(x < l && x > 0) // intersection is on the segment
                 verts.push_back(xc.first);
         }
     }
