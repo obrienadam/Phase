@@ -92,11 +92,11 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    //computeInterfaceNormals();
-    //computeCurvature();
+    computeInterfaceNormals();
+    computeCurvature();
 
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_)*/);
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -120,7 +120,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
     case PLIC:
 
         gammaTilde = smooth(gamma, cellRangeSearch_, kernelWidth_);
-        gammaEqn_ = (plic::div(u, gamma, timeStep, geometries()["plicPolygons"], geometries()["fluxPolygons"]) == 0.);
+        gammaEqn_ = (plic::div(u, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
     }
 

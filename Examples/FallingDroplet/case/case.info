@@ -6,16 +6,16 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-2
+	timeStep 7.5e-3
 	maxCo 0.25
 	maxTime 5
 
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.5
+	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
-	numPressureCorrections 1
+	numPressureCorrections 2
 
-	smoothingKernelRadius 0.02
+	smoothingKernelRadius 0.0301
 }
 
 Properties

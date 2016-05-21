@@ -7,7 +7,7 @@ InitialConditions
     vel
     {
       type uniform
-      value (1,0)
+      value (1,1)
     }
   }
 

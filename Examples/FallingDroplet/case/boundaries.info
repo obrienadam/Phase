@@ -33,13 +33,13 @@ Boundaries
   {
     x+
     {
-      type fixed
+      type normal_gradient
       value 0
     } 
 
     x-
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 
@@ -61,7 +61,7 @@ Boundaries
     *
     {
       type normal_gradient
-      value 0.5774 ; Contact angle of approximately 60 degrees
+      value 0 ; Contact angle of approximately 60 degrees
     }
   }
 }

@@ -3,7 +3,7 @@
 namespace plic
 {
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons, std::vector<Polygon> &fluxPolygons)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -11,15 +11,14 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
     entries.reserve(field.grid.nActiveCells());
 
-    // Figure out the plic reconstruction
     for(const Cell &cell: field.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
         const size_t row = cell.globalIndex();
 
-        //- Get the plic polygon
         Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
-        plicPolygons[cell.id()] = plicPgn;
+
+        //plicPolygons[cell.id()] = plicPgn;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -27,40 +26,34 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
             if(dot(u.faces()[nb.face().id()], nb.outwardNorm()) > 0.)
             {
+                Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep);
 
-                Polygon fluxPgn = intersectionPolygon(plicPgn, computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep));
-                //fluxPolygons[cell.id()] = fluxPgn;
+                if(fluxPgn.area() == 0.)
+                    continue;
 
-                //if(plicPgn.area() == 0. || fluxPgn.area() == 0.)
-                 //   continue;
+                fluxPgn = intersectionPolygon(plicPgn, fluxPgn);
 
-                //- Compute the flux
-                //Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
+                //if(fluxPgn.area() > 1.01*plicPgn.area())
+                //   throw Exception("plic", "div", "invalid flux polygon. Face flux = " + std::to_string(fluxPgn.area()) + ", flux polygon area = " + std::to_string(plicPgn.area()));
 
-                //eqn.boundaries()(row) -= faceFlux*field[cell.id()];
-                //eqn.boundaries()(col) += faceFlux*field[cell.id()];
-
-                //Scalar faceFlux = intersectionPolygon(plicPgn, fluxPgn).area();
-
-                //if(faceFlux > plicPgn.area() && faceFlux > 1e-10)
-                  //  throw Exception("plic", "div", "invalid flux polygon. Face flux = " + std::to_string(faceFlux) + ", flux polygon area = " + std::to_string(plicPgn.area()));
-
-                eqn.boundaries()(row) -= fluxPgn.area()/timeStep;
-                eqn.boundaries()(col) += fluxPgn.area()/timeStep;
+                eqn.boundaries()(row) -= fluxPgn.area();
+                eqn.boundaries()(col) += fluxPgn.area();
             }
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
+            Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep);
+
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
+                eqn.boundaries()(row) -= fluxPgn.area()*field.faces()[bd.face().id()]; // No intersection computation required, always same gamma influx
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-
-                eqn.boundaries()(row) -= dot(u.faces()[bd.face().id()], bd.outwardNorm())*field[cell.id()];
-
+                fluxPgn = intersectionPolygon(plicPgn, fluxPgn); // Flux depends on the plic reconstruction in the boundary cell
+                eqn.boundaries()(row) -= fluxPgn.area();
                 break;
 
             default:
@@ -68,8 +61,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             }
         }
 
-        centralCoeff += cell.volume()/timeStep;
-        eqn.boundaries()(row) += field[cell.id()]*cell.volume()/timeStep;
+        centralCoeff += cell.volume();
+        eqn.boundaries()(row) += field[cell.id()]*cell.volume();
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
@@ -160,7 +153,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
 
     Polygon plicPgn = clipPolygon(cell.shape(), plic.adjust(c)); // Return the clipped polygon that represents the shape of phase B
 
-    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-2)
+    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-5)
         throw Exception("plic", "computeInterfacePolygon", "an invalid PLIC polygon reconstruction was detected. Reconstructed gamma = "
                         + std::to_string(plicPgn.area()/cell.volume()) + ", actual gamma = " + std::to_string(gamma) + ".");
 
@@ -169,7 +162,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
 
 Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar timeStep)
 {
-    Vector2D off = dot(uf, link.outwardNorm().unitVec())*timeStep;
+    Vector2D off = dot(uf, link.outwardNorm())*link.outwardNorm()/link.outwardNorm().magSqr()*timeStep;
 
     std::vector<Point2D> verts = {
         link.face().lNode(),

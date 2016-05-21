@@ -25,6 +25,8 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
         break; // for now only one ib object is allowed
     }
 
+    interfaceAdvectionMethod_ = CICSAM; // Only method supported at the moment
+
     ibObj_.constructStencils();
     Multiphase::constructSmoothingKernels();
     setCellStatus();
