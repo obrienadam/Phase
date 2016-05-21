@@ -1,0 +1,52 @@
+; Test case for the 2D interface advection test 
+
+CaseName InterfaceAdvectionTest2D
+
+Solver
+{
+	timeDependent On
+	maxIterations 100
+	timeStep 5e-3
+	maxCo 0.2
+	maxTime 0.575
+
+	momentumRelaxation 1
+	pressureCorrectionRelaxation 0.3
+	numInnerIterations 1
+	numPressureCorrections 3
+	smoothingKernelRadius 0.0801
+}
+
+Properties
+{
+	rho1 1
+	rho2 1
+	mu1 0.01
+	mu2 0.01
+	sigma 0.07
+	g (0,0)
+}
+
+Grid
+{
+	type rectilinear
+	nCellsI 25
+	nCellsJ 25
+
+	; Rectilinear parameters
+	spacingX 0.04
+	spacingY 0.04
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,pCorr,m,gamma,rho,mu
+}
+
+System
+{
+  fileWriteFrequency 1
+  consoleOutputFrequency 1
+}
