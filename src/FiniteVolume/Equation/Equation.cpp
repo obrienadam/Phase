@@ -7,13 +7,10 @@ Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field, cons
     :
       name(name),
       spMat_(field.grid.nActiveCells(), field.grid.nActiveCells(), 5),
-      boundaries_(field.grid.nActiveCells()),
-      sources_(field.grid.nActiveCells()),
       field_(field)
 {
-    spMat_.setZero();
-    boundaries_.setZero();
-    sources_.setZero();
+    boundaries_ = SparseVector::Zero(field.grid.nActiveCells());
+    sources_ = SparseVector::Zero(field.grid.nActiveCells());
 }
 
 template<>
@@ -21,13 +18,10 @@ Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, cons
     :
       name(name),
       spMat_(2*field.grid.nActiveCells(), 2*field.grid.nActiveCells(), 5),
-      boundaries_(2*field.grid.nActiveCells()),
-      sources_(2*field.grid.nActiveCells()),
       field_(field)
 {
-    spMat_.setZero();
-    boundaries_.setZero();
-    sources_.setZero();
+    boundaries_ = SparseVector::Zero(2*field.grid.nActiveCells());
+    sources_ = SparseVector::Zero(2*field.grid.nActiveCells());
 }
 
 template<>
@@ -353,7 +347,7 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
         size_t row = cell.globalIndex();
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, a[cell.id()]*cell.volume()/timeStep));
-        eqn.boundaries()(row) += -a[cell.id()]*cell.volume()*prevField[cell.id()]/timeStep;
+        eqn.boundaries()(row) += a[cell.id()]*cell.volume()*prevField[cell.id()]/timeStep;
     }
 
     eqn.matrix().assemble(entries);

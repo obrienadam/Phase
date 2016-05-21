@@ -50,8 +50,7 @@ template<class T>
 void FiniteVolumeField<T>::fillInterior(const T &val)
 {
     std::fill(FiniteVolumeField<T>::begin(), FiniteVolumeField<T>::end(), val);
-    for(const Face &face: grid.interiorFaces())
-        faces_[face.id()] = val;
+    interpolateFaces(*this);
 }
 
 template<class T>

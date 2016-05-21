@@ -5,7 +5,8 @@
 
 Polygon::Polygon()
 {
-
+    area_ = 0.;
+    centroid_ = Point2D(0., 0.);
 }
 
 Polygon::Polygon(const std::vector<Point2D> &vertices)
@@ -119,6 +120,8 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 
     if(pgn.size() == 0)
         return Polygon();
+    else if (pgn.size() > 1)
+        throw Exception("Polygon", "intersectionPolygon", "there are two polygons!");
 
     return Polygon(pgn.front());
 }

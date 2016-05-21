@@ -3,7 +3,7 @@
 namespace plic
 {
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons, std::vector<Polygon> &fluxPolygons)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -18,7 +18,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
         const size_t row = cell.globalIndex();
 
         //- Get the plic polygon
-        Polygon &plicPgn = plicPolygons[cell.id()] = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
+        Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
+        plicPolygons[cell.id()] = plicPgn;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -26,38 +27,39 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
             if(dot(u.faces()[nb.face().id()], nb.outwardNorm()) > 0.)
             {
-                //- Get the flux polygon
-                Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep);
+
+                Polygon fluxPgn = intersectionPolygon(plicPgn, computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep));
+                //fluxPolygons[cell.id()] = fluxPgn;
+
+                //if(plicPgn.area() == 0. || fluxPgn.area() == 0.)
+                 //   continue;
 
                 //- Compute the flux
-                Scalar faceFlux = plicPgn.area()*0.001;
+                //Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
-                eqn.boundaries()(row) -= faceFlux;
-                //eqn.boundaries()(col) += faceFlux;
+                //eqn.boundaries()(row) -= faceFlux*field[cell.id()];
+                //eqn.boundaries()(col) += faceFlux*field[cell.id()];
+
+                //Scalar faceFlux = intersectionPolygon(plicPgn, fluxPgn).area();
+
+                //if(faceFlux > plicPgn.area() && faceFlux > 1e-10)
+                  //  throw Exception("plic", "div", "invalid flux polygon. Face flux = " + std::to_string(faceFlux) + ", flux polygon area = " + std::to_string(plicPgn.area()));
+
+                eqn.boundaries()(row) -= fluxPgn.area()/timeStep;
+                eqn.boundaries()(col) += fluxPgn.area()/timeStep;
             }
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep);
-            Vector2D wt, n;
-            Scalar faceFlux;
-
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= fluxPgn.area()*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                wt = bd.outwardNorm().tangentVec();
-                n = dot(wt, gradField[cell.id()]) > 0 ? wt : -wt;
 
-                plicPgn = computeInterfacePolygon(cell, field[cell.id()], n);
-                fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep);
-                faceFlux = intersectionPolygon(plicPgn, fluxPgn).area();
-
-                eqn.boundaries()(row) -= plicPgn.area()*0.001;
+                eqn.boundaries()(row) -= dot(u.faces()[bd.face().id()], bd.outwardNorm())*field[cell.id()];
 
                 break;
 
@@ -66,8 +68,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             }
         }
 
-        centralCoeff += cell.volume();
-        eqn.boundaries()(row) += field[cell.id()]*cell.volume();
+        centralCoeff += cell.volume()/timeStep;
+        eqn.boundaries()(row) += field[cell.id()]*cell.volume()/timeStep;
 
         entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
@@ -78,12 +80,31 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
 Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D& interfaceNormal)
 {
-    if(gamma >= 1 - 1e-8)
+    if(gamma >= 1 - 1e-10)
         return cell.shape();
-    else if (gamma <= 1e-8)
+    else if (gamma <= 1e-10)
         return Polygon();
-    else if (interfaceNormal.x == 0 && interfaceNormal.y == 0)
-        return cell.shape();
+    else if (interfaceNormal.x == 0 && interfaceNormal.y == 0) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
+    {
+        Scalar a = 0., b = 1.;
+
+        while(true)
+        {
+            Scalar c = (a + b)/2.;
+
+            Polygon plicPgn = cell.shape();
+            plicPgn.scale(c);
+
+            Scalar f = plicPgn.area()/cell.volume() - gamma;
+
+            if(fabs(f) < 1e-12)
+                return plicPgn;
+            else if(f > 0)
+                b = c;
+            else
+                a = c;
+        }
+    }
 
     Line2D plic(cell.centroid(), interfaceNormal);
 
@@ -148,12 +169,12 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
 
 Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar timeStep)
 {
-    Vector2D off = -uf*timeStep;
+    Vector2D off = dot(uf, link.outwardNorm().unitVec())*timeStep;
 
     std::vector<Point2D> verts = {
         link.face().lNode(),
-        link.face().lNode() + off,
-        link.face().rNode() + off,
+        link.face().lNode() - off,
+        link.face().rNode() - off,
         link.face().rNode(),
     };
 
