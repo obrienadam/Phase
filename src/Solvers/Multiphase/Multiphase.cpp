@@ -27,9 +27,20 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     constructSmoothingKernels();
 
+    gamma = smooth(gamma, cellRangeSearch_, kernelWidth_); // Do one smooth to resolve poorly definited initial conditions
+
     //- Configuration
     interfaceAdvectionMethod_ = PLIC;
     curvatureEvaluationMethod_ = CSF;
+
+    if(interfaceAdvectionMethod_ == PLIC)
+    {
+        addGeometries("plicPolygons");
+        addGeometries("fluxPolygons");
+    }
+
+    if(curvatureEvaluationMethod_ == HF)
+        addGeometries("hfPolygons");
 }
 
 Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
@@ -108,7 +119,8 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
         break;
     case PLIC:
 
-        gammaEqn_ = (plic::div(u, gamma, timeStep) == 0.);
+        gammaTilde = smooth(gamma, cellRangeSearch_, kernelWidth_);
+        gammaEqn_ = (plic::div(u, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
     }
 

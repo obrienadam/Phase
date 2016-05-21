@@ -17,8 +17,10 @@ public:
 private:
 
     std::string varLocation();
-
     void createTecplotHeader();
+
+    std::map<std::string, Ref<const std::vector<Polygon> > > geometryRecords_;
+    int nZones_;
 
 };
 

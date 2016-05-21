@@ -43,6 +43,11 @@ VectorFiniteVolumeField& Solver::addVectorField(const std::string& name)
     return (vectorFields_.insert(Key(name, VectorFiniteVolumeField(grid_, name))).first)->second;
 }
 
+std::vector<Polygon>& Solver::addGeometries(const std::string &name)
+{
+    return (geometries_.insert(std::make_pair(name, std::vector<Polygon>(grid_.cells().size()))).first)->second;
+}
+
 void Solver::setInitialConditions(const Input& input)
 {
     using namespace std;

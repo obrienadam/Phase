@@ -133,7 +133,12 @@ Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
         const Vector2D& nextVtx = *(vertIt + 1);
         Line2D edgeLine = Line2D(vtx, (nextVtx - vtx).normalVec());
 
-        if(line.isBelowLine(vtx))
+        if(line.isApproximatelyOnLine(vtx))
+        {
+            verts.push_back(vtx); // special case
+            continue;
+        }
+        else if(line.isBelowLine(vtx))
             verts.push_back(vtx);
 
         std::pair<Point2D, bool> xc = Line2D::intersection(line, edgeLine);

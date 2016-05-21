@@ -25,9 +25,12 @@ public:
     VectorFiniteVolumeField& addVectorField(const Input& input, const std::string& name);
     VectorFiniteVolumeField& addVectorField(const std::string& name);
 
+    std::vector<Polygon>& addGeometries(const std::string& name);
+
     const FiniteVolumeGrid2D& grid() const { return grid_; }
     std::map<std::string, ScalarFiniteVolumeField >& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField >& vectorFields() const { return vectorFields_; }
+    std::map<std::string, std::vector<Polygon> >& geometries() const { return geometries_; }
 
     void setInitialConditions(const Input& input);
 
@@ -46,6 +49,7 @@ protected:
 
     mutable std::map<std::string, ScalarFiniteVolumeField > scalarFields_;
     mutable std::map<std::string, VectorFiniteVolumeField > vectorFields_;
+    mutable std::map<std::string, std::vector<Polygon> > geometries_;
 
     TimeDependent timeDependent_;
     int maxIterations_;

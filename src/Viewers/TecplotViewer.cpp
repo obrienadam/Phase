@@ -6,6 +6,10 @@ TecplotViewer::TecplotViewer(const Solver &solver, const Input &input)
       Viewer(solver, input)
 {
     createTecplotHeader();
+    nZones_ = 0;
+
+    for(const auto& entry: solver.geometries())
+        geometryRecords_.insert(std::make_pair(entry.first, std::cref(entry.second)));
 }
 
 void TecplotViewer::createTecplotHeader()
@@ -58,6 +62,31 @@ void TecplotViewer::write(Scalar solutionTime)
     {
         const auto &nodeIds = cell.nodeIds();
         fout_ << nodeIds[0] + 1 << " " << nodeIds[1] + 1 << " " << nodeIds[2] + 1 << " " << nodeIds[3] + 1 << "\n";
+    }
+
+    ++nZones_;
+    //- Create geometry records
+    for(const auto& entry: geometryRecords_)
+    {
+        const std::vector<Polygon>& pgns = entry.second;
+
+        for(const Polygon &pgn: pgns)
+        {
+            if(pgn.vertices().size() == 0)
+                continue;
+
+            Point2D origin = *pgn.begin();
+
+            fout_ << "Geometry x=" << origin.x << ", y=" << origin.y << ", t=line, fc=blue, cs=grid, zn=" << nZones_ << "\n"
+                  << "1\n"
+                  << pgn.vertices().size() << "\n";
+
+            for(const Point2D& vtx: pgn)
+            {
+                Vector2D rVec = vtx - origin;
+                fout_ << rVec.x << " " << rVec.y << "\n";
+            }
+        }
     }
 }
 
