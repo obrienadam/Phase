@@ -6,15 +6,15 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
-	maxCo 0.2
+	timeStep 2.5e-3
+	maxCo 0.1
 	maxTime 0.575
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.3
 	numInnerIterations 1
 	numPressureCorrections 3
-	smoothingKernelRadius 0.0801
+	smoothingKernelRadius 0.0401
 }
 
 Properties
@@ -30,12 +30,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 25
-	nCellsJ 25
+	nCellsI 50
+	nCellsJ 50
 
 	; Rectilinear parameters
-	spacingX 0.04
-	spacingY 0.04
+	spacingX 0.02
+	spacingY 0.02
 }
 
 Viewer

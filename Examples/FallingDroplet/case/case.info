@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 7.5e-3
+	timeStep 5e-3
 	maxCo 0.25
 	maxTime 5
 
@@ -15,7 +15,7 @@ Solver
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.0301
+	smoothingKernelRadius 0.0201
 }
 
 Properties
