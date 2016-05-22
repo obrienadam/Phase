@@ -36,7 +36,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                     if(!plicPgn.isEmpty())
                         massTransfer = intersectionPolygon(plicPgn, fluxPgn).area();
                     else
-                        massTransfer = fluxPgn.area()*field[cell.id()];
+                        massTransfer = 0.;
 
                     eqn.boundaries()(row) -= massTransfer;
                     eqn.boundaries()(col) += massTransfer;
@@ -63,7 +63,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                     if(!plicPgn.isEmpty())
                         massTransfer = intersectionPolygon(plicPgn, fluxPgn).area(); // Flux depends on the plic reconstruction in the boundary cell
                     else
-                        massTransfer = fluxPgn.area()*field[cell.id()];
+                        massTransfer = 0.;
 
                     break;
 
@@ -97,7 +97,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
 Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D& interfaceNormal)
 {
-    const int maxIters = 100;
+    const int maxIters = 200;
     Polygon plicPgn;
 
     if(gamma >= 1)
@@ -197,7 +197,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
         //throw Exception("plic", "computeInterfacePolygon", "an invalid polygon was detected, gamma = " + std::to_string(gamma));
     }
 
-    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-5)
+    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-3)
         throw Exception("plic", "computeInterfacePolygon", "an invalid PLIC polygon reconstruction was detected. Reconstructed gamma = "
                         + std::to_string(plicPgn.area()/cell.volume()) + ", actual gamma = " + std::to_string(gamma) + ".");
 

@@ -9,7 +9,8 @@ Solver
 	timeStep 1e-2
 	maxCo 0.25
 	maxTime 0.5
-
+	
+	smoothingKernelRadius 0.0201
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
 	numInnerIterations 2

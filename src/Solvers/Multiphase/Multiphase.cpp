@@ -22,7 +22,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     //gamma = smooth(gamma, cellRangeSearch_, kernelWidth_); // Do one smooth to resolve poorly definited initial conditions
 
     //- Configuration
-    interfaceAdvectionMethod_ = PLIC;
+    interfaceAdvectionMethod_ = CICSAM;
     curvatureEvaluationMethod_ = CSF;
 
     if(interfaceAdvectionMethod_ == PLIC)
