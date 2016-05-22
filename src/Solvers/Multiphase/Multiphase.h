@@ -2,6 +2,7 @@
 #define MULTIPHASE_H
 
 #include "Piso.h"
+#include "SurfaceTensionForce.h"
 
 class Multiphase : public Piso
 {
@@ -14,12 +15,10 @@ public:
 
     virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep);
 
-    ScalarFiniteVolumeField &gamma, &gammaTilde, &kappa;
-    VectorFiniteVolumeField &n;
+    ScalarFiniteVolumeField &gamma;
+    VectorFiniteVolumeField &ft;
 
 protected:
-
-    void constructSmoothingKernels();
 
     virtual void computeRho();
     virtual void computeMu();
@@ -27,15 +26,10 @@ protected:
     virtual Scalar solveUEqn(Scalar timeStep, Scalar prevTimeStep);
     virtual Scalar solveGammaEqn(Scalar timeStep, Scalar prevTimeStep);
 
-    void computeInterfaceNormals();
-    void computeCurvature();
-
-    Scalar rho1_, rho2_, mu1_, mu2_, sigma_;
+    Scalar rho1_, rho2_, mu1_, mu2_;
+    std::unique_ptr<SurfaceTensionForce> surfaceTensionForce_;
 
     Equation<ScalarFiniteVolumeField> gammaEqn_;
-
-    std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
-    Scalar kernelWidth_;
 
     InterfaceAdvection interfaceAdvectionMethod_;
     CurvatureEvaluation curvatureEvaluationMethod_;

@@ -6,8 +6,8 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 2.5e-3
-	maxCo 0.1
+	timeStep 5e-3
+	maxCo 0.3
 	maxTime 0.575
 
 	momentumRelaxation 1

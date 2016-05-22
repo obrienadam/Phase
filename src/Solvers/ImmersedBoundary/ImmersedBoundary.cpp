@@ -28,7 +28,6 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
     interfaceAdvectionMethod_ = CICSAM; // Only method supported at the moment
 
     ibObj_.constructStencils();
-    Multiphase::constructSmoothingKernels();
     setCellStatus();
 }
 
@@ -61,11 +60,8 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
 
 Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    computeInterfaceNormals();
-    computeCurvature();
-
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sigma_*kappa*grad(gammaTilde)) + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(sigma_*kappa*grad(gammaTilde))*/ + fv::source(rho*g_));
 
     uEqn_.relax(momentumOmega_);
 

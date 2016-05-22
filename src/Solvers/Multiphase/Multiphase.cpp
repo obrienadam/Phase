@@ -1,31 +1,23 @@
 #include "Multiphase.h"
 #include "Cicsam.h"
 #include "Plic.h"
-#include "CellSearch.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
-      gammaTilde(addScalarField("gammaTilde")),
-      kappa(addScalarField("kappa")),
-      n(addVectorField("n")),
+      ft(addVectorField("ft")),
       gammaEqn_(gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
-    sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
 
     setInitialConditions(input);
 
     computeRho();
     computeMu();
-
-    //- Construct the range search
-    kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    constructSmoothingKernels();
 
     //gamma = smooth(gamma, cellRangeSearch_, kernelWidth_); // Do one smooth to resolve poorly definited initial conditions
 
@@ -39,8 +31,19 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
         addGeometries("fluxPolygons");
     }
 
-    if(curvatureEvaluationMethod_ == HF)
+    switch(curvatureEvaluationMethod_)
+    {
+    case CSF:
+
+        surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
+        break;
+    case HF:
+
+        surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma));
+        interfaceAdvectionMethod_ = PLIC; // Only plic is guaranteed to work with height function methods
         addGeometries("hfPolygons");
+        break;
+    }
 }
 
 Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
@@ -56,17 +59,6 @@ Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
 }
 
 //- Protected methods
-
-void Multiphase::constructSmoothingKernels()
-{
-    CellSearch cs(grid_.activeCells());
-
-    cellRangeSearch_.clear();
-    cellRangeSearch_.resize(grid_.cells().size());
-
-    for(const Cell &cell: grid_.activeCells())
-        cellRangeSearch_[cell.id()] = cs.rangeSearch(Circle(cell.centroid(), kernelWidth_));
-}
 
 void Multiphase::computeRho()
 {
@@ -92,11 +84,10 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    computeInterfaceNormals();
-    computeCurvature();
+    //ft = surfaceTensionForce_->compute(); // surface tension force
 
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(sigma_*kappa*grad(gammaTilde))*/ + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(ft)*/ + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -119,7 +110,6 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
         break;
     case PLIC:
 
-        gammaTilde = smooth(gamma, cellRangeSearch_, kernelWidth_);
         gammaEqn_ = (plic::div(u, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
     }
@@ -130,40 +120,6 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
         throw Exception("Multiphase", "solveGammaEqn", "a nan value was detected.");
 
     return error;
-}
-
-void Multiphase::computeInterfaceNormals()
-{
-    gammaTilde = smooth(gamma, cellRangeSearch_, kernelWidth_);
-    interpolateFaces(gammaTilde);
-    n = grad(gammaTilde);
-
-    for(Vector2D &vec: n)
-    {
-        vec = vec.unitVec();
-        Scalar magSqr = vec.magSqr();
-
-        if(!(fabs(magSqr - 1.) < 1e-2) || isnan(magSqr))
-            vec.x = vec.y = 0.;
-    }
-
-    interpolateFaces(n);
-}
-
-void Multiphase::computeCurvature()
-{
-    for(const Cell &cell: kappa.grid.fluidCells())
-    {
-        Scalar &k = kappa[cell.id()] = 0.;
-
-        for(const InteriorLink &nb: cell.neighbours())
-            k -= dot(n.faces()[nb.face().id()], nb.outwardNorm());
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            k -= dot(n.faces()[bd.face().id()], bd.outwardNorm());
-
-        k /= cell.volume();
-    }
 }
 
 //- External functions

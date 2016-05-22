@@ -33,7 +33,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                 {
                     Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep, componentNo);
 
-                    if(fluxPgn.area() == 0.)
+                    if(fluxPgn.vertices().size() == 0)
                         continue;
 
                     fluxPgn = intersectionPolygon(plicPgn, fluxPgn);
@@ -51,6 +51,9 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             for(const BoundaryLink &bd: cell.boundaries())
             {
                 Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep, componentNo);
+
+                if(fluxPgn.vertices().size() == 0)
+                    continue;
 
                 switch(field.boundaryType(bd.face().id()))
                 {
@@ -74,12 +77,13 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             const size_t row = cell.globalIndex();
 
             Scalar centralCoeff = cell.volume();
-            eqn.boundaries()(row) += std::min(std::max(field[cell.id()], 0.), 1.)*cell.volume();
+            //eqn.boundaries()(row) += std::min(std::max(field[cell.id()], 0.), 1.)*cell.volume(); // A limiting operation to ensure valid masses
+            eqn.boundaries()(row) += field[cell.id()]*cell.volume();
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
         }
 
-         eqn.matrix().assemble(entries);
+        eqn.matrix().assemble(entries);
 
         if(componentNo == 0)
             eqn.solve(); // Solve and compute the next component
@@ -88,15 +92,22 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
     }
 }
 
-Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D& interfaceNormal)
+Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D& interfaceNormal)
 {
     const int maxIters = 100;
+    Polygon plicPgn;
 
-    if(gamma >= 1 - 1e-10)
+    if(gamma >= 1 - 1e-12)
+    {
+        gamma = 1.;
         return cell.shape();
-    else if (gamma <= 1e-10)
+    }
+    else if (gamma <= 1e-12)
+    {
+        gamma = 0.;
         return Polygon();
-    else if (interfaceNormal.x == 0 && interfaceNormal.y == 0) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
+    }
+    else if (fabs(interfaceNormal.x) < std::numeric_limits<Scalar>::epsilon() && fabs(interfaceNormal.y) < std::numeric_limits<Scalar>::epsilon()) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
     {
         Scalar a = 0., b = 1.;
 
@@ -105,7 +116,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
         {
             Scalar c = (a + b)/2.;
 
-            Polygon plicPgn = cell.shape();
+            plicPgn = cell.shape();
             plicPgn.scale(c);
 
             Scalar f = plicPgn.area()/cell.volume() - gamma;
@@ -120,59 +131,64 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar gamma,  const Vector2D&
                 a = c;
         }
     }
-
-    Line2D plic(cell.centroid(), interfaceNormal);
-
-    auto f = [&cell, &plic, &gamma](Scalar c)->Scalar
+    else
     {
-        return clipPolygon(cell.shape(), plic.adjust(c)).area()/cell.volume() - gamma;
-    };
+        Line2D plic(cell.centroid(), interfaceNormal);
 
-    auto bracket = [&cell, &plic, &gamma](Scalar &cMin, Scalar &cMax)->void
-    {
-        bool init = true;
-
-        for(const Point2D& vtx: cell.shape())
+        auto f = [&cell, &plic, &gamma](Scalar c)->Scalar
         {
-            Scalar c = dot(vtx - plic.r0(), plic.n());
+            return clipPolygon(cell.shape(), plic.adjust(c)).area()/cell.volume() - gamma;
+        };
 
-            if(init)
+        auto bracket = [&cell, &plic, &gamma](Scalar &cMin, Scalar &cMax)->void
+        {
+            bool init = true;
+
+            for(const Point2D& vtx: cell.shape())
             {
-                cMin = cMax = c;
-                init = false;
+                Scalar c = dot(vtx - plic.r0(), plic.n());
+
+                if(init)
+                {
+                    cMin = cMax = c;
+                    init = false;
+                }
+                else
+                {
+                    cMin = c < cMin ? c : cMin;
+                    cMax = c > cMax ? c : cMax;
+                }
+
             }
+        };
+
+        Scalar func, c, cMin, cMax;
+        int iters = 0;
+        //- find the bounds
+        bracket(cMin, cMax);
+        //- Make a guess
+
+        //- bisection
+        while(true)
+        {
+            c = (cMin + cMax)/2;
+            func = f(c);
+
+            if (fabs(func) < 1e-12)
+                break;
+            else if (++iters > maxIters)
+                break;
+            else if (func < 0)
+                cMin = c;
             else
-            {
-                cMin = c < cMin ? c : cMin;
-                cMax = c > cMax ? c : cMax;
-            }
-
+                cMax = c;
         }
-    };
 
-    Scalar func, c, cMin, cMax;
-    int iters = 0;
-    //- find the bounds
-    bracket(cMin, cMax);
-    //- Make a guess
-
-    //- bisection
-    while(true)
-    {
-        c = (cMin + cMax)/2;
-        func = f(c);
-
-        if (fabs(func) < 1e-12)
-            break;
-        else if (++iters > maxIters)
-            break;
-        else if (func < 0)
-            cMin = c;
-        else
-            cMax = c;
+        plicPgn = clipPolygon(cell.shape(), plic.adjust(c)); // Return the clipped polygon that represents the shape of phase B
     }
 
-    Polygon plicPgn = clipPolygon(cell.shape(), plic.adjust(c)); // Return the clipped polygon that represents the shape of phase B
+    if(!plicPgn.isValid())
+        throw Exception("plic", "computeInterfacePolygon", "an invalid polygon was detected.");
 
     if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-5)
         throw Exception("plic", "computeInterfacePolygon", "an invalid PLIC polygon reconstruction was detected. Reconstructed gamma = "
@@ -186,6 +202,9 @@ Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar 
     Vector2D off = dot(uf, link.outwardNorm())*link.outwardNorm()/link.outwardNorm().magSqr()*timeStep;
     off = componentNo == 0 ? Vector2D(off.x, 0.) : Vector2D(0., off.y);
 
+    if(off.magSqr() < std::numeric_limits<Scalar>::epsilon())
+        return Polygon();
+
     std::vector<Point2D> verts = {
         link.face().lNode(),
         link.face().lNode() - off,
@@ -193,6 +212,11 @@ Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar 
         link.face().rNode(),
     };
 
-    return Polygon(verts);
+    Polygon fluxPgn = Polygon(verts);
+
+    if(!fluxPgn.isValid())
+        throw Exception("plic", "computeFluxPolygon", "an invalid polygon was detected.");
+
+    return fluxPgn;
 }
 }

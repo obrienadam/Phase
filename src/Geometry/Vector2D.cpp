@@ -5,6 +5,8 @@
 #include "Vector2D.h"
 #include "Exception.h"
 
+const Scalar Vector2D::EPSILON_ = 20*std::numeric_limits<Scalar>::epsilon();
+
 Vector2D::Vector2D(Scalar x, Scalar y)
     :
       x(x),
@@ -61,6 +63,11 @@ Scalar Vector2D::angle() const
 Scalar Vector2D::angle(const Vector2D& other) const
 {
     return atan2(y - other.y, x - other.x);
+}
+
+bool Vector2D::isParallel(const Vector2D &other) const
+{
+    return fabs(dot(*this, other)*dot(*this, other) - magSqr()*other.magSqr()) < EPSILON_;
 }
 
 Vector2D Vector2D::rotate(Scalar theta) const
@@ -129,6 +136,12 @@ Vector2D& Vector2D::operator /=(Scalar other)
     x /= other;
     y /= other;
     return *this;
+}
+
+bool Vector2D::operator==(const Vector2D& rhs) const
+{
+    return fabs(x - rhs.x) < EPSILON_
+            && fabs(y - rhs.y) < EPSILON_;
 }
 
 bool Vector2D::operator <(const Vector2D& rhs)

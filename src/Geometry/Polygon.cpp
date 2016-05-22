@@ -34,6 +34,11 @@ bool Polygon::isOnEdge(const Point2D &testPoint) const
     return boost::geometry::covered_by(testPoint, poly_) && !isInside(testPoint);
 }
 
+bool Polygon::isValid() const
+{
+    return boost::geometry::is_valid(poly_);
+}
+
 Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
 {
     auto vtxIter = begin();
@@ -151,7 +156,7 @@ Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
             Scalar l = (nextVtx - vtx).magSqr();
             Scalar x = dot(nextVtx - vtx, xc.first - vtx);
 
-            if(x < l && x > 0) // intersection is on the segment
+            if(x < l && x > 0 && !(xc.first == vtx || xc.first == nextVtx)) // intersection is on the segment
                 verts.push_back(xc.first);
         }
     }

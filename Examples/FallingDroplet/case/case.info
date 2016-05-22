@@ -6,9 +6,9 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
-	maxCo 0.25
-	maxTime 5
+	timeStep 5e-4
+	maxCo 0.1
+	maxTime 0.3
 
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
@@ -31,19 +31,19 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 200
-	nCellsJ 100
+	nCellsI 100
+	nCellsJ 50
 
 	; Rectilinear parameters
-	spacingX 0.01
-	spacingY 0.01
+	spacingX 0.02
+	spacingY 0.02
 }
 
 Viewer
 {
 	type tecplot
-	vectorFields u,n
-	scalarFields p,pCorr,m,gamma,rho,mu,kappa,gammaTilde
+	vectorFields u,n,ft
+	scalarFields p,pCorr,m,gamma,rho,mu
 }
 
 System

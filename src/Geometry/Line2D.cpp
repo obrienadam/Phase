@@ -42,9 +42,7 @@ bool Line2D::isBelowLine(const Point2D& pt) const
 
 std::pair<Point2D, bool> Line2D::intersection(const Line2D &lineA, const Line2D &lineB)
 {
-    Scalar proj = dot(lineA.n(), lineB.n());
-
-    if(fabs(proj*proj - 1) < std::numeric_limits<Scalar>::epsilon())
+    if(lineA.n().isParallel(lineB.n()))
         return std::make_pair(Point2D(), false); // lines are parallel
 
     Vector2D d1 = lineA.n().tangentVec(),
