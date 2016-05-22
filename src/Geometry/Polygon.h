@@ -25,6 +25,7 @@ public:
     virtual bool isInside(const Point2D& testPoint) const;
     virtual bool isOnEdge(const Point2D& testPoint) const;
     bool isValid() const;
+    bool isEmpty() const;
 
     //- Intersections
     virtual Point2D nearestIntersect(const Point2D& testPoint) const;

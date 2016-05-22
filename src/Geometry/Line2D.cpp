@@ -23,9 +23,7 @@ Point2D Line2D::operator()(Scalar t) const
 bool Line2D::isApproximatelyOnLine(const Point2D& pt) const
 {
     Vector2D rVec = (pt - r0_).normalVec();
-    Scalar proj = dot(rVec, n_);
-
-    return fabs(proj*proj - rVec.magSqr()) < std::numeric_limits<Scalar>::epsilon() ? true : false;
+    return n_.isParallel(rVec);
 }
 
 bool Line2D::isAboveLine(const Point2D& pt) const

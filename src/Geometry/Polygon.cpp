@@ -39,6 +39,11 @@ bool Polygon::isValid() const
     return boost::geometry::is_valid(poly_);
 }
 
+bool Polygon::isEmpty() const
+{
+    return vertices().size() == 0;
+}
+
 Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
 {
     auto vtxIter = begin();

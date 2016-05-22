@@ -5,7 +5,7 @@
 #include "Vector2D.h"
 #include "Exception.h"
 
-const Scalar Vector2D::EPSILON_ = 20*std::numeric_limits<Scalar>::epsilon();
+const Scalar Vector2D::EPSILON_ = 10*std::numeric_limits<Scalar>::epsilon(); // This parameter governs the precision of vector operations
 
 Vector2D::Vector2D(Scalar x, Scalar y)
     :

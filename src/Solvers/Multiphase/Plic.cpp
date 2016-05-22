@@ -20,11 +20,6 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
             Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
 
-            plicPolygons[cell.id()] = plicPgn;
-
-            if(plicPgn.vertices().size() == 0) // No plic pgn was constructed
-                continue;
-
             for(const InteriorLink &nb: cell.neighbours())
             {
                 const size_t col = nb.cell().globalIndex();
@@ -33,15 +28,15 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                 {
                     Polygon fluxPgn = computeFluxPolygon(nb, u.faces()[nb.face().id()], timeStep, componentNo);
 
-                    if(fluxPgn.vertices().size() == 0)
+                    if(fluxPgn.isEmpty())
                         continue;
 
-                    fluxPgn = intersectionPolygon(plicPgn, fluxPgn);
+                    Scalar massTransfer;
 
-                    Scalar massTransfer = fluxPgn.area();
-
-                    if(massTransfer < 0.)
-                        throw Exception("plic", "div", "invalid mass transfer.");
+                    if(!plicPgn.isEmpty())
+                        massTransfer = intersectionPolygon(plicPgn, fluxPgn).area();
+                    else
+                        massTransfer = fluxPgn.area()*field[cell.id()];
 
                     eqn.boundaries()(row) -= massTransfer;
                     eqn.boundaries()(col) += massTransfer;
@@ -52,23 +47,31 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             {
                 Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep, componentNo);
 
-                if(fluxPgn.vertices().size() == 0)
+                if(fluxPgn.isEmpty())
                     continue;
+
+               Scalar massTransfer;
 
                 switch(field.boundaryType(bd.face().id()))
                 {
                 case ScalarFiniteVolumeField::FIXED:
-                    eqn.boundaries()(row) -= fluxPgn.area()*field.faces()[bd.face().id()]; // No intersection computation required, always same gamma influx
+                    massTransfer = fluxPgn.area()*field.faces()[bd.face().id()];
+
                     break;
 
                 case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                    fluxPgn = intersectionPolygon(plicPgn, fluxPgn); // Flux depends on the plic reconstruction in the boundary cell
-                    eqn.boundaries()(row) -= fluxPgn.area();
+                    if(!plicPgn.isEmpty())
+                        massTransfer = intersectionPolygon(plicPgn, fluxPgn).area(); // Flux depends on the plic reconstruction in the boundary cell
+                    else
+                        massTransfer = fluxPgn.area()*field[cell.id()];
+
                     break;
 
                 default:
                     throw Exception("plic", "div", "unrecognized or unspecified boundary type.");
                 }
+
+                eqn.boundaries()(row) -= massTransfer;
             }
         }
 
@@ -97,17 +100,15 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
     const int maxIters = 100;
     Polygon plicPgn;
 
-    if(gamma >= 1 - 1e-12)
+    if(gamma >= 1)
     {
-        gamma = 1.;
         return cell.shape();
     }
     else if (gamma <= 1e-12)
     {
-        gamma = 0.;
         return Polygon();
     }
-    else if (fabs(interfaceNormal.x) < std::numeric_limits<Scalar>::epsilon() && fabs(interfaceNormal.y) < std::numeric_limits<Scalar>::epsilon()) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
+    else if (interfaceNormal == Vector2D(0., 0.)) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
     {
         Scalar a = 0., b = 1.;
 
@@ -160,6 +161,9 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
                 }
 
             }
+
+            cMax += 1.01*fabs(cMax);
+            cMin -= 1.01*fabs(cMin);
         };
 
         Scalar func, c, cMin, cMax;
@@ -188,7 +192,10 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
     }
 
     if(!plicPgn.isValid())
-        throw Exception("plic", "computeInterfacePolygon", "an invalid polygon was detected.");
+    {
+        return Polygon();
+        //throw Exception("plic", "computeInterfacePolygon", "an invalid polygon was detected, gamma = " + std::to_string(gamma));
+    }
 
     if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-5)
         throw Exception("plic", "computeInterfacePolygon", "an invalid PLIC polygon reconstruction was detected. Reconstructed gamma = "
