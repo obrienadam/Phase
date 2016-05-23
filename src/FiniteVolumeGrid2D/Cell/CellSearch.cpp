@@ -54,6 +54,7 @@ std::vector< Ref<const Cell> > CellSearch::kNearestNeighbourSearch(const Point2D
 std::vector< Ref<const Cell> > CellSearch::getRefs(const std::vector<Value> &vals) const
 {
     std::vector< Ref<const Cell> > refs;
+    refs.reserve(vals.size());
 
     for(const Value &val: vals)
         refs.push_back(val.second);

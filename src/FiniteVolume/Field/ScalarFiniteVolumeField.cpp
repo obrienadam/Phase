@@ -53,3 +53,9 @@ ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFini
     rhs *= lhs;
     return rhs;
 }
+
+ScalarFiniteVolumeField operator/(ScalarFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}

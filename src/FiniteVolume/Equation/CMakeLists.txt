@@ -1,13 +1,7 @@
-set(HEADERS Equation.h
-            Matrix.h
-            SparseMatrix.h
-            SparseVector.h)
+set(HEADERS Equation.h)
 
 set(SOURCES Equation.cpp
-            Equation.tpp
-            Matrix.cpp
-            SparseMatrix.cpp
-            SparseVector.cpp)
+            Equation.tpp)
 
 add_library(Equation ${HEADERS} ${SOURCES})
-target_link_libraries(Equation Field lapacke lapack openblas)
+target_link_libraries(Equation Field Math)

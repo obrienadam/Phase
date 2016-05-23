@@ -19,10 +19,8 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     computeRho();
     computeMu();
 
-    //gamma = smooth(gamma, cellRangeSearch_, kernelWidth_); // Do one smooth to resolve poorly definited initial conditions
-
     //- Configuration
-    interfaceAdvectionMethod_ = CICSAM;
+    interfaceAdvectionMethod_ = PLIC;
     curvatureEvaluationMethod_ = CSF;
 
     if(interfaceAdvectionMethod_ == PLIC)
@@ -62,21 +60,37 @@ Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
 
 void Multiphase::computeRho()
 {
+//    for(const Cell& cell: rho.grid.activeCells())
+//    {
+//        size_t id = cell.id();
+//        rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
+//    }
+
+//    harmonicInterpolateFaces(rho);
+
     for(const Cell& cell: rho.grid.activeCells())
     {
         size_t id = cell.id();
-        rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
+        rho[id] = (1. - gamma[id])*rho1_ + gamma[id]*rho2_;
     }
 
-    harmonicInterpolateFaces(rho);
+    interpolateFaces(rho);
 }
 
 void Multiphase::computeMu()
 {
+//    for(const Cell& cell: mu.grid.activeCells())
+//    {
+//        size_t id = cell.id();
+//        mu[id] = rho[id]/((1. - gamma[id])*rho1_/mu1_ + gamma[id]*rho2_/mu2_);
+//    }
+
+//    interpolateFaces(mu);
+
     for(const Cell& cell: mu.grid.activeCells())
     {
         size_t id = cell.id();
-        mu[id] = rho[id]/((1. - gamma[id])*rho1_/mu1_ + gamma[id]*rho2_/mu2_);
+        mu[id] = (1. - gamma[id])*mu1_ + gamma[id]*mu2_;
     }
 
     interpolateFaces(mu);
@@ -84,10 +98,10 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    //ft = surfaceTensionForce_->compute(); // surface tension force
+    ft = surfaceTensionForce_->compute(); // surface tension force
 
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(ft)*/ + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();

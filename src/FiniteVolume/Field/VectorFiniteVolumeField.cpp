@@ -97,3 +97,9 @@ VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vect
 
     return result;
 }
+
+VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}

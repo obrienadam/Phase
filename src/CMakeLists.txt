@@ -1,4 +1,5 @@
 add_subdirectory(System)
+add_subdirectory(Math)
 add_subdirectory(Geometry)
 add_subdirectory(FiniteVolumeGrid2D)
 add_subdirectory(Solvers)

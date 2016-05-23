@@ -42,6 +42,7 @@ public:
     FiniteVolumeField& operator*=(const FiniteVolumeField<Scalar>& rhs);
     FiniteVolumeField& operator*=(Scalar rhs);
     FiniteVolumeField& operator/=(Scalar lhs);
+    FiniteVolumeField& operator/=(const FiniteVolumeField<Scalar>& rhs);
 
     const FiniteVolumeGrid2D& grid;
 

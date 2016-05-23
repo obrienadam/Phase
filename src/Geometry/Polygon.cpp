@@ -89,12 +89,15 @@ void Polygon::operator-=(const Vector2D& translationVec)
     operator +=(-translationVec);
 }
 
-void Polygon::scale(Scalar factor)
+Polygon Polygon::scale(Scalar factor) const
 {
-    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
-        vtx = factor*(vtx - centroid_) + centroid_;
+    std::vector<Point2D> verts;
+    verts.reserve(vertices().size());
 
-    area_ = boost::geometry::area(poly_);
+    for(const Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        verts.push_back(factor*(vtx - centroid_) + centroid_);
+
+    return Polygon(verts);
 }
 
 void Polygon::rotate(Scalar theta)

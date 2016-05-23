@@ -7,11 +7,6 @@ HeightFunction::HeightFunction(const Input &input, const ScalarFiniteVolumeField
 
 }
 
-void HeightFunction::init(const Input &input)
-{
-
-}
-
 VectorFiniteVolumeField HeightFunction::compute()
 {
 

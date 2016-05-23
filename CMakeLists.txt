@@ -25,6 +25,7 @@ endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 # Includes
 set(INCLUDE_DIR src/Types
                 src/System
+                src/Math
                 src/Geometry
                 src/FiniteVolumeGrid2D
                 src/FiniteVolumeGrid2D/Node

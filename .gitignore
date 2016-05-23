@@ -80,6 +80,8 @@ Thumbs.db
 # Tecplot files
 *.dat
 *.plt
+*.map
+*.lay
 
 # Valgrind files
 *callgrind*

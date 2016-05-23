@@ -11,7 +11,6 @@ public:
 
     SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField& gamma);
 
-    virtual void init(const Input& input) = 0;
     virtual VectorFiniteVolumeField compute() = 0;
 
 protected:

@@ -177,6 +177,20 @@ FiniteVolumeField<T>& FiniteVolumeField<T>::operator/=(Scalar rhs)
     return *this;
 }
 
+template<class T>
+FiniteVolumeField<T>& FiniteVolumeField<T>::operator/=(const FiniteVolumeField<Scalar>& rhs)
+{
+    auto &self = *this;
+
+    for(int i = 0, end = self.size(); i < end; ++i)
+        self[i] /= rhs[i];
+
+    for(int i = 0, end = self.faces().size(); i < end; ++i)
+        self.faces()[i] /= rhs.faces()[i];
+
+    return self;
+}
+
 //- Protected methods
 
 template<class T>

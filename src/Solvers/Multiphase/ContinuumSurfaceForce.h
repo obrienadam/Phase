@@ -10,7 +10,6 @@ public:
 
     ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma);
 
-    virtual void init(const Input& input);
     virtual VectorFiniteVolumeField compute();
 
 private:

@@ -7,11 +7,6 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFin
       n_(gamma.grid, "interfaceNormals"),
       kappa_(gamma.grid, "kappa")
 {
-    init(input);
-}
-
-void ContinuumSurfaceForce::init(const Input &input)
-{
     CellSearch cs(gamma_.grid.activeCells());
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
 
@@ -40,13 +35,12 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
     for(Vector2D &vec: n_)
     {
-        vec = vec.unitVec();
-        Scalar magSqr = vec.magSqr();
-
-        if(fabs(magSqr - 1.) < 1e-2 || isnan(magSqr))
+        if(vec == Vector2D(0., 0.))
             vec.x = vec.y = 0.;
+        else
+            vec = vec.unitVec();
 
-        if(isnan(vec.x) || isnan(vec.y))
+        if(isnan(vec.magSqr()))
             throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
     }
 
@@ -63,7 +57,9 @@ void ContinuumSurfaceForce::computeCurvature()
             k -= dot(n_.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink &bd: cell.boundaries())
-            k -= dot(n_.faces()[bd.face().id()], bd.outwardNorm());
+        {
+            k -= dot(n_.faces()[bd.face().id()], bd.outwardNorm()); // Modify surface tension force near boundary
+        }
 
         k /= cell.volume();
 

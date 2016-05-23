@@ -1,4 +1,6 @@
 #include "Plic.h"
+#include "BisectionSearch.h"
+#include "SecantSearch.h"
 
 namespace plic
 {
@@ -12,13 +14,15 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
         Equation<ScalarFiniteVolumeField> eqn(field);
         VectorFiniteVolumeField gradField = grad(field);
         entries.clear();
-        entries.reserve(field.grid.nActiveCells());
+        entries.reserve(4*field.grid.nActiveCells());
 
         for(const Cell &cell: field.grid.fluidCells())
         {
             const size_t row = cell.globalIndex();
 
             Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
+            //if(componentNo == 0)
+             //   plicPolygons[cell.id()] = plicPgn;
 
             for(const InteriorLink &nb: cell.neighbours())
             {
@@ -31,15 +35,17 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                     if(fluxPgn.isEmpty())
                         continue;
 
-                    Scalar massTransfer;
-
                     if(!plicPgn.isEmpty())
-                        massTransfer = intersectionPolygon(plicPgn, fluxPgn).area();
+                    {
+                        Scalar massTransfer = intersectionPolygon(plicPgn, fluxPgn).area();
+                        eqn.boundaries()(row) -= massTransfer;
+                        eqn.boundaries()(col) += massTransfer;
+                    }
                     else
-                        massTransfer = 0.;
-
-                    eqn.boundaries()(row) -= massTransfer;
-                    eqn.boundaries()(col) += massTransfer;
+                    {
+                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, fluxPgn.area()));
+                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(col, row, -fluxPgn.area()));
+                    }
                 }
             }
 
@@ -50,7 +56,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                 if(fluxPgn.isEmpty())
                     continue;
 
-               Scalar massTransfer;
+                Scalar massTransfer = 0.;
 
                 switch(field.boundaryType(bd.face().id()))
                 {
@@ -63,7 +69,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                     if(!plicPgn.isEmpty())
                         massTransfer = intersectionPolygon(plicPgn, fluxPgn).area(); // Flux depends on the plic reconstruction in the boundary cell
                     else
-                        massTransfer = 0.;
+                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, fluxPgn.area()));
 
                     break;
 
@@ -97,7 +103,6 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
 Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D& interfaceNormal)
 {
-    const int maxIters = 200;
     Polygon plicPgn;
 
     if(gamma >= 1)
@@ -108,96 +113,54 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
     {
         return Polygon();
     }
-    else if (interfaceNormal == Vector2D(0., 0.)) // This is bad and should not happen, interface cells should have a gradient. Plic pgn will be placed in the middle4
+    else if (interfaceNormal == Vector2D(0., 0.)) // Invalid normal, must use a different method
     {
-        Scalar a = 0., b = 1.;
+        std::function<Scalar(Scalar)> f = [&cell, &gamma](Scalar c){ return cell.shape().scale(c).area()/cell.volume() - gamma; };
+        auto c = bisectionSearch(f, 0., 1., 1e-12, 100);
 
-        int iters = 0;
-        while(true)
-        {
-            Scalar c = (a + b)/2.;
-
-            plicPgn = cell.shape();
-            plicPgn.scale(c);
-
-            Scalar f = plicPgn.area()/cell.volume() - gamma;
-
-            if(fabs(f) < 1e-12)
-                return plicPgn;
-            else if(++iters > maxIters)
-                break;
-            else if(f > 0)
-                b = c;
-            else
-                a = c;
-        }
+        plicPgn = cell.shape().scale(c.first); // Return a scaled concentric polygon
     }
     else
     {
+        //- Create a plic line
         Line2D plic(cell.centroid(), interfaceNormal);
 
-        auto f = [&cell, &plic, &gamma](Scalar c)->Scalar
-        {
-            return clipPolygon(cell.shape(), plic.adjust(c)).area()/cell.volume() - gamma;
-        };
+        //- Locate the bounds
+        Scalar cMin, cMax;
 
-        auto bracket = [&cell, &plic, &gamma](Scalar &cMin, Scalar &cMax)->void
+        bool init = true;
+        for(const Point2D& vtx: cell.shape())
         {
-            bool init = true;
+            Scalar c = dot(vtx - plic.r0(), plic.n());
 
-            for(const Point2D& vtx: cell.shape())
+            if(init)
             {
-                Scalar c = dot(vtx - plic.r0(), plic.n());
-
-                if(init)
-                {
-                    cMin = cMax = c;
-                    init = false;
-                }
-                else
-                {
-                    cMin = c < cMin ? c : cMin;
-                    cMax = c > cMax ? c : cMax;
-                }
-
+                cMin = cMax = c;
+                init = false;
+            }
+            else
+            {
+                cMin = c < cMin ? c : cMin;
+                cMax = c > cMax ? c : cMax;
             }
 
-            cMax += 1.01*fabs(cMax);
-            cMin -= 1.01*fabs(cMin);
-        };
-
-        Scalar func, c, cMin, cMax;
-        int iters = 0;
-        //- find the bounds
-        bracket(cMin, cMax);
-        //- Make a guess
-
-        //- bisection
-        while(true)
-        {
-            c = (cMin + cMax)/2;
-            func = f(c);
-
-            if (fabs(func) < 1e-12)
-                break;
-            else if (++iters > maxIters)
-                break;
-            else if (func < 0)
-                cMin = c;
-            else
-                cMax = c;
         }
 
-        plicPgn = clipPolygon(cell.shape(), plic.adjust(c)); // Return the clipped polygon that represents the shape of phase B
+        cMax += 1.01*fabs(cMax);
+        cMin -= 1.01*fabs(cMin);
+
+        std::function<Scalar(Scalar)> f = [&cell, &plic, &gamma](Scalar c){ return clipPolygon(cell.shape(), plic.adjust(c)).area()/cell.volume() - gamma; };
+        auto c = bisectionSearch(f, cMin, cMax, 1e-12, 100);
+
+        plicPgn = clipPolygon(cell.shape(), plic.adjust(c.first)); // Return the clipped polygon that represents the shape of phase B
     }
 
     if(!plicPgn.isValid())
     {
         return Polygon();
-        //throw Exception("plic", "computeInterfacePolygon", "an invalid polygon was detected, gamma = " + std::to_string(gamma));
     }
 
-    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-3)
+    if(fabs(plicPgn.area()/cell.volume() - gamma) > 1e-5)
         throw Exception("plic", "computeInterfacePolygon", "an invalid PLIC polygon reconstruction was detected. Reconstructed gamma = "
                         + std::to_string(plicPgn.area()/cell.volume()) + ", actual gamma = " + std::to_string(gamma) + ".");
 

@@ -20,7 +20,7 @@ Solver
 Properties
 {
 	rho1 1
-	rho2 1
+	rho2 1.5
 	mu1 0.01
 	mu2 0.01
 	sigma 0.07

@@ -32,7 +32,7 @@ public:
 
     virtual void operator+=(const Vector2D& translationVec);
     virtual void operator-=(const Vector2D& translationVec);
-    virtual void scale(Scalar factor);
+    virtual Polygon scale(Scalar factor) const;
     virtual void rotate(Scalar theta);
 
     //- Iterators
