@@ -7,7 +7,7 @@ Solver
 	timeDependent On
 	maxIterations 100
 	timeStep 6e-3
-	maxCo 0.2
+	maxCo 0.3
 	maxTime 6
 
 	momentumRelaxation 0.5
@@ -15,12 +15,12 @@ Solver
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.0401
+	smoothingKernelRadius 0.051
 }
 
 Properties
 {
-	rho1 0.75
+	rho1 0.5
 	rho2 1
  	mu1 0.001
 	mu2 0.001

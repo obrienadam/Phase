@@ -10,11 +10,11 @@ Solver
 	maxCo 0.3
 	maxTime 50
 
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.5
+	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
-	numPressureCorrections 3
-	smoothingKernelRadius 0.0301
+	numPressureCorrections 2
+	smoothingKernelRadius 0.0201
 }
 
 Properties

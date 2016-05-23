@@ -21,8 +21,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             const size_t row = cell.globalIndex();
 
             Polygon plicPgn = computeInterfacePolygon(cell, field[cell.id()], -gradField[cell.id()]);
-            //if(componentNo == 0)
-             //   plicPolygons[cell.id()] = plicPgn;
+            if(componentNo == 0)
+                plicPolygons[cell.id()] = plicPgn;
 
             for(const InteriorLink &nb: cell.neighbours())
             {

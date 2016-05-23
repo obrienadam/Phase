@@ -60,8 +60,10 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
 
 Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
+    ft = surfaceTensionForce_->compute();
+
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
-             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(sigma_*kappa*grad(gammaTilde))*/ + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(ft)*/);
 
     uEqn_.relax(momentumOmega_);
 
@@ -84,7 +86,7 @@ Scalar ImmersedBoundary::solvePCorrEqn()
 
 Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    gamma.save(2);
+    gamma.save(1);
     interpolateFaces(gamma);
     gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
 
