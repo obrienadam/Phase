@@ -18,20 +18,20 @@ ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const C
 
 //- Immersed boundary objectclass
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr)
     :
       Circle(Point2D(), 0.),
       grid_(grid)
 {
-
+    csf_ = csfPtr;
 }
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const Point2D &center, Scalar radius)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr, const Point2D &center, Scalar radius)
     :
       Circle(center, radius),
       grid_(grid)
 {
-
+    csf_ = csfPtr;
 }
 
 void ImmersedBoundaryObject::init(const Point2D& center, Scalar radius)

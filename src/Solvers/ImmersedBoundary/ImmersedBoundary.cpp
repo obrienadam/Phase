@@ -5,7 +5,7 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      ibObj_(grid),
+      ibObj_(grid, surfaceTensionForce_),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& child: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -20,12 +20,14 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
         ibObj_.addBoundaryType("u", ImmersedBoundaryObject::FIXED);
         ibObj_.addBoundaryType("p", ImmersedBoundaryObject::NORMAL_GRADIENT);
         ibObj_.addBoundaryType("pCorr", ImmersedBoundaryObject::NORMAL_GRADIENT);
-        ibObj_.addBoundaryType("gamma", ImmersedBoundaryObject::NORMAL_GRADIENT);
+        ibObj_.addBoundaryType("gamma", ImmersedBoundaryObject::CONTACT_ANGLE);
 
         break; // for now only one ib object is allowed
     }
 
-    interfaceAdvectionMethod_ = CICSAM; // Only method supported at the moment
+    // Only multiphase methods supported at the moment
+    interfaceAdvectionMethod_ = CICSAM;
+    surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
 
     ibObj_.constructStencils();
     setCellStatus();

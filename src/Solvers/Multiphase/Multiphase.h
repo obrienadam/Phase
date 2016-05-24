@@ -27,7 +27,7 @@ protected:
     virtual Scalar solveGammaEqn(Scalar timeStep, Scalar prevTimeStep);
 
     Scalar rho1_, rho2_, mu1_, mu2_;
-    std::unique_ptr<SurfaceTensionForce> surfaceTensionForce_;
+    std::shared_ptr<SurfaceTensionForce> surfaceTensionForce_;
 
     Equation<ScalarFiniteVolumeField> gammaEqn_;
 

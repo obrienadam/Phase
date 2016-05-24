@@ -4,12 +4,13 @@
 #include "Circle.h"
 #include "FiniteVolumeGrid2D.h"
 #include "CellSearch.h"
+#include "ContinuumSurfaceForce.h"
 
 class ImmersedBoundaryObject : public Circle
 {
 public:
 
-    enum BoundaryType{FIXED, NORMAL_GRADIENT};
+    enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE};
 
     class ImmersedBoundaryStencil
     {
@@ -33,8 +34,8 @@ public:
         Point2D bp_, ip_;
     };
 
-    ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid);
-    ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const Point2D &center, Scalar radius);
+    ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr);
+    ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr, const Point2D &center, Scalar radius);
 
     void init(const Point2D& center, Scalar radius);
 
@@ -47,9 +48,12 @@ public:
     void addBoundaryType(const std::string& fieldName, BoundaryType boundaryType) { boundaryTypes_[fieldName] = boundaryType; }
     BoundaryType boundaryType(const std::string& fieldName) const { return boundaryTypes_.find(fieldName)->second; }
 
+    const SurfaceTensionForce& csf() const { return *csf_; }
+
 private:
 
     const FiniteVolumeGrid2D &grid_;
+    std::shared_ptr<SurfaceTensionForce> csf_;
     std::vector<ImmersedBoundaryStencil> ibStencils_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;

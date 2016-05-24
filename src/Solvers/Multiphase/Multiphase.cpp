@@ -33,11 +33,11 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     {
     case CSF:
 
-        surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
         break;
     case HF:
 
-        surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma));
         interfaceAdvectionMethod_ = PLIC; // Only plic is guaranteed to work with height function methods
         addGeometries("hfPolygons");
         break;

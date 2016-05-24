@@ -11,19 +11,21 @@ public:
     ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma);
 
     virtual VectorFiniteVolumeField compute();
+    const VectorFiniteVolumeField& n() const { return n_; }
 
-private:
+    virtual const VectorFiniteVolumeField& gradGamma() const { return gradGammaTilde_; }
+
+protected:
 
     void constructSmoothingKernels();
-    void computeInterfaceNormals();
-    void computeCurvature();
-    Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal);
+    void computeGradGammaTilde();
+    virtual void computeInterfaceNormals();
+    virtual void computeCurvature();
 
     std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
     Scalar kernelWidth_;
 
-    ScalarFiniteVolumeField gammaTilde_, kappa_;
-    VectorFiniteVolumeField n_;
+    VectorFiniteVolumeField gradGammaTilde_;
 };
 
 #endif

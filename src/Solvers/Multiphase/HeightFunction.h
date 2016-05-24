@@ -12,6 +12,7 @@ public:
     HeightFunction(const Input &input, const ScalarFiniteVolumeField& gamma);
 
     virtual VectorFiniteVolumeField compute();
+    virtual const VectorFiniteVolumeField& gradGamma() const { }
 
 private:
 

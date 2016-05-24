@@ -36,15 +36,31 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
         };
 
         Scalar centralCoeff;
+        Vector2D nWall, gradGamma, nl;
         // Then here we shall do the boundary assembly!
         switch(ibObj.boundaryType(field.name))
         {
         case ImmersedBoundaryObject::FIXED:
             centralCoeff = 1.;
             break;
+
         case ImmersedBoundaryObject::NORMAL_GRADIENT:
             centralCoeff = -1.;
             break;
+
+        case ImmersedBoundaryObject::CONTACT_ANGLE:
+
+            nWall = ibStencil.cell().centroid() - ibStencil.imagePoint();
+            gradGamma = ibObj.csf().gradGamma()[ibStencil.cell().id()];
+            nl = ibObj.csf().computeContactLineNormal(gradGamma, nWall);
+
+            gradGamma = -gradGamma.mag()*nl;
+
+            eqn.boundaries()(row) -= nWall.mag()*dot(gradGamma, nWall.unitVec());
+            centralCoeff = -1.;
+
+            break;
+
         default:
             throw Exception("gc", "ib", "invalid boundary type.");
         }
@@ -108,6 +124,10 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
         case ImmersedBoundaryObject::NORMAL_GRADIENT:
             centralCoeff = -1.;
             break;
+
+        case ImmersedBoundaryObject::CONTACT_ANGLE:
+            throw Exception("gc", "ib", "contact angle boundaries are not valid for vector fields.");
+
         default:
             throw Exception("gc", "ib", "invalid boundary type.");
         }

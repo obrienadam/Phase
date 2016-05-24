@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_SUITE (ImmersedBoundaryTest)
 BOOST_AUTO_TEST_CASE(CellGroupCreationTest)
 {
     RectilinearGrid2D grid(20, 20, 0.05, 0.05);
-    ImmersedBoundaryObject ibObj(grid, Point2D(0.5, 0.5), 0.15);
+    ImmersedBoundaryObject ibObj(grid, nullptr, Point2D(0.5, 0.5), 0.15);
 
     ibObj.constructStencils();
 
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(CellGroupCreationTest)
               << "IB cell group size       : " << grid.cellGroup("ibCells").size() << "\n";
 
 
-    ImmersedBoundaryObject iObj2(grid, Point2D(0.5, 0.5), 0.25);
+    ImmersedBoundaryObject iObj2(grid, nullptr, Point2D(0.5, 0.5), 0.25);
     iObj2.constructStencils();
 
     std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(CellGroupCreationTest)
 
     grid.moveAllCellsToFluidCellGroup(); // For some reason this has to be called to avoid seg fault. Why??
 
-    ImmersedBoundaryObject iObj3(grid, Point2D(0.5, 0.5), 0.41);
+    ImmersedBoundaryObject iObj3(grid, nullptr, Point2D(0.5, 0.5), 0.41);
     iObj3.constructStencils();
 
     std::cout << "Active cell group size   : " << grid.activeCells().size() << "\n"
