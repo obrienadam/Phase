@@ -7,7 +7,7 @@ InitialConditions
     velocity
     {
       type uniform
-      value (0,0.02)
+      value (0,0.01)
     }
   }
 }

@@ -20,7 +20,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     computeMu();
 
     //- Configuration
-    interfaceAdvectionMethod_ = PLIC;
+    interfaceAdvectionMethod_ = CICSAM;
     curvatureEvaluationMethod_ = CSF;
 
     if(interfaceAdvectionMethod_ == PLIC)

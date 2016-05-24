@@ -15,17 +15,20 @@ Solver
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.051
+	smoothingKernelRadius 0.041
 }
 
 Properties
 {
-	rho1 0.5
+	rho1 0.75
 	rho2 1
  	mu1 0.001
 	mu2 0.001
 	sigma 0.07
 	g (0,-9.8065)
+
+	advancingContactAngle 120
+	recedingContactAngle 120
 }
 
 Grid

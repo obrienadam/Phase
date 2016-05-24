@@ -7,7 +7,7 @@ Boundaries
     x+
     {
       type fixed
-      value (0,0)
+      value (0,0.01)
     }
 
     y+
@@ -19,13 +19,13 @@ Boundaries
     x-
     {
       type fixed
-      value (0,0)
+      value (0,0.01)
     }
 
     y-
     {
       type fixed
-      value (0,0.02)
+      value (0,0.01)
     }
   }
 

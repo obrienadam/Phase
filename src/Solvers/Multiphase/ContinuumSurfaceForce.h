@@ -17,6 +17,7 @@ private:
     void constructSmoothingKernels();
     void computeInterfaceNormals();
     void computeCurvature();
+    Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal);
 
     std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
     Scalar kernelWidth_;

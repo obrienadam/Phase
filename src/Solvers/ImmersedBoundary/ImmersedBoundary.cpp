@@ -63,7 +63,7 @@ Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
     ft = surfaceTensionForce_->compute();
 
     uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
-             == fv::laplacian(mu, u) - fv::grad(p) /*+ fv::source(ft)*/);
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft));
 
     uEqn_.relax(momentumOmega_);
 

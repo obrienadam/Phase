@@ -15,7 +15,7 @@ public:
 
 protected:
 
-    Scalar sigma_;
+    Scalar sigma_, thetaAdv_, thetaRec_;
     const ScalarFiniteVolumeField &gamma_;
 };
 
