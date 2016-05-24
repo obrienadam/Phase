@@ -3,10 +3,7 @@
 
 #include "Solver.h"
 #include "Input.h"
-#include "FiniteVolumeGrid2D.h"
-#include "ScalarFiniteVolumeField.h"
-#include "VectorFiniteVolumeField.h"
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 
 class Simple : public Solver
 {

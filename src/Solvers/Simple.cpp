@@ -129,13 +129,24 @@ void Simple::rhieChowInterpolation()
 
     for(const Face& face: u.grid.boundaryFaces())
     {
+        Vector2D nWall;
+
         switch(u.boundaryType(face.id()))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
+
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u.faces()[face.id()] = u[face.lCell().id()];
             break;
+
+        case VectorFiniteVolumeField::SYMMETRY:
+            nWall = face.outwardNorm(face.lCell().centroid()).unitVec();
+            u.faces()[face.id()] = u[face.lCell().id()] - dot(u[face.lCell().id()], nWall)*nWall;
+            break;
+
+        default:
+            throw Exception("Simple", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
     }
 

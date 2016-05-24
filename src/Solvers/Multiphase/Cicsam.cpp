@@ -111,6 +111,9 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
                 centralCoeff += flux;
                 break;
 
+            case ScalarFiniteVolumeField::SYMMETRY:
+                break;
+
             default:
                 throw Exception("hc", "div", "unrecognized or unspecified boundary type.");
             }

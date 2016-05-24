@@ -9,18 +9,19 @@ Solver
 	maxIterations 100
 	timeStep 0.01
 	maxTime 0.25
+	maxCo 0.8
 
 	numInnerIterations 3
 	numPressureCorrections 2
-	momentumRelaxation 0.1
-	pressureCorrectionRelaxation 0.05
+	momentumRelaxation 0.5
+	pressureCorrectionRelaxation 0.5
 }
 
 Properties
 {
 	rho 1.2
 	mu 1e-2
-	g (0,-9.81)
+	g (0,0)
 	gamma 0.001
 }
 
@@ -40,4 +41,9 @@ Viewer
 	type tecplot
 	vectorFields u,gradP
 	scalarFields p,pCorr,m
+}
+
+System
+{
+  fileWriteFrequency 10
 }

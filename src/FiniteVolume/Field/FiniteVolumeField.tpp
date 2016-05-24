@@ -212,6 +212,8 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
                 boundaryTypes_.push_back(FIXED);
             else if(type == "normal_gradient")
                 boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else if(type == "symmetry")
+                boundaryTypes_.push_back(SYMMETRY);
             else
                 throw Exception("FiniteVolumeField", "FiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
         }
@@ -228,6 +230,8 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
                 boundaryTypes_.push_back(FIXED);
             else if (type == "normal_gradient")
                 boundaryTypes_.push_back(NORMAL_GRADIENT);
+            else if (type == "symmetry")
+                boundaryTypes_.push_back(SYMMETRY);
             else
                 throw Exception("FiniteVolumeField", "FiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
         }
@@ -299,6 +303,13 @@ void interpolateFaces(FiniteVolumeField<T>& field)
             sf = face.outwardNorm(face.lCell().centroid());
             field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
             break;
+
+        case FiniteVolumeField<T>::SYMMETRY:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+
+        default:
+            throw Exception("FiniteVolumeField<T>", "interpolateFaces", "unrecongnized boundary condition type.");
         }
     }
 }
@@ -329,6 +340,13 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
             sf = face.outwardNorm(face.lCell().centroid());
             field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
             break;
+
+        case FiniteVolumeField<T>::SYMMETRY:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+
+        default:
+            throw Exception("FiniteVolumeField<T>", "harmonicInterpolateFaces", "unrecongnized boundary condition type.");
         }
     }
 }

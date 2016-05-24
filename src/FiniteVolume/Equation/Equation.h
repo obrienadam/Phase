@@ -78,23 +78,6 @@ Equation<T> operator*(Equation<T> lhs, Scalar rhs);
 template<class T>
 Equation<T> operator*(Scalar lhs, Equation<T> rhs);
 
-namespace fv
-{
-Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& coeff, ScalarFiniteVolumeField& field);
-Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& coeff, VectorFiniteVolumeField& field);
-
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
-Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFiniteVolumeField& field);
-
-Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep);
-Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep);
-Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep);
-Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep);
-
-VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& field);
-VectorFiniteVolumeField source(VectorFiniteVolumeField field);
-}
-
 namespace cn // Crank-Nicholson schemes
 {
 Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep);

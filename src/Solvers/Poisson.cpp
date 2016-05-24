@@ -1,4 +1,5 @@
 #include "Poisson.h"
+#include "Laplacian.h"
 
 Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
     :
