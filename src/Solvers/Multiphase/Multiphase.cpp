@@ -7,14 +7,12 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
       ft(addVectorField("ft")),
-      gammaEqn_(gamma, "gamma")
+      gammaEqn_(gamma, "gamma", SparseMatrix::IncompleteLUT)
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
-
-    setInitialConditions(input);
 
     computeRho();
     computeMu();

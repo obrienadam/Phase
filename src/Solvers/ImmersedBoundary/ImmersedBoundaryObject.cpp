@@ -83,3 +83,8 @@ void ImmersedBoundaryObject::constructStencils()
     grid_.moveCellsToInactiveCellGroup(inactiveCellIds);
     grid_.moveCellsToCellGroup("ibCells", ibCellIds);
 }
+
+void ImmersedBoundaryObject::addBoundaryType(const std::string &fieldName, BoundaryType boundaryType)
+{
+    boundaryTypes_[fieldName] = boundaryType;
+}

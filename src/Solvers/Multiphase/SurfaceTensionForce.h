@@ -25,6 +25,8 @@ protected:
     const ScalarFiniteVolumeField &gamma_;
     ScalarFiniteVolumeField kappa_;
     VectorFiniteVolumeField n_;
+
+    std::vector< Ref<const Patch> > contactAnglePatches_;
 };
 
 //- Header files for the available methods

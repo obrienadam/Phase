@@ -45,7 +45,7 @@ public:
 
     const std::vector<ImmersedBoundaryStencil>& stencils() const { return ibStencils_; }
 
-    void addBoundaryType(const std::string& fieldName, BoundaryType boundaryType) { boundaryTypes_[fieldName] = boundaryType; }
+    void addBoundaryType(const std::string& fieldName, BoundaryType boundaryType);
     BoundaryType boundaryType(const std::string& fieldName) const { return boundaryTypes_.find(fieldName)->second; }
 
     const SurfaceTensionForce& csf() const { return *csf_; }

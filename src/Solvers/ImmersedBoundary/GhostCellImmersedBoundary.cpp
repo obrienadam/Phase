@@ -26,7 +26,8 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             kNN[3].get().centroid(),
         };
 
-        std::vector<Scalar> coeffs = BilinearInterpolation(centroids)(ibStencil.imagePoint());
+        BilinearInterpolation bi(centroids);
+        std::vector<Scalar> coeffs = bi(ibStencil.imagePoint());
 
         int cols[] = {
             kNN[0].get().globalIndex(),
@@ -35,7 +36,7 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             kNN[3].get().globalIndex(),
         };
 
-        Scalar centralCoeff;
+        Scalar centralCoeff, gammaIp, gamma[4];
         Vector2D nWall, gradGamma, nl;
         // Then here we shall do the boundary assembly!
         switch(ibObj.boundaryType(field.name))
@@ -50,8 +51,16 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
 
         case ImmersedBoundaryObject::CONTACT_ANGLE:
 
+            gamma[0] = ibObj.csf().gamma()[kNN[0].get().id()];
+            gamma[1] = ibObj.csf().gamma()[kNN[1].get().id()];
+            gamma[2] = ibObj.csf().gamma()[kNN[2].get().id()];
+            gamma[3] = ibObj.csf().gamma()[kNN[3].get().id()];
+
+            gammaIp = bi(gamma, ibStencil.imagePoint());
             nWall = ibStencil.cell().centroid() - ibStencil.imagePoint();
-            gradGamma = ibObj.csf().gradGamma()[ibStencil.cell().id()];
+
+            gradGamma = (ibObj.csf().gamma()[ibStencil.cell().id()] - gammaIp)*nWall.unitVec();
+
             nl = ibObj.csf().computeContactLineNormal(gradGamma, nWall);
 
             gradGamma = -gradGamma.mag()*nl;

@@ -14,8 +14,8 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       d(addScalarField("d")),
       ids(addScalarField("ids")),
       globalIndices(addScalarField("globalIndices")),
-      uEqn_(u, "momentum"),
-      pCorrEqn_(pCorr, "pressure correction")
+      uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
+      pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));

@@ -11,13 +11,13 @@ Equation<T>::Equation(const Equation<T>& other)
       sources_(other.sources_),
       field_(other.field_)
 {
-
+    precon_ = other.precon_;
 }
 
 template<class T>
 Scalar Equation<T>::solve()
 {
-    field_ = spMat_.solve(boundaries_ + sources_);
+    field_ = spMat_.solve(boundaries_ + sources_, precon_);
     printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
     return error();
 }

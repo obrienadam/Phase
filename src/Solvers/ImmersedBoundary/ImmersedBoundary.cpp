@@ -8,21 +8,40 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
       ibObj_(grid, surfaceTensionForce_),
       cellStatus_(addScalarField("cell_status"))
 {
-    for(const auto& child: input.boundaryInput().get_child("ImmersedBoundaries"))
+    for(const auto& ibObjects: input.boundaryInput().get_child("ImmersedBoundaries"))
     {
-        std::string name = child.first;
+        printf("Initializing immersed boundary object \"%s\".\n", ibObjects.first.c_str());
 
-        const auto &ptree = child.second;
+        for(const auto& child: ibObjects.second)
+        {
+            if(child.first == "geometry")
+            {
+                ibObj_.init(
+                            Vector2D(child.second.get<std::string>("center")),
+                            child.second.get<Scalar>("radius")
+                            );
+                continue;
+            }
 
-        ibObj_.init(Point2D(ptree.get<std::string>("geometry.center")),
-                    ptree.get<Scalar>("geometry.radius"));
+            std::string type = child.second.get<std::string>("type");
+            ImmersedBoundaryObject::BoundaryType boundaryType;
 
-        ibObj_.addBoundaryType("u", ImmersedBoundaryObject::FIXED);
-        ibObj_.addBoundaryType("p", ImmersedBoundaryObject::NORMAL_GRADIENT);
-        ibObj_.addBoundaryType("pCorr", ImmersedBoundaryObject::NORMAL_GRADIENT);
-        ibObj_.addBoundaryType("gamma", ImmersedBoundaryObject::CONTACT_ANGLE);
+            if(type == "fixed")
+                boundaryType = ImmersedBoundaryObject::FIXED;
+            else if(type == "normal_gradient")
+                boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
+            else if(type == "contact_angle")
+                boundaryType = ImmersedBoundaryObject::CONTACT_ANGLE;
+            else
+                throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
-        break; // for now only one ib object is allowed
+            printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
+
+            ibObj_.addBoundaryType(child.first, boundaryType);
+
+            if(child.first == "p")
+                ibObj_.addBoundaryType("pCorr", boundaryType);
+        }
     }
 
     // Only multiphase methods supported at the moment

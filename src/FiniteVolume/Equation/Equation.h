@@ -13,7 +13,7 @@ public:
 
     typedef Eigen::Triplet<Scalar> Triplet;
 
-    Equation(T& field, const std::string& name = "Unknown");
+    Equation(T& field, const std::string& name = "Unknown", SparseMatrix::Preconditioner precon = SparseMatrix::IncompleteLUT);
     Equation(const Equation<T>& other);
 
     SparseMatrix& matrix(){ return spMat_; }
@@ -49,6 +49,8 @@ private:
     SparseMatrix spMat_;
     SparseVector boundaries_, sources_;
     T& field_;
+
+    SparseMatrix::Preconditioner precon_;
 };
 
 template<class T>

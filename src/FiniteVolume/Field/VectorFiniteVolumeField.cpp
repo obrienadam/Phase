@@ -37,7 +37,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     else
     {
         //- Boundary condition association to patches is done by patch id
-        for(const Patch& patch: grid.patches())
+        for(const auto& patch: grid.patches())
         {
             string root = "Boundaries." + name + "." + patch.name;
             boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<std::string>(root + ".value")));
