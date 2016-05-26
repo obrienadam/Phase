@@ -4,13 +4,7 @@ Boundaries
 {
   u
   {
-    x+
-    {
-      type fixed
-      value (0,0)
-    }
-
-    x-
+    *
     {
       type fixed
       value (0,0)
@@ -19,25 +13,13 @@ Boundaries
     y+
     {
       type normal_gradient
-      value (0,0)
-    }
-
-    y-
-    {
-      type fixed
       value (0,0)
     }
   }
 
   p
   {
-    x+
-    {
-      type normal_gradient
-      value 0
-    } 
-
-    x-
+    *
     {
       type normal_gradient
       value 0
@@ -47,13 +29,7 @@ Boundaries
     {
       type fixed
       value 0
-    } 
-
-    y-
-    {
-      type normal_gradient
-      value 0
-    }  
+    }   
   }
   
   gamma
@@ -61,7 +37,14 @@ Boundaries
     *
     {
       type normal_gradient
-      value 1.73205080757 ; Contact angle of approximately 30 degrees
+      value 0
+    }
+
+    y-
+    {
+      type normal_gradient
+      value 0
+      contactAngle on
     }
   }
 }

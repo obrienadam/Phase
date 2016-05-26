@@ -18,32 +18,28 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
 {
     using namespace std;
 
-    auto &self = *this;
-
-    //- Check for a default patch
-
-    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + Field<Scalar>::name + ".*");
-
-    if(defBoundary)
+    if(input.boundaryInput().count("Boundaries." + name + ".*") != 0)
     {
-        for(int i = 0; i < grid.patches().size(); ++i)
-           boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>("Boundaries." + Field<Scalar>::name + ".*.value"));
-    }
-    else
-    {
-        //- Boundary condition association to patches is done by patch id
-        for(const Patch& patch: grid.patches())
+        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name + ".*.value");
+
+        for(const auto &entry: grid.patches())
         {
-            string root = "Boundaries." + Field<Scalar>::name + "." + patch.name;
-            boundaryRefValues_.push_back(input.boundaryInput().get<Scalar>(root + ".value"));
+            BoundaryType type = patchBoundaries_[entry.second.id()].first;
+            patchBoundaries_[entry.second.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for(const Patch& patch: grid.patches())
+    for(const auto &entry: grid.patches())
     {
-        for(const Face& face: patch.faces())
-            self.faces()[face.id()] = boundaryRefValue(face.id());
+        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name + "." + entry.first + ".value", 0);
+        BoundaryType type = patchBoundaries_[entry.second.id()].first;
+        patchBoundaries_[entry.second.id()] = std::make_pair(type, refVal);
     }
+
+    auto &self = *this;
+
+    for(const Face &face: grid.boundaryFaces())
+        self.faces()[face.id()] = boundaryRefValue(face.id());
 }
 
 //- External functions

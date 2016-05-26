@@ -60,7 +60,7 @@ public:
 
     //- Patch related methods
     void addPatch(const std::string& patchName);
-    const std::vector<Patch>& patches() const { return patches_; }
+    const std::map<std::string, Patch>& patches() const { return patches_; }
 
     //- Entity searches
     const Node& findNearestNode(const Point2D& pt) const;
@@ -97,7 +97,7 @@ protected:
     std::vector< Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
     std::vector< Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell
 
-    std::vector<Patch> patches_;
+    std::map<std::string, Patch> patches_;
 
     BoundingBox bBox_;
 

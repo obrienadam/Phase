@@ -23,32 +23,36 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 {
     using namespace std;
 
-    auto &self = *this;
+    string valStr = input.boundaryInput().get<string>("Boundaries." + name + ".*.value", "");
 
-    //- Check for a default patch
-
-    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + name + ".*");
-
-    if(defBoundary)
+    if(!valStr.empty())
     {
-        for(int i = 0; i < grid.patches().size(); ++i)
-            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<std::string>("Boundaries." + name + ".*.value")));
-    }
-    else
-    {
-        //- Boundary condition association to patches is done by patch id
-        for(const auto& patch: grid.patches())
+        Vector2D refVal = Vector2D(valStr);
+
+        for(const auto &entry: grid.patches())
         {
-            string root = "Boundaries." + name + "." + patch.name;
-            boundaryRefValues_.push_back(Vector2D(input.boundaryInput().get<std::string>(root + ".value")));
+            BoundaryType type = patchBoundaries_[entry.second.id()].first;
+            patchBoundaries_[entry.second.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for(const Patch& patch: grid.patches())
+    for(const auto &entry: grid.patches())
     {
-        for(const Face& face: patch.faces())
-            self.faces()[face.id()] = boundaryRefValue(face.id());
+        valStr = input.boundaryInput().get<string>("Boundaries." + name + "." + entry.first + ".value", "");
+
+        if(valStr.empty())
+            continue;
+
+        Vector2D refVal(valStr);
+
+        BoundaryType type = patchBoundaries_[entry.second.id()].first;
+        patchBoundaries_[entry.second.id()] = std::make_pair(type, refVal);
     }
+
+    auto &self = *this;
+
+    for(const Face &face: grid.boundaryFaces())
+        self.faces()[face.id()] = boundaryRefValue(face.id());
 }
 
 //- External functions

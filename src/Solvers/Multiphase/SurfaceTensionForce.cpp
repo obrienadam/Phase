@@ -14,13 +14,13 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteV
     for(const auto &boundaryInput: input.boundaryInput().get_child("Boundaries.gamma"))
     {
         std::string status = boundaryInput.second.get<std::string>("contactAngle", "off");
-/*
+
         if(status == "on")
             contactAnglePatches_.push_back(std::cref(gamma_.grid.patches().find(boundaryInput.first)->second));
         else if(status == "off")
             continue;
         else
-            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "invalid contact angle status \"" + status + "\".");*/
+            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "invalid contact angle status \"" + status + "\".");
     }
 }
 

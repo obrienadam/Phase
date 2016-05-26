@@ -23,16 +23,19 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
-    for(const Cell &cell: gamma_.grid.fluidCells())
+    for(const Patch &patch: contactAnglePatches_)
     {
-        if(cell.boundaries().size() == 0 || cell.boundaries().size() > 1)
-            ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
-        else
+        for(const Face &face: patch.faces())
         {
-            ft[cell.id()] = sigma_*kappa_[cell.id()]*(-gradGammaTilde_[cell.id()].mag()*computeContactLineNormal(gradGammaTilde_[cell.id()], cell.boundaries()[0].outwardNorm()));
-        }
+            const Cell &cell = face.lCell();
+            Vector2D sf = face.outwardNorm(cell.centroid());
 
+            gradGammaTilde_[cell.id()] = -gradGammaTilde_[cell.id()].mag()*computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
+        }
     }
+
+    for(const Cell &cell: gamma_.grid.fluidCells())
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
 
     return ft;
 }
@@ -60,8 +63,18 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
         if(isnan(vec.magSqr()))
             throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
     }
-
     interpolateFaces(n_);
+
+    for(const Patch &patch: contactAnglePatches_)
+    {
+        for(const Face &face: patch.faces())
+        {
+            const Cell &cell = face.lCell();
+            Vector2D sf = face.outwardNorm(cell.centroid());
+
+            n_.faces()[face.id()] = -computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
+        }
+    }
 }
 
 void ContinuumSurfaceForce::computeCurvature()
@@ -74,14 +87,11 @@ void ContinuumSurfaceForce::computeCurvature()
             k -= dot(n_.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink &bd: cell.boundaries())
-        {
-            k -= dot(-computeContactLineNormal(gradGammaTilde_[cell.id()], bd.outwardNorm()), bd.outwardNorm()); // Modify surface tension force near boundary
-        }
+            k -= dot(n_.faces()[bd.face().id()], bd.outwardNorm());
 
         k /= cell.volume();
 
         if(isnan(k))
             k = 0.;
-            //throw Exception("ContinuumSurfaceFoce", "computeCurvature", "NaN value detected. Cell volume = " + std::to_string(cell.volume()));
     }
 }

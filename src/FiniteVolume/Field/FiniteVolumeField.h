@@ -26,6 +26,8 @@ public:
     BoundaryType boundaryType(size_t faceId) const;
     T boundaryRefValue(size_t faceId) const;
 
+    std::pair<BoundaryType, T> boundaryInfo(size_t faceId) const;
+
     const std::vector<T>& faces() const { return faces_; }
     std::vector<T>& faces() { return faces_; }
 
@@ -51,8 +53,7 @@ protected:
     void setBoundaryTypes(const Input& input);
     void setBoundaryRefValues(const Input& input);
 
-    std::vector<BoundaryType> boundaryTypes_;
-    std::vector<T> boundaryRefValues_;
+    std::map<size_t, std::pair<BoundaryType, T> > patchBoundaries_;
 
     std::vector<T> faces_;
 

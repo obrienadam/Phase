@@ -29,8 +29,7 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeField &other)
     :
       Field<T>::Field(other),
       grid(other.grid),
-      boundaryTypes_(other.boundaryTypes_),
-      boundaryRefValues_(other.boundaryRefValues_),
+      patchBoundaries_(other.patchBoundaries_),
       faces_(other.faces_),
       previousFields_()
 {
@@ -56,26 +55,34 @@ void FiniteVolumeField<T>::fillInterior(const T &val)
 template<class T>
 void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 {
-    boundaryTypes_ = other.boundaryTypes_;
-    boundaryRefValues_.resize(other.boundaryRefValues_.size());
+    patchBoundaries_ = other.patchBoundaries_;
 }
 
 template<class T>
 typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(size_t faceId) const
 {
-    if(boundaryTypes_.size() == 0)
+    if(patchBoundaries_.size() == 0)
         return NORMAL_GRADIENT;
 
-    return boundaryTypes_[grid.faces()[faceId].patch().id()];
+    return (patchBoundaries_.find(grid.faces()[faceId].patch().id())->second).first;
 }
 
 template<class T>
 T FiniteVolumeField<T>::boundaryRefValue(size_t faceId) const
 {
-    if(boundaryRefValues_.size() == 0)
+    if(patchBoundaries_.size() == 0)
         return T();
 
-    return boundaryRefValues_[grid.faces()[faceId].patch().id()];
+    return (patchBoundaries_.find(grid.faces()[faceId].patch().id())->second).second;
+}
+
+template<class T>
+std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::boundaryInfo(size_t faceId) const
+{
+    if(patchBoundaries_.size() == 0)
+        return std::make_pair(NORMAL_GRADIENT, T());
+
+    return patchBoundaries_.find(grid.faces()[faceId].patch().id())->second;
 }
 
 template<class T>
@@ -100,8 +107,7 @@ FiniteVolumeField<T>& FiniteVolumeField<T>::operator=(const FiniteVolumeField& r
         throw Exception("FiniteVolumeField", "operator=", "grid references must be the same.");
 
     Field<T>::operator =(rhs);
-    boundaryTypes_ = rhs.boundaryTypes_;
-    boundaryRefValues_ = rhs.boundaryRefValues_;
+    patchBoundaries_ = rhs.patchBoundaries_;
     faces_ = rhs.faces_;
 
     return *this;
@@ -198,43 +204,44 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
 {
     using namespace std;
 
-    //- Check for a default patch
 
-    auto defBoundary = input.boundaryInput().get_child_optional("Boundaries." + Field<T>::name + ".*");
+    std::string typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name + ".*.type", "");
+    BoundaryType boundaryType;
 
-    if(defBoundary)
+    if(!typeStr.empty())
     {
-        std::string type = input.boundaryInput().get<string>("Boundaries." + Field<T>::name + ".*.type");
+        if(typeStr == "fixed")
+            boundaryType = FIXED;
+        else if(typeStr == "normal_gradient")
+            boundaryType = NORMAL_GRADIENT;
+        else if(typeStr == "symmetry")
+            boundaryType = SYMMETRY;
+        else
+            throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        for(int i = 0; i < grid.patches().size(); ++i)
+        for(const auto &entry: grid.patches())
         {
-            if(type == "fixed")
-                boundaryTypes_.push_back(FIXED);
-            else if(type == "normal_gradient")
-                boundaryTypes_.push_back(NORMAL_GRADIENT);
-            else if(type == "symmetry")
-                boundaryTypes_.push_back(SYMMETRY);
-            else
-                throw Exception("FiniteVolumeField", "FiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
+            patchBoundaries_[entry.second.id()] = std::make_pair(boundaryType, T());
         }
     }
-    else
-    {
-        //- Boundary condition association to patches is done by patch id
-        for(const Patch& patch: grid.patches())
-        {
-            string root = "Boundaries." + Field<T>::name + "." + patch.name;
-            string type = input.boundaryInput().get<string>(root + ".type");
 
-            if(type == "fixed")
-                boundaryTypes_.push_back(FIXED);
-            else if (type == "normal_gradient")
-                boundaryTypes_.push_back(NORMAL_GRADIENT);
-            else if (type == "symmetry")
-                boundaryTypes_.push_back(SYMMETRY);
-            else
-                throw Exception("FiniteVolumeField", "FiniteVolumeField", "unrecognized boundary type \"" + type + "\".");
-        }
+    for(const auto &entry: grid.patches())
+    {
+        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name + "." + entry.first + ".type", "");
+
+        if(typeStr.empty())
+            continue;
+
+        if(typeStr == "fixed")
+            boundaryType = FIXED;
+        else if(typeStr == "normal_gradient")
+            boundaryType = NORMAL_GRADIENT;
+        else if(typeStr == "symmetry")
+            boundaryType = SYMMETRY;
+        else
+            throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
+
+        patchBoundaries_[entry.second.id()] = std::make_pair(boundaryType, T());
     }
 }
 

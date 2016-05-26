@@ -15,6 +15,9 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
 
+    //- Initial conditions
+    solver.setInitialConditions(input);
+
     for(
         time = 0., iterNo = 0;
         time < maxTime;

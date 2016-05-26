@@ -8,7 +8,6 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(size_t nNodes, size_t nCells, size_t nFac
     nodes_.reserve(nNodes);
     cells_.reserve(nCells);
     faces_.reserve(nFaces);
-    patches_.reserve(4);
     fluidCells_.rename("FluidCells");
 }
 
@@ -119,10 +118,15 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& nam
 
 void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Ref<Face> > &faces)
 {
-    patches_.push_back(Patch(patches_.size(), patchName));
+    auto insert = patches_.insert(std::make_pair(patchName, Patch(patches_.size(), patchName)));
+
+    if(!insert.second)
+        throw Exception("FiniteVolumeGrid2D", "applyPatch", "patch already exists.");
+
+    Patch &patch = (insert.first)->second;
 
     for(Face &face: faces)
-        patches_.back().addFace(face);
+        patch.addFace(face);
 }
 
 const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const

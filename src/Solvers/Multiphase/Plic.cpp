@@ -99,6 +99,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
         else
             return eqn;
     }
+
+    return Equation<ScalarFiniteVolumeField>(field);
 }
 
 Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D& interfaceNormal)
