@@ -7,6 +7,16 @@ void CellSearch::constructRTree()
         rTree_.insert(Value(cell.centroid(), std::cref(cell)));
 }
 
+void CellSearch::addCell(const Cell &cell)
+{
+    rTree_.insert(Value(cell.centroid(), std::cref(cell)));
+}
+
+void CellSearch::removeCell(const Cell &cell)
+{
+    //rTree_.remove(Value(cell.centroid(), std::cref(cell)));
+}
+
 std::vector< Ref<const Cell> >  CellSearch::rangeSearch(const Circle &circle) const
 {
     auto inCircle = [&circle](const Value &val) { return circle.isInside(val.first); };

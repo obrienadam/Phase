@@ -27,11 +27,15 @@ public:
         const Point2D& boundaryPoint() const { return bp_; }
         const Point2D& imagePoint() const { return ip_; }
 
+        ImmersedBoundaryStencil rotate(Scalar theta, const ImmersedBoundaryObject &ibObj) const;
+
+
     private:
 
         Ref<const Cell> cell_;
         std::vector< Ref<const Cell> > kNN_;
         Point2D bp_, ip_;
+        const CellSearch &cellSearch_;
     };
 
     ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr);
@@ -50,11 +54,16 @@ public:
 
     const SurfaceTensionForce& csf() const { return *csf_; }
 
+    const CellSearch& cellSearch() const { return cellSearch_; }
+
+    std::vector< Ref<const Cell> > getBoundingCells(const Point2D& pt) const;
+
 private:
 
     const FiniteVolumeGrid2D &grid_;
     std::shared_ptr<SurfaceTensionForce> csf_;
     std::vector<ImmersedBoundaryStencil> ibStencils_;
+    CellSearch cellSearch_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
 };

@@ -13,6 +13,8 @@ public:
     CellSearch(const CellGroup &cellGroup) : cellGroup_(cellGroup) { constructRTree(); }
 
     void constructRTree();
+    void addCell(const Cell &cell);
+    void removeCell(const Cell &cell);
 
     std::vector< Ref<const Cell> > rangeSearch(const Circle &circle) const;
     std::vector< Ref<const Cell> > rangeSearch(const Polygon &pgn) const;

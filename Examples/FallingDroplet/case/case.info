@@ -27,8 +27,8 @@ Properties
 	sigma 0.07
 	g (0,-9.8065)
 
-	advancingContactAngle 120
-	recedingContactAngle 120
+	advancingContactAngle 150
+	recedingContactAngle 150
 }
 
 Grid

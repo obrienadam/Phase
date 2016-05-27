@@ -36,6 +36,8 @@ public:
     std::vector< Ref<const Cell> >::const_iterator begin() const { return cells_.begin(); }
     std::vector< Ref<const Cell> >::const_iterator end() const { return cells_.end(); }
 
+    bool isInGroup(const Cell &cell) const;
+
 protected:
 
     std::string name_;

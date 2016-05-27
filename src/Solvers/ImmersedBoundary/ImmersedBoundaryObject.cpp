@@ -10,10 +10,19 @@ ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const C
     :
       cell_(cell),
       bp_(bp),
-      ip_(2.*bp - cell.centroid())
+      ip_(2.*bp - cell.centroid()),
+      cellSearch_(cs)
 {
     Point2D sp = grid.findNearestNode(ip_);
     kNN_ = cs.kNearestNeighbourSearch(sp, 4);
+}
+
+ImmersedBoundaryObject::ImmersedBoundaryStencil ImmersedBoundaryObject::ImmersedBoundaryStencil::rotate(Scalar theta, const ImmersedBoundaryObject& ibObj) const
+{
+    Vector2D bp = bp_ - ibObj.centroid();
+    bp = bp.rotate(theta) + ibObj.centroid();
+
+    return ImmersedBoundaryStencil(cell_, bp, ibObj.grid(), cellSearch_);
 }
 
 //- Immersed boundary objectclass
@@ -21,7 +30,8 @@ ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const C
 ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr)
     :
       Circle(Point2D(), 0.),
-      grid_(grid)
+      grid_(grid),
+      cellSearch_(grid.activeCells())
 {
     csf_ = csfPtr;
 }
@@ -29,7 +39,8 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, c
 ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr, const Point2D &center, Scalar radius)
     :
       Circle(center, radius),
-      grid_(grid)
+      grid_(grid),
+      cellSearch_(grid.activeCells())
 {
     csf_ = csfPtr;
 }
@@ -74,7 +85,9 @@ void ImmersedBoundaryObject::constructStencils()
                                       cell,
                                       nearestIntersect(cell.centroid()),
                                       grid_,
-                                      grid_.activeCells()));
+                                      cellSearch_
+                                      )
+                                  );
         }
         else // the cell will be set to inactive
             inactiveCellIds.push_back(cell.id());
@@ -87,4 +100,10 @@ void ImmersedBoundaryObject::constructStencils()
 void ImmersedBoundaryObject::addBoundaryType(const std::string &fieldName, BoundaryType boundaryType)
 {
     boundaryTypes_[fieldName] = boundaryType;
+}
+
+std::vector< Ref<const Cell> > ImmersedBoundaryObject::getBoundingCells(const Point2D &pt) const
+{
+    Vector2D node = grid_.findNearestNode(pt);
+    return cellSearch_.kNearestNeighbourSearch(node, 4);
 }

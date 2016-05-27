@@ -18,7 +18,7 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
     {
         const size_t row = ibStencil.cell().globalIndex();
 
-        const std::vector< Ref<const Cell> > &kNN = ibStencil.kNearestNeighbours();
+        std::vector< Ref<const Cell> > kNN = ibStencil.kNearestNeighbours();
         std::vector<Point2D> centroids = {
             kNN[0].get().centroid(),
             kNN[1].get().centroid(),
@@ -29,15 +29,14 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
         BilinearInterpolation bi(centroids);
         std::vector<Scalar> coeffs = bi(ibStencil.imagePoint());
 
-        int cols[] = {
+        std::vector<int> cols = {
             kNN[0].get().globalIndex(),
             kNN[1].get().globalIndex(),
             kNN[2].get().globalIndex(),
             kNN[3].get().globalIndex(),
         };
 
-        Scalar centralCoeff, gammaIp, gamma[4];
-        Vector2D nWall, gradGamma, nl;
+        Scalar centralCoeff;
         // Then here we shall do the boundary assembly!
         switch(ibObj.boundaryType(field.name))
         {
@@ -50,28 +49,38 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             break;
 
         case ImmersedBoundaryObject::CONTACT_ANGLE:
-
-            gamma[0] = ibObj.csf().gamma()[kNN[0].get().id()];
-            gamma[1] = ibObj.csf().gamma()[kNN[1].get().id()];
-            gamma[2] = ibObj.csf().gamma()[kNN[2].get().id()];
-            gamma[3] = ibObj.csf().gamma()[kNN[3].get().id()];
-
-            gammaIp = bi(gamma, ibStencil.imagePoint());
-            nWall = ibStencil.cell().centroid() - ibStencil.imagePoint();
-
-            gradGamma = (ibObj.csf().gamma()[ibStencil.cell().id()] - gammaIp)*nWall.unitVec();
-
-            nl = ibObj.csf().computeContactLineNormal(gradGamma, nWall);
-
-            gradGamma = -gradGamma.mag()*nl;
-
-            eqn.boundaries()(row) -= nWall.mag()*dot(gradGamma, nWall.unitVec());
-            centralCoeff = -1.;
-
+            centralCoeff = 1;
             break;
 
         default:
             throw Exception("gc", "ib", "invalid boundary type.");
+        }
+
+        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE)
+        {
+            Scalar theta = ibObj.csf().theta();
+            Scalar rotAngle = (ibStencil.boundaryPoint() - ibObj.centroid()).x > 0. ? theta - M_PI/2. : M_PI/2. - theta;
+
+            Vector2D ip2 = (ibStencil.imagePoint() - ibStencil.boundaryPoint()).rotate(rotAngle) + ibStencil.imagePoint();
+
+            kNN = ibObj.getBoundingCells(ip2);
+
+            centroids = {
+                        kNN[0].get().centroid(),
+                        kNN[1].get().centroid(),
+                        kNN[2].get().centroid(),
+                        kNN[3].get().centroid(),
+                    };
+
+            bi = BilinearInterpolation(centroids);
+
+            std::vector<Scalar> tmpCoeffs = bi(ip2);
+
+            for(Scalar coeff: tmpCoeffs)
+                coeffs.push_back(-2*coeff);
+
+            for(const Cell &cell: kNN)
+                cols.push_back(cell.globalIndex());
         }
 
         entries.push_back(Triplet(row, row, centralCoeff));

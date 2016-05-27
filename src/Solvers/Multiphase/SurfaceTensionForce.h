@@ -19,6 +19,8 @@ public:
     const ScalarFiniteVolumeField& kappa() const { return kappa_; }
     const VectorFiniteVolumeField& n() const { return n_; }
 
+    Scalar theta() const { return thetaAdv_; }
+
 protected:
 
     Scalar sigma_, thetaAdv_, thetaRec_;

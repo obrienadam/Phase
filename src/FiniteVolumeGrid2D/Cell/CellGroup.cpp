@@ -28,3 +28,10 @@ void CellGroup::remove(const Cell &cell)
             cellSet_[&cell] = idx++;
     }
 }
+
+bool CellGroup::isInGroup(const Cell &cell) const
+{
+    auto it = cellSet_.find(&cell);
+
+    return it == cellSet_.end() ? false : true;
+}
