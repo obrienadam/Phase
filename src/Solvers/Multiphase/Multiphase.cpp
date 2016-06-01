@@ -31,7 +31,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     {
     case CSF:
 
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho));
         break;
     case HF:
 
@@ -47,7 +47,7 @@ Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
     computeRho();
     computeMu();
 
-    Piso::solve(timeStep, prevTimeStep);
+    Piso::solve(timeStep);
 
     solveGammaEqn(timeStep, prevTimeStep);
 
@@ -98,7 +98,7 @@ Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
     ft = surfaceTensionForce_->compute(); // surface tension force
 
-    uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
              == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(rho*g_));
     uEqn_.relax(momentumOmega_);
 
@@ -111,14 +111,14 @@ Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 
 Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
 { 
-    gamma.save(1);
+    gamma.save(timeStep, 1);
     interpolateFaces(gamma);
 
     switch(interfaceAdvectionMethod_)
     {
     case CICSAM:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + cicsam::div(u, gamma, timeStep) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) == 0.);
         break;
     case PLIC:
 

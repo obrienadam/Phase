@@ -10,6 +10,7 @@ extern "C"
 }
 
 #include "Matrix.h"
+#include "Exception.h"
 
 Matrix::Matrix(size_t nRows, size_t nCols)
 {
@@ -44,6 +45,15 @@ Scalar& Matrix::operator()(size_t m, size_t n)
 const Scalar& Matrix::operator()(size_t m, size_t n) const
 {
     return std::vector<Scalar>::operator [](m*nCols_ + n);
+}
+
+Matrix& Matrix::operator=(const std::initializer_list<Scalar>& list)
+{
+    if(list.size() != nRows_*nCols_)
+        throw Exception("Matrix", "operator=", "initializer list size does not match matrix dimensions.");
+
+    std::vector<Scalar>::operator =(list);
+    return *this;
 }
 
 //- Operators

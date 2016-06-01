@@ -22,6 +22,8 @@ public:
     Scalar& operator()(size_t m, size_t n);
     const Scalar& operator()(size_t m, size_t n) const;
 
+    Matrix& operator=(const std::initializer_list<Scalar>& list);
+
     Matrix& operator+=(const Matrix& rhs);
     Matrix& operator-=(const Matrix& rhs);
     Matrix& operator*=(Scalar rhs);

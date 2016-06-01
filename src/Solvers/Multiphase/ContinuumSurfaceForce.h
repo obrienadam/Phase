@@ -8,7 +8,7 @@ class ContinuumSurfaceForce : public SurfaceTensionForce
 {
 public:
 
-    ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma);
+    ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField& rho);
 
     virtual VectorFiniteVolumeField compute();
     const VectorFiniteVolumeField& n() const { return n_; }
@@ -25,6 +25,8 @@ protected:
     std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
     Scalar kernelWidth_;
 
+    Scalar avgRho_;
+    const ScalarFiniteVolumeField &rho_;
     VectorFiniteVolumeField gradGammaTilde_;
 };
 

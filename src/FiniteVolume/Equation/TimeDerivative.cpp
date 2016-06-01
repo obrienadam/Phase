@@ -3,7 +3,7 @@
 namespace fv
 {
 
-Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep)
+Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const Field<Scalar> &prevField = field.prev(0);
@@ -25,7 +25,7 @@ Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFi
     return eqn;
 }
 
-Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep)
+Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const Field<Scalar> &prevField = field.prev(0);
@@ -47,7 +47,7 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
     return eqn;
 }
 
-Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep)
+Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const FiniteVolumeField<Vector2D> &prevField = field.prev(0);
@@ -73,7 +73,7 @@ Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar tim
     return eqn;
 }
 
-Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep, Scalar prevTimeStep)
+Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const FiniteVolumeField<Vector2D> &prevField = field.prev(0);

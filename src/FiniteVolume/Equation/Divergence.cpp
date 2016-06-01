@@ -31,7 +31,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm()), boundaryCoeff;
 
             switch(field.boundaryType(bd.face().id()))
             {
@@ -89,7 +89,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm()), boundaryCoeff;
 
             switch(field.boundaryType(bd.face().id()))
             {
@@ -103,6 +103,9 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:
+                boundaryCoeff = dot(bd.rFaceVec(), bd.outwardNorm().unitVec())/dot(bd.rFaceVec(), bd.rFaceVec());
+                boundaryCoeff = 1./(1./boundaryCoeff + 1.);
+                centralCoeff += faceFlux*boundaryCoeff;
                 break;
 
             default:

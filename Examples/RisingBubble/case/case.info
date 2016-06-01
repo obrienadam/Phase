@@ -1,18 +1,18 @@
-; Test case for the 2D falling droplet
+; Test case for the 2D rising bubble
 
-CaseName FallingDroplet2D
+CaseName RisingBubble2D
 
 Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-2
+	timeStep 0.5e-3
 	maxCo 0.3
-	maxTime 6
+	maxTime 2
 
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
-	numInnerIterations 2
+	numInnerIterations 3
 	numPressureCorrections 1
 
 	smoothingKernelRadius 0.028
@@ -20,11 +20,11 @@ Solver
 
 Properties
 {
-	rho1 0.1
-	rho2 1
- 	mu1 0.001
-	mu2 0.001
-	sigma 0.07
+	rho1 998
+	rho2 1.2
+ 	mu1 8.94e-4
+	mu2 1.846e-5
+	sigma 0.762
 	g (0,-9.8065)
 
 	advancingContactAngle 150
@@ -34,8 +34,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 100
-	nCellsJ 50
+	nCellsI 50
+	nCellsJ 100
 
 	; Rectilinear parameters
 	spacingX 0.02

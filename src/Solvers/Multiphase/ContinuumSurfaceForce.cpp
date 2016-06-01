@@ -1,9 +1,10 @@
 #include "ContinuumSurfaceForce.h"
 
-ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma)
+ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho)
     :
       SurfaceTensionForce(input, gamma),
-      gradGammaTilde_(gamma.grid, "gammaTilde")
+      gradGammaTilde_(gamma.grid, "gammaTilde"),
+      rho_(rho)
 {
     CellSearch cs(gamma_.grid.activeCells());
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
@@ -13,6 +14,8 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFin
 
     for(const Cell &cell: gamma_.grid.cells())
         cellRangeSearch_[cell.id()] = cs.rangeSearch(Circle(cell.centroid(), kernelWidth_));
+
+    avgRho_ = (input.caseInput().get<Scalar>("Properties.rho1") + input.caseInput().get<Scalar>("Properties.rho2"))/2.;
 }
 
 VectorFiniteVolumeField ContinuumSurfaceForce::compute()
@@ -30,12 +33,12 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
             const Cell &cell = face.lCell();
             Vector2D sf = face.outwardNorm(cell.centroid());
 
-            gradGammaTilde_[cell.id()] = -gradGammaTilde_[cell.id()].mag()*computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
+            gradGammaTilde_[cell.id()] = -gradGammaTilde_[cell.id()].mag()*computeContactLineNormal(gradGammaTilde_[cell.id()], sf)*rho_[cell.id()]/avgRho_;
         }
     }
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()]*rho_[cell.id()]/avgRho_;
 
     return ft;
 }

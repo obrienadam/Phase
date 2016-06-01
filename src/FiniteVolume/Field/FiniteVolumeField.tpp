@@ -1,6 +1,8 @@
 #include "FiniteVolumeField.h"
 #include "Exception.h"
 
+#include <boost/algorithm/string.hpp>
+
 //- Constructors
 
 template <class T>
@@ -86,14 +88,14 @@ std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::
 }
 
 template<class T>
-FiniteVolumeField<T>& FiniteVolumeField<T>::save(int nPreviousFields)
+FiniteVolumeField<T>& FiniteVolumeField<T>::save(Scalar timeStep, int nPreviousFields)
 {
-    previousFields_.push_front(FiniteVolumeField<T>(*this));
+    previousFields_.push_front(std::make_pair(timeStep, FiniteVolumeField<T>(*this)));
 
     while(previousFields_.size() > nPreviousFields)
         previousFields_.pop_back();
 
-    return previousFields_.front();
+    return previousFields_.front().second;
 }
 
 //- Operators
@@ -205,8 +207,9 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
     using namespace std;
 
 
-    std::string typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name + ".*.type", "");
+    std::string typeStr = input.boundaryInput().get<string>("Boundaries." + Field<T>::name + ".*.type", "");
     BoundaryType boundaryType;
+    std::vector<Scalar> coeffs;
 
     if(!typeStr.empty())
     {

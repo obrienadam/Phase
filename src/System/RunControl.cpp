@@ -10,7 +10,6 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     Scalar time = 0.;
     Scalar maxTimeStep = input.caseInput().get<Scalar>("Solver.timeStep");
     Scalar timeStep = maxTimeStep;
-    Scalar prevTimeStep = timeStep;
 
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
@@ -27,9 +26,8 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
         if(iterNo%fileWriteFrequency == 0)
             viewer.write(time);
 
-        solver.solve(timeStep, prevTimeStep);
+        solver.solve(timeStep);
         printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
-        prevTimeStep = timeStep;
     }
 
     viewer.write(time);

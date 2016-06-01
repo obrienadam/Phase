@@ -32,6 +32,8 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
                 boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
             else if(type == "contact_angle")
                 boundaryType = ImmersedBoundaryObject::CONTACT_ANGLE;
+            else if(type == "partial_slip")
+                boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
@@ -46,7 +48,7 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
 
     // Only multiphase methods supported at the moment
     interfaceAdvectionMethod_ = CICSAM;
-    surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma));
+    surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho));
 
     ibObj_.constructStencils();
     setCellStatus();
@@ -57,7 +59,7 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
     computeRho();
     computeMu();
 
-    u.save(1);
+    u.save(timeStep, 1);
 
     Scalar avgError = 0.;
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
@@ -83,7 +85,7 @@ Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
 {
     ft = surfaceTensionForce_->compute();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep, prevTimeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
              == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft));
 
     uEqn_.relax(momentumOmega_);
@@ -107,9 +109,9 @@ Scalar ImmersedBoundary::solvePCorrEqn()
 
 Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
 {
-    gamma.save(1);
+    gamma.save(timeStep, 1);
     interpolateFaces(gamma);
-    gammaEqn_ = (fv::ddt(gamma, timeStep, prevTimeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObj_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 

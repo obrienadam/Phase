@@ -11,7 +11,7 @@ Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
 }
 
-Scalar Poisson::solve(Scalar timeStep, Scalar prevTimeStep)
+Scalar Poisson::solve(Scalar timeStep)
 {
     phiEqn_ = (fv::laplacian(gamma, phi) == 0.);
     phiEqn_.solve();

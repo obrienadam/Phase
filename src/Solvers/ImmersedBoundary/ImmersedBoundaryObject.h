@@ -10,7 +10,7 @@ class ImmersedBoundaryObject : public Circle
 {
 public:
 
-    enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE};
+    enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP};
 
     class ImmersedBoundaryStencil
     {

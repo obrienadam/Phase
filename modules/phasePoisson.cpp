@@ -20,7 +20,7 @@ int main(int argc, const char* argv[])
     Poisson solver(*gridPtr, input);
     TecplotViewer viewer(solver, input);
 
-    solver.solve(0., 0.);
+    solver.solve(0.);
     viewer.write(0.);
 
     return 0;

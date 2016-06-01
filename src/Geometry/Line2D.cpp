@@ -50,13 +50,15 @@ std::pair<Point2D, bool> Line2D::intersection(const Line2D &lineA, const Line2D 
 
     Matrix A(2, 2), b(2, 1);
 
-    A(0, 0) = d1.x;
-    A(0, 1) = -d2.x;
-    A(1, 0) = d1.y;
-    A(1, 1) = -d2.y;
+    A = {
+      d1.x, -d2.x,
+        d1.y, -d2.y,
+    };
 
-    b(0, 0) = o2.x - o1.x;
-    b(1, 0) = o2.y - o1.y;
+    b = {
+      o2.x - o1.x,
+        o2.y - o1.y,
+    };
 
     A.solve(b);
 
