@@ -10,7 +10,7 @@ BilinearInterpolation::BilinearInterpolation(const std::vector<Point2D>& pts)
     constructMatrix(pts);
 }
 
-Scalar BilinearInterpolation::operator()(const Scalar vals[], const Point2D& ip) const
+Scalar BilinearInterpolation::operator()(const std::vector<Scalar>& vals, const Point2D& ip) const
 {
     Matrix x(4, 1), phi(1, 4);
 
@@ -29,6 +29,37 @@ Scalar BilinearInterpolation::operator()(const Scalar vals[], const Point2D& ip)
     };
 
     return (phi*mat_*x)(0, 0);
+}
+
+Vector2D BilinearInterpolation::operator()(const std::vector<Vector2D>& vals, const Point2D& ip) const
+{
+    Matrix x(4, 1), phiX(1, 4), phiY(1, 4);
+
+    x = {
+      ip.x,
+        ip.y,
+        ip.x*ip.y,
+        1.,
+    };
+
+    phiX = {
+      vals[0].x,
+        vals[1].x,
+        vals[2].x,
+        vals[3].x,
+    };
+
+    phiY = {
+      vals[0].y,
+        vals[1].y,
+        vals[2].y,
+        vals[3].y,
+    };
+
+    return Vector2D(
+                (phiX*mat_*x)(0, 0),
+                (phiY*mat_*x)(0, 0)
+                );
 }
 
 std::vector<Scalar> BilinearInterpolation::operator()(const Point2D& ip) const

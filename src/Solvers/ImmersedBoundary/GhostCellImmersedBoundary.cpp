@@ -55,9 +55,9 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             throw Exception("gc", "ib", "invalid boundary type.");
         }
 
-        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE)
+        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE && false)
         {
-            Scalar theta = M_PI/6;
+            Scalar theta = ibObj.csf().theta();
             const Point2D boundaryPoint = ibObj.boundaryPoint(cell.centroid());
 
             Scalar rotAngle = (boundaryPoint - ibObj.centroid()).x > 0. ? theta - M_PI/2. : M_PI/2. - theta;

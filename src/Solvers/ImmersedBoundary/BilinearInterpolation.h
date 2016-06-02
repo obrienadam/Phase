@@ -11,7 +11,9 @@ public:
     BilinearInterpolation(const FiniteVolumeGrid2D& grid);
     BilinearInterpolation(const std::vector<Point2D> &pts);
 
-    Scalar operator()(const Scalar vals[], const Point2D& ip) const;
+    Scalar operator()(const std::vector<Scalar>& vals, const Point2D& ip) const;
+    Vector2D operator()(const std::vector<Vector2D>& vals, const Point2D& ip) const;
+
     std::vector<Scalar> operator()(const Point2D& ip) const;
 
     const Matrix& mat() const { return mat_; }

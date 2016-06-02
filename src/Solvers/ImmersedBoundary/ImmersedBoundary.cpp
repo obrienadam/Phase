@@ -5,7 +5,8 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      ibObj_(grid),
+      csf_(input, gamma, rho),
+      ibObj_(grid, csf_),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& ibObjects: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -83,7 +84,7 @@ Scalar ImmersedBoundary::solve(Scalar timeStep)
 
 Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_->compute();
+    ft = csf_.compute(ibObj_);
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObj_, u)
              == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft));

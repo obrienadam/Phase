@@ -1,9 +1,10 @@
 #include "ImmersedBoundaryObject.h"
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid, const ImmersedBoundaryContinuumSurfaceForce &csf)
     :
       Circle(Point2D(0., 0.), 0.),
-      grid_(grid)
+      grid_(grid),
+      csf_(csf)
 {
 
 }

@@ -25,6 +25,7 @@ protected:
     Scalar solveGammaEqn(Scalar timeStep);
 
     ImmersedBoundaryObject ibObj_;
+    ImmersedBoundaryContinuumSurfaceForce csf_;
 };
 
 #endif

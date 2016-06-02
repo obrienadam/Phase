@@ -7,7 +7,7 @@ class ContinuumSurfaceForce : public SurfaceTensionForce
 {
 public:
 
-    ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField& rho);
+    ContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField& gamma, const ScalarFiniteVolumeField &rho);
 
     virtual VectorFiniteVolumeField compute();
     const VectorFiniteVolumeField& n() const { return n_; }

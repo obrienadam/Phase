@@ -20,10 +20,10 @@ Solver
 
 Properties
 {
-	rho1 0.5
+	rho1 0.75
 	rho2 1
- 	mu1 0.01
-	mu2 0.01
+ 	mu1 0.001
+	mu2 0.001
 	sigma 0.0262
 	g (0,-9.8065)
 

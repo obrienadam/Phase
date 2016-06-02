@@ -97,7 +97,8 @@ void Simple::computeD()
 {
     const auto diag = uEqn_.matrix().diagonal();
 
-    for(const Cell& cell: d.grid.activeCells())
+    d.fill(0.);
+    for(const Cell& cell: d.grid.fluidCells())
     {
         if(cell.isActive())
             d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
