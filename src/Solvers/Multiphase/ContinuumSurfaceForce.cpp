@@ -57,17 +57,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
     interpolateFaces(n_);
 
-    for(Vector2D &n: n_.faces())
-    {
-        if(n == Vector2D(0., 0.))
-            continue;
-
-        n = n.unitVec();
-
-        if(isnan(n.magSqr()))
-            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
-    }
-
+    //- Set the contact angles
     for(const Patch &patch: contactAnglePatches_)
     {
         for(const Face &face: patch.faces())
@@ -77,6 +67,17 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
             n_.faces()[face.id()] = -computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
         }
+    }
+
+    for(Vector2D &n: n_.faces())
+    {
+        if(n.magSqr() < 1e-32)
+            n = Vector2D(0., 0.);
+        else
+            n = n.unitVec();
+
+        if(isnan(n.magSqr()))
+            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
     }
 }
 

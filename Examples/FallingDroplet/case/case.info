@@ -6,29 +6,29 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-4
+	timeStep 5e-3
 	maxCo 0.3
-	maxTime 2
+	maxTime 5
 
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.028
+	smoothingKernelRadius 0.0601
 }
 
 Properties
 {
-	rho1 1.225
-	rho2 998
- 	mu1 0.001
-	mu2 0.0001
-	sigma 0.0762
+	rho1 0.5
+	rho2 1
+ 	mu1 0.01
+	mu2 0.01
+	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 150
-	recedingContactAngle 150
+	advancingContactAngle 120
+	recedingContactAngle 120
 }
 
 Grid

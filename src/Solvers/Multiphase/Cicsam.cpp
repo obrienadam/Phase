@@ -78,7 +78,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
             const Scalar coD = u.faces()[nb.face().id()].mag()*timeStep/nb.rCellVec().mag();
 
-            Scalar betaFace = uq::betaFace(gammaD, gammaA, gammaU, coD);
+            Scalar betaFace = hc::betaFace(gammaD, gammaA, gammaU, coD);
 
             size_t col = nb.cell().globalIndex();
             Scalar coeff;
