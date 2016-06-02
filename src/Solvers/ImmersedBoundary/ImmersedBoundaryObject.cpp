@@ -1,109 +1,59 @@
 #include "ImmersedBoundaryObject.h"
-#include "CellSearch.h"
 
-//- Immersed boundary object stencil class
-
-ImmersedBoundaryObject::ImmersedBoundaryStencil::ImmersedBoundaryStencil(const Cell &cell,
-                                                                         const Point2D &bp,
-                                                                         const FiniteVolumeGrid2D &grid,
-                                                                         const CellSearch &cs)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid)
     :
-      cell_(cell),
-      bp_(bp),
-      ip_(2.*bp - cell.centroid()),
-      cellSearch_(cs)
+      Circle(Point2D(0., 0.), 0.),
+      grid_(grid)
 {
-    Point2D sp = grid.findNearestNode(ip_);
-    kNN_ = cs.kNearestNeighbourSearch(sp, 4);
+
 }
 
-ImmersedBoundaryObject::ImmersedBoundaryStencil ImmersedBoundaryObject::ImmersedBoundaryStencil::rotate(Scalar theta, const ImmersedBoundaryObject& ibObj) const
+Point2D ImmersedBoundaryObject::boundaryPoint(const Point2D &pt) const
 {
-    Vector2D bp = bp_ - ibObj.centroid();
-    bp = bp.rotate(theta) + ibObj.centroid();
-
-    return ImmersedBoundaryStencil(cell_, bp, ibObj.grid(), cellSearch_);
+    return nearestIntersect(pt);
 }
 
-//- Immersed boundary objectclass
-
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr)
-    :
-      Circle(Point2D(), 0.),
-      grid_(grid),
-      cellSearch_(grid.activeCells())
+Point2D ImmersedBoundaryObject::imagePoint(const Point2D &pt) const
 {
-    csf_ = csfPtr;
+    return 2.*boundaryPoint(pt) - pt;
 }
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D &grid, const std::shared_ptr<SurfaceTensionForce> &csfPtr, const Point2D &center, Scalar radius)
-    :
-      Circle(center, radius),
-      grid_(grid),
-      cellSearch_(grid.activeCells())
+void ImmersedBoundaryObject::setInternalCells()
 {
-    csf_ = csfPtr;
-}
+    auto internalCells = grid_.activeCells().rangeSearch(*this);
+    std::vector<size_t> internalCellIds;
+    internalCellIds.reserve(internalCells.size());
 
-void ImmersedBoundaryObject::init(const Point2D& center, Scalar radius)
-{
-    Circle::init(center, radius);
-}
+    grid_.moveAllCellsToFluidCellGroup(); // temporary!
 
-void ImmersedBoundaryObject::constructStencils()
-{
-    grid().moveAllCellsToFluidCellGroup(); // This must happen first for some reason
+    for(const Cell &cell: internalCells)
+        internalCellIds.push_back(cell.id());
 
-    // Get a list of cells that are in immersed boundary
-    std::vector< Ref<const Cell> > internalCells = CellSearch(grid_.activeCells()).rangeSearch(*this);
-
-    ibStencils_.clear();
-    ibStencils_.reserve(internalCells.size());
-
-    std::vector<size_t> inactiveCellIds, ibCellIds;
-
-    inactiveCellIds.reserve(internalCells.size());
-    ibCellIds.reserve(internalCells.size());
+    grid_.moveCellsToInactiveCellGroup(internalCellIds);
+    internalCellIds.clear();
 
     for(const Cell &cell: internalCells)
     {
-        bool isIbCell = false;
-
         for(const InteriorLink &nb: cell.neighbours())
         {
-            if(!isInside(nb.cell().centroid()))
+            if(nb.cell().isActive())
             {
-                isIbCell = true;
+                internalCellIds.push_back(cell.id());
                 break;
             }
         }
-
-        if(isIbCell)
-        {
-            ibCellIds.push_back(cell.id()); // set the cell as an ib cell (part of a new group)
-            ibStencils_.push_back(ImmersedBoundaryStencil(
-                                      cell,
-                                      nearestIntersect(cell.centroid()),
-                                      grid_,
-                                      cellSearch_
-                                      )
-                                  );
-        }
-        else // the cell will be set to inactive
-            inactiveCellIds.push_back(cell.id());
     }
 
-    grid_.moveCellsToInactiveCellGroup(inactiveCellIds);
-    grid_.moveCellsToCellGroup("ibCells", ibCellIds);
+    grid_.moveCellsToCellGroup("ibCells", internalCellIds);
 }
 
-void ImmersedBoundaryObject::addBoundaryType(const std::string &fieldName, BoundaryType boundaryType)
+void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
 {
-    boundaryTypes_[fieldName] = boundaryType;
+    boundaryTypes_[name] = boundaryType;
 }
 
-std::vector< Ref<const Cell> > ImmersedBoundaryObject::getBoundingCells(const Point2D &pt) const
+const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const Point2D &pt) const
 {
-    Vector2D node = grid_.findNearestNode(pt);
-    return cellSearch_.kNearestNeighbourSearch(node, 4);
+    const Node &node = grid_.findNearestNode(pt);
+    return grid_.activeCells().kNearestNeighbourSearch(node, 4);
 }

@@ -14,6 +14,8 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
 
+    setInitialConditions(input);
+
     computeRho();
     computeMu();
 
@@ -42,14 +44,14 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     }
 }
 
-Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
+Scalar Multiphase::solve(Scalar timeStep)
 {
     computeRho();
     computeMu();
 
     Piso::solve(timeStep);
 
-    solveGammaEqn(timeStep, prevTimeStep);
+    solveGammaEqn(timeStep);
 
     return 0.; // just to get rid of warning
 }
@@ -58,14 +60,6 @@ Scalar Multiphase::solve(Scalar timeStep, Scalar prevTimeStep)
 
 void Multiphase::computeRho()
 {
-//    for(const Cell& cell: rho.grid.activeCells())
-//    {
-//        size_t id = cell.id();
-//        rho[id] = rho1_*(1. - gamma[id]) + rho2_*gamma[id];
-//    }
-
-//    harmonicInterpolateFaces(rho);
-
     for(const Cell& cell: rho.grid.activeCells())
     {
         size_t id = cell.id();
@@ -77,14 +71,6 @@ void Multiphase::computeRho()
 
 void Multiphase::computeMu()
 {
-//    for(const Cell& cell: mu.grid.activeCells())
-//    {
-//        size_t id = cell.id();
-//        mu[id] = rho[id]/((1. - gamma[id])*rho1_/mu1_ + gamma[id]*rho2_/mu2_);
-//    }
-
-//    interpolateFaces(mu);
-
     for(const Cell& cell: mu.grid.activeCells())
     {
         size_t id = cell.id();
@@ -94,7 +80,7 @@ void Multiphase::computeMu()
     interpolateFaces(mu);
 }
 
-Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
+Scalar Multiphase::solveUEqn(Scalar timeStep)
 {
     ft = surfaceTensionForce_->compute(); // surface tension force
 
@@ -109,7 +95,7 @@ Scalar Multiphase::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
     return error;
 }
 
-Scalar Multiphase::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
+Scalar Multiphase::solveGammaEqn(Scalar timeStep)
 { 
     gamma.save(timeStep, 1);
     interpolateFaces(gamma);

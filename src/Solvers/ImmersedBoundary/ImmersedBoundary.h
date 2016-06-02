@@ -12,7 +12,7 @@ public:
 
     ImmersedBoundary(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    Scalar solve(Scalar timeStep, Scalar prevTimeStep);
+    Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &cellStatus_;
 
@@ -20,9 +20,9 @@ protected:
 
     void setCellStatus();
 
-    Scalar solveUEqn(Scalar timeStep, Scalar prevTimeStep);
+    Scalar solveUEqn(Scalar timeStep);
     Scalar solvePCorrEqn();
-    Scalar solveGammaEqn(Scalar timeStep, Scalar prevTimeStep);
+    Scalar solveGammaEqn(Scalar timeStep);
 
     ImmersedBoundaryObject ibObj_;
 };

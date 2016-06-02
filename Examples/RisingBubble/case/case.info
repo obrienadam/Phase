@@ -21,7 +21,7 @@ Solver
 Properties
 {
 	rho1 998
-	rho2 1.2
+	rho2 1.225
  	mu1 8.94e-4
 	mu2 1.846e-5
 	sigma 0.762

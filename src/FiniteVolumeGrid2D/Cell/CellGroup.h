@@ -4,7 +4,10 @@
 #include <vector>
 #include <map>
 
+#include <boost/geometry/index/rtree.hpp>
+
 #include "Cell.h"
+#include "Circle.h"
 
 typedef std::set< Ref<const Cell> > CellSet;
 
@@ -30,6 +33,10 @@ public:
     virtual void push_back(const Cell &cell);
     virtual void remove(const Cell &cell);
 
+    //- Searching
+    std::vector< Ref<const Cell> > rangeSearch(const Circle& circle) const;
+    std::vector< Ref<const Cell> > kNearestNeighbourSearch(const Point2D& pt, size_t k) const;
+
     //- Iterators
     std::vector< Ref<const Cell> >::iterator begin() { return cells_.begin(); }
     std::vector< Ref<const Cell> >::iterator end() { return cells_.end(); }
@@ -40,10 +47,16 @@ public:
 
 protected:
 
+    typedef std::pair< Point2D, Ref< const Cell > > Value;
+
+    std::vector< Ref<const Cell> > getRefs(const std::vector< Value >& vals) const;
+
     std::string name_;
 
     std::map< const Cell*, size_t> cellSet_;
     std::vector< Ref<const Cell> > cells_;
+
+    boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<32> > rTree_;
 };
 
 #endif

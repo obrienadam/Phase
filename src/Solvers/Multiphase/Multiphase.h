@@ -13,7 +13,7 @@ public:
 
     Multiphase(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    virtual Scalar solve(Scalar timeStep, Scalar prevTimeStep);
+    virtual Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &gamma;
     VectorFiniteVolumeField &ft;
@@ -23,8 +23,8 @@ protected:
     virtual void computeRho();
     virtual void computeMu();
 
-    virtual Scalar solveUEqn(Scalar timeStep, Scalar prevTimeStep);
-    virtual Scalar solveGammaEqn(Scalar timeStep, Scalar prevTimeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveGammaEqn(Scalar timeStep);
 
     Scalar rho1_, rho2_, mu1_, mu2_;
     std::shared_ptr<SurfaceTensionForce> surfaceTensionForce_;

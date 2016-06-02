@@ -53,6 +53,9 @@ private:
     SparseMatrix::Preconditioner precon_;
 };
 
+typedef Equation<ScalarFiniteVolumeField> ScalarEquation;
+typedef Equation<VectorFiniteVolumeField> VectorEquation;
+
 template<class T>
 Equation<T> operator+(Equation<T> lhs, const Equation<T>& rhs);
 

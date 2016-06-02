@@ -2,7 +2,6 @@
 #define CONTINUUM_SURFACE_FORCE_H
 
 #include "SurfaceTensionForce.h"
-#include "CellSearch.h"
 
 class ContinuumSurfaceForce : public SurfaceTensionForce
 {

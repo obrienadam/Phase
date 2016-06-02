@@ -6,14 +6,13 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFin
       gradGammaTilde_(gamma.grid, "gammaTilde"),
       rho_(rho)
 {
-    CellSearch cs(gamma_.grid.activeCells());
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
 
     cellRangeSearch_.clear();
     cellRangeSearch_.resize(gamma_.grid.cells().size());
 
     for(const Cell &cell: gamma_.grid.cells())
-        cellRangeSearch_[cell.id()] = cs.rangeSearch(Circle(cell.centroid(), kernelWidth_));
+        cellRangeSearch_[cell.id()] = gamma.grid.activeCells().rangeSearch(Circle(cell.centroid(), kernelWidth_));
 
     avgRho_ = (input.caseInput().get<Scalar>("Properties.rho1") + input.caseInput().get<Scalar>("Properties.rho2"))/2.;
 }
@@ -25,17 +24,6 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-
-    for(const Patch &patch: contactAnglePatches_)
-    {
-        for(const Face &face: patch.faces())
-        {
-            const Cell &cell = face.lCell();
-            Vector2D sf = face.outwardNorm(cell.centroid());
-
-            gradGammaTilde_[cell.id()] = -gradGammaTilde_[cell.id()].mag()*computeContactLineNormal(gradGammaTilde_[cell.id()], sf)*rho_[cell.id()]/avgRho_;
-        }
-    }
 
     for(const Cell &cell: gamma_.grid.fluidCells())
         ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()]*rho_[cell.id()]/avgRho_;
@@ -66,7 +54,19 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
         if(isnan(vec.magSqr()))
             throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
     }
+
     interpolateFaces(n_);
+
+    for(Vector2D &n: n_.faces())
+    {
+        if(n == Vector2D(0., 0.))
+            continue;
+
+        n = n.unitVec();
+
+        if(isnan(n.magSqr()))
+            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
+    }
 
     for(const Patch &patch: contactAnglePatches_)
     {

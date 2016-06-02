@@ -10,15 +10,14 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
     std::vector<Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
 
-    const UniqueCellGroup &ibCells = field.grid.cellGroup("ibCells");
+    entries.reserve(5*field.grid.nActiveCells());
 
-    entries.reserve(5*ibCells.size());
-
-    for(const ImmersedBoundaryObject::ImmersedBoundaryStencil &ibStencil: ibObj.stencils())
+    for(const Cell &cell: ibObj.cells())
     {
-        const size_t row = ibStencil.cell().globalIndex();
+        const size_t row = cell.globalIndex();
+        const Point2D imagePoint = ibObj.imagePoint(cell.centroid());
 
-        std::vector< Ref<const Cell> > kNN = ibStencil.kNearestNeighbours();
+        std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
         std::vector<Point2D> centroids = {
             kNN[0].get().centroid(),
             kNN[1].get().centroid(),
@@ -27,7 +26,7 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
         };
 
         BilinearInterpolation bi(centroids);
-        std::vector<Scalar> coeffs = bi(ibStencil.imagePoint());
+        std::vector<Scalar> coeffs = bi(imagePoint);
 
         std::vector<int> cols = {
             kNN[0].get().globalIndex(),
@@ -58,12 +57,14 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
 
         if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE)
         {
-            Scalar theta = ibObj.csf().theta();
-            Scalar rotAngle = (ibStencil.boundaryPoint() - ibObj.centroid()).x > 0. ? theta - M_PI/2. : M_PI/2. - theta;
+            Scalar theta = M_PI/6;
+            const Point2D boundaryPoint = ibObj.boundaryPoint(cell.centroid());
 
-            Vector2D ip2 = (ibStencil.imagePoint() - ibStencil.boundaryPoint()).rotate(rotAngle) + ibStencil.imagePoint();
+            Scalar rotAngle = (boundaryPoint - ibObj.centroid()).x > 0. ? theta - M_PI/2. : M_PI/2. - theta;
 
-            kNN = ibObj.getBoundingCells(ip2);
+            Vector2D ip2 = (imagePoint - boundaryPoint).rotate(rotAngle) + imagePoint;
+
+            kNN = ibObj.boundingCells(ip2);
 
             centroids = {
                         kNN[0].get().centroid(),
@@ -101,16 +102,16 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
     Equation<VectorFiniteVolumeField> eqn(field);
     const size_t nActiveCells = field.grid.nActiveCells();
 
-    const UniqueCellGroup &ibCells = field.grid.cellGroup("ibCells");
+    entries.reserve(10*field.grid.nActiveCells());
 
-    entries.reserve(10*ibCells.size());
-
-    for(const ImmersedBoundaryObject::ImmersedBoundaryStencil &ibStencil: ibObj.stencils())
+    for(const Cell &cell: ibObj.cells())
     {
-        const size_t rowX = ibStencil.cell().globalIndex();
+        const size_t rowX = cell.globalIndex();
         const size_t rowY = rowX + nActiveCells;
 
-        const std::vector< Ref<const Cell> > &kNN = ibStencil.kNearestNeighbours();
+        const Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+
+        const std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
         std::vector<Point2D> centroids = {
             kNN[0].get().centroid(),
             kNN[1].get().centroid(),
@@ -119,7 +120,7 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
         };
 
         BilinearInterpolation bi(centroids);
-        std::vector<Scalar> coeffs = bi(ibStencil.imagePoint());
+        std::vector<Scalar> coeffs = bi(imagePoint);
 
         int colsX[] = {
             kNN[0].get().globalIndex(),

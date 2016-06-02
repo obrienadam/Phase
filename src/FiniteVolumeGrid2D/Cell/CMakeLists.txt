@@ -1,11 +1,9 @@
 set(HEADERS Cell.h
             CellGroup.h
-            UniqueCellGroup.h
-            CellSearch.h)
+            UniqueCellGroup.h)
 
 set(SOURCES Cell.cpp
             CellGroup.cpp
-            UniqueCellGroup.cpp
-            CellSearch.cpp)
+            UniqueCellGroup.cpp)
 
 add_library(Cell ${HEADERS} ${SOURCES})

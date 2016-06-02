@@ -5,7 +5,7 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      ibObj_(grid, surfaceTensionForce_),
+      ibObj_(grid),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& ibObjects: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -50,11 +50,11 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
     interfaceAdvectionMethod_ = CICSAM;
     surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho));
 
-    ibObj_.constructStencils();
+    ibObj_.setInternalCells();
     setCellStatus();
 }
 
-Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
+Scalar ImmersedBoundary::solve(Scalar timeStep)
 {
     computeRho();
     computeMu();
@@ -64,7 +64,7 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
     Scalar avgError = 0.;
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
     {
-        avgError += solveUEqn(timeStep, prevTimeStep);
+        avgError += solveUEqn(timeStep);
 
         for(size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
         {
@@ -74,14 +74,14 @@ Scalar ImmersedBoundary::solve(Scalar timeStep, Scalar prevTimeStep)
         }
     }
 
-    solveGammaEqn(timeStep, prevTimeStep);
+    solveGammaEqn(timeStep);
 
     printf("time step = %lf, max Co = %lf\n", timeStep, courantNumber(timeStep));
 
     return 0.;
 }
 
-Scalar ImmersedBoundary::solveUEqn(Scalar timeStep, Scalar prevTimeStep)
+Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
 {
     ft = surfaceTensionForce_->compute();
 
@@ -107,7 +107,7 @@ Scalar ImmersedBoundary::solvePCorrEqn()
     return error;
 }
 
-Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep, Scalar prevTimeStep)
+Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
 {
     gamma.save(timeStep, 1);
     interpolateFaces(gamma);

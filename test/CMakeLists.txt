@@ -11,10 +11,6 @@ target_link_libraries(PolygonTest Geometry)
 add_executable(RangeSearchTest RangeSearchTest.cpp)
 target_link_libraries(RangeSearchTest Geometry FiniteVolumeGrid2D)
 
-# Build immersed boundary test unit
-add_executable(ImmersedBoundaryTest ImmersedBoundaryTest.cpp)
-target_link_libraries(ImmersedBoundaryTest ImmersedBoundary)
-
 # Build plic test unit
 add_executable(PlicTest PlicTest.cpp)
 target_link_libraries(PlicTest Multiphase)
