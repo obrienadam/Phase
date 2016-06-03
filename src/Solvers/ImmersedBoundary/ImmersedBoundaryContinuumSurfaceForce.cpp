@@ -12,7 +12,8 @@ ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(con
 VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const ImmersedBoundaryObject &ibObj)
 {
     computeGradGammaTilde();
-    computeInterfaceNormals(ibObj);
+    // computeInterfaceNormals(ibObj);
+    ContinuumSurfaceForce::computeInterfaceNormals();
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
@@ -84,14 +85,21 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const Immers
 
     eqn.solve();
 
+    for(const Cell &cell: n_.grid.cellGroup("ibCells"))
+    {
+        n_[cell.id()] = n_[cell.id()].unitVec();
+        if(isnan(n_[cell.id()].magSqr()))
+            n_[cell.id()] = Vector2D(0., 0.);
+    }
+
     interpolateFaces(n_);
 
     for(Vector2D &n: n_.faces())
     {
         if(n.magSqr() < 1e-12)
             n = Vector2D(0., 0.);
-        //else
-        //    n = n.unitVec();
+        else
+            n = n.unitVec();
 
         if(isnan(n.magSqr()))
             throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");

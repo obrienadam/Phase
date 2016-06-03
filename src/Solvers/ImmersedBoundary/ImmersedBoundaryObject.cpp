@@ -53,6 +53,11 @@ void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryTy
     boundaryTypes_[name] = boundaryType;
 }
 
+void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)
+{
+    boundaryRefValues_[name] = boundaryRefValue;
+}
+
 const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const Point2D &pt) const
 {
     const Node &node = grid_.findNearestNode(pt);

@@ -35,7 +35,7 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             kNN[3].get().globalIndex(),
         };
 
-        Scalar centralCoeff;
+        Scalar centralCoeff, l;
         // Then here we shall do the boundary assembly!
         switch(ibObj.boundaryType(field.name))
         {
@@ -51,11 +51,20 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             centralCoeff = 1;
             break;
 
+        case ImmersedBoundaryObject::PARTIAL_SLIP:
+            l = (cell.centroid() - imagePoint).mag();
+            centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name)/l;
+
+            for(Scalar &coeff: coeffs)
+                coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name)/l;
+
+            break;
+
         default:
             throw Exception("gc", "ib", "invalid boundary type.");
         }
 
-        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE && false)
+        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE)
         {
             Scalar theta = ibObj.csf().theta();
             const Point2D boundaryPoint = ibObj.boundaryPoint(cell.centroid());
@@ -134,7 +143,7 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
             colsY[i] = colsX[i] + nActiveCells;
 
         // Then here we shall do the boundary assembly!
-        Scalar centralCoeff;
+        Scalar centralCoeff, l;
         switch(ibObj.boundaryType(field.name))
         {
         case ImmersedBoundaryObject::FIXED:
@@ -146,6 +155,15 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
 
         case ImmersedBoundaryObject::CONTACT_ANGLE:
             throw Exception("gc", "ib", "contact angle boundaries are not valid for vector fields.");
+
+        case ImmersedBoundaryObject::PARTIAL_SLIP:
+            l = (cell.centroid() - imagePoint).mag();
+            centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name)/l;
+
+            for(Scalar &coeff: coeffs)
+                coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name)/l;
+
+            break;
 
         default:
             throw Exception("gc", "ib", "invalid boundary type.");

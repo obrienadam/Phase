@@ -45,21 +45,12 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     n_ = gradGammaTilde_;
 
     for(Vector2D &vec: n_)
-    {
-        if(vec == Vector2D(0., 0.))
-            vec.x = vec.y = 0.;
-        else
-            vec = vec.unitVec();
-
-        if(isnan(vec.magSqr()))
-            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
-    }
+        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : vec.unitVec();
 
     interpolateFaces(n_);
 
-    //- Set the contact angles
+    //- Set the contact angle normals
     for(const Patch &patch: contactAnglePatches_)
-    {
         for(const Face &face: patch.faces())
         {
             const Cell &cell = face.lCell();
@@ -67,18 +58,10 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
             n_.faces()[face.id()] = -computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
         }
-    }
 
+    //- Make sure all interpolated faces have the correct magnitude
     for(Vector2D &n: n_.faces())
-    {
-        if(n.magSqr() < 1e-32)
-            n = Vector2D(0., 0.);
-        else
-            n = n.unitVec();
-
-        if(isnan(n.magSqr()))
-            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
-    }
+        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
 }
 
 void ContinuumSurfaceForce::computeCurvature()

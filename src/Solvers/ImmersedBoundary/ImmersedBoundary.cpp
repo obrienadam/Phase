@@ -26,6 +26,7 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
 
             std::string type = child.second.get<std::string>("type");
             ImmersedBoundaryObject::BoundaryType boundaryType;
+            Scalar boundaryRefValue = 0.;
 
             if(type == "fixed")
                 boundaryType = ImmersedBoundaryObject::FIXED;
@@ -34,13 +35,17 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
             else if(type == "contact_angle")
                 boundaryType = ImmersedBoundaryObject::CONTACT_ANGLE;
             else if(type == "partial_slip")
+            {
                 boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
+                boundaryRefValue = child.second.get<Scalar>("lambda");
+            }
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
             printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
 
             ibObj_.addBoundaryType(child.first, boundaryType);
+            ibObj_.addBoundaryRefValue(child.first, boundaryRefValue);
 
             if(child.first == "p")
                 ibObj_.addBoundaryType("pCorr", boundaryType);
