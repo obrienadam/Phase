@@ -12,8 +12,8 @@ ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(con
 VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const ImmersedBoundaryObject &ibObj)
 {
     computeGradGammaTilde();
-    // computeInterfaceNormals(ibObj);
-    ContinuumSurfaceForce::computeInterfaceNormals();
+    computeInterfaceNormals(ibObj);
+    // ContinuumSurfaceForce::computeInterfaceNormals();
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
@@ -28,8 +28,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const Imm
 
 void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const ImmersedBoundaryObject& ibObj)
 {
-    ContinuumSurfaceForce::computeInterfaceNormals();
-    VectorEquation eqn(n_, "IB normal equation", SparseMatrix::IncompleteLUT);
+    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
     const Scalar centralCoeff = 1.;
 
     for(const Cell &cell: n_.grid.fluidCells())
@@ -39,8 +38,11 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const Immers
 
         eqn.matrix().insert(rowX, rowX) = 1.;
         eqn.matrix().insert(rowY, rowY) = 1.;
-        eqn.sources()(rowX) = n_[cell.id()].x;
-        eqn.sources()(rowY) = n_[cell.id()].y;
+
+        Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : gradGammaTilde_[cell.id()].unitVec();
+
+        eqn.sources()(rowX) = n.x;
+        eqn.sources()(rowY) = n.y;
     }
 
     for(const Cell &cell: n_.grid.cellGroup("ibCells"))
@@ -68,15 +70,15 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const Immers
         BilinearInterpolation bi(centroids);
         std::vector<Scalar> coeffs = bi(imagePoint);
 
-        Vector2D bpNormal = (imagePoint - ibObj.centroid()).x < 0. ? (imagePoint - cell.centroid()).rotate(thetaAdv_ + M_PI/2.).unitVec() : (imagePoint - cell.centroid()).rotate(-(thetaAdv_ + M_PI/2.)).unitVec();
+        Vector2D bpNormal = (imagePoint - ibObj.centroid()).x < 0. ? (imagePoint - cell.centroid()).rotate(M_PI - thetaAdv_).unitVec() : (imagePoint - cell.centroid()).rotate(-(M_PI - thetaAdv_)).unitVec();
 
-        eqn.matrix().insert(rowX, rowX) = centralCoeff;
-        eqn.matrix().insert(rowY, rowY) = centralCoeff;
+        eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
+        eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
 
         for(int i = 0; i < coeffs.size(); ++i)
         {
-            eqn.matrix().insert(rowX, cols[i]) = coeffs[i];
-            eqn.matrix().insert(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i];
+            eqn.matrix().insert(rowX, cols[i]) = coeffs[i]/2.;
+            eqn.matrix().insert(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
         }
 
         eqn.sources()(rowX) = bpNormal.x;
@@ -85,23 +87,11 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const Immers
 
     eqn.solve();
 
-    for(const Cell &cell: n_.grid.cellGroup("ibCells"))
-    {
-        n_[cell.id()] = n_[cell.id()].unitVec();
-        if(isnan(n_[cell.id()].magSqr()))
-            n_[cell.id()] = Vector2D(0., 0.);
-    }
+    for(const Cell &cell: n_.grid.activeCells())
+        n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
 
     interpolateFaces(n_);
 
     for(Vector2D &n: n_.faces())
-    {
-        if(n.magSqr() < 1e-12)
-            n = Vector2D(0., 0.);
-        else
-            n = n.unitVec();
-
-        if(isnan(n.magSqr()))
-            throw Exception("ContinuumSurfaceFoce", "computeInterfaceNormals", "NaN value detected.");
-    }
+        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
 }

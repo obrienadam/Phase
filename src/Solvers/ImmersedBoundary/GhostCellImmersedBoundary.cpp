@@ -76,11 +76,11 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             kNN = ibObj.boundingCells(ip2);
 
             centroids = {
-                        kNN[0].get().centroid(),
-                        kNN[1].get().centroid(),
-                        kNN[2].get().centroid(),
-                        kNN[3].get().centroid(),
-                    };
+                kNN[0].get().centroid(),
+                kNN[1].get().centroid(),
+                kNN[2].get().centroid(),
+                kNN[3].get().centroid(),
+            };
 
             bi = BilinearInterpolation(centroids);
 
@@ -129,39 +129,77 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
         };
 
         BilinearInterpolation bi(centroids);
-        std::vector<Scalar> coeffs = bi(imagePoint);
+        std::vector<Scalar> coeffsX = bi(imagePoint), coeffsY;
+        coeffsY = coeffsX;
 
-        int colsX[] = {
+        std::vector<int> colsX = {
             kNN[0].get().globalIndex(),
             kNN[1].get().globalIndex(),
             kNN[2].get().globalIndex(),
             kNN[3].get().globalIndex(),
         };
 
-        int colsY[4];
+        std::vector<int> colsY(4);
         for(int i = 0; i < 4; ++i)
             colsY[i] = colsX[i] + nActiveCells;
 
         // Then here we shall do the boundary assembly!
-        Scalar centralCoeff, l;
+        Scalar centralCoeffX, centralCoeffY, l, tmpScalar;
+        Vector2D n, t;
         switch(ibObj.boundaryType(field.name))
         {
         case ImmersedBoundaryObject::FIXED:
-            centralCoeff = 1.;
+            centralCoeffX = centralCoeffY = 1.;
             break;
         case ImmersedBoundaryObject::NORMAL_GRADIENT:
-            centralCoeff = -1.;
+            centralCoeffX = centralCoeffY = -1.;
             break;
 
         case ImmersedBoundaryObject::CONTACT_ANGLE:
             throw Exception("gc", "ib", "contact angle boundaries are not valid for vector fields.");
 
         case ImmersedBoundaryObject::PARTIAL_SLIP:
-            l = (cell.centroid() - imagePoint).mag();
-            centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name)/l;
 
-            for(Scalar &coeff: coeffs)
-                coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name)/l;
+            //- Note: the tangent equation replaces the u.x equation and the normal equation replaces the u.y equation
+
+            //- Enforce the tangent condition
+            n = (imagePoint - cell.centroid()).unitVec();
+            t = n.tangentVec();
+
+            l = (imagePoint - cell.centroid()).mag();
+
+            tmpScalar = ibObj.boundaryRefValue(field.name);
+            tmpScalar = (1. + 2.*tmpScalar/l)/(1. - 2.*tmpScalar/l);
+
+            centralCoeffX = tmpScalar*t.x;
+
+            colsX.push_back(rowY);
+            coeffsX.push_back(tmpScalar*t.y);
+
+            for(int i = 0; i < 4; ++i)
+            {
+                colsX.push_back(colsY[i]);
+                coeffsX.push_back(coeffsY[i]*t.y);
+            }
+
+            //- Enforce the normal condition
+            centralCoeffY = n.y;
+
+            colsY.push_back(rowX);
+            coeffsY.push_back(n.x);
+
+            for(int i = 0; i < 4; ++i)
+            {
+                colsY.push_back(colsX[i]);
+                coeffsY.push_back(coeffsX[i]*n.x);
+            }
+
+            //- Modify the original coefficients
+            for(int i = 0; i < 4; ++i)
+            {
+                coeffsX[i] *= t.x;
+                coeffsY[i] *= n.y;
+            }
 
             break;
 
@@ -169,13 +207,13 @@ Equation<VectorFiniteVolumeField> ib(const ImmersedBoundaryObject &ibObj, Vector
             throw Exception("gc", "ib", "invalid boundary type.");
         }
 
-        entries.push_back(Triplet(rowX, rowX, centralCoeff));
-        entries.push_back(Triplet(rowY, rowY, centralCoeff));
+        entries.push_back(Triplet(rowX, rowX, centralCoeffX));
+        entries.push_back(Triplet(rowY, rowY, centralCoeffY));
 
-        for(int i = 0; i < coeffs.size(); ++i)
+        for(int i = 0; i < coeffsX.size(); ++i)
         {
-            entries.push_back(Triplet(rowX, colsX[i], coeffs[i]));
-            entries.push_back(Triplet(rowY, colsY[i], coeffs[i]));
+            entries.push_back(Triplet(rowX, colsX[i], coeffsX[i]));
+            entries.push_back(Triplet(rowY, colsY[i], coeffsY[i]));
         }
     }
 
