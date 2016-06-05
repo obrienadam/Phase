@@ -48,7 +48,7 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
             break;
 
         case ImmersedBoundaryObject::CONTACT_ANGLE:
-            centralCoeff = 1;
+            centralCoeff = -1;
             break;
 
         case ImmersedBoundaryObject::PARTIAL_SLIP:
@@ -62,35 +62,6 @@ Equation<ScalarFiniteVolumeField> ib(const ImmersedBoundaryObject& ibObj, Scalar
 
         default:
             throw Exception("gc", "ib", "invalid boundary type.");
-        }
-
-        if(ibObj.boundaryType(field.name) == ImmersedBoundaryObject::CONTACT_ANGLE)
-        {
-            Scalar theta = ibObj.csf().theta();
-            const Point2D boundaryPoint = ibObj.boundaryPoint(cell.centroid());
-
-            Scalar rotAngle = (boundaryPoint - ibObj.centroid()).x > 0. ? theta - M_PI/2. : M_PI/2. - theta;
-
-            Vector2D ip2 = (imagePoint - boundaryPoint).rotate(rotAngle) + imagePoint;
-
-            kNN = ibObj.boundingCells(ip2);
-
-            centroids = {
-                kNN[0].get().centroid(),
-                kNN[1].get().centroid(),
-                kNN[2].get().centroid(),
-                kNN[3].get().centroid(),
-            };
-
-            bi = BilinearInterpolation(centroids);
-
-            std::vector<Scalar> tmpCoeffs = bi(ip2);
-
-            for(Scalar coeff: tmpCoeffs)
-                coeffs.push_back(-2*coeff);
-
-            for(const Cell &cell: kNN)
-                cols.push_back(cell.globalIndex());
         }
 
         entries.push_back(Triplet(row, row, centralCoeff));
