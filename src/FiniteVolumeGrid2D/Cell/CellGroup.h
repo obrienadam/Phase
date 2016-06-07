@@ -35,6 +35,7 @@ public:
 
     //- Searching
     std::vector< Ref<const Cell> > rangeSearch(const Circle& circle) const;
+    std::vector< Ref<const Cell> > rangeSearch(const Polygon& pgn) const;
     std::vector< Ref<const Cell> > kNearestNeighbourSearch(const Point2D& pt, size_t k) const;
 
     //- Iterators
@@ -47,16 +48,17 @@ public:
 
 protected:
 
-    typedef std::pair< Point2D, Ref< const Cell > > Value;
+    typedef std::pair<Point2D, size_t> Value;
+    typedef boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<16> > Rtree;
 
     std::vector< Ref<const Cell> > getRefs(const std::vector< Value >& vals) const;
 
     std::string name_;
 
-    std::map< const Cell*, size_t> cellSet_;
-    std::vector< Ref<const Cell> > cells_;
+    std::map<size_t, Ref<const Cell> > cellSet_; // Allows cell lookup via an id
+    std::vector< Ref<const Cell> > cells_; // Used for faster iteration over all cells
 
-    boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<32> > rTree_;
+    Rtree rTree_;
 };
 
 #endif

@@ -9,11 +9,10 @@ ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(con
 
 }
 
-VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const ImmersedBoundaryObject &ibObj)
+VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std::vector<ImmersedBoundaryObject> &ibObjs)
 {
     computeGradGammaTilde();
-    computeInterfaceNormals(ibObj);
-    // ContinuumSurfaceForce::computeInterfaceNormals();
+    computeInterfaceNormals(ibObjs);
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
@@ -26,7 +25,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const Imm
 
 //- Protected methods
 
-void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const ImmersedBoundaryObject& ibObj)
+void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::vector<ImmersedBoundaryObject>& ibObjs)
 {
     VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
     const Scalar centralCoeff = 1.;
@@ -45,45 +44,46 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const Immers
         eqn.sources()(rowY) = n.y;
     }
 
-    for(const Cell &cell: n_.grid.cellGroup("ibCells"))
-    {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + n_.grid.nActiveCells();
-
-        Point2D imagePoint = ibObj.imagePoint(cell.centroid());
-        std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
-
-        std::vector<Point2D> centroids = {
-            kNN[0].get().centroid(),
-            kNN[1].get().centroid(),
-            kNN[2].get().centroid(),
-            kNN[3].get().centroid(),
-        };
-
-        std::vector<int> cols = {
-            kNN[0].get().globalIndex(),
-            kNN[1].get().globalIndex(),
-            kNN[2].get().globalIndex(),
-            kNN[3].get().globalIndex(),
-        };
-
-        BilinearInterpolation bi(centroids);
-        std::vector<Scalar> coeffs = bi(imagePoint);
-
-        Vector2D bpNormal = (imagePoint - ibObj.centroid()).x < 0. ? (imagePoint - cell.centroid()).rotate(M_PI - thetaAdv_).unitVec() : (imagePoint - cell.centroid()).rotate(-(M_PI - thetaAdv_)).unitVec();
-
-        eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
-        eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
-
-        for(int i = 0; i < coeffs.size(); ++i)
+    for(const ImmersedBoundaryObject &ibObj: ibObjs)
+        for(const Cell &cell: ibObj.cells())
         {
-            eqn.matrix().insert(rowX, cols[i]) = coeffs[i]/2.;
-            eqn.matrix().insert(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
-        }
+            size_t rowX = cell.globalIndex();
+            size_t rowY = rowX + n_.grid.nActiveCells();
 
-        eqn.sources()(rowX) = bpNormal.x;
-        eqn.sources()(rowY) = bpNormal.y;
-    }
+            Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+            std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
+
+            std::vector<Point2D> centroids = {
+                kNN[0].get().centroid(),
+                kNN[1].get().centroid(),
+                kNN[2].get().centroid(),
+                kNN[3].get().centroid(),
+            };
+
+            std::vector<int> cols = {
+                kNN[0].get().globalIndex(),
+                kNN[1].get().globalIndex(),
+                kNN[2].get().globalIndex(),
+                kNN[3].get().globalIndex(),
+            };
+
+            BilinearInterpolation bi(centroids);
+            std::vector<Scalar> coeffs = bi(imagePoint);
+
+            Vector2D bpNormal = (imagePoint - ibObj.centroid()).x < 0. ? (imagePoint - cell.centroid()).rotate(M_PI - thetaAdv_).unitVec() : (imagePoint - cell.centroid()).rotate(-(M_PI - thetaAdv_)).unitVec();
+
+            eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
+            eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
+
+            for(int i = 0; i < coeffs.size(); ++i)
+            {
+                eqn.matrix().insert(rowX, cols[i]) = coeffs[i]/2.;
+                eqn.matrix().insert(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
+            }
+
+            eqn.sources()(rowX) = bpNormal.x;
+            eqn.sources()(rowY) = bpNormal.y;
+        }
 
     eqn.solve();
 

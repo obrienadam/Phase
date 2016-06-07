@@ -24,7 +24,7 @@ protected:
     Scalar solvePCorrEqn();
     Scalar solveGammaEqn(Scalar timeStep);
 
-    ImmersedBoundaryObject ibObj_;
+    std::vector<ImmersedBoundaryObject> ibObjs_;
     ImmersedBoundaryContinuumSurfaceForce csf_;
 };
 

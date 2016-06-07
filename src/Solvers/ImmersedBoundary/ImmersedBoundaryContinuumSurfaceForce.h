@@ -10,11 +10,11 @@ class ImmersedBoundaryContinuumSurfaceForce : public ContinuumSurfaceForce
 public:
     ImmersedBoundaryContinuumSurfaceForce(const Input& input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField& rho);
 
-    virtual VectorFiniteVolumeField compute(const ImmersedBoundaryObject& ibObj);
+    virtual VectorFiniteVolumeField compute(const std::vector<ImmersedBoundaryObject> &ibObjs);
 
 protected:
 
-    virtual void computeInterfaceNormals(const ImmersedBoundaryObject &ibObj);
+    virtual void computeInterfaceNormals(const std::vector<ImmersedBoundaryObject> &ibObjs);
 
 };
 

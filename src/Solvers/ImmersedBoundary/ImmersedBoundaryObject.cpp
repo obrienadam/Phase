@@ -1,8 +1,9 @@
 #include "ImmersedBoundaryObject.h"
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const FiniteVolumeGrid2D& grid, const ImmersedBoundaryContinuumSurfaceForce &csf)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name, const FiniteVolumeGrid2D& grid, const ImmersedBoundaryContinuumSurfaceForce &csf, const Point2D& center, Scalar radius)
     :
-      Circle(Point2D(0., 0.), 0.),
+      Circle(center, radius),
+      name_(name),
       grid_(grid),
       csf_(csf)
 {
@@ -25,8 +26,6 @@ void ImmersedBoundaryObject::setInternalCells()
     std::vector<size_t> internalCellIds;
     internalCellIds.reserve(internalCells.size());
 
-    grid_.moveAllCellsToFluidCellGroup(); // temporary!
-
     for(const Cell &cell: internalCells)
         internalCellIds.push_back(cell.id());
 
@@ -45,7 +44,7 @@ void ImmersedBoundaryObject::setInternalCells()
         }
     }
 
-    grid_.moveCellsToCellGroup("ibCells", internalCellIds);
+    grid_.moveCellsToCellGroup(name_ + "_cells", internalCellIds);
 }
 
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
