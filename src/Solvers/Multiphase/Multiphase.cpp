@@ -33,7 +33,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     {
     case CSF:
 
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho, scalarFields_));
         break;
     case HF:
 

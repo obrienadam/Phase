@@ -1,19 +1,13 @@
 #include "ContinuumSurfaceForce.h"
 
-ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho)
+ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho, std::map<std::string, ScalarFiniteVolumeField> &fields)
     :
       SurfaceTensionForce(input, gamma),
       gradGammaTilde_(gamma.grid, "gammaTilde"),
-      rho_(rho)
+      rho_(rho),
+      gammaTilde_((fields.insert(std::make_pair(std::string("gammaTilde"), ScalarFiniteVolumeField(gamma.grid, "gammaTilde"))).first)->second)
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-
-    cellRangeSearch_.clear();
-    cellRangeSearch_.resize(gamma_.grid.cells().size());
-
-    for(const Cell &cell: gamma_.grid.cells())
-        cellRangeSearch_[cell.id()] = gamma.grid.activeCells().rangeSearch(Circle(cell.centroid(), kernelWidth_));
-
     avgRho_ = (input.caseInput().get<Scalar>("Properties.rho1") + input.caseInput().get<Scalar>("Properties.rho2"))/2.;
 }
 
@@ -31,13 +25,22 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     return ft;
 }
 
+void ContinuumSurfaceForce::constructSmoothingKernels()
+{
+    cellRangeSearch_.clear();
+    cellRangeSearch_.resize(gamma_.grid.cells().size());
+
+    for(const Cell &cell: gamma_.grid.activeCells())
+        cellRangeSearch_[cell.id()] = gamma_.grid.activeCells().rangeSearch(Circle(cell.centroid(), kernelWidth_));
+}
+
 //- Private methods
 
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
-    ScalarFiniteVolumeField gammaTilde = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    interpolateFaces(gammaTilde);
-    gradGammaTilde_ = grad(gammaTilde);
+    gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+    interpolateFaces(gammaTilde_);
+    gradGammaTilde_ = grad(gammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()

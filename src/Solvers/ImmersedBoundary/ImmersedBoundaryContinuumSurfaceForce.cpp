@@ -2,9 +2,9 @@
 #include "ImmersedBoundaryObject.h"
 #include "BilinearInterpolation.h"
 
-ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho)
+ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho, std::map<std::string, ScalarFiniteVolumeField> &fields)
     :
-      ContinuumSurfaceForce(input, gamma, rho)
+      ContinuumSurfaceForce(input, gamma, rho, fields)
 {
 
 }

@@ -373,7 +373,7 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector
         return pow4(1. - pow2(std::min(r/h, 1.)));
     };
 
-    for(const Cell &cell: field.grid.cells())
+    for(const Cell &cell: field.grid.activeCells())
     {
         Scalar totalVol = 0., intKr = 0.;
 
@@ -384,11 +384,7 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector
         }
 
         for(const Cell &kCell: rangeSearch[cell.id()])
-        {
             smoothedField[cell.id()] += field[kCell.id()]*kr((cell.centroid() - kCell.centroid()).mag(), h)/intKr;
-        }
-
-        //smoothedField[cell.id()] = std::min(field[cell.id()], std::max(field[cell.id()], smoothedField[cell.id()]));
     }
 
     return smoothedField;

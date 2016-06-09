@@ -5,7 +5,7 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      csf_(input, gamma, rho),
+      csf_(input, gamma, rho, scalarFields_),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& ibObject: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -55,6 +55,9 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
         ibObjs_.back().setInternalCells();
     }
 
+    //- must reconstruct smoothing kernels
+    csf_.constructSmoothingKernels();
+
     for(const Cell &cell: grid.inactiveCells())
     {
         u[cell.id()] = Vector2D(0., 0.);
@@ -64,8 +67,6 @@ ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &
 
     // Only multiphase methods supported at the moment
     interfaceAdvectionMethod_ = CICSAM;
-    surfaceTensionForce_ = std::unique_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho));
-
     setCellStatus();
 }
 
