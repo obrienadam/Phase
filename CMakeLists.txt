@@ -39,6 +39,7 @@ set(INCLUDE_DIR src/Types
                 src/Solvers
                 src/Solvers/Multiphase
                 src/Solvers/ImmersedBoundary
+                src/Solvers/Coupled
                 src/Viewers)
 
 include_directories(${INCLUDE_DIR})

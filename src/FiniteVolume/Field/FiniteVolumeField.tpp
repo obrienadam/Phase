@@ -373,7 +373,7 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector
         return pow4(1. - pow2(std::min(r/h, 1.)));
     };
 
-    for(const Cell &cell: field.grid.activeCells())
+    for(const Cell &cell: field.grid.cells())
     {
         Scalar totalVol = 0., intKr = 0.;
 

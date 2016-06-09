@@ -112,12 +112,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
         break;
     }
 
-    Scalar error = gammaEqn_.solve();
-
-    if(isnan(error))
-        throw Exception("Multiphase", "solveGammaEqn", "a nan value was detected.");
-
-    return error;
+    return gammaEqn_.solve();
 }
 
 //- External functions

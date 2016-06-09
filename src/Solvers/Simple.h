@@ -15,7 +15,7 @@ public:
     Scalar computeMaxTimeStep(Scalar maxCo) const;
 
     VectorFiniteVolumeField &u, &h;
-    ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d, &ids, &globalIndices;
+    ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:
 

@@ -12,3 +12,6 @@ target_link_libraries(phaseMultiphase System FiniteVolumeGrid2D Viewers Multipha
 
 add_executable(phaseImmersedBoundary phaseImmersedBoundary.cpp)
 target_link_libraries(phaseImmersedBoundary System FiniteVolumeGrid2D Viewers ImmersedBoundary)
+
+add_executable(phaseCoupled phaseCoupled.cpp)
+target_link_libraries(phaseCoupled System FiniteVolumeGrid2D Viewers Coupled)

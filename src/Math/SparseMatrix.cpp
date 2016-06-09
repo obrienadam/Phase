@@ -1,12 +1,11 @@
 #include "SparseMatrix.h"
-#include <stdio.h>
+#include "Exception.h"
 
 SparseMatrix::SparseMatrix(int nRows, int nCols, int nnz)
     :
       Eigen::SparseMatrix<Scalar>(nRows, nCols)
 {
     reserve(nRows*nnz);
-    setZero();
     solverNoPreconditioner_.setTolerance(1e-12);
     solverNoPreconditioner_.setMaxIterations(50);
     solverIncompleteLUT_.setTolerance(1e-12);
@@ -37,38 +36,30 @@ void SparseMatrix::assemble(const std::vector<Eigen::Triplet<Scalar> > &entries)
 
 SparseVector SparseMatrix::solve(const SparseVector &b, Preconditioner precon) const
 {
+    SparseVector x;
+    Eigen::ComputationInfo info;
+
     switch(precon)
     {
     case NoPreconditioner:
         solverNoPreconditioner_.compute(*this);
+        x = solverNoPreconditioner_.solve(b);
         error_ = solverNoPreconditioner_.error();
         nIters_ = solverNoPreconditioner_.iterations();
-        return solverNoPreconditioner_.solve(b);
+        info = solverNoPreconditioner_.info();
+        break;
 
     case IncompleteLUT:
         solverIncompleteLUT_.compute(*this);
+        x = solverIncompleteLUT_.solve(b);
         error_ = solverIncompleteLUT_.error();
         nIters_ = solverIncompleteLUT_.iterations();
-        return solverIncompleteLUT_.solve(b);
-
+        info = solverIncompleteLUT_.info();
+        break;
     }
-}
 
-SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon) const
-{
-    switch(precon)
-    {
-    case NoPreconditioner:
-        solverNoPreconditioner_.compute(*this);
-        error_ = solverNoPreconditioner_.error();
-        nIters_ = solverNoPreconditioner_.iterations();
-        return solverNoPreconditioner_.solveWithGuess(b, x0);
+    //if(info == Eigen::NoConvergence)
+    //    throw Exception("SparseMatrix", "solve", "iterative procedure did not converge.");
 
-    case IncompleteLUT:
-        solverIncompleteLUT_.compute(*this);
-        error_ = solverIncompleteLUT_.error();
-        nIters_ = solverIncompleteLUT_.iterations();
-        return solverIncompleteLUT_.solveWithGuess(b, x0);
-
-    }
+    return x;
 }

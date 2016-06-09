@@ -12,6 +12,7 @@ set(SOURCES Solver.cpp
 
 add_subdirectory(Multiphase)
 add_subdirectory(ImmersedBoundary)
+add_subdirectory(Coupled)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
 target_link_libraries(Solvers Equation)

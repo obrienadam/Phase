@@ -12,8 +12,11 @@ class SparseMatrix : public Eigen::SparseMatrix<Scalar>
 {
 public:
 
+    typedef Eigen::Triplet<Scalar> Triplet;
+
     enum Preconditioner{IncompleteLUT, NoPreconditioner};
 
+    SparseMatrix() {}
     SparseMatrix(int nRows, int nCols, int nnz);
     SparseMatrix(const SparseMatrix& other);
 
@@ -24,8 +27,7 @@ public:
 
     void assemble(const std::vector< Eigen::Triplet<Scalar> >& entries);
 
-    SparseVector solve(const SparseVector& b, Preconditioner precon = IncompleteLUT) const;
-    SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon = IncompleteLUT) const;
+    SparseVector solve(const SparseVector& b, Preconditioner precon = IncompleteLUT) const;//SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon = IncompleteLUT) const;
 
     Scalar error() const { return error_; }
     int nIterations() const { return nIters_; }

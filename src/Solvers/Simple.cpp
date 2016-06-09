@@ -12,8 +12,6 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(addScalarField("mu")),
       m(addScalarField("m")),
       d(addScalarField("d")),
-      ids(addScalarField("ids")),
-      globalIndices(addScalarField("globalIndices")),
       uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
       pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
 {
@@ -27,12 +25,6 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 
     pCorr.copyBoundaryTypes(p);
-
-    for(const Cell& cell: ids.grid.cells())
-    {
-        ids[cell.id()] = cell.id();
-        globalIndices[cell.id()] = cell.globalIndex();
-    }
 }
 
 Scalar Simple::solve(Scalar timeStep)

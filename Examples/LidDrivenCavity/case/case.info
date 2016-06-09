@@ -6,8 +6,8 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e9
-	maxTime 1e12
+	timeStep 2
+	maxTime 10
 	maxCo 1e12
 	numInnerIterations 1
 	numPressureCorrections 1
@@ -18,7 +18,7 @@ Solver
 Properties
 {
 	rho 1
-	mu 0.01
+	mu 0.1
 	g (0,0)
 	gamma 0.001
 }
@@ -43,5 +43,5 @@ Viewer
 
 System
 {
-	fileWriteFrequency 10
+	fileWriteFrequency 1
 }

@@ -77,8 +77,8 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
 
             for(int i = 0; i < coeffs.size(); ++i)
             {
-                eqn.matrix().insert(rowX, cols[i]) = coeffs[i]/2.;
-                eqn.matrix().insert(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
+                eqn.matrix().coeffRef(rowX, cols[i]) = coeffs[i]/2.;
+                eqn.matrix().coeffRef(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
             }
 
             eqn.sources()(rowX) = bpNormal.x;

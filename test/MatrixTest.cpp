@@ -2,7 +2,8 @@
 #include <iostream>
 #include <boost/test/included/unit_test.hpp>
 #include "Matrix.h"
-#include "ImmersedBoundary/BilinearInterpolation.h"
+#include "BilinearInterpolation.h"
+#include "SparseMatrix.h"
 
 BOOST_AUTO_TEST_SUITE (MatrixTest)
 
@@ -128,6 +129,27 @@ BOOST_AUTO_TEST_CASE(NormAndConditionNumberTest)
     std::cout << "Infinity norm    : " << mat.norm('i') << "\n"
               << "1-norm           : " << mat.norm('1') << "\n"
               << "Condition number : " << mat.cond('i') << "\n";
+}
+
+BOOST_AUTO_TEST_CASE(SparseMatrixTest)
+{
+    const int n = 5;
+
+    SparseMatrix spMat(n, n, 5);
+    SparseVector x, b;
+
+    b = SparseVector::Zero(n);
+
+    for(int i = 0; i < n; ++i)
+    {
+        spMat.coeffRef(i, i) = 0.1;
+        b(i) = 2;
+    }
+
+    x = spMat.solve(b);
+
+    for(int i = 0; i < n; ++i)
+        BOOST_REQUIRE_CLOSE(x(i), b(i)/0.1, 1e-10);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
