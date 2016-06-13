@@ -2,9 +2,12 @@
 #include "ImmersedBoundaryObject.h"
 #include "BilinearInterpolation.h"
 
-ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho, std::map<std::string, ScalarFiniteVolumeField> &fields)
+ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(const Input &input,
+                                                                             const ScalarFiniteVolumeField &gamma,
+                                                                             const VectorFiniteVolumeField &u,
+                                                                             std::map<std::string, ScalarFiniteVolumeField> &fields)
     :
-      ContinuumSurfaceForce(input, gamma, rho, fields)
+      ContinuumSurfaceForce(input, gamma, u, fields)
 {
 
 }
@@ -18,7 +21,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()]*rho_[cell.id()]/avgRho_;
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
 
     return ft;
 }
@@ -27,7 +30,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std
 
 void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::vector<ImmersedBoundaryObject>& ibObjs)
 {
-    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
+    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::NoPreconditioner);
     const Scalar centralCoeff = 1.;
 
     for(const Cell &cell: n_.grid.fluidCells())
@@ -38,7 +41,7 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
         eqn.matrix().insert(rowX, rowX) = 1.;
         eqn.matrix().insert(rowY, rowY) = 1.;
 
-        Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : gradGammaTilde_[cell.id()].unitVec();
+        Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
 
         eqn.sources()(rowX) = n.x;
         eqn.sources()(rowY) = n.y;
@@ -70,7 +73,19 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
             BilinearInterpolation bi(centroids);
             std::vector<Scalar> coeffs = bi(imagePoint);
 
-            Vector2D bpNormal = (imagePoint - ibObj.centroid()).x < 0. ? (imagePoint - cell.centroid()).rotate(M_PI - thetaAdv_).unitVec() : (imagePoint - cell.centroid()).rotate(-(M_PI - thetaAdv_)).unitVec();
+            //- From previous values, workout the direction and orientation of the contact line
+            std::vector<Vector2D> velVals;
+            for(const Cell &cell: kNN)
+                velVals.push_back(u_[cell.id()]);
+
+            std::vector<Vector2D> gradGammaVals;
+            for(const Cell &cell: kNN)
+                gradGammaVals.push_back(gradGammaTilde_[cell.id()]);
+
+            const Vector2D uIp = bi(velVals, imagePoint);
+            const Vector2D gradGammaIp = bi(gradGammaVals, imagePoint);
+
+            const Vector2D bpNormal = SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
 
             eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
             eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
@@ -81,8 +96,16 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
                 eqn.matrix().coeffRef(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
             }
 
-            eqn.sources()(rowX) = bpNormal.x;
-            eqn.sources()(rowY) = bpNormal.y;
+            if(gradGammaIp == Vector2D(0., 0.)) // no contact line present
+            {
+                eqn.sources()(rowX) = 0.;
+                eqn.sources()(rowY) = 0.;
+            }
+            else
+            {
+                eqn.sources()(rowX) = bpNormal.x;
+                eqn.sources()(rowY) = bpNormal.y;
+            }
         }
 
     eqn.solve();

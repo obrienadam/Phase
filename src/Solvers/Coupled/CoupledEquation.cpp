@@ -21,7 +21,7 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     spMat_.setZero();
     rhs_.setZero();
 
-    u_.save(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 1);
 
     printf("Assembling momentum equation...\n");
     rhieChowInterpolation();

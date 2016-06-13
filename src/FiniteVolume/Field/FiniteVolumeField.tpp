@@ -33,7 +33,8 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeField &other)
       grid(other.grid),
       patchBoundaries_(other.patchBoundaries_),
       faces_(other.faces_),
-      previousFields_()
+      previousTimeSteps_(),
+      previousIteration_()
 {
 
 }
@@ -88,14 +89,25 @@ std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::
 }
 
 template<class T>
-FiniteVolumeField<T>& FiniteVolumeField<T>::save(Scalar timeStep, int nPreviousFields)
+FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    previousFields_.push_front(std::make_pair(timeStep, FiniteVolumeField<T>(*this)));
+    previousTimeSteps_.push_front(std::make_pair(timeStep, FiniteVolumeField<T>(*this)));
 
-    while(previousFields_.size() > nPreviousFields)
-        previousFields_.pop_back();
+    while(previousTimeSteps_.size() > nPreviousFields)
+        previousTimeSteps_.pop_back();
 
-    return previousFields_.front().second;
+    return previousTimeSteps_.front().second;
+}
+
+template<class T>
+FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousIteration()
+{
+    if(previousIteration_.size() >= 1)
+        previousIteration_.clear();
+
+    previousIteration_.push_back(FiniteVolumeField<T>(*this));
+
+    return previousIteration_.back();
 }
 
 //- Operators

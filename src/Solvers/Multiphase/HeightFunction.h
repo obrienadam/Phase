@@ -9,7 +9,7 @@ class HeightFunction : public SurfaceTensionForce
 {
 public:
 
-    HeightFunction(const Input &input, const ScalarFiniteVolumeField& gamma);
+    HeightFunction(const Input &input, const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField &u);
 
     virtual VectorFiniteVolumeField compute();
     virtual const VectorFiniteVolumeField& gradGamma() const { }

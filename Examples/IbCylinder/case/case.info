@@ -19,11 +19,11 @@ Solver
 
 Properties
 {
-	rho1 1
-	rho2 0.3
-	mu1 0.0001
-	mu2 0.0001
-	sigma 0.07
+	rho1 998
+	rho2 1.225
+	mu1 8.94e-4
+	mu2 1.81e-5
+	sigma 0.0762
 	g (0,0)
 
 	; Piso parameters

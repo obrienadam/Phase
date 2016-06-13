@@ -31,12 +31,15 @@ public:
     const std::vector<T>& faces() const { return faces_; }
     std::vector<T>& faces() { return faces_; }
 
-    FiniteVolumeField& save(Scalar timeStep, int nPreviousFields);
-    size_t nPreviousFields() const { return previousFields_.size(); }
+    FiniteVolumeField& savePreviousTimeStep(Scalar timeStep, int nPreviousFields);
+    FiniteVolumeField& savePreviousIteration();
 
-    FiniteVolumeField& prev(int i = 0) { return previousFields_[i].second; }
-    const FiniteVolumeField& prev(int i = 0) const { return previousFields_[i].second; }
-    Scalar prevTimeStep(int i = 0) { return previousFields_[i].first; }
+    FiniteVolumeField& prev(int i = 0) { return previousTimeSteps_[i].second; }
+    const FiniteVolumeField& prev(int i = 0) const { return previousTimeSteps_[i].second; }
+    Scalar prevTimeStep(int i = 0) { return previousTimeSteps_[i].first; }
+
+    FiniteVolumeField& prevIter() { return previousIteration_.front(); }
+    const FiniteVolumeField& prev() const { return previousIteration_.front(); }
 
     FiniteVolumeField& operator=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator=(const SparseVector& rhs);
@@ -58,7 +61,8 @@ protected:
 
     std::vector<T> faces_;
 
-    std::deque< std::pair<Scalar, FiniteVolumeField<T> > > previousFields_;
+    std::deque< std::pair<Scalar, FiniteVolumeField<T> > > previousTimeSteps_;
+    std::deque< FiniteVolumeField<T> > previousIteration_;
 };
 
 template<class T>

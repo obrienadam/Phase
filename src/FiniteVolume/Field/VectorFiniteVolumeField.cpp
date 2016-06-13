@@ -61,7 +61,7 @@ VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
 {
     VectorFiniteVolumeField gradField(scalarField.grid, "grad_" + scalarField.name);
 
-    for(const Cell& cell: scalarField.grid.activeCells())
+    for(const Cell& cell: scalarField.grid.fluidCells())
     {
         Vector2D &gradPhi = gradField[cell.id()];
 

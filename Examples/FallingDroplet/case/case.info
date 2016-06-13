@@ -6,29 +6,29 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 7.5e-3
+	timeStep 1e-2
 	maxCo 0.3
-	maxTime 5
+	maxTime 10
 
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
-	numPressureCorrections 1
+	numPressureCorrections 2
 
-	smoothingKernelRadius 0.0401
+	smoothingKernelRadius 0.0015
 }
 
 Properties
 {
-	rho1 0.5
-	rho2 1
- 	mu1 0.001
-	mu2 0.001
+	rho1 958
+	rho2 998
+ 	mu1 9e-3
+	mu2 8.94e-4
 	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 120
-	recedingContactAngle 120
+	advancingContactAngle 110
+	recedingContactAngle 70
 }
 
 Grid
@@ -38,19 +38,19 @@ Grid
 	nCellsJ 50
 
 	; Rectilinear parameters
-	spacingX 0.02
-	spacingY 0.02
+	spacingX 0.0005
+	spacingY 0.0005
 }
 
 Viewer
 {
 	type tecplot
 	vectorFields u,n,ft
-	scalarFields p,pCorr,m,gamma,rho,mu
+	scalarFields p,pCorr,m,gamma,rho,mu,gammaTilde
 }
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 50
   consoleOutputFrequency 1
 }

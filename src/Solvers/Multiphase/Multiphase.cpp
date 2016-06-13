@@ -33,11 +33,11 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     {
     case CSF:
 
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, rho, scalarFields_));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, u, scalarFields_));
         break;
     case HF:
 
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma, u));
         interfaceAdvectionMethod_ = PLIC; // Only plic is guaranteed to work with height function methods
         addGeometries("hfPolygons");
         break;
@@ -66,7 +66,8 @@ void Multiphase::computeRho()
         rho[id] = (1. - gamma[id])*rho1_ + gamma[id]*rho2_;
     }
 
-    interpolateFaces(rho);
+    //interpolateFaces(rho);
+    harmonicInterpolateFaces(rho);
 }
 
 void Multiphase::computeMu()
@@ -82,10 +83,11 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_->compute(); // surface tension force
+    sg = fv::gravity(rho, g_);
+    ft = surfaceTensionForce_->compute(); // surface tension forceb
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(rho*g_));
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -97,7 +99,7 @@ Scalar Multiphase::solveUEqn(Scalar timeStep)
 
 Scalar Multiphase::solveGammaEqn(Scalar timeStep)
 { 
-    gamma.save(timeStep, 1);
+    gamma.savePreviousTimeStep(timeStep, 1);
     interpolateFaces(gamma);
 
     switch(interfaceAdvectionMethod_)
@@ -113,6 +115,37 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     }
 
     return gammaEqn_.solve();
+}
+
+void Multiphase::rhieChowInterpolation()
+{
+    Simple::rhieChowInterpolation();
+
+    for(const Face& face: u.grid.interiorFaces())
+    {
+        const size_t id = face.id();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        const Vector2D rc = rCell.centroid() - lCell.centroid();
+
+        const Scalar df = d.faces()[id];
+        const Scalar rhof = rho.faces()[id];
+        const Scalar rhoP = rho[lCell.id()];
+        const Scalar rhoQ = rho[rCell.id()];
+
+        const Scalar kf = surfaceTensionForce_->kappa().faces()[id];
+        const Scalar kP = surfaceTensionForce_->kappa()[lCell.id()];
+        const Scalar kQ = surfaceTensionForce_->kappa()[rCell.id()];
+
+        const Scalar gP = surfaceTensionForce_->gammaTilde()[lCell.id()];
+        const Scalar gQ = surfaceTensionForce_->gammaTilde()[rCell.id()];
+
+        const Vector2D& dgP = surfaceTensionForce_->gradGamma()[lCell.id()];
+        const Vector2D& dgQ = surfaceTensionForce_->gradGamma()[rCell.id()];
+
+        u.faces()[id] += df*surfaceTensionForce_->sigma()*(kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(kP*dgP/rhoP + kQ*dgQ/rhoQ)/2.);
+    }
 }
 
 //- External functions

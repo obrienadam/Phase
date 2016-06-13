@@ -1,8 +1,9 @@
 #include "SurfaceTensionForce.h"
 
-SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField &gamma)
+SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField &u)
     :
       gamma_(gamma),
+      u_(u),
       n_(gamma.grid, "interfaceNormals"),
       kappa_(gamma.grid, "interfaceCurvature")
 {
@@ -25,9 +26,9 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteV
 }
 
 
-Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal) const
+Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D& vel) const
 {
-    Vector2D nt = wallNormal.rotate(M_PI/2.);
-
-    return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI/2. -thetaAdv_).unitVec() : nt.rotate(M_PI/2. + thetaAdv_).unitVec();
+    const Vector2D nt = wallNormal.tangentVec();
+    const Scalar theta = dot(-gradGamma, vel) >= 0. ? thetaAdv_ : thetaRec_;
+    return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI/2. - theta).unitVec() : nt.rotate(M_PI/2. + theta).unitVec();
 }

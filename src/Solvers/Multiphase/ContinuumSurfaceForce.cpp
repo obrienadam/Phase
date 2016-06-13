@@ -1,14 +1,16 @@
 #include "ContinuumSurfaceForce.h"
 
-ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input, const ScalarFiniteVolumeField &gamma, const ScalarFiniteVolumeField &rho, std::map<std::string, ScalarFiniteVolumeField> &fields)
+ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
+                                             const ScalarFiniteVolumeField &gamma,
+                                             const VectorFiniteVolumeField& u,
+                                             std::map<std::string, ScalarFiniteVolumeField> &fields)
     :
-      SurfaceTensionForce(input, gamma),
+      SurfaceTensionForce(input, gamma, u),
       gradGammaTilde_(gamma.grid, "gammaTilde"),
-      rho_(rho),
       gammaTilde_((fields.insert(std::make_pair(std::string("gammaTilde"), ScalarFiniteVolumeField(gamma.grid, "gammaTilde"))).first)->second)
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    avgRho_ = (input.caseInput().get<Scalar>("Properties.rho1") + input.caseInput().get<Scalar>("Properties.rho2"))/2.;
+    constructSmoothingKernels();
 }
 
 VectorFiniteVolumeField ContinuumSurfaceForce::compute()
@@ -20,7 +22,7 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()]*rho_[cell.id()]/avgRho_;
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
 
     return ft;
 }
@@ -48,7 +50,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     n_ = gradGammaTilde_;
 
     for(Vector2D &vec: n_)
-        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : vec.unitVec();
+        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : -vec.unitVec();
 
     interpolateFaces(n_);
 
@@ -59,7 +61,8 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
             const Cell &cell = face.lCell();
             Vector2D sf = face.outwardNorm(cell.centroid());
 
-            n_.faces()[face.id()] = -computeContactLineNormal(gradGammaTilde_[cell.id()], sf);
+            if(!(n_.faces()[face.id()] == Vector2D(0., 0.)))
+                n_.faces()[face.id()] = computeContactLineNormal(gradGammaTilde_[cell.id()], sf, u_[cell.id()]);
         }
 
     //- Make sure all interpolated faces have the correct magnitude
@@ -74,14 +77,13 @@ void ContinuumSurfaceForce::computeCurvature()
         Scalar &k = kappa_[cell.id()] = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
-            k -= dot(n_.faces()[nb.face().id()], nb.outwardNorm());
+            k += dot(n_.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink &bd: cell.boundaries())
-            k -= dot(n_.faces()[bd.face().id()], bd.outwardNorm());
+            k += dot(n_.faces()[bd.face().id()], bd.outwardNorm());
 
         k /= cell.volume();
-
-        if(isnan(k))
-            k = 0.;
     }
+
+    interpolateFaces(kappa_);
 }

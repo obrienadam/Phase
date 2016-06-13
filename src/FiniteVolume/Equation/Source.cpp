@@ -29,4 +29,26 @@ VectorFiniteVolumeField source(VectorFiniteVolumeField field)
     return field;
 }
 
+VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector2D& g)
+{
+    VectorFiniteVolumeField gravity(rho.grid, "g");
+
+    for(const Cell& cell: rho.grid.fluidCells())
+    {
+        Vector2D &gs = gravity[cell.id()] = Vector2D(0., 0.);
+
+        for(const InteriorLink &nb: cell.neighbours())
+            gs += dot(g, nb.rFaceVec())*rho.faces()[nb.face().id()]*nb.outwardNorm();
+
+        for(const BoundaryLink &bd: cell.boundaries())
+            gs += dot(g, bd.rFaceVec())*rho.faces()[bd.face().id()]*bd.outwardNorm();
+
+        gs /= cell.volume();
+    }
+
+    interpolateFaces(gravity);
+
+    return gravity;
+}
+
 }

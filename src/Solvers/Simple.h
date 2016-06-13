@@ -14,7 +14,7 @@ public:
     virtual Scalar solve(Scalar timeStep);
     Scalar computeMaxTimeStep(Scalar maxCo) const;
 
-    VectorFiniteVolumeField &u, &h;
+    VectorFiniteVolumeField &u, &h, &sg;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:
@@ -24,7 +24,7 @@ protected:
 
     void computeD();
     void computeH();
-    void rhieChowInterpolation();
+    virtual void rhieChowInterpolation();
 
     void correctAll();
     void correctPressure();

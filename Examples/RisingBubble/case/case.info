@@ -10,12 +10,12 @@ Solver
 	maxCo 0.3
 	maxTime 5
 
-	momentumRelaxation 0.5
-	pressureCorrectionRelaxation 0.5
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
 	numInnerIterations 3
 	numPressureCorrections 1
 
-	smoothingKernelRadius 0.0401
+	smoothingKernelRadius 0.0601
 }
 
 Properties
@@ -34,12 +34,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 100
-	nCellsJ 200
+	nCellsI 50
+	nCellsJ 100
 
 	; Rectilinear parameters
-	spacingX 0.01
-	spacingY 0.01
+	spacingX 0.02
+	spacingY 0.02
 }
 
 Viewer

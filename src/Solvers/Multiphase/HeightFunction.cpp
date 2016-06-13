@@ -1,8 +1,8 @@
 #include "HeightFunction.h"
 
-HeightFunction::HeightFunction(const Input &input, const ScalarFiniteVolumeField &gamma)
+HeightFunction::HeightFunction(const Input &input, const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField& u)
     :
-      SurfaceTensionForce(input, gamma)
+      SurfaceTensionForce(input, gamma, u)
 {
 
 }

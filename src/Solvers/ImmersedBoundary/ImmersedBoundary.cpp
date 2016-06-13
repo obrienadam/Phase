@@ -5,7 +5,7 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      csf_(input, gamma, rho, scalarFields_),
+      csf_(input, gamma, u, scalarFields_),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& ibObject: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -75,11 +75,13 @@ Scalar ImmersedBoundary::solve(Scalar timeStep)
     computeRho();
     computeMu();
 
-    u.save(timeStep, 1);
+    u.savePreviousTimeStep(timeStep, 1);
 
     Scalar avgError = 0.;
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
     {
+        u.savePreviousIteration();
+
         avgError += solveUEqn(timeStep);
 
         for(size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
@@ -99,10 +101,11 @@ Scalar ImmersedBoundary::solve(Scalar timeStep)
 
 Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
 {
+    sg = fv::gravity(rho, g_);
     ft = csf_.compute(ibObjs_);
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObjs_, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft));
+             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
 
     uEqn_.relax(momentumOmega_);
 
@@ -125,8 +128,9 @@ Scalar ImmersedBoundary::solvePCorrEqn()
 
 Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
 {
-    gamma.save(timeStep, 1);
+    gamma.savePreviousTimeStep(timeStep, 1);
     interpolateFaces(gamma);
+
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObjs_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();

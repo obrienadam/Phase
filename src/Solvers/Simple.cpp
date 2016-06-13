@@ -6,6 +6,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       Solver(grid, input),
       u(addVectorField(input, "u")),
       h(addVectorField("h")),
+      sg(addVectorField("sg")),
       p(addScalarField(input, "p")),
       pCorr(addScalarField("pCorr")),
       rho(addScalarField("rho")),
@@ -29,10 +30,12 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 Scalar Simple::solve(Scalar timeStep)
 {
-    u.save(timeStep, 1);
+    u.savePreviousTimeStep(timeStep, 1);
 
     for(size_t i = 0; i < nInnerIterations_; ++i)
     {
+        u.savePreviousIteration();
+
         solveUEqn(timeStep);
         solvePCorrEqn();
         correctPressure();
@@ -64,7 +67,9 @@ Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 
 Scalar Simple::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(rho*g_));
+    sg = fv::gravity(rho, g_);
+
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -76,6 +81,19 @@ Scalar Simple::solveUEqn(Scalar timeStep)
 
 Scalar Simple::solvePCorrEqn()
 {
+    for(const Cell& cell: m.grid.fluidCells())
+    {
+        size_t id = cell.id();
+
+        m[id] = 0.;
+
+        for(const InteriorLink& nb: cell.neighbours())
+            m[id] += dot(u.faces()[nb.face().id()], nb.outwardNorm());
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            m[id] += dot(u.faces()[bd.face().id()], bd.outwardNorm());
+    }
+
     pCorrEqn_ = (fv::laplacian(d, pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
@@ -91,10 +109,7 @@ void Simple::computeD()
 
     d.fill(0.);
     for(const Cell& cell: d.grid.fluidCells())
-    {
-        if(cell.isActive())
-            d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
-    }
+        d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
 
     interpolateFaces(d);
 }
@@ -102,26 +117,38 @@ void Simple::computeD()
 void Simple::rhieChowInterpolation()
 {
     computeD();
-
-    h = u + d*grad(p);
-    interpolateFaces(h);
+    VectorFiniteVolumeField gradP = grad(p);
+    const VectorFiniteVolumeField& uStar = u.prevIter();
 
     for(const Face& face: u.grid.interiorFaces())
     {
-        size_t faceId = face.id();
+        const Cell& cellP = face.lCell();
+        const Cell& cellQ = face.rCell();
+        const size_t fid = face.id();
 
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
+        const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
+        const Vector2D rc = cellQ.centroid() - cellP.centroid();
 
-        Vector2D sf = face.outwardNorm(lCell.centroid());
-        Vector2D rc = rCell.centroid() - lCell.centroid();
+        const Scalar df = d.faces()[fid];
+        const Scalar rhoP = rho[cellP.id()];
+        const Scalar rhoQ = rho[cellQ.id()];
+        const Scalar rhof = rho.faces()[fid];
 
-        u.faces()[faceId] = h.faces()[faceId] - d.faces()[faceId]*(p[rCell.id()] - p[lCell.id()])*sf/dot(rc, rc);
+        u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
+                + (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
+                - df*((p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) - rhof*(gradP[cellP.id()]/rhoP + gradP[cellQ.id()]/rhoQ)/2.)
+                + df*(rhof*g_ - rhof*(sg[cellP.id()]/rhoP + sg[cellQ.id()]/rhoQ)/2.);
     }
 
     for(const Face& face: u.grid.boundaryFaces())
     {
         Vector2D nWall;
+
+        const Cell& cellP = face.lCell();
+        const size_t fid = face.id();
+        const Vector2D rf = face.centroid() - cellP.centroid();
+        const Scalar df = d.faces()[fid];
+        const Scalar rhof = rho.faces()[fid];
 
         switch(u.boundaryType(face.id()))
         {
@@ -129,7 +156,9 @@ void Simple::rhieChowInterpolation()
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u.faces()[face.id()] = u[face.lCell().id()];
+            u.faces()[face.id()] = u[face.lCell().id()]
+                    - df*((p.faces()[fid] - p[cellP.id()])*rf/dot(rf, rf) - gradP[cellP.id()])
+                    + df*(rhof*g_ - sg[cellP.id()]);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -140,19 +169,6 @@ void Simple::rhieChowInterpolation()
         default:
             throw Exception("Simple", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
-    }
-
-    for(const Cell& cell: m.grid.fluidCells())
-    {
-        size_t id = cell.id();
-
-        m[id] = 0.;
-
-        for(const InteriorLink& nb: cell.neighbours())
-            m[id] += dot(u.faces()[nb.face().id()], nb.outwardNorm());
-
-        for(const BoundaryLink& bd: cell.boundaries())
-            m[id] += dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 }
 

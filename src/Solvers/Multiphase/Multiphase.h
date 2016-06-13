@@ -26,6 +26,8 @@ protected:
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
+    virtual void rhieChowInterpolation();
+
     Scalar rho1_, rho2_, mu1_, mu2_;
     std::shared_ptr<SurfaceTensionForce> surfaceTensionForce_;
 
