@@ -22,8 +22,6 @@ protected:
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solvePCorrEqn();
 
-    void computeD();
-    void computeH();
     virtual void rhieChowInterpolation();
 
     void correctAll();

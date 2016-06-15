@@ -37,7 +37,5 @@ protected:
 
 //- Header files for the available methods
 #include "ContinuumSurfaceForce.h"
-#include "SurfaceTensionForce.h"
-#include "HeightFunction.h"
 
 #endif

@@ -49,18 +49,18 @@ Scalar Simple::solve(Scalar timeStep)
 
 Scalar Simple::computeMaxTimeStep(Scalar maxCo) const
 {
-    Scalar maxTimeStep = std::numeric_limits<Scalar>::infinity();
+    Scalar maxTimeStepSqr = std::numeric_limits<Scalar>::infinity(), maxCoSqr = maxCo*maxCo;
 
     for(const Cell &cell: u.grid.fluidCells())
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Scalar deltaX = nb.rCellVec().mag();
-            Scalar magU = u.faces()[nb.face().id()].mag();
+            Scalar deltaXSqr = nb.rCellVec().magSqr();
+            Scalar magUSqr = u.faces()[nb.face().id()].magSqr();
 
-            maxTimeStep = std::min(maxTimeStep, maxCo*deltaX/magU);
+            maxTimeStepSqr = std::min(maxTimeStepSqr, maxCoSqr*deltaXSqr/magUSqr);
         }
 
-    return maxTimeStep;
+    return sqrt(maxTimeStepSqr);
 }
 
 //- Protected methods
@@ -103,8 +103,11 @@ Scalar Simple::solvePCorrEqn()
     return error;
 }
 
-void Simple::computeD()
-{
+void Simple::rhieChowInterpolation()
+{   
+    VectorFiniteVolumeField gradP = grad(p);
+    const VectorFiniteVolumeField& uStar = u.prevIter();
+
     const auto diag = uEqn_.matrix().diagonal();
 
     d.fill(0.);
@@ -112,13 +115,6 @@ void Simple::computeD()
         d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
 
     interpolateFaces(d);
-}
-
-void Simple::rhieChowInterpolation()
-{
-    computeD();
-    VectorFiniteVolumeField gradP = grad(p);
-    const VectorFiniteVolumeField& uStar = u.prevIter();
 
     for(const Face& face: u.grid.interiorFaces())
     {
@@ -194,20 +190,21 @@ void Simple::correctVelocity()
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
 
-        Vector2D sf = face.outwardNorm(lCell.centroid());
         Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u.faces()[faceId] -= d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*sf/dot(rc, rc);
+        u.faces()[faceId] -= d.faces()[faceId]*(pCorr[rCell.id()] - pCorr[lCell.id()])*rc/dot(rc, rc);
     }
 
     for(const Face& face: u.grid.boundaryFaces())
     {
+        const Vector2D rf = face.centroid() - face.lCell().centroid();
+
         switch(u.boundaryType(face.id()))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u.faces()[face.id()] = u[face.lCell().id()];
+            u.faces()[face.id()] -= d.faces()[face.id()]*(pCorr.faces()[face.id()] - pCorr[face.lCell().id()])*rf/dot(rf, rf);
             break;
         }
     }
@@ -228,16 +225,16 @@ void Simple::correctVelocity()
 
 Scalar Simple::courantNumber(Scalar timeStep)
 {
-    Scalar maxCo = 0.;
+    Scalar maxCoSqr = 0., timeStepSqr = timeStep*timeStep;
 
     for(const Cell &cell: u.grid.fluidCells())
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Scalar deltaX = nb.rCellVec().mag();
-            Scalar magU = u.faces()[nb.face().id()].mag();
+            Scalar deltaXSqr = nb.rCellVec().magSqr();
+            Scalar magUSqr = u.faces()[nb.face().id()].magSqr();
 
-            maxCo = std::max(maxCo, magU*timeStep/deltaX);
+            maxCoSqr = std::max(maxCoSqr, magUSqr*timeStepSqr/deltaXSqr);
         }
 
-    return maxCo;
+    return sqrt(maxCoSqr);
 }

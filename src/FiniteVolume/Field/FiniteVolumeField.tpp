@@ -321,9 +321,7 @@ void interpolateFaces(FiniteVolumeField<T>& field)
             break;
 
         case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            rf = face.centroid() - face.lCell().centroid();
-            sf = face.outwardNorm(face.lCell().centroid());
-            field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
+            field.faces()[face.id()] = field[face.lCell().id()];
             break;
 
         case FiniteVolumeField<T>::SYMMETRY:
@@ -358,9 +356,7 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
             break;
 
         case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            rf = face.centroid() - face.lCell().centroid();
-            sf = face.outwardNorm(face.lCell().centroid());
-            field.faces()[face.id()] = sf.mag()/(dot(rf, sf)/dot(rf, rf))*field.boundaryRefValue(face.id()) + field[face.lCell().id()];
+            field.faces()[face.id()] = field[face.lCell().id()];
             break;
 
         case FiniteVolumeField<T>::SYMMETRY:

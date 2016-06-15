@@ -32,15 +32,13 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     switch(curvatureEvaluationMethod_)
     {
     case CSF:
-
         surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, u, scalarFields_));
         break;
-    case HF:
 
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new HeightFunction(input, gamma, u));
-        interfaceAdvectionMethod_ = PLIC; // Only plic is guaranteed to work with height function methods
-        addGeometries("hfPolygons");
+    case HF:
+        throw Exception("Multiphase", "Multiphase", "height functions not yet implemented.");
         break;
+
     }
 }
 
