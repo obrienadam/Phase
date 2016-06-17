@@ -96,16 +96,8 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
                 eqn.matrix().coeffRef(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
             }
 
-            if(gradGammaIp == Vector2D(0., 0.)) // no contact line present
-            {
-                eqn.sources()(rowX) = 0.;
-                eqn.sources()(rowY) = 0.;
-            }
-            else
-            {
-                eqn.sources()(rowX) = bpNormal.x;
-                eqn.sources()(rowY) = bpNormal.y;
-            }
+            eqn.sources()(rowX) = bpNormal.x;
+            eqn.sources()(rowY) = bpNormal.y;
         }
 
     eqn.solve();

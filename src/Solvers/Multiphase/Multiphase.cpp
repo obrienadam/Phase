@@ -104,7 +104,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, surfaceTensionForce_->n(), gamma, timeStep) == 0.);
         break;
     case PLIC:
 

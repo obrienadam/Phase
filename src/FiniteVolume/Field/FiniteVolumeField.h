@@ -72,7 +72,7 @@ template<class T>
 void harmonicInterpolateFaces(FiniteVolumeField<T>& field);
 
 template<class T>
-FiniteVolumeField<T> smooth(const Field<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar h);
+FiniteVolumeField<T> smooth(const Field<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar epsilon);
 
 #include "FiniteVolumeField.tpp"
 

@@ -1,12 +1,10 @@
 set(HEADERS ImmersedBoundary.h
             ImmersedBoundaryObject.h
-            BilinearInterpolation.cpp
             GhostCellImmersedBoundary.h
             ImmersedBoundaryContinuumSurfaceForce.h)
 
 set(SOURCES ImmersedBoundary.cpp
             ImmersedBoundaryObject.cpp
-            BilinearInterpolation.cpp
             GhostCellImmersedBoundary.cpp
             ImmersedBoundaryContinuumSurfaceForce.cpp)
 

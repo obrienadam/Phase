@@ -28,7 +28,11 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 
         solver.solve(timeStep);
         printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
+        printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
     }
 
     viewer.write(time);
+    printf("%s\n", (std::string(96, '*')).c_str());
+    printf("Calculation complete.\n");
+    printf("%s\n", (std::string(96, '*')).c_str());
 }

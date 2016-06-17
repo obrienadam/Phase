@@ -107,7 +107,7 @@ FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousIteration()
 
     previousIteration_.push_back(FiniteVolumeField<T>(*this));
 
-    return previousIteration_.back();
+    return previousIteration_.front();
 }
 
 //- Operators
@@ -370,29 +370,28 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
 }
 
 template<class T>
-FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar h)
+FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar e)
 {
     FiniteVolumeField<T> smoothedField(field.grid, field.name);
+    Scalar A = 1.;
+    const Scalar eSqr = e*e;
 
-    auto pow4 = [](Scalar x) { return x*x*x*x; };
-    auto pow2 = [](Scalar x) { return x*x; };
-    auto kr = [&pow2, &pow4](Scalar r, Scalar h)
-    {
-        return pow4(1. - pow2(std::min(r/h, 1.)));
-    };
+    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
 
     for(const Cell &cell: field.grid.activeCells())
     {
-        Scalar totalVol = 0., intKr = 0.;
+        //- Determine the normalizing constant for this kernel
+        Scalar integralK = 0.;
+        A = 1.;
 
         for(const Cell &kCell: rangeSearch[cell.id()])
-        {
-            totalVol += kCell.volume();
-            intKr += kr((cell.centroid() - kCell.centroid()).mag(), h);
-        }
+            integralK += K((kCell.centroid() - cell.centroid()).magSqr(), eSqr)*kCell.volume();
 
+        A = 1./integralK;
+
+        smoothedField[cell.id()] = 0.;
         for(const Cell &kCell: rangeSearch[cell.id()])
-            smoothedField[cell.id()] += field[kCell.id()]*kr((cell.centroid() - kCell.centroid()).mag(), h)/intKr;
+            smoothedField[cell.id()] += field[kCell.id()]*K((kCell.centroid() - cell.centroid()).magSqr(), eSqr)*kCell.volume();
     }
 
     return smoothedField;

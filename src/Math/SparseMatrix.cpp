@@ -7,9 +7,9 @@ SparseMatrix::SparseMatrix(int nRows, int nCols, int nnz)
 {
     reserve(nRows*nnz);
     solverNoPreconditioner_.setTolerance(1e-12);
-    solverNoPreconditioner_.setMaxIterations(50);
+    solverNoPreconditioner_.setMaxIterations(200);
     solverIncompleteLUT_.setTolerance(1e-12);
-    solverIncompleteLUT_.setMaxIterations(50);
+    solverIncompleteLUT_.setMaxIterations(200);
 }
 
 SparseMatrix::SparseMatrix(const SparseMatrix &other)
@@ -58,8 +58,8 @@ SparseVector SparseMatrix::solve(const SparseVector &b, Preconditioner precon) c
         break;
     }
 
-    //if(info == Eigen::NoConvergence)
-    //    throw Exception("SparseMatrix", "solve", "iterative procedure did not converge.");
+    if(info == Eigen::NoConvergence)
+        printf("Warning: solver failed to converge after %ld iterations. Error = %lf\n", nIters_, error_);
 
     return x;
 }

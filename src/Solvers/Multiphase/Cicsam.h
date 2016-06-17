@@ -3,27 +3,14 @@
 
 #include "Equation.h"
 
-namespace hc
-{
-
-Scalar betaFace(Scalar gammaD, Scalar gammaA, Scalar gammaU, Scalar coD);
-
-}
-
-namespace sc
-{
-
-}
-
-namespace uq
-{
-
-}
-
 namespace cicsam
 {
 
+Scalar hc(Scalar gammaTilde, Scalar coD);
+Scalar uq(Scalar gammaTilde, Scalar coD);
+
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep);
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField &m, ScalarFiniteVolumeField &field, Scalar timeStep);
 
 }
 

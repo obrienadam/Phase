@@ -107,3 +107,15 @@ VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFinit
     lhs /= rhs;
     return lhs;
 }
+
+void extrapolateBoundaryFaces(ScalarFiniteVolumeField& field)
+{
+    VectorFiniteVolumeField gradField = grad(field);
+
+    for(const Cell &cell: field.grid.activeCells())
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            if(field.boundaryType(bd.face().id()) != ScalarFiniteVolumeField::FIXED)
+                field.faces()[bd.face().id()] = field[bd.face().lCell().id()] + dot(bd.rFaceVec(), gradField[bd.face().lCell().id()]);
+        }
+}

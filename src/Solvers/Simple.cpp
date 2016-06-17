@@ -83,15 +83,13 @@ Scalar Simple::solvePCorrEqn()
 {
     for(const Cell& cell: m.grid.fluidCells())
     {
-        size_t id = cell.id();
-
-        m[id] = 0.;
+        Scalar &mass = m[cell.id()] = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            m[id] += dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            mass += dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            m[id] += dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            mass += dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 
     pCorrEqn_ = (fv::laplacian(d, pCorr) == m);
@@ -107,6 +105,8 @@ void Simple::rhieChowInterpolation()
 {   
     VectorFiniteVolumeField gradP = grad(p);
     const VectorFiniteVolumeField& uStar = u.prevIter();
+    const VectorFiniteVolumeField& uPrev = u.prev(0);
+    const Scalar dt = u.prevTimeStep(0);
 
     const auto diag = uEqn_.matrix().diagonal();
 
@@ -115,6 +115,13 @@ void Simple::rhieChowInterpolation()
         d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
 
     interpolateFaces(d);
+
+    for(const Cell& cell: d.grid.fluidCells())
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            if(!d.grid.fluidCells().isInGroup(nb.cell()))
+                d.faces()[nb.face().id()] = d[cell.id()];
+        }
 
     for(const Face& face: u.grid.interiorFaces())
     {
@@ -132,6 +139,7 @@ void Simple::rhieChowInterpolation()
 
         u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
                 + (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
+                + rhof/dt*df*(uPrev.faces()[fid] - (g*uPrev[cellP.id()] + (1. - g)*uPrev[cellQ.id()])) //- Why is this causing issues?
                 - df*((p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) - rhof*(gradP[cellP.id()]/rhoP + gradP[cellQ.id()]/rhoQ)/2.)
                 + df*(rhof*g_ - rhof*(sg[cellP.id()]/rhoP + sg[cellQ.id()]/rhoQ)/2.);
     }
@@ -153,8 +161,8 @@ void Simple::rhieChowInterpolation()
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u.faces()[face.id()] = u[face.lCell().id()]
-                    - df*((p.faces()[fid] - p[cellP.id()])*rf/dot(rf, rf) - gradP[cellP.id()])
-                    + df*(rhof*g_ - sg[cellP.id()]);
+                    - df*((p.faces()[fid] - p[cellP.id()])*rf/dot(rf, rf) - rhof*gradP[cellP.id()]/rho[cellP.id()])
+                    + df*(rhof*g_ - rhof*sg[cellP.id()]/rho[cellP.id()]);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -174,6 +182,7 @@ void Simple::correctPressure()
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
     interpolateFaces(p);
+    //extrapolateBoundaryFaces(p);
 }
 
 void Simple::correctVelocity()

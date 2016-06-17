@@ -52,8 +52,10 @@ Scalar CoupledEquation::solve(Scalar timeStep)
 
 void CoupledEquation::computeD()
 {
+    const auto diag = spMat_.diagonal();
+
     for(const Cell &cell: u_.grid.fluidCells())
-        d_[cell.id()] = cell.volume()/spMat_.coeff(cell.globalIndex(), cell.globalIndex());
+        d_[cell.id()] = cell.volume()/diag[cell.globalIndex()];
 
     interpolateFaces(d_);
 }

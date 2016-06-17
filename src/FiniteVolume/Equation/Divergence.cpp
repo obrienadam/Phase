@@ -31,7 +31,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm()), boundaryCoeff;
+            Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
 
             switch(field.boundaryType(bd.face().id()))
             {

@@ -1,10 +1,5 @@
 #include "BilinearInterpolation.h"
 
-BilinearInterpolation::BilinearInterpolation(const FiniteVolumeGrid2D &grid)
-{
-
-}
-
 BilinearInterpolation::BilinearInterpolation(const std::vector<Point2D>& pts)
 {
     constructMatrix(pts);
