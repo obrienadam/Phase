@@ -19,6 +19,8 @@ public:
 
 protected:
 
+    Vector2D g_;
+
 };
 
 #endif

@@ -5,9 +5,10 @@
 ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(const Input &input,
                                                                              const ScalarFiniteVolumeField &gamma,
                                                                              const VectorFiniteVolumeField &u,
-                                                                             std::map<std::string, ScalarFiniteVolumeField> &fields)
+                                                                             std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
+                                                                             std::map<std::string, VectorFiniteVolumeField> &vectorFields)
     :
-      ContinuumSurfaceForce(input, gamma, u, fields)
+      ContinuumSurfaceForce(input, gamma, u, scalarFields, vectorFields)
 {
 
 }
@@ -21,7 +22,19 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
+    {
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            const Scalar kappaF = gamma_.grid.fluidCells().isInGroup(nb.cell()) ? kappa_.faces()[nb.face().id()] : kappa_[cell.id()];
+
+            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], nb.rFaceVec())*kappaF*nb.outwardNorm();
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], bd.rFaceVec())*kappa_.faces()[bd.face().id()]*bd.outwardNorm();
+
+        ft[cell.id()] *= sigma_/cell.volume();
+    }
 
     return ft;
 }
@@ -85,7 +98,7 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
             const Vector2D uIp = bi(velVals, imagePoint);
             const Vector2D gradGammaIp = bi(gradGammaVals, imagePoint);
 
-            const Vector2D bpNormal = SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
+            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
 
             eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
             eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
@@ -100,12 +113,19 @@ void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::v
             eqn.sources()(rowY) = bpNormal.y;
         }
 
-    eqn.solve();
+    Scalar error = eqn.solve();
+
+    if(isnan(error))
+    {
+        printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
+        ContinuumSurfaceForce::computeInterfaceNormals();
+        return;
+    }
+
+    interpolateFaces(n_);
 
     for(const Cell &cell: n_.grid.activeCells())
         n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
-
-    interpolateFaces(n_);
 
     for(Vector2D &n: n_.faces())
         n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();

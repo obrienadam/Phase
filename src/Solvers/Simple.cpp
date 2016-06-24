@@ -104,8 +104,8 @@ Scalar Simple::solvePCorrEqn()
 void Simple::rhieChowInterpolation()
 {   
     VectorFiniteVolumeField gradP = grad(p);
-    const VectorFiniteVolumeField& uStar = u.prevIter();
-    const VectorFiniteVolumeField& uPrev = u.prev(0);
+    VectorFiniteVolumeField& uStar = u.prevIter();
+    VectorFiniteVolumeField& uPrev = u.prev(0);
     const Scalar dt = u.prevTimeStep(0);
 
     const auto diag = uEqn_.matrix().diagonal();
@@ -116,32 +116,28 @@ void Simple::rhieChowInterpolation()
 
     interpolateFaces(d);
 
-    for(const Cell& cell: d.grid.fluidCells())
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            if(!d.grid.fluidCells().isInGroup(nb.cell()))
-                d.faces()[nb.face().id()] = d[cell.id()];
-        }
-
     for(const Face& face: u.grid.interiorFaces())
     {
         const Cell& cellP = face.lCell();
         const Cell& cellQ = face.rCell();
         const size_t fid = face.id();
 
-        const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
         const Vector2D rc = cellQ.centroid() - cellP.centroid();
 
+        const Scalar dP = d[cellP.id()];
+        const Scalar dQ = d[cellQ.id()];
         const Scalar df = d.faces()[fid];
         const Scalar rhoP = rho[cellP.id()];
         const Scalar rhoQ = rho[cellQ.id()];
         const Scalar rhof = rho.faces()[fid];
 
+        const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
+
         u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
-                + (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
-                + rhof/dt*df*(uPrev.faces()[fid] - (g*uPrev[cellP.id()] + (1. - g)*uPrev[cellQ.id()])) //- Why is this causing issues?
-                - df*((p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) - rhof*(gradP[cellP.id()]/rhoP + gradP[cellQ.id()]/rhoQ)/2.)
-                + df*(rhof*g_ - rhof*(sg[cellP.id()]/rhoP + sg[cellQ.id()]/rhoQ)/2.);
+                //+ (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
+                + (rhof*df*uPrev.faces()[fid] - (g*rhoP*dP*uPrev[cellP.id()] + (1. - g)*rhoQ*dQ*uPrev[cellQ.id()]))/dt //- Why is this causing issues?
+                - df*(p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) + rhof*(dP*gradP[cellP.id()]/rhoP + dQ*gradP[cellQ.id()]/rhoQ)/2.
+                + df*rhof*g_ - rhof*(dP*sg[cellP.id()]/rhoP + dQ*sg[cellQ.id()]/rhoQ)/2.;
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -182,7 +178,9 @@ void Simple::correctPressure()
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
     interpolateFaces(p);
-    //extrapolateBoundaryFaces(p);
+
+    for(const Face &face: p.grid.boundaryFaces())
+        p.faces()[face.id()] += rho[face.lCell().id()]*dot(face.centroid() - face.lCell().centroid(), g_);
 }
 
 void Simple::correctVelocity()

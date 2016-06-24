@@ -9,7 +9,7 @@ class SurfaceTensionForce
 {
 public:
 
-    SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField& u);
+    SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField& u, std::map<std::string, VectorFiniteVolumeField> &fields);
 
     virtual VectorFiniteVolumeField compute() = 0;
     Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel) const;
@@ -30,7 +30,7 @@ protected:
     const ScalarFiniteVolumeField &gamma_;
     const VectorFiniteVolumeField &u_;
     ScalarFiniteVolumeField kappa_;
-    VectorFiniteVolumeField n_;
+    VectorFiniteVolumeField &n_;
 
     std::vector< Ref<const Patch> > contactAnglePatches_;
 };

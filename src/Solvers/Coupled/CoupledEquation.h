@@ -16,7 +16,6 @@ public:
 
 protected:
 
-    void computeD();
     void assembleMomentumEquation(Scalar timeStep);
     void assembleContinuityEquation();
     void rhieChowInterpolation();
@@ -27,8 +26,11 @@ protected:
     VectorFiniteVolumeField& u_, gradP_;
     ScalarFiniteVolumeField& p_, d_;
 
+    //const Vector2D& g_;
+
+    std::vector<SparseMatrix::Triplet> triplets_;
     SparseMatrix spMat_;
-    SparseVector rhs_;
+    SparseVector rhs_, phi_;
 };
 
 #endif

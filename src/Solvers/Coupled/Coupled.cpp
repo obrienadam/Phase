@@ -12,6 +12,7 @@ Coupled::Coupled(const FiniteVolumeGrid2D &grid, const Input &input)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho"));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu"));
+    g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 }
 
 Scalar Coupled::solve(Scalar timeStep)

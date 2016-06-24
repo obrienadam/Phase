@@ -32,7 +32,7 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     switch(curvatureEvaluationMethod_)
     {
     case CSF:
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, u, scalarFields_));
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, u, scalarFields_, vectorFields_));
         break;
 
     case HF:
@@ -104,7 +104,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, surfaceTensionForce_->n(), gamma, timeStep) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep, cicsam::HC) == 0.);
         break;
     case PLIC:
 
@@ -132,17 +132,19 @@ void Multiphase::rhieChowInterpolation()
         const Scalar rhoP = rho[lCell.id()];
         const Scalar rhoQ = rho[rCell.id()];
 
-        const Scalar kf = surfaceTensionForce_->kappa().faces()[id];
-        const Scalar kP = surfaceTensionForce_->kappa()[lCell.id()];
-        const Scalar kQ = surfaceTensionForce_->kappa()[rCell.id()];
+        Scalar kf;
+
+        if(!u.grid.fluidCells().isInGroup(lCell))
+            kf = surfaceTensionForce_->kappa()[rCell.id()];
+        else if(!u.grid.fluidCells().isInGroup(rCell))
+            kf = surfaceTensionForce_->kappa()[lCell.id()];
+        else
+            kf = surfaceTensionForce_->kappa().faces()[id];
 
         const Scalar gP = surfaceTensionForce_->gammaTilde()[lCell.id()];
         const Scalar gQ = surfaceTensionForce_->gammaTilde()[rCell.id()];
 
-        const Vector2D& dgP = surfaceTensionForce_->gradGamma()[lCell.id()];
-        const Vector2D& dgQ = surfaceTensionForce_->gradGamma()[rCell.id()];
-
-        u.faces()[id] += df*surfaceTensionForce_->sigma()*(kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(kP*dgP/rhoP + kQ*dgQ/rhoQ)/2.);
+        u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(d[lCell.id()]*ft[lCell.id()]/rhoP + d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
     }
 }
 

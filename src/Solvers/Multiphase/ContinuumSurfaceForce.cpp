@@ -3,11 +3,12 @@
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              const ScalarFiniteVolumeField &gamma,
                                              const VectorFiniteVolumeField& u,
-                                             std::map<std::string, ScalarFiniteVolumeField> &fields)
+                                             std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
+                                             std::map<std::string, VectorFiniteVolumeField> &vectorFields)
     :
-      SurfaceTensionForce(input, gamma, u),
+      SurfaceTensionForce(input, gamma, u, vectorFields),
       gradGammaTilde_(gamma.grid, "gammaTilde"),
-      gammaTilde_((fields.insert(std::make_pair(std::string("gammaTilde"), ScalarFiniteVolumeField(gamma.grid, "gammaTilde"))).first)->second)
+      gammaTilde_((scalarFields.insert(std::make_pair(std::string("gammaTilde"), ScalarFiniteVolumeField(gamma.grid, "gammaTilde"))).first)->second)
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     constructSmoothingKernels();
@@ -22,7 +23,16 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
+    {
+
+        for(const InteriorLink &nb: cell.neighbours())
+            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], nb.rFaceVec())*kappa_.faces()[nb.face().id()]*nb.outwardNorm();
+
+        for(const BoundaryLink &bd: cell.boundaries())
+            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], bd.rFaceVec())*kappa_.faces()[bd.face().id()]*bd.outwardNorm();
+
+        ft[cell.id()] *= sigma_/cell.volume();
+    }
 
     return ft;
 }

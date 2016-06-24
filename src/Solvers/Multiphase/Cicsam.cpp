@@ -3,18 +3,18 @@
 namespace cicsam
 {
 
-Scalar hc(Scalar gammaTilde, Scalar coD)
+Scalar hc(Scalar gammaTilde, Scalar coD) // Maintains very sharp interface but funny things sometimes happen
 {
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min(1., gammaTilde/coD) : gammaTilde;
 }
 
 
-Scalar uq(Scalar gammaTilde, Scalar coD)
+Scalar uq(Scalar gammaTilde, Scalar coD) // Fairly sharp interface but fewer funny things
 {
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min((8.*coD*gammaTilde + (1. - coD)*(6.*gammaTilde + 3.))/8., hc(gammaTilde, coD)) : gammaTilde;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, Type type)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -25,7 +25,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
     for(const Cell &cell: field.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
-        size_t row = cell.globalIndex();
+        const size_t row = cell.globalIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -43,11 +43,22 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
 
             const Scalar gammaTilde = (gammaD - gammaU)/(gammaA - gammaU);
 
-            const Scalar gammaTildeF = uq(gammaTilde, coD);
+            Scalar gammaTildeF;
+
+            switch(type)
+            {
+            case HC:
+                gammaTildeF = hc(gammaTilde, coD);
+                break;
+            case UQ:
+                gammaTildeF = uq(gammaTilde, coD);
+                break;
+            }
+
             Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
 
             if(isnan(betaFace)) // Upwind if a valid value is not found
-                betaFace = 0.;
+                betaFace = &cell == &donor ? 0. : 1.;
 
             betaFace = std::max(std::min(betaFace, 1.), 0.);
 
@@ -101,7 +112,6 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
     VectorFiniteVolumeField gradField = grad(field);
-
     const Scalar k = 1.;
 
     entries.reserve(5*field.grid.nActiveCells());
@@ -109,7 +119,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
     for(const Cell &cell: field.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
-        size_t row = cell.globalIndex();
+        const size_t row = cell.globalIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -135,9 +145,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
 
             if(isnan(betaFace)) // Upwind if a valid value is not found
-                betaFace = 0.;
-            else if(psiF < 0. || psiF > 1.)
-                throw Exception("cicsam", "div", "invalid blending value computed. Psi = " + std::to_string(psiF) + ".");
+                betaFace = &cell == &donor ? 0. : 1.;
 
             betaFace = std::max(std::min(betaFace, 1.), 0.);
 

@@ -6,29 +6,29 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-4
+	timeStep 0.8e-4
 	maxCo 0.3
-	maxTime 0.4
+	maxTime 1
 
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.25
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.001001
+	smoothingKernelRadius 0.003
 }
 
 Properties
 {
 	rho1 1
-	rho2 10
+	rho2 2
  	mu1 1.81e-5
 	mu2 8.94e-4
-	sigma 0.0762
+	sigma 0.01
 	g (0,-9.8065)
 
 	advancingContactAngle 110
-	recedingContactAngle 110
+	recedingContactAngle 70
 }
 
 Grid
@@ -38,8 +38,8 @@ Grid
 	nCellsJ 50
 
 	; Rectilinear parameters
-	spacingX 0.0005
-	spacingY 0.0005
+	spacingX 0.001
+	spacingY 0.001
 }
 
 Viewer
@@ -51,6 +51,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 100
+  fileWriteFrequency 200
   consoleOutputFrequency 1
 }

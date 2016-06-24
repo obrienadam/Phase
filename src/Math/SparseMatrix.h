@@ -27,10 +27,14 @@ public:
 
     void assemble(const std::vector< Eigen::Triplet<Scalar> >& entries);
 
-    SparseVector solve(const SparseVector& b, Preconditioner precon = IncompleteLUT) const;//SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon = IncompleteLUT) const;
+    SparseVector solve(const SparseVector& b, Preconditioner precon = IncompleteLUT) const;
+    SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon = IncompleteLUT) const;
 
     Scalar error() const { return error_; }
     int nIterations() const { return nIters_; }
+
+    void setTolerance(Scalar toler);
+    void setMaxIterations(size_t maxIters);
 
 private:
 
@@ -38,7 +42,7 @@ private:
     mutable size_t nIters_;
 
     mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solverIncompleteLUT_;
-    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IdentityPreconditioner > solverNoPreconditioner_;
+    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::DiagonalPreconditioner<Scalar> > solverNoPreconditioner_;
 };
 
 #endif

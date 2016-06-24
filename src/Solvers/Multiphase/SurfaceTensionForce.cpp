@@ -1,10 +1,10 @@
 #include "SurfaceTensionForce.h"
 
-SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField &u)
+SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField &u, std::map<std::string, VectorFiniteVolumeField> &fields)
     :
       gamma_(gamma),
       u_(u),
-      n_(gamma.grid, "interfaceNormals"),
+      n_((fields.insert(std::make_pair(std::string("n"), VectorFiniteVolumeField(gamma.grid, "n"))).first)->second),
       kappa_(gamma.grid, "interfaceCurvature")
 {
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");

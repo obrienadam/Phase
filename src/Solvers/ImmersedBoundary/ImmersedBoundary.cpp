@@ -5,7 +5,7 @@
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Multiphase(grid, input),
-      csf_(input, gamma, u, scalarFields_),
+      csf_(input, gamma, u, scalarFields_, vectorFields_),
       cellStatus_(addScalarField("cell_status"))
 {
     for(const auto& ibObject: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -131,7 +131,7 @@ Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
     gamma.savePreviousTimeStep(timeStep, 1);
     interpolateFaces(gamma);
 
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep) + gc::ib(ibObjs_, gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep, cicsam::HC) + gc::ib(ibObjs_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 
