@@ -21,9 +21,10 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
+    VectorFiniteVolumeField gradGamma = grad(gamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma[cell.id()];
 
     return ft;
 }

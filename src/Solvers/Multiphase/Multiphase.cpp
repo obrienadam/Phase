@@ -16,9 +16,6 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     setInitialConditions(input);
 
-    computeRho();
-    computeMu();
-
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
     curvatureEvaluationMethod_ = CSF;
@@ -40,6 +37,10 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
         break;
 
     }
+
+    surfaceTensionForce_->compute();
+    computeRho();
+    computeMu();
 }
 
 Scalar Multiphase::solve(Scalar timeStep)
@@ -58,10 +59,12 @@ Scalar Multiphase::solve(Scalar timeStep)
 
 void Multiphase::computeRho()
 {
+    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
+
     for(const Cell& cell: rho.grid.activeCells())
     {
         size_t id = cell.id();
-        rho[id] = (1. - gamma[id])*rho1_ + gamma[id]*rho2_;
+        rho[id] = (1. - gammaTilde[id])*rho1_ + gammaTilde[id]*rho2_;
     }
 
     //interpolateFaces(rho);
@@ -70,10 +73,12 @@ void Multiphase::computeRho()
 
 void Multiphase::computeMu()
 {
+    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
+
     for(const Cell& cell: mu.grid.activeCells())
     {
         size_t id = cell.id();
-        mu[id] = (1. - gamma[id])*mu1_ + gamma[id]*mu2_;
+        mu[id] = (1. - gammaTilde[id])*mu1_ + gammaTilde[id]*mu2_;
     }
 
     harmonicInterpolateFaces(mu);
@@ -141,8 +146,8 @@ void Multiphase::rhieChowInterpolation()
         else
             kf = surfaceTensionForce_->kappa().faces()[id];
 
-        const Scalar gP = surfaceTensionForce_->gammaTilde()[lCell.id()];
-        const Scalar gQ = surfaceTensionForce_->gammaTilde()[rCell.id()];
+        const Scalar gP = gamma[lCell.id()];
+        const Scalar gQ = gamma[rCell.id()];
 
         u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(d[lCell.id()]*ft[lCell.id()]/rhoP + d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
     }
