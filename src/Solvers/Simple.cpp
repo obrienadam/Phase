@@ -139,8 +139,8 @@ void Simple::rhieChowInterpolation()
         u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
                 //+ (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
                 + (rhof*df*uPrev.faces()[fid] - (g*rhoP*dP*uPrev[cellP.id()] + (1. - g)*rhoQ*dQ*uPrev[cellQ.id()]))/dt //- Why is this causing issues?
-                - df*(p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) + rhof*(dP*gradP[cellP.id()]/rhoP + dQ*gradP[cellQ.id()]/rhoQ)/2.
-                + df*rhof*g_ - rhof*(dP*sg[cellP.id()]/rhoP + dQ*sg[cellQ.id()]/rhoQ)/2.;
+                - df*(p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) + rhof*(g*dP*gradP[cellP.id()]/rhoP + (1. - g)*dQ*gradP[cellQ.id()]/rhoQ)/2.
+                + df*rhof*g_ - rhof*(g*dP*sg[cellP.id()]/rhoP + (1. - g)*dQ*sg[cellQ.id()]/rhoQ)/2.;
     }
 
     for(const Face& face: u.grid.boundaryFaces())

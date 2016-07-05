@@ -149,7 +149,9 @@ void Multiphase::rhieChowInterpolation()
         const Scalar gP = gamma[lCell.id()];
         const Scalar gQ = gamma[rCell.id()];
 
-        u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(d[lCell.id()]*ft[lCell.id()]/rhoP + d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
+        const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
+
+        u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d[lCell.id()]*ft[lCell.id()]/rhoP + (1. - g)*d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
     }
 }
 
