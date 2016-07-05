@@ -76,6 +76,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             }
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.boundaries()(row) -= coeff*field.prev()[nb.cell().id()];
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -100,7 +101,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff + 2.*cell.volume()/timeStep));
+        eqn.boundaries()(row) += 2.*cell.volume()*field.prev()[cell.id()]/timeStep - centralCoeff*field.prev()[cell.id()];
     }
 
     eqn.matrix().assemble(entries);
@@ -163,6 +165,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             }
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.boundaries()(row) -= coeff*field.prev()[nb.cell().id()];
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -187,7 +190,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff + 2.*cell.volume()/timeStep));
+        eqn.boundaries()(row) += 2.*cell.volume()*field.prev()[cell.id()]/timeStep - centralCoeff*field.prev()[cell.id()];
     }
 
     eqn.matrix().assemble(entries);

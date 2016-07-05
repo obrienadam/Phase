@@ -131,7 +131,7 @@ Scalar ImmersedBoundary::solveGammaEqn(Scalar timeStep)
     gamma.savePreviousTimeStep(timeStep, 1);
     interpolateFaces(gamma);
 
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep, cicsam::HC) + gc::ib(ibObjs_, gamma) == 0.);
+    gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + gc::ib(ibObjs_, gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 

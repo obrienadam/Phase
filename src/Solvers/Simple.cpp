@@ -26,6 +26,9 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
 
     pCorr.copyBoundaryTypes(p);
+
+    uEqn_.matrix().setFill(1);
+    pCorrEqn_.matrix().setFill(3);
 }
 
 Scalar Simple::solve(Scalar timeStep)

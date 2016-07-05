@@ -76,7 +76,7 @@ void Multiphase::computeMu()
         mu[id] = (1. - gamma[id])*mu1_ + gamma[id]*mu2_;
     }
 
-    interpolateFaces(mu);
+    harmonicInterpolateFaces(mu);
 }
 
 Scalar Multiphase::solveUEqn(Scalar timeStep)
@@ -104,7 +104,7 @@ Scalar Multiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
 
-        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma, timeStep, cicsam::HC) == 0.);
+        gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) == 0.);
         break;
     case PLIC:
 

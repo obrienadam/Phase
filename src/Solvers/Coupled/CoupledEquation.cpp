@@ -16,8 +16,9 @@ CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const Scala
     rhs_ = SparseVector::Zero(nVars_);
     phi_ = SparseVector::Zero(nVars_);
 
-    spMat_.setTolerance(1e-4);
+    spMat_.setTolerance(1e-7);
     spMat_.setMaxIterations(1000);
+    spMat_.setFill(0);
 }
 
 Scalar CoupledEquation::solve(Scalar timeStep)
@@ -39,7 +40,7 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     triplets_.clear();
 
     printf("Solving coupled Navier-Stokes equations...\n");
-    phi_ = spMat_.solve(rhs_, phi_, SparseMatrix::NoPreconditioner);
+    phi_ = spMat_.solve(rhs_, phi_, SparseMatrix::IncompleteLUT);
     printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", spMat_.error(), spMat_.nIterations());
 
     for(const Cell &cell: u_.grid.activeCells())

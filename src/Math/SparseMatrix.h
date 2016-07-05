@@ -36,6 +36,8 @@ public:
     void setTolerance(Scalar toler);
     void setMaxIterations(size_t maxIters);
 
+    void setFill(int fillFactor) { solverIncompleteLUT_.preconditioner().setFillfactor(fillFactor); }
+
 private:
 
     mutable Scalar error_;

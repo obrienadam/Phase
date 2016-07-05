@@ -22,19 +22,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-    {
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            const Scalar kappaF = gamma_.grid.fluidCells().isInGroup(nb.cell()) ? kappa_.faces()[nb.face().id()] : kappa_[cell.id()];
-
-            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], nb.rFaceVec())*kappaF*nb.outwardNorm();
-        }
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            ft[cell.id()] += dot(gradGammaTilde_[cell.id()], bd.rFaceVec())*kappa_.faces()[bd.face().id()]*bd.outwardNorm();
-
-        ft[cell.id()] *= sigma_/cell.volume();
-    }
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGammaTilde_[cell.id()];
 
     return ft;
 }
