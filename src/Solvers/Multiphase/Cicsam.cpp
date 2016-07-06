@@ -86,7 +86,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= flux*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= 2.*flux*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -175,7 +175,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             switch(field.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= flux*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= 2.*flux*field.faces()[bd.face().id()];
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:

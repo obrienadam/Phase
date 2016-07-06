@@ -9,7 +9,7 @@ class Multiphase : public Piso
 public:
 
     enum InterfaceAdvection{CICSAM, PLIC};
-    enum CurvatureEvaluation{CSF, HF};
+    enum CurvatureEvaluation{CSF, HF, CELESTE};
 
     Multiphase(const FiniteVolumeGrid2D& grid, const Input& input);
 

@@ -1,6 +1,7 @@
 #include "Multiphase.h"
 #include "Cicsam.h"
 #include "Plic.h"
+#include "Celeste.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -18,36 +19,27 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
-    curvatureEvaluationMethod_ = CSF;
 
-    if(interfaceAdvectionMethod_ == PLIC)
-    {
-        addGeometries("plicPolygons");
-        addGeometries("fluxPolygons");
-    }
+    std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel", "CSF");
 
-    switch(curvatureEvaluationMethod_)
+    if(tmp == "CSF")
     {
-    case CSF:
         surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, gamma, u, scalarFields_, vectorFields_));
-        break;
-
-    case HF:
-        throw Exception("Multiphase", "Multiphase", "height functions not yet implemented.");
-        break;
-
     }
+    else if(tmp == "CELESTE")
+    {
+        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new Celeste(input, gamma, u, scalarFields_, vectorFields_));
+    }
+    else
+        throw Exception("Multiphase", "Multiphase", "unrecognized surface tension model \"" + tmp + "\".");
 
-    surfaceTensionForce_->compute();
+    //surfaceTensionForce_->compute();
     computeRho();
     computeMu();
 }
 
 Scalar Multiphase::solve(Scalar timeStep)
 {
-    computeRho();
-    computeMu();
-
     Piso::solve(timeStep);
 
     solveGammaEqn(timeStep);
@@ -86,8 +78,10 @@ void Multiphase::computeMu()
 
 Scalar Multiphase::solveUEqn(Scalar timeStep)
 {
+    ft = surfaceTensionForce_->compute(); // surface tension force. The order matters here since the smoothed gamma field is used for rho and mu
+    computeRho();
+    computeMu();
     sg = fv::gravity(rho, g_);
-    ft = surfaceTensionForce_->compute(); // surface tension forceb
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
              == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
@@ -152,6 +146,35 @@ void Multiphase::rhieChowInterpolation()
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
         u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d[lCell.id()]*ft[lCell.id()]/rhoP + (1. - g)*d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
+    }
+
+    for(const Face& face: u.grid.boundaryFaces())
+    {
+        const Cell& cellP = face.lCell();
+        const Vector2D rf = face.centroid() - cellP.centroid();
+        const Scalar df = d.faces()[face.id()];
+        const Scalar kf = surfaceTensionForce_->kappa().faces()[face.id()];
+        const Scalar gf = gamma.faces()[face.id()];
+        const Scalar gP = gamma[cellP.id()];
+        const Scalar rhoP = rho[cellP.id()];
+        const Scalar rhof = rho.faces()[face.id()];
+
+        switch(u.boundaryType(face.id()))
+        {
+        case VectorFiniteVolumeField::FIXED:
+            break;
+
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            u.faces()[face.id()] += surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
+                    - rhof*d[cellP.id()]*ft[cellP.id()]/rhoP;
+            break;
+
+        case VectorFiniteVolumeField::SYMMETRY:
+            break;
+
+        default:
+            throw Exception("Simple", "rhieChowInterpolation", "unrecognized boundary condition type.");
+        }
     }
 }
 

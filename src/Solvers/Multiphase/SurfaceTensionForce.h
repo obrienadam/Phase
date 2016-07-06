@@ -16,7 +16,7 @@ public:
 
     const ScalarFiniteVolumeField& gamma() const { return gamma_; }
     virtual const ScalarFiniteVolumeField& gammaTilde() const { return gamma_; }
-    virtual const VectorFiniteVolumeField& gradGamma() const = 0;
+    virtual const VectorFiniteVolumeField& gradGammaTilde() const = 0;
 
     const ScalarFiniteVolumeField& kappa() const { return kappa_; }
     const VectorFiniteVolumeField& n() const { return n_; }

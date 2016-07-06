@@ -45,6 +45,7 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     interpolateFaces(gammaTilde_);
     gradGammaTilde_ = grad(gammaTilde_);
+    interpolateFaces(gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
@@ -54,7 +55,8 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     for(Vector2D &vec: n_)
         vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : -vec.unitVec();
 
-    interpolateFaces(n_);
+    for(Vector2D &vec: n_.faces())
+        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : -vec.unitVec();
 
     //- Set the contact angle normals
     for(const Patch &patch: contactAnglePatches_)
@@ -66,10 +68,6 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
             if(!(n_.faces()[face.id()] == Vector2D(0., 0.)))
                 n_.faces()[face.id()] = computeContactLineNormal(gradGammaTilde_[cell.id()], sf, u_[cell.id()]);
         }
-
-    //- Make sure all interpolated faces have the correct magnitude
-    for(Vector2D &n: n_.faces())
-        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
 }
 
 void ContinuumSurfaceForce::computeCurvature()
