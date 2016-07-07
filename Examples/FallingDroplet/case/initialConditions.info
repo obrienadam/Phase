@@ -7,8 +7,8 @@ InitialConditions
     bubble
     {
       type circle
-      radius 0.0075
-      center (0.05,0.025)
+      radius 0.0005
+      center (0.0025,0.00125)
       value 1
     }
   }

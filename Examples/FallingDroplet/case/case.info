@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 0.8e-4
+	timeStep 2.75e-4
 	maxCo 0.3
 	maxTime 1
 
@@ -15,20 +15,21 @@ Solver
 	numInnerIterations 2
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.003
+	smoothingKernelRadius 0.0001
+	surfaceTensionModel CELESTE
 }
 
 Properties
 {
-	rho1 1
-	rho2 2
- 	mu1 1.81e-5
+	rho1 958
+	rho2 998
+ 	mu1 9e-3
 	mu2 8.94e-4
-	sigma 0.01
+	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 110
-	recedingContactAngle 70
+	advancingContactAngle 120
+	recedingContactAngle 120
 }
 
 Grid
@@ -38,8 +39,8 @@ Grid
 	nCellsJ 50
 
 	; Rectilinear parameters
-	spacingX 0.001
-	spacingY 0.001
+	spacingX 0.00005
+	spacingY 0.00005
 }
 
 Viewer
@@ -51,6 +52,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 200
+  fileWriteFrequency 20
   consoleOutputFrequency 1
 }

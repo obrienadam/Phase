@@ -73,7 +73,10 @@ void Celeste::computeCurvature()
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
-        auto nb = kappa_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        auto nb = kappa_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+
+        A.resize(8 + cell.boundaries().size(), 5);
+        b.resize(8 + cell.boundaries().size(), 1);
 
         for(int compNo = 0; compNo < 2; ++compNo)
         {
@@ -94,6 +97,23 @@ void Celeste::computeCurvature()
                 A(i, 4) = dx*dy/sSqr;
 
                 b(i, 0) = (n_[kCell.id()](compNo) - n_[cell.id()](compNo))/sSqr;
+
+                ++i;
+            }
+
+            for(const BoundaryLink &bd: cell.boundaries())
+            {
+                const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
+                const Scalar dx = bd.face().centroid().x - cell.centroid().x;
+                const Scalar dy = bd.face().centroid().y - cell.centroid().y;
+
+                A(i, 0) = dx/sSqr;
+                A(i, 1) = dy/sSqr;
+                A(i, 2) = dx*dx/(2.*sSqr);
+                A(i, 3) = dy*dy/(2.*sSqr);
+                A(i, 4) = dx*dy/sSqr;
+
+                b(i, 0) = (n_.faces()[bd.face().id()](compNo) - n_[cell.id()](compNo))/sSqr;
 
                 ++i;
             }
