@@ -30,6 +30,7 @@ public:
     //- Create grid entities
     size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
     size_t createCell(const std::vector<size_t>& faceIds);
+    size_t addNode(Point2D point);
 
     //- Node related methods
     const std::vector<Node>& nodes() const { return nodes_; }

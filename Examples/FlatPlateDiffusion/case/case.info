@@ -18,12 +18,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 1000
-	nCellsJ 1000
+	nCellsX 500
+	nCellsY 500
 
 	; Rectilinear parameters
-	spacingX 0.01
-	spacingY 0.01
+	width 1
+	height 1
 }
 
 Viewer

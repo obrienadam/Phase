@@ -2,13 +2,15 @@
 #include "Cicsam.h"
 #include "Plic.h"
 #include "Celeste.h"
+#include "CrankNicolson.h"
+#include "AdamsBashforth.h"
 
 Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
       ft(addVectorField("ft")),
-      gammaEqn_(gamma, "gamma", SparseMatrix::IncompleteLUT)
+      gammaEqn_(gamma, "gamma", SparseMatrix::NoPreconditioner)
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
@@ -83,8 +85,8 @@ Scalar Multiphase::solveUEqn(Scalar timeStep)
     computeMu();
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u)
+             == ab::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();

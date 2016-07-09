@@ -11,7 +11,10 @@ public:
 
     enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP};
 
-    ImmersedBoundaryObject(const std::string& name, const FiniteVolumeGrid2D& grid, const ImmersedBoundaryContinuumSurfaceForce &csf, const Point2D& center = Vector2D(0., 0.), Scalar radius = 0.);
+    ImmersedBoundaryObject(const std::string& name,
+                           const FiniteVolumeGrid2D& grid,
+                           const ImmersedBoundaryContinuumSurfaceForce &csf,
+                           const Point2D& center = Vector2D(0., 0.), Scalar radius = 0.);
 
     Point2D boundaryPoint(const Point2D& pt) const;
     Point2D imagePoint(const Point2D& pt) const;

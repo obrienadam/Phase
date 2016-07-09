@@ -1,4 +1,4 @@
-#include "BoundaryLink.h"
+#include "BoundaryFaceLink.h"
 #include "Face.h"
 #include "Cell.h"
 

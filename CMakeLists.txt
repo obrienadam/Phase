@@ -34,8 +34,8 @@ set(INCLUDE_DIR src/Types
 		src/FiniteVolumeGrid2D/Link
                 src/FiniteVolume
                 src/FiniteVolume/Field
-                src/FiniteVolume/BoundaryCondition
                 src/FiniteVolume/Equation
+                src/FiniteVolume/Discretization
                 src/Solvers
                 src/Solvers/Multiphase
                 src/Solvers/ImmersedBoundary

@@ -8,7 +8,7 @@ ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(con
                                                                              std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
                                                                              std::map<std::string, VectorFiniteVolumeField> &vectorFields)
     :
-      ContinuumSurfaceForce(input, gamma, u, scalarFields, vectorFields)
+      Celeste(input, gamma, u, scalarFields, vectorFields)
 {
 
 }
@@ -32,7 +32,7 @@ VectorFiniteVolumeField ImmersedBoundaryContinuumSurfaceForce::compute(const std
 
 void ImmersedBoundaryContinuumSurfaceForce::computeInterfaceNormals(const std::vector<ImmersedBoundaryObject>& ibObjs)
 {
-    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::NoPreconditioner);
+    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
     const Scalar centralCoeff = 1.;
 
     for(const Cell &cell: n_.grid.fluidCells())

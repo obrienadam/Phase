@@ -20,6 +20,7 @@ public:
     bool isInside(const Point2D &testPoint) const;
     bool isOnEdge(const Point2D &testPoint) const;
     Point2D nearestIntersect(const Point2D &testPoint) const;
+    std::pair<Point2D, bool> firstIntersect(Point2D ptA, Point2D ptB) const;
 
     void operator+=(const Vector2D& translationVec);
     void operator-=(const Vector2D& translationVec);

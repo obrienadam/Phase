@@ -6,6 +6,7 @@
 
 #include "Polygon.h"
 #include "Line2D.h"
+#include "Circle.h"
 
 BOOST_AUTO_TEST_SUITE (PolygonTest)
 
@@ -42,6 +43,23 @@ BOOST_AUTO_TEST_CASE(NearestIntersectionTest)
 
     std::cout << std::endl
               << "Nearerest intersect for " << pt2 << " = " << pgn.nearestIntersect(pt2) << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(FirstIntersectionTest)
+{
+    Point2D ptA(3, 2), ptB(1, -4);
+    Circle circ(Point2D(1, 1), 2.);
+
+    auto result = circ.firstIntersect(ptA, ptB);
+
+    if(result.second)
+    {
+        std::cout << "At least one intersection was found. Pt = " << result.first << "\n";
+    }
+    else
+    {
+        std::cout << "No intersections were found.\n";
+    }
 }
 
 BOOST_AUTO_TEST_CASE(AirfoilTest)

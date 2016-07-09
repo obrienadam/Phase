@@ -1,5 +1,5 @@
-#ifndef BOUNDARY_LINK_H
-#define BOUNDARY_LINK_H
+#ifndef BOUNDARY_FACE_LINK_H
+#define BOUNDARY_FACE_LINK_H
 
 #include "Link.h"
 

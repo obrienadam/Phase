@@ -1,4 +1,4 @@
-#include "InteriorLink.h"
+#include "InteriorFaceLink.h"
 #include "Cell.h"
 
 //- Interior link

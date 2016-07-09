@@ -29,7 +29,7 @@ void Celeste::computeGradGammaTilde()
 
     for(const Cell &cell: gammaTilde_.grid.fluidCells())
     {
-        auto nb = gammaTilde_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        auto nb = gammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         int i = 0;
         for(const Cell &kCell: nb)
@@ -133,7 +133,7 @@ void Celeste::weightCurvatures()
     auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
 
     for(const Cell &cell: wGamma_.grid.activeCells())
-        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
+        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gamma_[cell.id()]));
 
     kappa_.savePreviousIteration();
 

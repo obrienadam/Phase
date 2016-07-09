@@ -1,9 +1,9 @@
 set(HEADERS FiniteVolumeGrid2D.h
-            RectilinearGrid2D.h
+            StructuredRectilinearGrid.h
             ConstructGrid.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
-            RectilinearGrid2D.cpp
+            StructuredRectilinearGrid.cpp
             ConstructGrid.cpp)
 
 add_subdirectory(Node)

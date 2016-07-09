@@ -10,7 +10,7 @@ Solver
 	maxTime 500
 	maxCo 1e12
 	numInnerIterations 1
-	numPressureCorrections 1
+	numPressureCorrections 2
 	momentumRelaxation 0.7
 	pressureCorrectionRelaxation 0.3
 }
@@ -18,7 +18,7 @@ Solver
 Properties
 {
 	rho 1
-	mu 1e-3
+	mu 1e-2
 	g (0,0)
 	gamma 0.0001
 }
@@ -26,12 +26,10 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 200
-	nCellsJ 200
-
-	; Rectilinear parameters
-	spacingX 0.01
-	spacingY 0.01
+	nCellsX 100
+	nCellsY 100
+	width 1
+	height 1
 }
 
 Viewer
@@ -43,5 +41,5 @@ Viewer
 
 System
 {
-	fileWriteFrequency 1
+	fileWriteFrequency 15
 }

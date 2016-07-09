@@ -15,4 +15,4 @@ add_subdirectory(ImmersedBoundary)
 add_subdirectory(Coupled)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
-target_link_libraries(Solvers Equation)
+target_link_libraries(Solvers Discretization)

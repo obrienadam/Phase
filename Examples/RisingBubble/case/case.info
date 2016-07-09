@@ -6,25 +6,26 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
-	maxCo 0.3
-	maxTime 5
+	timeStep 7.5e-5
+	maxCo 1
+	maxTime 0.2
 
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
-	numInnerIterations 3
-	numPressureCorrections 1
+	momentumRelaxation 1
+	pressureCorrectionRelaxation 0.25
+	numInnerIterations 1
+	numPressureCorrections 4
 
-	smoothingKernelRadius 0.0601
+	smoothingKernelRadius 0.06
+	surfaceTensionModel CELESTE
 }
 
 Properties
 {
-	rho1 1
-	rho2 0.75
+	rho1 998
+	rho2 1.225
  	mu1 8.94e-4
 	mu2 1.846e-5
-	sigma 0.762
+	sigma 0.0762
 	g (0,-9.8065)
 
 	advancingContactAngle 150
@@ -34,12 +35,11 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 50
-	nCellsJ 100
+	nCellsX 50
+	nCellsY 100
 
-	; Rectilinear parameters
-	spacingX 0.02
-	spacingY 0.02
+	width 1
+	height 2
 }
 
 Viewer

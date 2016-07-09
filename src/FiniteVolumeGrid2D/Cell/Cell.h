@@ -8,8 +8,9 @@
 
 #include "Node.h"
 #include "Face.h"
-#include "BoundaryLink.h"
-#include "InteriorLink.h"
+#include "BoundaryFaceLink.h"
+#include "InteriorFaceLink.h"
+#include "DiagonalCellLink.h"
 
 class Cell
 {
@@ -32,6 +33,7 @@ public:
     const Polygon& shape() const { return cellShape_; }
     const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
     const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
+    const std::vector<DiagonalCellLink>& diagonals() const { return diagonalLinks_; }
 
     size_t nFaces() const { return faces_.size(); }
     size_t nInteriorFaces() const { return interiorLinks_.size(); }
@@ -59,6 +61,7 @@ private:
 
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
+    std::vector<DiagonalCellLink> diagonalLinks_;
 
     friend class FiniteVolumeGrid2D;
 };

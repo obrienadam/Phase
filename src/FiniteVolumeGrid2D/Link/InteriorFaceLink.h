@@ -1,7 +1,7 @@
-#ifndef INTERIOR_LINK_H
-#define INTERIOR_LINK_H
+#ifndef INTERIOR_FACE_LINK_H
+#define INTERIOR_FACE_LINK_H
 
-#include "BoundaryLink.h"
+#include "BoundaryFaceLink.h"
 
 class InteriorLink : public BoundaryLink
 {

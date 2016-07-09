@@ -1,6 +1,10 @@
 #include "ImmersedBoundaryObject.h"
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name, const FiniteVolumeGrid2D& grid, const ImmersedBoundaryContinuumSurfaceForce &csf, const Point2D& center, Scalar radius)
+ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
+                                               const FiniteVolumeGrid2D& grid,
+                                               const ImmersedBoundaryContinuumSurfaceForce &csf,
+                                               const Point2D& center,
+                                               Scalar radius)
     :
       Circle(center, radius),
       name_(name),

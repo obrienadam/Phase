@@ -6,9 +6,9 @@ SparseMatrix::SparseMatrix(int nRows, int nCols, int nnz)
       Eigen::SparseMatrix<Scalar>(nRows, nCols)
 {
     reserve(nRows*nnz);
-    solverNoPreconditioner_.setTolerance(1e-10);
+    solverNoPreconditioner_.setTolerance(1e-8);
     solverNoPreconditioner_.setMaxIterations(500);
-    solverIncompleteLUT_.setTolerance(1e-12);
+    solverIncompleteLUT_.setTolerance(1e-8);
     solverIncompleteLUT_.setMaxIterations(500);
 }
 

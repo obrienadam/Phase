@@ -1,24 +1,23 @@
 #include <string>
 
 #include "ConstructGrid.h"
-#include "RectilinearGrid2D.h"
+#include "StructuredRectilinearGrid.h"
 #include "Exception.h"
 
 std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
 {
     using namespace std;
 
-    int nCellsI = input.caseInput().get<int>("Grid.nCellsI");
-    int nCellsJ = input.caseInput().get<int>("Grid.nCellsJ");
-
     string gridType = input.caseInput().get<string>("Grid.type");
 
     if(gridType == "rectilinear")
     {
-        Scalar hx = input.caseInput().get<Scalar>("Grid.spacingX");
-        Scalar hy = input.caseInput().get<Scalar>("Grid.spacingY");
+        Scalar width = input.caseInput().get<Scalar>("Grid.width");
+        Scalar height = input.caseInput().get<Scalar>("Grid.height");
+        int nCellsX = input.caseInput().get<int>("Grid.nCellsX");
+        int nCellsY = input.caseInput().get<int>("Grid.nCellsY");
 
-        return shared_ptr<RectilinearGrid2D>(new RectilinearGrid2D(nCellsI, nCellsJ, hx, hy));
+        return shared_ptr<FiniteVolumeGrid2D>(new StructuredRectilinearGrid(width, height, nCellsX, nCellsY));
     }
     else
     {

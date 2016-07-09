@@ -1,5 +1,7 @@
 #include "Simple.h"
 #include "Exception.h"
+#include "CrankNicolson.h"
+#include "AdamsBashforth.h"
 
 Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -13,7 +15,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(addScalarField("mu")),
       m(addScalarField("m")),
       d(addScalarField("d")),
-      uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
+      uEqn_(u, "momentum", SparseMatrix::NoPreconditioner),
       pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
@@ -29,6 +31,8 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
     uEqn_.matrix().setFill(1);
     pCorrEqn_.matrix().setFill(3);
+
+    u.savePreviousTimeStep(0., 1);
 }
 
 Scalar Simple::solve(Scalar timeStep)
@@ -72,7 +76,7 @@ Scalar Simple::solveUEqn(Scalar timeStep)
 {
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) == fv::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) == ab::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();

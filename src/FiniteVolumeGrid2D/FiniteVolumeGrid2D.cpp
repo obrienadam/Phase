@@ -63,6 +63,13 @@ size_t FiniteVolumeGrid2D::createCell(const std::vector<size_t> &faceIds)
     return cell.id();
 }
 
+size_t FiniteVolumeGrid2D::addNode(Point2D point)
+{
+    size_t id = nodes_.size();
+    nodes_.push_back(Node(point.x, point.y, id));
+    return id;
+}
+
 //- Cell related methods
 
 UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const

@@ -30,12 +30,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsI 50
-	nCellsJ 50
+	nCellsX 50
+	nCellsY 50
 
 	; Rectilinear parameters
-	spacingX 0.02
-	spacingY 0.02
+	width 1
+	height 1
 }
 
 Viewer

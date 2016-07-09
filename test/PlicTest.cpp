@@ -6,14 +6,14 @@
 
 #include "Multiphase.h"
 #include "Plic.h"
-#include "RectilinearGrid2D.h"
+#include "StructuredRectilinearGrid.h"
 #include "Polygon.h"
 
 BOOST_AUTO_TEST_SUITE (PlicTest)
 
 BOOST_AUTO_TEST_CASE(PlicConstruction)
 {
-    RectilinearGrid2D grid(40, 40, 0.0025, 0.0025);
+    StructuredRectilinearGrid grid(1, 1, 40, 40);
 
     Scalar gamma;
     Vector2D normal;

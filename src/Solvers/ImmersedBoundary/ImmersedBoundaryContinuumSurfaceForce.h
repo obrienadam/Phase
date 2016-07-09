@@ -1,11 +1,11 @@
 #ifndef IMMERSED_BOUNDARY_CONTINUUM_SURFACE_FORCE_H
 #define IMMERSED_BOUNDARY_CONTINUUM_SURFACE_FORCE_H
 
-#include "ContinuumSurfaceForce.h"
+#include "Celeste.h"
 
 class ImmersedBoundaryObject;
 
-class ImmersedBoundaryContinuumSurfaceForce : public ContinuumSurfaceForce
+class ImmersedBoundaryContinuumSurfaceForce : public Celeste
 {
 public:
     ImmersedBoundaryContinuumSurfaceForce(const Input& input,
