@@ -47,7 +47,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
                 eqn.boundaries()(rowY) -= faceFlux*field.faces()[bd.face().id()].y;
                 break;
 
-            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
                 centralCoeff += faceFlux;
                 break;
 

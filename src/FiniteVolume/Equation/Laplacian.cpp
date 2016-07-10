@@ -91,20 +91,20 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
             switch(field.boundaryType(bd.face().id()))
             {
-            case ScalarFiniteVolumeField::FIXED:
+            case VectorFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
                 eqn.boundaries()(rowX) -= coeff*field.faces()[bd.face().id()].x;
                 eqn.boundaries()(rowY) -= coeff*field.faces()[bd.face().id()].y;
 
                 break;
 
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 source = bd.outwardNorm().mag()/coeff*field.boundaryRefValue(bd.face().id());
                 eqn.boundaries()(rowX) -= source.x;
                 eqn.boundaries()(rowY) -= source.y;
                 break;
 
-            case ScalarFiniteVolumeField::SYMMETRY:
+            case VectorFiniteVolumeField::SYMMETRY:
                 nWall = bd.outwardNorm().unitVec();
 
                 entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, -coeff*nWall.x*nWall.x));

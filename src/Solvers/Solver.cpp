@@ -71,19 +71,20 @@ void Solver::setInitialConditions(const Input& input)
                     Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
                     setCircle(circle, icTree.get<Scalar>("value"), field);
                 }
-                else if(type == "square")
+                else if(type == "box")
                 {
                     Point2D center = Point2D(icTree.get<string>("center"));
                     Scalar w = icTree.get<Scalar>("width")/2;
+                    Scalar h = icTree.get<Scalar>("height")/2;
 
                     std::vector<Point2D> vertices = {
-                        Point2D(center.x - w, center.y - w),
-                        Point2D(center.x + w, center.y - w),
-                        Point2D(center.x + w, center.y + w),
-                        Point2D(center.x - w, center.y + w)
+                        Point2D(center.x - w, center.y - h),
+                        Point2D(center.x + w, center.y - h),
+                        Point2D(center.x + w, center.y + h),
+                        Point2D(center.x - w, center.y + h)
                     };
 
-                    setSquare(Polygon(vertices), icTree.get<Scalar>("value"), field);
+                    setBox(Polygon(vertices), icTree.get<Scalar>("value"), field);
                 }
                 else if(type == "uniform")
                     field.fillInterior(icTree.get<Scalar>("value"));
@@ -121,15 +122,16 @@ void Solver::setInitialConditions(const Input& input)
                 {
                     Point2D center = Point2D(icTree.get<string>("center"));
                     Scalar w = icTree.get<Scalar>("width")/2;
+                    Scalar h = icTree.get<Scalar>("height")/2;
 
                     std::vector<Point2D> vertices = {
-                        Point2D(center.x - w, center.y - w),
-                        Point2D(center.x + w, center.y - w),
-                        Point2D(center.x + w, center.y + w),
-                        Point2D(center.x - w, center.y + w)
+                        Point2D(center.x - w, center.y - h),
+                        Point2D(center.x + w, center.y - h),
+                        Point2D(center.x + w, center.y + h),
+                        Point2D(center.x - w, center.y + h)
                     };
 
-                    setSquare(Polygon(vertices), Vector2D(icTree.get<string>("value")), field);
+                    setBox(Polygon(vertices), Vector2D(icTree.get<string>("value")), field);
                 }
                 else if(type == "uniform")
                     field.fillInterior(Vector2D(icTree.get<string>("value")));
@@ -172,22 +174,22 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
     interpolateFaces(field);
 }
 
-void Solver::setSquare(const Polygon& square, Scalar innerValue, ScalarFiniteVolumeField& field)
+void Solver::setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeField& field)
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if (square.isInside(cell.centroid()))
+        if (box.isInside(cell.centroid()))
             field[cell.id()] = innerValue;
     }
 
     interpolateFaces(field);
 }
 
-void Solver::setSquare(const Polygon& square, const Vector2D& innerValue, VectorFiniteVolumeField& field)
+void Solver::setBox(const Polygon& box, const Vector2D& innerValue, VectorFiniteVolumeField& field)
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if (square.isInside(cell.centroid()))
+        if (box.isInside(cell.centroid()))
             field[cell.id()] = innerValue;
     }
 

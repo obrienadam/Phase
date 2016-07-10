@@ -43,7 +43,6 @@ Multiphase::Multiphase(const FiniteVolumeGrid2D &grid, const Input &input)
 Scalar Multiphase::solve(Scalar timeStep)
 {
     Piso::solve(timeStep);
-
     solveGammaEqn(timeStep);
 
     return 0.; // just to get rid of warning
@@ -174,8 +173,13 @@ void Multiphase::rhieChowInterpolation()
         case VectorFiniteVolumeField::SYMMETRY:
             break;
 
+        case VectorFiniteVolumeField::OUTFLOW:
+            u.faces()[face.id()] += dot(u.faces()[face.id()], face.outwardNorm(cellP.centroid())) > 0. ? surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
+                                                                                                         - rhof*d[cellP.id()]*ft[cellP.id()]/rhoP : Vector2D(0., 0.);
+            break;
+
         default:
-            throw Exception("Simple", "rhieChowInterpolation", "unrecognized boundary condition type.");
+            throw Exception("Multiphase", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
     }
 }

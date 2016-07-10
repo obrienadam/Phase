@@ -6,37 +6,37 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 7.5e-5
+	timeStep 1e-3
 	maxCo 1
-	maxTime 0.2
+	maxTime 2.5
 
 	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.25
+	pressureCorrectionRelaxation 0.5
 	numInnerIterations 1
-	numPressureCorrections 4
+	numPressureCorrections 2
 
-	smoothingKernelRadius 0.06
+	smoothingKernelRadius 0.021
 	surfaceTensionModel CELESTE
 }
 
 Properties
 {
-	rho1 998
-	rho2 1.225
+	rho1 10
+	rho2 5
  	mu1 8.94e-4
-	mu2 1.846e-5
-	sigma 0.0762
+	mu2 8.94e-4
+	sigma 0.762
 	g (0,-9.8065)
 
-	advancingContactAngle 150
-	recedingContactAngle 150
+	advancingContactAngle 90
+	recedingContactAngle 90
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 50
-	nCellsY 100
+	nCellsX 100
+	nCellsY 200
 
 	width 1
 	height 2

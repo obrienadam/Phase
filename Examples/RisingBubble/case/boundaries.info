@@ -12,7 +12,7 @@ Boundaries
 
     y+
     {
-      type normal_gradient
+      type outflow
       value (0,0)
     }
   }
@@ -38,13 +38,14 @@ Boundaries
     {
       type normal_gradient
       value 0
+      contactAngle off
     }
 
-    y-
+    y+
     {
       type normal_gradient
       value 0
-      contactAngle on
+      contactAngle off
     }
   }
 }

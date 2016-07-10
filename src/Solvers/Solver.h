@@ -39,8 +39,8 @@ protected:
     void setCircle(const Circle& circle, Scalar innerValue, ScalarFiniteVolumeField& field);
     void setCircle(const Circle& circle, const Vector2D& innerValue, VectorFiniteVolumeField& field);
 
-    void setSquare(const Polygon& square, Scalar innerValue, ScalarFiniteVolumeField& field);
-    void setSquare(const Polygon& square, const Vector2D& innerValue, VectorFiniteVolumeField& field);
+    void setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeField& field);
+    void setBox(const Polygon& box, const Vector2D& innerValue, VectorFiniteVolumeField& field);
 
     void setRotating(const std::string& function, Scalar amplitude, const Vector2D& center, ScalarFiniteVolumeField& field);
     void setRotating(const std::string& xFunction, const std::string& yFunction, const Vector2D& amplitude, const Vector2D& center, VectorFiniteVolumeField& field);

@@ -12,7 +12,7 @@ template<class T>
 class FiniteVolumeField : public Field<T>
 {
 public:
-    enum BoundaryType{FIXED, NORMAL_GRADIENT, SYMMETRY};
+    enum BoundaryType{FIXED, NORMAL_GRADIENT, SYMMETRY, OUTFLOW};
 
     FiniteVolumeField(const FiniteVolumeGrid2D& grid, const std::string& name);
     FiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);

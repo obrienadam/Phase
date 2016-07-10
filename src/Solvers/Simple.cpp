@@ -142,7 +142,7 @@ void Simple::rhieChowInterpolation()
 
         u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
                 //+ (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
-                + (rhof*df*uPrev.faces()[fid] - (g*rhoP*dP*uPrev[cellP.id()] + (1. - g)*rhoQ*dQ*uPrev[cellQ.id()]))/dt //- Why is this causing issues?
+                //+ (rhof*df*uPrev.faces()[fid] - (g*rhoP*dP*uPrev[cellP.id()] + (1. - g)*rhoQ*dQ*uPrev[cellQ.id()]))/dt //- Why is this causing issues?
                 - df*(p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) + rhof*(g*dP*gradP[cellP.id()]/rhoP + (1. - g)*dQ*gradP[cellQ.id()]/rhoQ)/2.
                 + df*rhof*g_ - rhof*(g*dP*sg[cellP.id()]/rhoP + (1. - g)*dQ*sg[cellQ.id()]/rhoQ)/2.;
     }
@@ -173,6 +173,15 @@ void Simple::rhieChowInterpolation()
             u.faces()[face.id()] = u[face.lCell().id()] - dot(u[face.lCell().id()], nWall)*nWall;
             break;
 
+        case VectorFiniteVolumeField::OUTFLOW:
+            u.faces()[face.id()] = u[face.lCell().id()]
+                    - df*((p.faces()[fid] - p[cellP.id()])*rf/dot(rf, rf) - rhof*gradP[cellP.id()]/rho[cellP.id()])
+                    + df*(rhof*g_ - rhof*sg[cellP.id()]/rho[cellP.id()]);
+
+            if(dot(u.faces()[face.id()], face.outwardNorm(cellP.centroid())) < 0.)
+                u.faces()[face.id()] = Vector2D(0., 0.);
+            break;
+
         default:
             throw Exception("Simple", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
@@ -186,8 +195,8 @@ void Simple::correctPressure()
 
     interpolateFaces(p);
 
-    for(const Face &face: p.grid.boundaryFaces())
-        p.faces()[face.id()] += rho[face.lCell().id()]*dot(face.centroid() - face.lCell().centroid(), g_);
+    //for(const Face &face: p.grid.boundaryFaces())
+    //    p.faces()[face.id()] += rho[face.lCell().id()]*dot(face.centroid() - face.lCell().centroid(), g_);
 }
 
 void Simple::correctVelocity()

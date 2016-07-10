@@ -6,15 +6,16 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
+	timeStep 2.5e-3
 	maxCo 0.3
 	maxTime 0.575
 
 	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.3
+	pressureCorrectionRelaxation 0.5
 	numInnerIterations 1
-	numPressureCorrections 3
-	smoothingKernelRadius 0.05
+	numPressureCorrections 2
+	smoothingKernelRadius 0.04
+	surfaceTensionModel CELESTE
 }
 
 Properties
