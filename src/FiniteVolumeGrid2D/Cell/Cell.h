@@ -28,6 +28,8 @@ public:
     size_t id() const { return id_; }
     int globalIndex() const { return globalIndex_; }
 
+    void addDiagonalLink(const Cell& cell);
+
     const std::vector< Ref<const Face> >& faces() const { return faces_; }
     const std::vector<size_t>& nodeIds() const { return nodeIds_; }
     const Polygon& shape() const { return cellShape_; }

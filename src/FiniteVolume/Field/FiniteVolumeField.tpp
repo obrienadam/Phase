@@ -380,12 +380,12 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector
     Scalar A = 1.;
     const Scalar eSqr = e*e;
 
-    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
-//    auto K = [&A](Scalar rSqr, Scalar eSqr){ // This smoothing kernel appears to be slightly better
-//        Scalar r = sqrt(rSqr), e = sqrt(eSqr);
+    //auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
+    auto K = [&A](Scalar rSqr, Scalar eSqr){ // This smoothing kernel appears to be slightly better
+        Scalar r = sqrt(rSqr), e = sqrt(eSqr);
 
-//        return r < e ? A/(2.*e)*(1. + cos(M_PI*r/e)) : 0.;
-//    };
+        return r < e ? A/(2.*e)*(1. + cos(M_PI*r/e)) : 0.;
+    };
 
     for(const Cell &cell: field.grid.activeCells())
     {

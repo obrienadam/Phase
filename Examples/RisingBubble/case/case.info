@@ -6,9 +6,9 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-3
-	maxCo 1
-	maxTime 2.5
+	timeStep 7.5e-5
+	maxCo 0.3
+	maxTime 0.1
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
@@ -21,11 +21,11 @@ Solver
 
 Properties
 {
-	rho1 10
-	rho2 5
+	rho1 998
+	rho2 1.225
  	mu1 8.94e-4
-	mu2 8.94e-4
-	sigma 0.762
+	mu2 1.84e-5
+	sigma 0.0762
 	g (0,-9.8065)
 
 	advancingContactAngle 90

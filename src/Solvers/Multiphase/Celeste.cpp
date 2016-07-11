@@ -73,22 +73,19 @@ void Celeste::computeCurvature()
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
-        auto nb = kappa_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
 
-        A.resize(8 + cell.boundaries().size(), 5);
-        b.resize(8 + cell.boundaries().size(), 1);
+        A.resize(stencilSize, 5);
+        b.resize(stencilSize, 1);
 
         for(int compNo = 0; compNo < 2; ++compNo)
         {
             int i = 0;
-            for(const Cell &kCell: nb)
+            for(const InteriorLink &nb: cell.neighbours())
             {
-                if(&cell == &kCell)
-                    continue;
-
-                const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
-                const Scalar dx = kCell.centroid().x - cell.centroid().x;
-                const Scalar dy = kCell.centroid().y - cell.centroid().y;
+                const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+                const Scalar dx = nb.cell().centroid().x - cell.centroid().x;
+                const Scalar dy = nb.cell().centroid().y - cell.centroid().y;
 
                 A(i, 0) = dx/sSqr;
                 A(i, 1) = dy/sSqr;
@@ -96,7 +93,24 @@ void Celeste::computeCurvature()
                 A(i, 3) = dy*dy/(2.*sSqr);
                 A(i, 4) = dx*dy/sSqr;
 
-                b(i, 0) = (n_[kCell.id()](compNo) - n_[cell.id()](compNo))/sSqr;
+                b(i, 0) = (n_[nb.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
+
+                ++i;
+            }
+
+            for(const DiagonalCellLink &dg: cell.diagonals())
+            {
+                const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+                const Scalar dx = dg.cell().centroid().x - cell.centroid().x;
+                const Scalar dy = dg.cell().centroid().y - cell.centroid().y;
+
+                A(i, 0) = dx/sSqr;
+                A(i, 1) = dy/sSqr;
+                A(i, 2) = dx*dx/(2.*sSqr);
+                A(i, 3) = dy*dy/(2.*sSqr);
+                A(i, 4) = dx*dy/sSqr;
+
+                b(i, 0) = (n_[dg.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
 
                 ++i;
             }

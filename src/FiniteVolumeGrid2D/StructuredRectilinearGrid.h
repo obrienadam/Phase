@@ -10,6 +10,7 @@ public:
 
     StructuredRectilinearGrid(Scalar width, Scalar height, int nCellsX, int nCellsY);
 
+    Cell& operator ()(int i, int j);
     const Cell& operator()(int i, int j) const;
     const Node& node(int i, int j) const;
 

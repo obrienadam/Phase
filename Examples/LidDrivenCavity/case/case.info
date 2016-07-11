@@ -11,8 +11,8 @@ Solver
 	maxCo 1e12
 	numInnerIterations 1
 	numPressureCorrections 2
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.9
+	pressureCorrectionRelaxation 0.05
 }
 
 Properties

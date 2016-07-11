@@ -5,6 +5,8 @@
 
 class DiagonalCellLink : public Link
 {
+public:
+
     DiagonalCellLink(const Cell& self, const Cell& cell);
 
     const Cell& cell() const { return cell_; }

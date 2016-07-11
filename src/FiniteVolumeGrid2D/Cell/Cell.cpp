@@ -43,6 +43,11 @@ Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces, bool is
         throw Exception("Cell", "Cell", "faces are not oriented in a counter-clockwise manner.");
 }
 
+void Cell::addDiagonalLink(const Cell &cell)
+{
+    diagonalLinks_.push_back(DiagonalCellLink(*this, cell));
+}
+
 bool Cell::isInCell(const Point2D &point) const
 {
     return cellShape_.isInside(point);
