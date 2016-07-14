@@ -141,7 +141,7 @@ void Simple::rhieChowInterpolation()
         const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
 
         u.faces()[fid] = g*u[cellP.id()] + (1. - g)*u[cellQ.id()]
-                //+ (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
+                + (1. - momentumOmega_)*(uStar.faces()[fid] - (g*uStar[cellP.id()] + (1. - g)*uStar[cellQ.id()]))
                 + (rhof*df*uPrev.faces()[fid] - (g*rhoP*dP*uPrev[cellP.id()] + (1. - g)*rhoQ*dQ*uPrev[cellQ.id()]))/dt //- This term is very important!
                 - df*(p[cellQ.id()] - p[cellP.id()])*rc/dot(rc, rc) + rhof*(g*dP*gradP[cellP.id()]/rhoP + (1. - g)*dQ*gradP[cellQ.id()]/rhoQ)/2.
                 + df*rhof*g_ - rhof*(g*dP*sg[cellP.id()]/rhoP + (1. - g)*dQ*sg[cellQ.id()]/rhoQ)/2.;

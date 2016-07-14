@@ -3,6 +3,59 @@
 namespace fv
 {
 
+Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
+{
+    const size_t nCells = field.grid.nActiveCells();
+
+    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
+    Equation<ScalarFiniteVolumeField> eqn(field);
+
+    entries.reserve(5*nCells);
+
+    for(const Cell& cell: field.grid.fluidCells())
+    {
+        size_t row = cell.globalIndex();
+        Scalar centralCoeff = 0.;
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            size_t col = nb.cell().globalIndex();
+            Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            centralCoeff -= coeff;
+
+            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            Scalar coeff = dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+
+            switch(field.boundaryType(bd.face().id()))
+            {
+            case ScalarFiniteVolumeField::FIXED:
+                centralCoeff -= coeff;
+                eqn.boundaries()(row) -= coeff*field.faces()[bd.face().id()];
+                break;
+
+            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                eqn.boundaries()(row) -= bd.outwardNorm().mag()/coeff*field.boundaryRefValue(bd.face().id());
+                break;
+
+            case ScalarFiniteVolumeField::SYMMETRY:
+                break;
+
+            default:
+                throw Exception("fv", "laplacian", "unrecognized or unspecified boundary type.");
+            }
+        }
+
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+    }
+
+    eqn.matrix().assemble(entries);
+    return eqn;
+}
+
 Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, ScalarFiniteVolumeField& field)
 {
     const size_t nCells = field.grid.nActiveCells();

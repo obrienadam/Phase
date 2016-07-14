@@ -15,3 +15,6 @@ target_link_libraries(phaseImmersedBoundary System FiniteVolumeGrid2D Viewers Im
 
 add_executable(phaseCoupled phaseCoupled.cpp)
 target_link_libraries(phaseCoupled System FiniteVolumeGrid2D Viewers Coupled)
+
+add_executable(phaseFractionalStep phaseFractionalStep.cpp)
+target_link_libraries(phaseFractionalStep System FiniteVolumeGrid2D Viewers Solvers)

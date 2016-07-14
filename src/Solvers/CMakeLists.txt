@@ -2,12 +2,14 @@ set(HEADERS Solver.h
             Poisson.h
             Simple.h
             Piso.h
+            FractionalStep.h
             ConstructSolver.h)
 
 set(SOURCES Solver.cpp
             Poisson.cpp
             Simple.cpp
             Piso.cpp
+            FractionalStep.cpp
             ConstructSolver.cpp)
 
 add_subdirectory(Multiphase)
