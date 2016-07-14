@@ -36,9 +36,9 @@ set(INCLUDE_DIR src/Types
                 src/FiniteVolume/Field
                 src/FiniteVolume/Equation
                 src/FiniteVolume/Discretization
+                src/FiniteVolume/ImmersedBoundary
                 src/Solvers
                 src/Solvers/Multiphase
-                src/Solvers/ImmersedBoundary
                 src/Solvers/Coupled
                 src/Viewers)
 

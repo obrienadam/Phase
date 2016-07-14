@@ -1,5 +1,4 @@
 #include "Celeste.h"
-#include "Matrix.h"
 
 Celeste::Celeste(const Input &input,
                  const ScalarFiniteVolumeField &gamma,
@@ -10,12 +9,73 @@ Celeste::Celeste(const Input &input,
       ContinuumSurfaceForce(input, gamma, u, scalarFields, vectorFields),
       wGamma_(gamma.grid, "wGamma")
 {
-
+    constructMatrices();
 }
 
 VectorFiniteVolumeField Celeste::compute()
 {
     return ContinuumSurfaceForce::compute();
+}
+
+void Celeste::constructMatrices()
+{
+    Matrix A(8, 5);
+    matrices_.resize(gamma_.size());
+
+    for(const Cell &cell: gamma_.grid.fluidCells())
+    {
+        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
+
+        A.resize(stencilSize, 5);
+
+        int i = 0;
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+            const Scalar dx = nb.cell().centroid().x - cell.centroid().x;
+            const Scalar dy = nb.cell().centroid().y - cell.centroid().y;
+
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+            const Scalar dx = dg.cell().centroid().x - cell.centroid().x;
+            const Scalar dy = dg.cell().centroid().y - cell.centroid().y;
+
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
+            const Scalar dx = bd.face().centroid().x - cell.centroid().x;
+            const Scalar dy = bd.face().centroid().y - cell.centroid().y;
+
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        matrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
+    }
 }
 
 //- Protected methods
@@ -25,36 +85,41 @@ void Celeste::computeGradGammaTilde()
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
-    Matrix A(8, 5), b(8, 1);
+    Matrix b(8, 1);
 
-    for(const Cell &cell: gammaTilde_.grid.fluidCells())
+    for(const Cell &cell: gradGammaTilde_.grid.fluidCells())
     {
-        auto nb = gammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
 
-        int i = 0;
-        for(const Cell &kCell: nb)
-        {
-            if(&cell == &kCell)
-                continue;
+            int i = 0;
+            b.resize(stencilSize, 1);
 
-            const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
-            const Scalar dx = kCell.centroid().x - cell.centroid().x;
-            const Scalar dy = kCell.centroid().y - cell.centroid().y;
+            for(const InteriorLink &nb: cell.neighbours())
+            {
+                const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+                b(i, 0) = (gammaTilde_[nb.cell().id()] - gammaTilde_[cell.id()])/sSqr;
 
-            A(i, 0) = dx/sSqr;
-            A(i, 1) = dy/sSqr;
-            A(i, 2) = dx*dx/(2.*sSqr);
-            A(i, 3) = dy*dy/(2.*sSqr);
-            A(i, 4) = dx*dy/sSqr;
+                ++i;
+            }
 
-            b(i, 0) = (gammaTilde_[kCell.id()] - gammaTilde_[cell.id()])/sSqr;
+            for(const DiagonalCellLink &dg: cell.diagonals())
+            {
+                const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+                b(i, 0) = (gammaTilde_[dg.cell().id()] - gammaTilde_[cell.id()])/sSqr;
 
-            ++i;
-        }
+                ++i;
+            }
 
-        A.solve(b);
+            for(const BoundaryLink &bd: cell.boundaries())
+            {
+                const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
+                b(i, 0) = (gammaTilde_.faces()[bd.face().id()] - gammaTilde_[cell.id()])/sSqr;
 
-        gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
+                ++i;
+            }
+
+            b = matrices_[cell.id()]*b;
+            gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
     }
 
     interpolateFaces(gradGammaTilde_);
@@ -67,32 +132,21 @@ void Celeste::computeInterfaceNormals()
 
 void Celeste::computeCurvature()
 {
+    Matrix b(8, 1);
     kappa_.fill(0.);
-
-    Matrix A(8, 5), b(8, 1);
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
 
-        A.resize(stencilSize, 5);
-        b.resize(stencilSize, 1);
-
         for(int compNo = 0; compNo < 2; ++compNo)
         {
             int i = 0;
+            b.resize(stencilSize, 1);
+
             for(const InteriorLink &nb: cell.neighbours())
             {
                 const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-                const Scalar dx = nb.cell().centroid().x - cell.centroid().x;
-                const Scalar dy = nb.cell().centroid().y - cell.centroid().y;
-
-                A(i, 0) = dx/sSqr;
-                A(i, 1) = dy/sSqr;
-                A(i, 2) = dx*dx/(2.*sSqr);
-                A(i, 3) = dy*dy/(2.*sSqr);
-                A(i, 4) = dx*dy/sSqr;
-
                 b(i, 0) = (n_[nb.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
 
                 ++i;
@@ -101,15 +155,6 @@ void Celeste::computeCurvature()
             for(const DiagonalCellLink &dg: cell.diagonals())
             {
                 const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
-                const Scalar dx = dg.cell().centroid().x - cell.centroid().x;
-                const Scalar dy = dg.cell().centroid().y - cell.centroid().y;
-
-                A(i, 0) = dx/sSqr;
-                A(i, 1) = dy/sSqr;
-                A(i, 2) = dx*dx/(2.*sSqr);
-                A(i, 3) = dy*dy/(2.*sSqr);
-                A(i, 4) = dx*dy/sSqr;
-
                 b(i, 0) = (n_[dg.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
 
                 ++i;
@@ -118,21 +163,12 @@ void Celeste::computeCurvature()
             for(const BoundaryLink &bd: cell.boundaries())
             {
                 const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
-                const Scalar dx = bd.face().centroid().x - cell.centroid().x;
-                const Scalar dy = bd.face().centroid().y - cell.centroid().y;
-
-                A(i, 0) = dx/sSqr;
-                A(i, 1) = dy/sSqr;
-                A(i, 2) = dx*dx/(2.*sSqr);
-                A(i, 3) = dy*dy/(2.*sSqr);
-                A(i, 4) = dx*dy/sSqr;
-
                 b(i, 0) = (n_.faces()[bd.face().id()](compNo) - n_[cell.id()](compNo))/sSqr;
 
                 ++i;
             }
 
-            A.solve(b);
+            b = matrices_[cell.id()]*b;
 
             kappa_[cell.id()] += b(compNo, 0);
         }

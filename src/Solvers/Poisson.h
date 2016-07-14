@@ -3,6 +3,7 @@
 
 #include "Solver.h"
 #include "Equation.h"
+#include "ImmersedBoundary.h"
 
 class Poisson : public Solver
 {
@@ -17,6 +18,8 @@ public:
 protected:
 
     Equation<ScalarFiniteVolumeField> phiEqn_;
+
+    ImmersedBoundary ib_;
 };
 
 #endif

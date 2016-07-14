@@ -74,7 +74,7 @@ ImmersedBoundaries
     {
       type circle
       center (0.75,1)
-      radius 0.2
+      radius 0.3
     }
 
     u
@@ -87,12 +87,6 @@ ImmersedBoundaries
     {
       type normal_gradient
       value 0
-    }
-
-    gamma
-    {
-      type normal_gradient
-      value 0.573
     }
   }
 }

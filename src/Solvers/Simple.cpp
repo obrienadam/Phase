@@ -16,7 +16,8 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       m(addScalarField("m")),
       d(addScalarField("d")),
       uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
-      pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
+      pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT),
+      ib_(input, *this)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -76,7 +77,7 @@ Scalar Simple::solveUEqn(Scalar timeStep)
 {
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) == ab::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -99,7 +100,7 @@ Scalar Simple::solvePCorrEqn()
             mass += dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 
-    pCorrEqn_ = (fv::laplacian(d, pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
 

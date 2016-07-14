@@ -11,7 +11,8 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
       mu(addScalarField("mu")),
       divUStar(addScalarField("uStar")),
       uEqn_(u, "uEqn", SparseMatrix::IncompleteLUT),
-      pEqn_(p, "pEqn", SparseMatrix::IncompleteLUT)
+      pEqn_(p, "pEqn", SparseMatrix::IncompleteLUT),
+      ib_(input, *this)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -53,7 +54,7 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo) const
 
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) == ab::laplacian(mu, u));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u));
     Scalar error = uEqn_.solve();
     interpolateFaces(u);
     return error;
@@ -72,7 +73,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
             divUStar[cell.id()] += rho[cell.id()]/timeStep*dot(u.faces()[bd.face().id()], bd.outwardNorm());
     }
 
-    pEqn_ = (fv::laplacian(p) == divUStar);
+    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
     Scalar error = pEqn_.solve();
 
     interpolateFaces(p);

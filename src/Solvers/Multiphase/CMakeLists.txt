@@ -1,4 +1,5 @@
 set(HEADERS Multiphase.h
+            FractionalStepMultiphase.h
             Cicsam.h
             Plic.h
             SurfaceTensionForce.h
@@ -6,6 +7,7 @@ set(HEADERS Multiphase.h
             Celeste.h)
 
 set(SOURCES Multiphase.cpp
+            FractionalStepMultiphase.cpp
             Cicsam.cpp
             Plic.cpp
             SurfaceTensionForce.cpp

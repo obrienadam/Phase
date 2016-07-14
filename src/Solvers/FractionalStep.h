@@ -3,6 +3,7 @@
 
 #include "Solver.h"
 #include "FiniteVolumeEquation.h"
+#include "ImmersedBoundary.h"
 
 class FractionalStep: public Solver
 {
@@ -18,12 +19,14 @@ public:
 
 protected:
 
-    Scalar solveUEqn(Scalar timeStep);
-    Scalar solvePEqn(Scalar timeStep);
-    void correctVelocity(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solvePEqn(Scalar timeStep);
+    virtual void correctVelocity(Scalar timeStep);
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pEqn_;
+
+    ImmersedBoundary ib_;
 };
 
 #endif

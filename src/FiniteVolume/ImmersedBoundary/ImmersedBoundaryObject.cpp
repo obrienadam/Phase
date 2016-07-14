@@ -2,14 +2,12 @@
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const FiniteVolumeGrid2D& grid,
-                                               const ImmersedBoundaryCeleste &csf,
                                                const Point2D& center,
                                                Scalar radius)
     :
       Circle(center, radius),
       name_(name),
-      grid_(grid),
-      csf_(csf)
+      grid_(grid)
 {
 
 }

@@ -11,4 +11,4 @@ set(SOURCES ImmersedBoundary.cpp
             ImmersedBoundaryCeleste.cpp)
 
 add_library(ImmersedBoundary ${HEADERS} ${SOURCES})
-target_link_libraries(ImmersedBoundary Multiphase)
+target_link_libraries(ImmersedBoundary Math)
