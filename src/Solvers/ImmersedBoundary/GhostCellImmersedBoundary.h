@@ -8,6 +8,7 @@ namespace gc {
 
 Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, ScalarFiniteVolumeField& field);
 Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, VectorFiniteVolumeField& field);
+//Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, const ScalarFiniteVolumeField& p, const ScalarFiniteVolumeField &d, VectorFiniteVolumeField& u);
 
 }
 

@@ -2,7 +2,7 @@
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const FiniteVolumeGrid2D& grid,
-                                               const ImmersedBoundaryContinuumSurfaceForce &csf,
+                                               const ImmersedBoundaryCeleste &csf,
                                                const Point2D& center,
                                                Scalar radius)
     :
@@ -38,9 +38,24 @@ void ImmersedBoundaryObject::setInternalCells()
 
     for(const Cell &cell: internalCells)
     {
+        bool isActive = false;
+
         for(const InteriorLink &nb: cell.neighbours())
         {
             if(nb.cell().isActive())
+            {
+                internalCellIds.push_back(cell.id());
+                isActive = true;
+                break;
+            }
+        }
+
+        if(isActive)
+            continue;
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            if(dg.cell().isActive())
             {
                 internalCellIds.push_back(cell.id());
                 break;

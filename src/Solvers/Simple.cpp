@@ -15,7 +15,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(addScalarField("mu")),
       m(addScalarField("m")),
       d(addScalarField("d")),
-      uEqn_(u, "momentum", SparseMatrix::NoPreconditioner),
+      uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
       pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
@@ -29,7 +29,7 @@ Simple::Simple(const FiniteVolumeGrid2D &grid, const Input &input)
 
     pCorr.copyBoundaryTypes(p);
 
-    uEqn_.matrix().setFill(1);
+    uEqn_.matrix().setFill(3);
     pCorrEqn_.matrix().setFill(3);
 
     u.savePreviousTimeStep(0., 1);

@@ -72,6 +72,7 @@ void Multiphase::computeMu()
     {
         size_t id = cell.id();
         mu[id] = (1. - gammaTilde[id])*mu1_ + gammaTilde[id]*mu2_;
+        //mu[id] = rho[id]/((1. - gammaTilde[id])*rho1_/mu1_ + gammaTilde[id]*rho2_/mu2_);
     }
 
     harmonicInterpolateFaces(mu);

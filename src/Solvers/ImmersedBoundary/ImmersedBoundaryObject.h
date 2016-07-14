@@ -3,7 +3,7 @@
 
 #include "Circle.h"
 #include "Equation.h"
-#include "ImmersedBoundaryContinuumSurfaceForce.h"
+#include "ImmersedBoundaryCeleste.h"
 
 class ImmersedBoundaryObject : public Circle
 {
@@ -13,7 +13,7 @@ public:
 
     ImmersedBoundaryObject(const std::string& name,
                            const FiniteVolumeGrid2D& grid,
-                           const ImmersedBoundaryContinuumSurfaceForce &csf,
+                           const ImmersedBoundaryCeleste &csf,
                            const Point2D& center = Vector2D(0., 0.), Scalar radius = 0.);
 
     Point2D boundaryPoint(const Point2D& pt) const;
@@ -29,7 +29,7 @@ public:
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }
 
-    const ImmersedBoundaryContinuumSurfaceForce& csf() const { return csf_; }
+    const ImmersedBoundaryCeleste& csf() const { return csf_; }
 
     const std::string& name() const { return name_; }
 
@@ -40,7 +40,7 @@ protected:
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefValues_;
 
-    const ImmersedBoundaryContinuumSurfaceForce &csf_;
+    const ImmersedBoundaryCeleste &csf_;
 };
 
 #endif

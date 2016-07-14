@@ -8,7 +8,7 @@ ImmersedBoundaryContinuumSurfaceForce::ImmersedBoundaryContinuumSurfaceForce(con
                                                                              std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
                                                                              std::map<std::string, VectorFiniteVolumeField> &vectorFields)
     :
-      Celeste(input, gamma, u, scalarFields, vectorFields)
+      ContinuumSurfaceForce(input, gamma, u, scalarFields, vectorFields)
 {
 
 }

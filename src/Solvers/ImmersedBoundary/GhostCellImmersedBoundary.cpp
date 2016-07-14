@@ -194,4 +194,74 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
     return eqn;
 }
 
+//Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, const ScalarFiniteVolumeField &p, const ScalarFiniteVolumeField& d, VectorFiniteVolumeField& u)
+//{
+//    typedef Equation<VectorFiniteVolumeField>::Triplet Triplet;
+
+//    Equation<VectorFiniteVolumeField> eqn = ib(ibObjs, u);
+//    const size_t nActiveCells = u.grid.nActiveCells();
+//    VectorFiniteVolumeField gradP = grad(p);
+
+//    for(const ImmersedBoundaryObject ibObj: ibObjs)
+//    {
+//        for(const Cell &cell: ibObj.cells())
+//        {
+//            const size_t rowX = cell.globalIndex();
+//            const size_t rowY = rowX + nActiveCells;
+
+//            const Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+
+//            const std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
+//            std::vector<Point2D> centroids = {
+//                kNN[0].get().centroid(),
+//                kNN[1].get().centroid(),
+//                kNN[2].get().centroid(),
+//                kNN[3].get().centroid(),
+//            };
+
+//            BilinearInterpolation bi(centroids);
+//            std::vector<Scalar> coeffsX = bi(imagePoint), coeffsY;
+//            coeffsY = coeffsX;
+
+//            std::vector<size_t> ids = {
+//                kNN[0].get().id(),
+//                kNN[1].get().id(),
+//                kNN[2].get().id(),
+//                kNN[3].get().id(),
+//            };
+
+//            std::vector<Scalar> dVals = {
+//                d[ids[0]],
+//                d[ids[1]],
+//                d[ids[2]],
+//                d[ids[3]],
+//            };
+
+//            std::vector<Scalar> pVals = {
+//                p[ids[0]],
+//                p[ids[1]],
+//                p[ids[2]],
+//                p[ids[3]],
+//            };
+
+//            std::vector<Vector2D> gradPVals = {
+//                d[ids[0]]*gradP[ids[0]],
+//                d[ids[1]]*gradP[ids[1]],
+//                d[ids[2]]*gradP[ids[2]],
+//                d[ids[3]]*gradP[ids[3]],
+//            };
+
+//            Scalar dBar = bi(dVals, imagePoint);
+//            Scalar pBar = bi(pVals, imagePoint);
+//            Vector2D gradPBar = bi(gradPVals, imagePoint);
+//            Vector2D r = cell.centroid() - imagePoint;
+
+//            eqn.boundaries()(rowX) += -gradPBar.x + dBar*(p[cell.id()] - pBar)*r.x/r.magSqr();
+//            eqn.boundaries()(rowY) += -gradPBar.y + dBar*(p[cell.id()] - pBar)*r.y/r.magSqr();
+//        }
+//    }
+
+//    return eqn;
+//}
+
 }

@@ -1,6 +1,9 @@
 #include "SurfaceTensionForce.h"
 
-SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField &u, std::map<std::string, VectorFiniteVolumeField> &fields)
+SurfaceTensionForce::SurfaceTensionForce(const Input &input,
+                                         const ScalarFiniteVolumeField &gamma,
+                                         const VectorFiniteVolumeField &u,
+                                         std::map<std::string, VectorFiniteVolumeField> &fields)
     :
       gamma_(gamma),
       u_(u),
@@ -8,8 +11,8 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input, const ScalarFiniteV
       kappa_(gamma.grid, "interfaceCurvature")
 {
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
-    thetaAdv_ = input.caseInput().get<Scalar>("Properties.advancingContactAngle", 90)*M_PI/180.;
-    thetaRec_ = input.caseInput().get<Scalar>("Properties.recedingContactAngle", 90)*M_PI/180.;
+    thetaAdv_ = input.caseInput().get<Scalar>("Properties.advancingContactAngle")*M_PI/180.;
+    thetaRec_ = input.caseInput().get<Scalar>("Properties.recedingContactAngle")*M_PI/180.;
 
     //- Must figure out which patches to enforce the contact angle on
     for(const auto &boundaryInput: input.boundaryInput().get_child("Boundaries.gamma"))

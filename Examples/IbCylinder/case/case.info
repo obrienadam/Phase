@@ -6,14 +6,14 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-2
+	timeStep 5e-3
 	maxCo 0.8
 	maxTime 80
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
-	numPressureCorrections 2
+	numPressureCorrections 1
 	smoothingKernelRadius 0.0401
 }
 
@@ -47,6 +47,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 5
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

@@ -1,6 +1,8 @@
 #include "ImmersedBoundary.h"
 #include "Cicsam.h"
 #include "GhostCellImmersedBoundary.h"
+#include "CrankNicolson.h"
+#include "AdamsBashforth.h"
 
 ImmersedBoundary::ImmersedBoundary(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -104,8 +106,8 @@ Scalar ImmersedBoundary::solveUEqn(Scalar timeStep)
     sg = fv::gravity(rho, g_);
     ft = csf_.compute(ibObjs_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + gc::ib(ibObjs_, u)
-             == fv::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + gc::ib(ibObjs_, u)
+             == ab::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
 
     uEqn_.relax(momentumOmega_);
 

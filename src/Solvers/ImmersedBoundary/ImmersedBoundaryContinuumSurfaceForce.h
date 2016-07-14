@@ -5,7 +5,7 @@
 
 class ImmersedBoundaryObject;
 
-class ImmersedBoundaryContinuumSurfaceForce : public Celeste
+class ImmersedBoundaryContinuumSurfaceForce : public ContinuumSurfaceForce
 {
 public:
     ImmersedBoundaryContinuumSurfaceForce(const Input& input,
