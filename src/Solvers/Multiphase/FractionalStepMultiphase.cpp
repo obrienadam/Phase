@@ -29,12 +29,15 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     computeMu();
 
     u.savePreviousTimeStep(timeStep, 1);
+    p.savePreviousTimeStep(timeStep, 1);
     gamma.savePreviousTimeStep(timeStep, 1);
 
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
     solveGammaEqn(timeStep);
+
+    printf("Max Co = %lf\n", courantNumber(timeStep));
 
     return 0.;
 }
@@ -44,31 +47,11 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
     ft = surfaceTensionForce_.compute();
+    sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) + fv::source(ft));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(grad(p)) + fv::source(ft));
     Scalar error = uEqn_.solve();
     interpolateFaces(u);
-    return error;
-}
-
-Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
-{
-    divUStar.fill(0.);
-
-    for(const Cell &cell: grid_.fluidCells())
-    {
-        for(const InteriorLink &nb: cell.neighbours())
-            divUStar[cell.id()] += rho[cell.id()]/timeStep*dot(u.faces()[nb.face().id()], nb.outwardNorm());
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            divUStar[cell.id()] += rho[cell.id()]/timeStep*dot(u.faces()[bd.face().id()], bd.outwardNorm());
-    }
-
-    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
-    Scalar error = pEqn_.solve();
-
-    interpolateFaces(p);
-
     return error;
 }
 

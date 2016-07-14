@@ -8,14 +8,14 @@ Solver
 	maxIterations 100
 	timeStep 1e-4
 	maxCo 0.3
-	maxTime 1
+	maxTime 0.1
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.00011
+	smoothingKernelRadius 0.0001
 	surfaceTensionModel CELESTE
 }
 
