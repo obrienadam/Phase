@@ -14,6 +14,11 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
 
+    //- Print the solver info
+    printf("%s\n", (std::string(96, '-')).c_str());
+    printf("%s", solver.info().c_str());
+    printf("%s\n", (std::string(96, '-')).c_str());
+
     //- Initial conditions
     solver.setInitialConditions(input);
 

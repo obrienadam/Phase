@@ -9,10 +9,7 @@ class Celeste : public ContinuumSurfaceForce
 public:
 
     Celeste(const Input& input,
-            const ScalarFiniteVolumeField& gamma,
-            const VectorFiniteVolumeField &u,
-            std::map<std::string, ScalarFiniteVolumeField>& scalarFields,
-            std::map<std::string, VectorFiniteVolumeField>& vectorFields);
+            Solver &solver);
 
     virtual VectorFiniteVolumeField compute();
     void constructMatrices();
@@ -26,7 +23,7 @@ protected:
 
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 
-    ScalarFiniteVolumeField wGamma_;
+    ScalarFiniteVolumeField &wGamma_;
 
 };
 

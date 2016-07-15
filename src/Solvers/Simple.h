@@ -4,7 +4,6 @@
 #include "Solver.h"
 #include "Input.h"
 #include "FiniteVolumeEquation.h"
-#include "ImmersedBoundary.h"
 
 class Simple : public Solver
 {
@@ -38,8 +37,6 @@ protected:
 
     size_t nInnerIterations_;
     Scalar momentumOmega_, pCorrOmega_;
-
-    ImmersedBoundary ib_;
 };
 
 #endif

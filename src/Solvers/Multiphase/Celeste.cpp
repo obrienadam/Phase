@@ -1,13 +1,10 @@
 #include "Celeste.h"
 
 Celeste::Celeste(const Input &input,
-                 const ScalarFiniteVolumeField &gamma,
-                 const VectorFiniteVolumeField &u,
-                 std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
-                 std::map<std::string, VectorFiniteVolumeField> &vectorFields)
+                 Solver &solver)
     :
-      ContinuumSurfaceForce(input, gamma, u, scalarFields, vectorFields),
-      wGamma_(gamma.grid, "wGamma")
+      ContinuumSurfaceForce(input, solver),
+      wGamma_(solver.addScalarField("wGamma"))
 {
     constructMatrices();
 }
@@ -59,9 +56,21 @@ void Celeste::constructMatrices()
         int i = 0;
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-            const Scalar dx = nb.cell().centroid().x - cell.centroid().x;
-            const Scalar dy = nb.cell().centroid().y - cell.centroid().y;
+            Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+            Scalar dx = nb.cell().centroid().x - cell.centroid().x;
+            Scalar dy = nb.cell().centroid().y - cell.centroid().y;
+
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(nb.cell()))
+                {
+                    Point2D xc = ibObj.firstIntersect(cell.centroid(), nb.cell().centroid()).first;
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    dx = xc.x - cell.centroid().x;
+                    dy = xc.y - cell.centroid().y;
+                    break;
+                }
+            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -74,9 +83,21 @@ void Celeste::constructMatrices()
 
         for(const DiagonalCellLink &dg: cell.diagonals())
         {
-            const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
-            const Scalar dx = dg.cell().centroid().x - cell.centroid().x;
-            const Scalar dy = dg.cell().centroid().y - cell.centroid().y;
+            Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+            Scalar dx = dg.cell().centroid().x - cell.centroid().x;
+            Scalar dy = dg.cell().centroid().y - cell.centroid().y;
+
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(dg.cell()))
+                {
+                    Point2D xc = ibObj.firstIntersect(cell.centroid(), dg.cell().centroid()).first;
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    dx = xc.x - cell.centroid().x;
+                    dy = xc.y - cell.centroid().y;
+                    break;
+                }
+            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -162,16 +183,42 @@ void Celeste::computeCurvature()
 
             for(const InteriorLink &nb: cell.neighbours())
             {
-                const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (n_[nb.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
+                Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+                Scalar n = n_[nb.cell().id()](compNo) - n_[cell.id()](compNo);
+
+                for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+                {
+                    if(ibObj.cells().isInGroup(nb.cell()))
+                    {
+                        Point2D xc = ibObj.firstIntersect(cell.centroid(), nb.cell().centroid()).first;
+                        sSqr = (xc - cell.centroid()).magSqr();
+                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        break;
+                    }
+                }
+
+                b(i, 0) = n/sSqr;
 
                 ++i;
             }
 
             for(const DiagonalCellLink &dg: cell.diagonals())
             {
-                const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (n_[dg.cell().id()](compNo) - n_[cell.id()](compNo))/sSqr;
+                Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+                Scalar n = n_[dg.cell().id()](compNo) - n_[cell.id()](compNo);
+
+                for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+                {
+                    if(ibObj.cells().isInGroup(dg.cell()))
+                    {
+                        Point2D xc = ibObj.firstIntersect(cell.centroid(), dg.cell().centroid()).first;
+                        sSqr = (xc - cell.centroid()).magSqr();
+                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        break;
+                    }
+                }
+
+                b(i, 0) = n/sSqr;
 
                 ++i;
             }

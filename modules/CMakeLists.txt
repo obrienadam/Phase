@@ -7,8 +7,8 @@ target_link_libraries(phaseSimple System FiniteVolumeGrid2D Viewers Solvers)
 add_executable(phasePiso phasePiso.cpp)
 target_link_libraries(phasePiso System FiniteVolumeGrid2D Viewers Solvers)
 
-add_executable(phaseMultiphase phaseMultiphase.cpp)
-target_link_libraries(phaseMultiphase System FiniteVolumeGrid2D Viewers Multiphase)
+add_executable(phasePisoMultiphase phasePisoMultiphase.cpp)
+target_link_libraries(phasePisoMultiphase System FiniteVolumeGrid2D Viewers Multiphase)
 
 add_executable(phaseCoupled phaseCoupled.cpp)
 target_link_libraries(phaseCoupled System FiniteVolumeGrid2D Viewers Coupled)

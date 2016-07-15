@@ -4,7 +4,7 @@
 
 #include <boost/test/included/unit_test.hpp>
 
-#include "Multiphase.h"
+#include "PisoMultiphase.h"
 #include "Plic.h"
 #include "StructuredRectilinearGrid.h"
 #include "Polygon.h"

@@ -12,8 +12,7 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
       mu(addScalarField("mu")),
       divUStar(addScalarField("uStar")),
       uEqn_(u, "uEqn", SparseMatrix::IncompleteLUT),
-      pEqn_(p, "pEqn", SparseMatrix::IncompleteLUT),
-      ib_(input, *this)
+      pEqn_(p, "pEqn", SparseMatrix::IncompleteLUT)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -23,6 +22,15 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
     pEqn_.matrix().setFill(3);
 
     u.savePreviousTimeStep(0., 1);
+}
+
+std::string FractionalStep::info() const
+{
+    return Solver::info()
+            + "Type: 2nd order fractional-step\n"
+            + "Advection time-marching: Crank-Nicolson\n"
+            + "Diffusion time-marching: Adams-Bashforth\n"
+            + "Gravity: " + g_.toString() + "\n";
 }
 
 Scalar FractionalStep::solve(Scalar timeStep)

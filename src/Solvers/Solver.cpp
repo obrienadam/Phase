@@ -4,7 +4,8 @@
 
 Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
     :
-      grid_(grid)
+      grid_(grid),
+      ib_(input, *this)
 {
     std::string timeDependentOpt = input.caseInput().get<std::string>("Solver.timeDependent");
     boost::to_lower(timeDependentOpt);
@@ -12,11 +13,10 @@ Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
     timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
 }
 
-std::string Solver::info()
+std::string Solver::info() const
 {
-    return "Solver info:\n"
-           "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n"
-                                                                                     "Max Iterations: " + std::to_string(maxIterations_) + "\n";
+    return "SOLVER INFO\n"
+               "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n";
 }
 
 ScalarFiniteVolumeField& Solver::addScalarField(const Input& input, const std::string& name)

@@ -1,15 +1,15 @@
 #ifndef SURFACE_TENSION_FORCE_H
 #define SURFACE_TENSION_FORCE_H
 
-#include "ScalarFiniteVolumeField.h"
-#include "VectorFiniteVolumeField.h"
+#include "Solver.h"
 #include "Input.h"
 
 class SurfaceTensionForce
 {
 public:
 
-    SurfaceTensionForce(const Input &input, const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField& u, std::map<std::string, VectorFiniteVolumeField> &fields);
+    SurfaceTensionForce(const Input &input,
+                        Solver &solver);
 
     virtual VectorFiniteVolumeField compute() = 0;
     Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel) const;
@@ -24,15 +24,20 @@ public:
     Scalar theta() const { return thetaAdv_; }
     Scalar sigma() const { return sigma_; }
 
+    const Solver& solver() const { return solver_; }
+
 protected:
 
     Scalar sigma_, thetaAdv_, thetaRec_;
+
     const ScalarFiniteVolumeField &gamma_;
     const VectorFiniteVolumeField &u_;
-    ScalarFiniteVolumeField kappa_;
+    ScalarFiniteVolumeField &kappa_;
     VectorFiniteVolumeField &n_;
 
     std::vector< Ref<const Patch> > contactAnglePatches_;
+
+    const Solver &solver_;
 };
 
 //- Header files for the available methods

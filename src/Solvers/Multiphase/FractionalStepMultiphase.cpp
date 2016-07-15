@@ -9,7 +9,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &gri
       gamma(addScalarField(input, "gamma")),
       ft(addVectorField("ft")),
       gammaEqn_(gamma, "gammaEqn"),
-      surfaceTensionForce_(input, gamma, u, scalarFields_, vectorFields_)
+      surfaceTensionForce_(input, *this)
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
@@ -59,7 +59,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     interpolateFaces(gamma);
 
-    gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) == 0.);
+    gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
     Scalar error = gammaEqn_.solve();
     return error;
 }

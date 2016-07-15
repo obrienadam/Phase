@@ -6,6 +6,7 @@
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 #include "Circle.h"
+#include "ImmersedBoundary.h"
 
 class Solver
 {
@@ -15,7 +16,7 @@ public:
 
     Solver(const FiniteVolumeGrid2D& grid, const Input& input);
 
-    virtual std::string info();
+    virtual std::string info() const;
     virtual Scalar solve(Scalar timeStep) = 0;
     virtual Scalar computeMaxTimeStep(Scalar maxCo) const = 0;
 
@@ -33,6 +34,8 @@ public:
     std::map<std::string, std::vector<Polygon> >& geometries() const { return geometries_; }
 
     void setInitialConditions(const Input& input);
+
+    const ImmersedBoundary& ib() const { return ib_; }
 
 protected:
 
@@ -52,7 +55,8 @@ protected:
     mutable std::map<std::string, std::vector<Polygon> > geometries_;
 
     TimeDependent timeDependent_;
-    int maxIterations_;
+
+    ImmersedBoundary ib_;
 };
 
 #endif

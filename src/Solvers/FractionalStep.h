@@ -3,13 +3,14 @@
 
 #include "Solver.h"
 #include "FiniteVolumeEquation.h"
-#include "ImmersedBoundary.h"
 
 class FractionalStep: public Solver
 {
 public:
 
     FractionalStep(const FiniteVolumeGrid2D& grid, const Input& input);
+
+    virtual std::string info() const;
 
     virtual Scalar solve(Scalar timeStep);
     virtual Scalar computeMaxTimeStep(Scalar maxCo) const;
@@ -30,7 +31,6 @@ protected:
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pEqn_;
 
-    ImmersedBoundary ib_;
 };
 
 #endif

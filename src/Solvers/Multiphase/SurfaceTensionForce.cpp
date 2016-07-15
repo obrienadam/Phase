@@ -1,14 +1,13 @@
 #include "SurfaceTensionForce.h"
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
-                                         const ScalarFiniteVolumeField &gamma,
-                                         const VectorFiniteVolumeField &u,
-                                         std::map<std::string, VectorFiniteVolumeField> &fields)
+                                         Solver &solver)
     :
-      gamma_(gamma),
-      u_(u),
-      n_((fields.insert(std::make_pair(std::string("n"), VectorFiniteVolumeField(gamma.grid, "n"))).first)->second),
-      kappa_(gamma.grid, "interfaceCurvature")
+      gamma_(solver.scalarFields().find("gamma")->second),
+      u_(solver.vectorFields().find("u")->second),
+      n_(solver.addVectorField("n")),
+      kappa_(solver.addScalarField("kappa")),
+      solver_(solver)
 {
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
     thetaAdv_ = input.caseInput().get<Scalar>("Properties.advancingContactAngle")*M_PI/180.;

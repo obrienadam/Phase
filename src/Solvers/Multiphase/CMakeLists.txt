@@ -1,4 +1,4 @@
-set(HEADERS Multiphase.h
+set(HEADERS PisoMultiphase.h
             FractionalStepMultiphase.h
             Cicsam.h
             Plic.h
@@ -6,7 +6,7 @@ set(HEADERS Multiphase.h
             ContinuumSurfaceForce.h
             Celeste.h)
 
-set(SOURCES Multiphase.cpp
+set(SOURCES PisoMultiphase.cpp
             FractionalStepMultiphase.cpp
             Cicsam.cpp
             Plic.cpp

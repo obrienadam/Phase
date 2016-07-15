@@ -1,14 +1,11 @@
 #include "ContinuumSurfaceForce.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
-                                             const ScalarFiniteVolumeField &gamma,
-                                             const VectorFiniteVolumeField& u,
-                                             std::map<std::string, ScalarFiniteVolumeField> &scalarFields,
-                                             std::map<std::string, VectorFiniteVolumeField> &vectorFields)
+                                             Solver &solver)
     :
-      SurfaceTensionForce(input, gamma, u, vectorFields),
-      gradGammaTilde_(gamma.grid, "gammaTilde"),
-      gammaTilde_((scalarFields.insert(std::make_pair(std::string("gammaTilde"), ScalarFiniteVolumeField(gamma.grid, "gammaTilde"))).first)->second)
+      SurfaceTensionForce(input, solver),
+      gammaTilde_(solver.addScalarField("gammaTilde")),
+      gradGammaTilde_(solver.addVectorField("gradGammaTilde"))
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     constructSmoothingKernels();

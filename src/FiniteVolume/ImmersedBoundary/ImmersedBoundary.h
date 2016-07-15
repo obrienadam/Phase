@@ -16,6 +16,8 @@ public:
     Equation<ScalarFiniteVolumeField> eqns(ScalarFiniteVolumeField& field);
     Equation<VectorFiniteVolumeField> eqns(VectorFiniteVolumeField& field);
 
+    const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
+
     ScalarFiniteVolumeField &cellStatus_;
 
 protected:

@@ -9,10 +9,7 @@ class ImmersedBoundaryContinuumSurfaceForce : public ContinuumSurfaceForce
 {
 public:
     ImmersedBoundaryContinuumSurfaceForce(const Input& input,
-                                          const ScalarFiniteVolumeField &gamma,
-                                          const VectorFiniteVolumeField& u,
-                                          std::map<std::string, ScalarFiniteVolumeField>& scalarFields,
-                                          std::map<std::string, VectorFiniteVolumeField> &vectorFields);
+                                          Solver &solver);
 
     virtual VectorFiniteVolumeField compute(const std::vector<ImmersedBoundaryObject> &ibObjs);
 
