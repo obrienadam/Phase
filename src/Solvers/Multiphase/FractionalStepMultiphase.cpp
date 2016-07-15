@@ -49,7 +49,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     ft = surfaceTensionForce_.compute();
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(grad(p)) + fv::source(ft));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(grad(p)) + fv::source(ft) + fv::source(rho*g_));
     Scalar error = uEqn_.solve();
     interpolateFaces(u);
     return error;

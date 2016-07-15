@@ -83,6 +83,7 @@ void Celeste::constructMatrices()
 void Celeste::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+    interpolateFaces(gammaTilde_);
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
     Matrix b(8, 1);

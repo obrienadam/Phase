@@ -70,11 +70,11 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     for(const Cell &cell: grid_.fluidCells())
     {
         for(const InteriorLink &nb: cell.neighbours())
-            divUStar[cell.id()] += rho.faces()[nb.face().id()]/timeStep*dot(u.faces()[nb.face().id()], nb.outwardNorm())
+            divUStar[cell.id()] += rho[cell.id()]/timeStep*dot(u.faces()[nb.face().id()], nb.outwardNorm())
                     + (p[nb.cell().id()] - p[cell.id()])*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
 
         for(const BoundaryLink &bd: cell.boundaries())
-            divUStar[cell.id()] += rho.faces()[bd.face().id()]/timeStep*dot(u.faces()[bd.face().id()], bd.outwardNorm())
+            divUStar[cell.id()] += rho[cell.id()]/timeStep*dot(u.faces()[bd.face().id()], bd.outwardNorm())
                     + (p.faces()[bd.face().id()] - p[cell.id()])*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
     }
 
