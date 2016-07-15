@@ -20,8 +20,36 @@ VectorFiniteVolumeField Celeste::compute()
 void Celeste::constructMatrices()
 {
     Matrix A(8, 5);
-    matrices_.resize(gamma_.size());
 
+    gradGammaTildeMatrices_.resize(gradGammaTilde_.size());
+    for(const Cell &cell: gammaTilde_.grid.fluidCells())
+    {
+        auto nb = gammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+
+        A.resize(8, 5);
+        int i = 0;
+        for(const Cell &kCell: nb)
+        {
+            if(&cell == &kCell)
+                continue;
+
+            const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
+            const Scalar dx = kCell.centroid().x - cell.centroid().x;
+            const Scalar dy = kCell.centroid().y - cell.centroid().y;
+
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        gradGammaTildeMatrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
+    }
+
+    kappaMatrices_.resize(gamma_.size());
     for(const Cell &cell: gamma_.grid.fluidCells())
     {
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
@@ -74,7 +102,7 @@ void Celeste::constructMatrices()
             ++i;
         }
 
-        matrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
+        kappaMatrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
     }
 }
 
@@ -83,44 +111,31 @@ void Celeste::constructMatrices()
 void Celeste::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    interpolateFaces(gammaTilde_);
+    // interpolateFaces(gammaTilde_);
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
     Matrix b(8, 1);
 
     for(const Cell &cell: gradGammaTilde_.grid.fluidCells())
     {
-        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
+        auto nb = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
-            int i = 0;
-            b.resize(stencilSize, 1);
+        b.resize(8, 1);
+        int i = 0;
 
-            for(const InteriorLink &nb: cell.neighbours())
-            {
-                const Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (gammaTilde_[nb.cell().id()] - gammaTilde_[cell.id()])/sSqr;
+        for(const Cell &kCell: nb)
+        {
+            if(&cell == &kCell)
+                continue;
 
-                ++i;
-            }
+            const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
+            b(i, 0) = (gammaTilde_[kCell.id()] - gammaTilde_[cell.id()])/sSqr;
 
-            for(const DiagonalCellLink &dg: cell.diagonals())
-            {
-                const Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (gammaTilde_[dg.cell().id()] - gammaTilde_[cell.id()])/sSqr;
+            ++i;
+        }
 
-                ++i;
-            }
-
-            for(const BoundaryLink &bd: cell.boundaries())
-            {
-                const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (gammaTilde_.faces()[bd.face().id()] - gammaTilde_[cell.id()])/sSqr;
-
-                ++i;
-            }
-
-            b = matrices_[cell.id()]*b;
-            gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
+        b = gradGammaTildeMatrices_[cell.id()]*b;
+        gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
     }
 
     interpolateFaces(gradGammaTilde_);
@@ -169,7 +184,7 @@ void Celeste::computeCurvature()
                 ++i;
             }
 
-            b = matrices_[cell.id()]*b;
+            b = kappaMatrices_[cell.id()]*b;
 
             kappa_[cell.id()] += b(compNo, 0);
         }

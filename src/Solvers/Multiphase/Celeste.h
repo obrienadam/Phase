@@ -24,7 +24,7 @@ protected:
     virtual void computeCurvature();
     void weightCurvatures();
 
-    std::vector<Matrix> matrices_;
+    std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 
     ScalarFiniteVolumeField wGamma_;
 
