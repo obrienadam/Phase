@@ -1,4 +1,5 @@
 #include "ContinuumSurfaceForce.h"
+#include "BilinearInterpolation.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              Solver &solver)
@@ -47,24 +48,92 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
 {
-    n_ = gradGammaTilde_;
+    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
+    const Scalar centralCoeff = 1.;
 
-    for(Vector2D &vec: n_)
-        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : -vec.unitVec();
+    for(const Cell &cell: n_.grid.fluidCells())
+    {
+        size_t rowX = cell.globalIndex();
+        size_t rowY = rowX + n_.grid.nActiveCells();
 
-    for(Vector2D &vec: n_.faces())
-        vec = vec == Vector2D(0., 0.) ? Vector2D(0., 0.) : -vec.unitVec();
+        eqn.matrix().insert(rowX, rowX) = 1.;
+        eqn.matrix().insert(rowY, rowY) = 1.;
 
-    //- Set the contact angle normals
-    for(const Patch &patch: contactAnglePatches_)
-        for(const Face &face: patch.faces())
+        Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
+
+        eqn.sources()(rowX) = n.x;
+        eqn.sources()(rowY) = n.y;
+    }
+
+    for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+        for(const Cell &cell: ibObj.cells())
         {
-            const Cell &cell = face.lCell();
-            Vector2D sf = face.outwardNorm(cell.centroid());
+            size_t rowX = cell.globalIndex();
+            size_t rowY = rowX + n_.grid.nActiveCells();
 
-            if(!(n_.faces()[face.id()] == Vector2D(0., 0.)))
-                n_.faces()[face.id()] = computeContactLineNormal(gradGammaTilde_[cell.id()], sf, u_[cell.id()]);
+            Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+            std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
+
+            std::vector<Point2D> centroids = {
+                kNN[0].get().centroid(),
+                kNN[1].get().centroid(),
+                kNN[2].get().centroid(),
+                kNN[3].get().centroid(),
+            };
+
+            std::vector<int> cols = {
+                kNN[0].get().globalIndex(),
+                kNN[1].get().globalIndex(),
+                kNN[2].get().globalIndex(),
+                kNN[3].get().globalIndex(),
+            };
+
+            BilinearInterpolation bi(centroids);
+            std::vector<Scalar> coeffs = bi(imagePoint);
+
+            //- From previous values, workout the direction and orientation of the contact line
+            std::vector<Vector2D> velVals;
+            for(const Cell &cell: kNN)
+                velVals.push_back(u_[cell.id()]);
+
+            std::vector<Vector2D> gradGammaVals;
+            for(const Cell &cell: kNN)
+                gradGammaVals.push_back(gradGammaTilde_[cell.id()]);
+
+            const Vector2D uIp = bi(velVals, imagePoint);
+            const Vector2D gradGammaIp = bi(gradGammaVals, imagePoint);
+
+            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
+
+            eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
+            eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
+
+            for(int i = 0; i < coeffs.size(); ++i)
+            {
+                eqn.matrix().coeffRef(rowX, cols[i]) = coeffs[i]/2.;
+                eqn.matrix().coeffRef(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
+            }
+
+            eqn.sources()(rowX) = bpNormal.x;
+            eqn.sources()(rowY) = bpNormal.y;
         }
+
+    Scalar error = eqn.solve();
+
+    if(isnan(error))
+    {
+        printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
+        ContinuumSurfaceForce::computeInterfaceNormals();
+        return;
+    }
+
+    interpolateFaces(n_);
+
+    for(const Cell &cell: n_.grid.activeCells())
+        n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
+
+    for(Vector2D &n: n_.faces())
+        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
 }
 
 void ContinuumSurfaceForce::computeCurvature()

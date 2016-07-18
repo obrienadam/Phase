@@ -40,7 +40,4 @@ protected:
     const Solver &solver_;
 };
 
-//- Header files for the available methods
-#include "ContinuumSurfaceForce.h"
-
 #endif

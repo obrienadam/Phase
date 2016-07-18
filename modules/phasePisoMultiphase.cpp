@@ -3,7 +3,7 @@
 #include "Input.h"
 #include "CommandLine.h"
 #include "ConstructGrid.h"
-#include "Simple.h"
+#include "PisoMultiphase.h"
 #include "TecplotViewer.h"
 #include "RunControl.h"
 
@@ -17,10 +17,12 @@ int main(int argc, const char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    Simple solver(*gridPtr, input);
+    PisoMultiphase solver(*gridPtr, input);
     TecplotViewer viewer(solver, input);
 
     RunControl runControl;
     runControl.run(input, solver, viewer);
+
+    return 0;
 }
 
