@@ -3,6 +3,7 @@
 
 #include "Circle.h"
 #include "Equation.h"
+#include "BilinearInterpolation.h"
 
 class ImmersedBoundaryObject : public Circle
 {
@@ -14,15 +15,21 @@ public:
                            const FiniteVolumeGrid2D& grid,
                            const Point2D& center = Vector2D(0., 0.), Scalar radius = 0.);
 
-    Point2D boundaryPoint(const Point2D& pt) const;
-    Point2D imagePoint(const Point2D& pt) const;
+    const Point2D& boundaryPoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).first; }
+    const Point2D& imagePoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).second; }
+    const std::pair<Point2D, Point2D>& stencilPoints(const Cell &cell) const { return stencilPoints_.find(cell.id())->second; }
+
+    const std::vector< Ref<const Cell> >& imagePointCells(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).first; }
+    const BilinearInterpolation& imagePointInterpolation(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).second; }
+
+    Scalar imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const;
+    Vector2D imagePointVal(const Cell &ell, const VectorFiniteVolumeField& field) const;
 
     void setInternalCells();
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
     const CellGroup& cells() const { return grid_.cellGroup(name_ + "_cells"); }
-    const std::vector< Ref<const Cell> > boundingCells(const Point2D& pt) const;
 
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }
@@ -31,8 +38,15 @@ public:
 
 protected:
 
+    const std::vector< Ref<const Cell> > boundingCells(const Point2D& pt) const;
+    void flagIbCells();
+    void constructStencils();
+
     std::string name_;
     const FiniteVolumeGrid2D &grid_;
+
+    std::map<size_t, std::pair<Vector2D, Vector2D> > stencilPoints_;
+    std::map<size_t, std::pair< std::vector< Ref<const Cell> >, BilinearInterpolation > > imagePointStencils_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefValues_;

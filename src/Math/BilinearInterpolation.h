@@ -8,6 +8,7 @@ class BilinearInterpolation
 {
 public:
 
+    BilinearInterpolation() {}
     BilinearInterpolation(const std::vector<Point2D> &pts);
 
     Scalar operator()(const std::vector<Scalar>& vals, const Point2D& ip) const;

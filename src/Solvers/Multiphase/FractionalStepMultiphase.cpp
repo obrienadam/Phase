@@ -59,7 +59,8 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     interpolateFaces(gamma);
 
-    gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
+    //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
+    gammaEqn_ = (cicsam::div(u, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
     Scalar error = gammaEqn_.solve();
     return error;
 }

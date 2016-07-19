@@ -16,17 +16,11 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
         for(const Cell &cell: ibObj.cells())
         {
             const size_t row = cell.globalIndex();
-            const Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+            const Point2D& imagePoint = ibObj.imagePoint(cell);
 
-            std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
-            std::vector<Point2D> centroids = {
-                kNN[0].get().centroid(),
-                kNN[1].get().centroid(),
-                kNN[2].get().centroid(),
-                kNN[3].get().centroid(),
-            };
+            const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
+            const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
 
-            BilinearInterpolation bi(centroids);
             std::vector<Scalar> coeffs = bi(imagePoint);
 
             std::vector<int> cols = {
@@ -91,17 +85,11 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             const size_t rowX = cell.globalIndex();
             const size_t rowY = rowX + nActiveCells;
 
-            const Point2D imagePoint = ibObj.imagePoint(cell.centroid());
+            const Point2D imagePoint = ibObj.imagePoint(cell);
 
-            const std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
-            std::vector<Point2D> centroids = {
-                kNN[0].get().centroid(),
-                kNN[1].get().centroid(),
-                kNN[2].get().centroid(),
-                kNN[3].get().centroid(),
-            };
+            const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
+            const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
 
-            BilinearInterpolation bi(centroids);
             std::vector<Scalar> coeffsX = bi(imagePoint), coeffsY;
             coeffsY = coeffsX;
 

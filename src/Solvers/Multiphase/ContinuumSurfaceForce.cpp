@@ -71,15 +71,11 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
             size_t rowX = cell.globalIndex();
             size_t rowY = rowX + n_.grid.nActiveCells();
 
-            Point2D imagePoint = ibObj.imagePoint(cell.centroid());
-            std::vector< Ref<const Cell> > kNN = ibObj.boundingCells(imagePoint);
+            const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
+            const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
+            const Point2D &imagePoint = ibObj.imagePoint(cell);
 
-            std::vector<Point2D> centroids = {
-                kNN[0].get().centroid(),
-                kNN[1].get().centroid(),
-                kNN[2].get().centroid(),
-                kNN[3].get().centroid(),
-            };
+            std::vector<Scalar> coeffs = bi(imagePoint);
 
             std::vector<int> cols = {
                 kNN[0].get().globalIndex(),
@@ -87,9 +83,6 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
                 kNN[2].get().globalIndex(),
                 kNN[3].get().globalIndex(),
             };
-
-            BilinearInterpolation bi(centroids);
-            std::vector<Scalar> coeffs = bi(imagePoint);
 
             //- From previous values, workout the direction and orientation of the contact line
             std::vector<Vector2D> velVals;

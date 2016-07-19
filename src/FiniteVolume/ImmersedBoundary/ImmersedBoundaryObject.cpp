@@ -12,21 +12,60 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
 
 }
 
-Point2D ImmersedBoundaryObject::boundaryPoint(const Point2D &pt) const
+Scalar ImmersedBoundaryObject::imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const
 {
-    return nearestIntersect(pt);
+    const Point2D &ip = imagePoint(cell);
+    const auto &ipCells = imagePointCells(cell);
+    const auto &bi = imagePointInterpolation(cell);
+
+    std::vector<Scalar> vals;
+    for(const Cell &kCell: ipCells)
+        vals.push_back(field[kCell.id()]);
+
+    return bi(vals, ip);
 }
 
-Point2D ImmersedBoundaryObject::imagePoint(const Point2D &pt) const
+Vector2D ImmersedBoundaryObject::imagePointVal(const Cell &cell, const VectorFiniteVolumeField& field) const
 {
-    return 2.*boundaryPoint(pt) - pt;
+    const Point2D &ip = imagePoint(cell);
+    const auto &ipCells = imagePointCells(cell);
+    const auto &bi = imagePointInterpolation(cell);
+
+    std::vector<Vector2D> vals;
+    for(const Cell &kCell: ipCells)
+        vals.push_back(field[kCell.id()]);
+
+    return bi(vals, ip);
 }
 
 void ImmersedBoundaryObject::setInternalCells()
 {
+    flagIbCells();
+    constructStencils();
+}
+
+void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
+{
+    boundaryTypes_[name] = boundaryType;
+}
+
+void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)
+{
+    boundaryRefValues_[name] = boundaryRefValue;
+}
+
+//- Protected methods
+
+const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const Point2D &pt) const
+{
+    const Node &node = grid_.findNearestNode(pt);
+    return grid_.activeCells().kNearestNeighbourSearch(node, 4);
+}
+
+void ImmersedBoundaryObject::flagIbCells()
+{
     auto internalCells = grid_.activeCells().rangeSearch(*this);
     std::vector<size_t> internalCellIds;
-    internalCellIds.reserve(internalCells.size());
 
     for(const Cell &cell: internalCells)
         internalCellIds.push_back(cell.id());
@@ -36,19 +75,19 @@ void ImmersedBoundaryObject::setInternalCells()
 
     for(const Cell &cell: internalCells)
     {
-        bool isActive = false;
+        bool isCellActive = false;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
             if(nb.cell().isActive())
             {
                 internalCellIds.push_back(cell.id());
-                isActive = true;
+                isCellActive = true;
                 break;
             }
         }
 
-        if(isActive)
+        if(isCellActive)
             continue;
 
         for(const DiagonalCellLink &dg: cell.diagonals())
@@ -64,18 +103,26 @@ void ImmersedBoundaryObject::setInternalCells()
     grid_.moveCellsToCellGroup(name_ + "_cells", internalCellIds);
 }
 
-void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
+void ImmersedBoundaryObject::constructStencils()
 {
-    boundaryTypes_[name] = boundaryType;
-}
+    stencilPoints_.clear();
+    imagePointStencils_.clear();
 
-void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)
-{
-    boundaryRefValues_[name] = boundaryRefValue;
-}
+    for(const Cell& cell: cells())
+    {
+        const Point2D bp = nearestIntersect(cell.centroid()), ip = 2.*bp - cell.centroid();
 
-const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const Point2D &pt) const
-{
-    const Node &node = grid_.findNearestNode(pt);
-    return grid_.activeCells().kNearestNeighbourSearch(node, 4);
+        stencilPoints_[cell.id()] = std::make_pair(bp, ip);
+
+        auto kNN = boundingCells(ip);
+
+        std::vector<Point2D> centroids = {
+            kNN[0].get().centroid(),
+            kNN[1].get().centroid(),
+            kNN[2].get().centroid(),
+            kNN[3].get().centroid(),
+        };
+
+        imagePointStencils_[cell.id()] = std::make_pair(kNN, BilinearInterpolation(centroids));
+    }
 }

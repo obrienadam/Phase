@@ -11,7 +11,17 @@ Celeste::Celeste(const Input &input,
 
 VectorFiniteVolumeField Celeste::compute()
 {
-    return ContinuumSurfaceForce::compute();
+    computeGradGammaTilde();
+    computeInterfaceNormals();
+    computeCurvature();
+
+    VectorFiniteVolumeField ft(gamma_.grid, "ft");
+    VectorFiniteVolumeField gradGamma = grad(gamma_);
+
+    for(const Cell &cell: gamma_.grid.fluidCells())
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma[cell.id()];
+
+    return ft;
 }
 
 void Celeste::constructMatrices()
@@ -19,13 +29,14 @@ void Celeste::constructMatrices()
     Matrix A(8, 5);
 
     gradGammaTildeMatrices_.resize(gradGammaTilde_.size());
+    gradGammaTildeStencils_.resize(gradGammaTilde_.size());
     for(const Cell &cell: gammaTilde_.grid.fluidCells())
     {
-        auto nb = gammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         A.resize(8, 5);
         int i = 0;
-        for(const Cell &kCell: nb)
+        for(const Cell &kCell: gradGammaTildeStencils_[cell.id()])
         {
             if(&cell == &kCell)
                 continue;
@@ -139,7 +150,7 @@ void Celeste::computeGradGammaTilde()
 
     for(const Cell &cell: gradGammaTilde_.grid.fluidCells())
     {
-        auto nb = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        const auto &nb = gradGammaTildeStencils_[cell.id()];
 
         b.resize(8, 1);
         int i = 0;
@@ -159,12 +170,16 @@ void Celeste::computeGradGammaTilde()
         gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
     }
 
-    interpolateFaces(gradGammaTilde_);
+    //interpolateFaces(gradGammaTilde_);
 }
 
 void Celeste::computeInterfaceNormals()
 {
-    ContinuumSurfaceForce::computeInterfaceNormals();
+    for(const Cell &cell: n_.grid.fluidCells())
+        n_[cell.id()] = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
+
+    //for(const Face &face: n_.grid.faces())
+    //    n_.faces()[face.id()] = gradGammaTilde_.faces()[face.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : gradGammaTilde_.faces()[face.id()].unitVec();
 }
 
 void Celeste::computeCurvature()
@@ -245,8 +260,8 @@ void Celeste::weightCurvatures()
 {
     auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
 
-    for(const Cell &cell: wGamma_.grid.activeCells())
-        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gamma_[cell.id()]));
+    for(const Cell &cell: wGamma_.grid.fluidCells())
+        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
 
     kappa_.savePreviousIteration();
 
@@ -260,23 +275,38 @@ void Celeste::weightCurvatures()
             sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()];
         }
 
-        kappa_[cell.id()] = isnan(sumKappaW/sumW) ? 0. : sumKappaW/sumW;
-    }
-
-    kappa_.savePreviousIteration();
-
-    for(const Cell &cell: kappa_.grid.fluidCells())
-    {
-        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
-
-        for(const InteriorLink &nb: cell.neighbours())
+        for(const DiagonalCellLink &dg: cell.diagonals())
         {
-            const Scalar mQ = pow8(dot(n_[cell.id()], nb.rCellVec().unitVec()));
-
-            sumW += wGamma_[nb.cell().id()]*mQ;
-            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()]*mQ;
+            sumW += wGamma_[dg.cell().id()];
+            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()];
         }
 
-        kappa_[cell.id()] = isnan(sumKappaW/sumW) ? 0. : sumKappaW/sumW;
+        kappa_[cell.id()] = fabs(sumW) < 1e-15 ? 0. : sumKappaW/sumW;
     }
+
+//    kappa_.savePreviousIteration();
+
+//    for(const Cell &cell: kappa_.grid.fluidCells())
+//    {
+//        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
+
+//        for(const InteriorLink &nb: cell.neighbours())
+//        {
+//            const Scalar mQ = pow8(dot(n_[cell.id()], nb.rCellVec().unitVec()));
+
+//            sumW += wGamma_[nb.cell().id()]*mQ;
+//            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()]*mQ;
+//        }
+
+//        for(const DiagonalCellLink &dg: cell.diagonals())
+//        {
+//            const Scalar mQ = pow8(dot(n_[cell.id()], dg.rCellVec().unitVec()));
+
+//            sumW += wGamma_[dg.cell().id()]*mQ;
+//            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()]*mQ;
+//        }
+
+//        Scalar kappa = sumKappaW/sumW;
+//        kappa_[cell.id()] = isnan(kappa) ? 0. : kappa;
+//    }
 }

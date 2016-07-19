@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-4
+	timeStep 5e-5
 	maxCo 0.3
 	maxTime 1
 
