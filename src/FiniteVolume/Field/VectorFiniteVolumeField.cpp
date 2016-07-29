@@ -119,3 +119,40 @@ void extrapolateBoundaryFaces(ScalarFiniteVolumeField& field)
                 field.faces()[bd.face().id()] = field[bd.face().lCell().id()] + dot(bd.rFaceVec(), gradField[bd.face().lCell().id()]);
         }
 }
+
+void interpolateFaces(VectorFiniteVolumeField& field)
+{
+    Vector2D rf, sf;
+
+    for(const Face& face: field.grid.interiorFaces())
+    {
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+
+        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
+        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
+        {
+        case VectorFiniteVolumeField::FIXED:
+            break;
+
+        case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+
+        case VectorFiniteVolumeField::SYMMETRY:
+        {
+            Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+            field.faces()[face.id()] = field[face.lCell().id()] - dot(field[face.lCell().id()], nWall)*nWall/nWall.magSqr();
+            break;
+        }
+
+        default:
+            throw Exception("VectorFiniteVolumeField", "interpolateFaces", "unrecongnized boundary condition type.");
+        }
+    }
+}

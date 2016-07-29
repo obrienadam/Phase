@@ -2,29 +2,6 @@
 
 namespace fv
 {
-
-Equation<ScalarFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, ScalarFiniteVolumeField& field, Scalar timeStep)
-{
-    const size_t nActiveCells = field.grid.nActiveCells();
-    const Field<Scalar> &prevField = field.prev(0);
-
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
-    Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(nActiveCells);
-
-    for(const Cell& cell: field.grid.fluidCells())
-    {
-        size_t row = cell.globalIndex();
-
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, a[cell.id()]*cell.volume()/timeStep));
-        eqn.boundaries()(row) += a[cell.id()]*cell.volume()*prevField[cell.id()]/timeStep;
-    }
-
-    eqn.matrix().assemble(entries);
-    return eqn;
-}
-
 Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();

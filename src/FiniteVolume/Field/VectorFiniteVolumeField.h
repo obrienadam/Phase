@@ -16,4 +16,6 @@ VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFinit
 
 void extrapolateBoundaryFaces(ScalarFiniteVolumeField& field);
 
+void interpolateFaces(VectorFiniteVolumeField& field);
+
 #endif

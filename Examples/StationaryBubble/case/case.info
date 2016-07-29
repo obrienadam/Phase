@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 2.5e-5
+	timeStep 1e-5
 	maxCo 0.25
 	maxTime 2.5e-2
 
@@ -23,7 +23,7 @@ Properties
 {
 	rho1 958
 	rho2 998
-	mu1 8.94e-3
+	mu1 9e-3
 	mu2 8.94e-4
 	sigma 0.0262
 	g (0,0)
