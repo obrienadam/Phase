@@ -46,12 +46,13 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_.compute();
-    sg = fv::gravity(rho, g_);
+    ft = surfaceTensionForce_.compute()/rho;
+    sp = p/rho;
+    gradSp = grad(sp);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(grad(p)) + fv::source(ft) + fv::source(rho*g_));
+    uEqn_ = (fv::ddt(u, timeStep) + cn::div(u, u) + ib_.eqns(u) == ab::laplacian(mu/rho, u) - fv::source(gradSp) + fv::source(ft));
     Scalar error = uEqn_.solve();
-    interpolateFaces(u);
+    computeAdvectingVelocity(timeStep);
     return error;
 }
 
@@ -62,25 +63,28 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
     gammaEqn_ = (cicsam::div(u, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
     Scalar error = gammaEqn_.solve();
+
     return error;
 }
 
 void FractionalStepMultiphase::computeRho()
 {
-    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_.gammaTilde();
+    const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
 
     for(const Cell &cell: grid_.activeCells())
-        rho[cell.id()] = (1. - gammaTilde[cell.id()])*rho1_ + gammaTilde[cell.id()]*rho2_;
+        rho[cell.id()] = (1. - w[cell.id()])*rho1_ + w[cell.id()]*rho2_;
 
+    //interpolateFaces(rho);
     harmonicInterpolateFaces(rho);
 }
 
 void FractionalStepMultiphase::computeMu()
 {
-    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_.gammaTilde();
+    const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
 
     for(const Cell &cell: grid_.activeCells())
-        mu[cell.id()] = (1. - gammaTilde[cell.id()])*mu1_ + gammaTilde[cell.id()]*mu2_;
+        mu[cell.id()] = (1. - w[cell.id()])*mu1_ + w[cell.id()]*mu2_;
 
+    //interpolateFaces(mu);
     harmonicInterpolateFaces(mu);
 }
