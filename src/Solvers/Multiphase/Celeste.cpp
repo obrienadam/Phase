@@ -252,7 +252,7 @@ void Celeste::computeCurvature()
         }
     }
 
-    weightCurvatures();
+    //weightCurvatures();
     interpolateFaces(kappa_);
 }
 
