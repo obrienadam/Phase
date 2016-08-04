@@ -76,6 +76,11 @@ Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
     return currNearestIntersect;
 }
 
+std::pair<Point2D, bool> Polygon::firstIntersect(Point2D ptA, Point2D ptB) const
+{
+    throw Exception("Polygon", "firstIntersect", "not yet implemented.");
+}
+
 void Polygon::operator+=(const Vector2D& translationVec)
 {
     for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
@@ -100,10 +105,26 @@ Polygon Polygon::scale(Scalar factor) const
     return Polygon(verts);
 }
 
+void Polygon::scale(Scalar factor)
+{
+    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx = factor*(vtx - centroid_) + centroid_;
+
+    init();
+}
+
 void Polygon::rotate(Scalar theta)
 {
     for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
         vtx = (vtx - centroid_).rotate(theta) + centroid_;
+}
+
+boost::geometry::model::box<Point2D> Polygon::boundingBox() const
+{
+    boost::geometry::model::box<Point2D> box;
+    boost::geometry::envelope(boostPolygon(), box);
+
+    return box;
 }
 
 //- Protected methods

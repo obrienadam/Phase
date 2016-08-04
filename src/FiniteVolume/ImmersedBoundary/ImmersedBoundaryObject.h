@@ -1,11 +1,11 @@
 #ifndef IMMERSED_BOUNDARY_OBJECT_H
 #define IMMERSED_BOUNDARY_OBJECT_H
 
-#include "Circle.h"
+#include "Shape2D.h"
 #include "Equation.h"
 #include "BilinearInterpolation.h"
 
-class ImmersedBoundaryObject : public Circle
+class ImmersedBoundaryObject
 {
 public:
 
@@ -13,7 +13,15 @@ public:
 
     ImmersedBoundaryObject(const std::string& name,
                            const FiniteVolumeGrid2D& grid,
-                           const Point2D& center = Vector2D(0., 0.), Scalar radius = 0.);
+                           const Point2D& center,
+                           Scalar radius);
+
+    ImmersedBoundaryObject(const std::string& name,
+                           const FiniteVolumeGrid2D& grid,
+                           const std::vector<Point2D>& vertices);
+
+    Shape2D& shape() { return *shapePtr_; }
+    const Shape2D& shape() const { return *shapePtr_; }
 
     const Point2D& boundaryPoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).first; }
     const Point2D& imagePoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).second; }
@@ -44,6 +52,7 @@ protected:
 
     std::string name_;
     const FiniteVolumeGrid2D &grid_;
+    std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<size_t, std::pair<Vector2D, Vector2D> > stencilPoints_;
     std::map<size_t, std::pair< std::vector< Ref<const Cell> >, BilinearInterpolation > > imagePointStencils_;

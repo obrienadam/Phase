@@ -1,0 +1,95 @@
+; Boundary conditions for the 2D immersed boundary airfoil
+
+Boundaries
+{
+  u
+  {
+    x+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    y+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    x-
+    {
+      type fixed
+      value (1,0)
+    }
+
+    y-
+    {
+      type normal_gradient
+      value (0,0)
+    }
+  }
+
+  p
+  {
+    x+
+    {
+      type fixed
+      value 0
+    }
+
+    y+
+    {
+      type fixed
+      value 0
+    }
+
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y-
+    {
+      type fixed
+      value 0
+    }    
+  }
+  
+  gamma
+  {
+    *
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}
+
+ImmersedBoundaries
+{
+  Airfoil1
+  {
+    geometry
+    {
+      type polygon
+      center (1.3,1) ; will center the polygon here
+      file naca0015
+
+      scale 2
+      rotate -12
+    }
+
+    u
+    {
+      type fixed
+      value (0,0)
+    }
+
+    p
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}

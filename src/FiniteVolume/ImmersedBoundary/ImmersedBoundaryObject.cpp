@@ -5,11 +5,20 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const Point2D& center,
                                                Scalar radius)
     :
-      Circle(center, radius),
       name_(name),
       grid_(grid)
 {
+    shapePtr_ = std::shared_ptr<Shape2D>(new Circle(center, radius));
+}
 
+ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
+                                               const FiniteVolumeGrid2D& grid,
+                                               const std::vector<Point2D> &vertices)
+    :
+      name_(name),
+      grid_(grid)
+{
+    shapePtr_ = std::shared_ptr<Shape2D>(new Polygon(vertices));
 }
 
 Scalar ImmersedBoundaryObject::imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const
@@ -64,7 +73,7 @@ const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const
 
 void ImmersedBoundaryObject::flagIbCells()
 {
-    auto internalCells = grid_.activeCells().rangeSearch(*this);
+    auto internalCells = grid_.activeCells().rangeSearch(shape());
     std::vector<size_t> internalCellIds;
 
     for(const Cell &cell: internalCells)
@@ -110,7 +119,7 @@ void ImmersedBoundaryObject::constructStencils()
 
     for(const Cell& cell: cells())
     {
-        const Point2D bp = nearestIntersect(cell.centroid()), ip = 2.*bp - cell.centroid();
+        const Point2D bp = shape().nearestIntersect(cell.centroid()), ip = 2.*bp - cell.centroid();
 
         stencilPoints_[cell.id()] = std::make_pair(bp, ip);
 

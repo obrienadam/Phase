@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "ImmersedBoundary.h"
 #include "Solver.h"
 #include "GhostCellImmersedBoundary.h"
@@ -13,6 +15,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
     }
     catch(...)
     {
+        printf("No immersed boundaries present.\n");
         return;
     }
 
@@ -20,13 +23,93 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
     {
         printf("Initializing immersed boundary object \"%s\".\n", ibObject.first.c_str());
 
-        ibObjs_.push_back(
-                    ImmersedBoundaryObject(ibObject.first,
-                                           solver_.grid(),
-                                           Vector2D(ibObject.second.get<std::string>("geometry.center")),
-                                           ibObject.second.get<Scalar>("geometry.radius"))
-                    );
+        //- Initialize the geometry
+        const std::string type = ibObject.second.get<std::string>("geometry.type");
+        const Point2D center = Point2D(ibObject.second.get<std::string>("geometry.center"));
 
+        if(type == "circle")
+        {
+            ibObjs_.push_back(
+                        ImmersedBoundaryObject(ibObject.first,
+                                               solver_.grid(),
+                                               center,
+                                               ibObject.second.get<Scalar>("geometry.radius"))
+                        );
+        }
+        else if(type == "box")
+        {
+            Scalar halfWidth = ibObject.second.get<Scalar>("geometry.width")/2.,
+                    halfHeight = ibObject.second.get<Scalar>("geometry.height")/2.;
+
+            std::vector<Point2D> box = {
+                center + Vector2D(-halfWidth, -halfHeight),
+                center + Vector2D(halfWidth, -halfHeight),
+                center + Vector2D(halfWidth, halfHeight),
+                center + Vector2D(-halfWidth, halfHeight)
+            };
+
+            ibObjs_.push_back(
+                        ImmersedBoundaryObject(ibObject.first,
+                                               solver_.grid(),
+                                               box)
+                        );
+        }
+        else if(type == "polygon")
+        {
+            std::ifstream fin;
+            std::vector<Point2D> verts;
+            std::string filename = "case/";
+            filename += ibObject.second.get<std::string>("geometry.file").c_str();
+
+            fin.open(filename.c_str());
+
+            if(!fin.is_open())
+                throw Exception("ImmersedBoundary", "ImmersedBoundary", "failed to open file \"" + filename + "\".");
+
+            printf("Reading data for \"%s\" from file \"%s\".\n", ibObject.first.c_str(), filename.c_str());
+
+            while(!fin.eof())
+            {
+                Scalar x, y;
+                fin >> x;
+                fin >> y;
+
+                verts.push_back(Point2D(x, y));
+            }
+
+            fin.close();
+
+            Vector2D translation = center - Polygon(verts).centroid();
+
+            for(Point2D &vert: verts)
+                vert += translation;
+
+            ibObjs_.push_back(
+                        ImmersedBoundaryObject(ibObject.first,
+                                               solver_.grid(),
+                                               verts)
+                        );
+        }
+        else
+            throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject", "invalid geometry type \"" + type + "\".");
+
+        //- Optional geometry parameters
+        boost::optional<Scalar> scaleFactor = ibObject.second.get_optional<Scalar>("geometry.scale");
+        boost::optional<Scalar> rotationAngle = ibObject.second.get_optional<Scalar>("geometry.rotate");
+
+        if(scaleFactor)
+        {
+            printf("Scaling \"%s\" by a factor of %lf.\n", ibObject.first.c_str(), scaleFactor.get());
+            ibObjs_.back().shape().scale(scaleFactor.get());
+        }
+
+        if(rotationAngle)
+        {
+            printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObject.first.c_str(), rotationAngle.get());
+            ibObjs_.back().shape().rotate(rotationAngle.get()*M_PI/180.);
+        }
+
+        //- Boundary information
         for(const auto& child: ibObject.second)
         {
             if(child.first == "geometry")

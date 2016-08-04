@@ -1,0 +1,49 @@
+; Test case for the 2D immersed boundary box
+
+CaseName ImmersedBoundaryBox2D
+
+Solver
+{
+	timeDependent On
+	maxIterations 100
+	timeStep 1e-2
+	maxCo 0.8
+	maxTime 10
+
+	momentumRelaxation 1
+	pressureCorrectionRelaxation 0.5
+	numInnerIterations 2
+	numPressureCorrections 1
+	smoothingKernelRadius 0.0401
+}
+
+Properties
+{
+	rho 998
+	mu 8.94e-4
+	g (0,0)
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 120
+	nCellsY 80
+
+	; Rectilinear parameters
+	width 3
+	height 2
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields rho,mu,cell_status,p,pCorr
+}
+
+System
+{
+  fileWriteFrequency 10
+  consoleOutputFrequency 1
+}

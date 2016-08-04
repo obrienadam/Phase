@@ -29,11 +29,17 @@ public:
 
     //- Intersections
     virtual Point2D nearestIntersect(const Point2D& testPoint) const;
+    virtual std::pair<Point2D, bool> firstIntersect(Point2D ptA, Point2D ptB) const;
 
     virtual void operator+=(const Vector2D& translationVec);
     virtual void operator-=(const Vector2D& translationVec);
-    virtual Polygon scale(Scalar factor) const;
+
+    Polygon scale(Scalar factor) const;
+
+    virtual void scale(Scalar factor);
     virtual void rotate(Scalar theta);
+
+    boost::geometry::model::box<Point2D> boundingBox() const;
 
     //- Iterators
     std::vector<Point2D>::const_iterator begin() const { return boost::geometry::exterior_ring(poly_).begin(); }

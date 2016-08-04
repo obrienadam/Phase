@@ -31,33 +31,15 @@ void CellGroup::remove(const Cell &cell)
 }
 
 //- Searching
-std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Circle& circle) const
+std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Shape2D& shape) const
 {
-    auto inCircle = [&circle](const Value &val) { return circle.isInside(val.first); };
+    auto insideShape = [&shape](const Value &val) { return shape.isInside(val.first); };
     std::vector<Value> result;
 
-    boost::geometry::model::box<Point2D> box(Point2D(circle.centroid().x - circle.radius(),
-                                                     circle.centroid().y - circle.radius()),
-                                             Point2D(circle.centroid().x + circle.radius(),
-                                                     circle.centroid().y + circle.radius()));
+    boost::geometry::model::box<Point2D> box = shape.boundingBox();
 
     rTree_.query(boost::geometry::index::within(box)
-                 && boost::geometry::index::satisfies(inCircle),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
-
-std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Polygon& pgn) const
-{
-    auto inPolygon = [&pgn](const Value &val){ return pgn.isInside(val.first); };
-    std::vector<Value> result;
-
-    boost::geometry::model::box<Point2D> box;
-    boost::geometry::envelope(pgn.boostPolygon(), box);
-
-    rTree_.query(boost::geometry::index::within(box)
-                 && boost::geometry::index::satisfies(inPolygon),
+                 && boost::geometry::index::satisfies(insideShape),
                  std::back_inserter(result));
 
     return getRefs(result);

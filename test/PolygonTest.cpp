@@ -226,5 +226,4 @@ BOOST_AUTO_TEST_CASE(PolygonSplitTest)
                         1e-8);
 }
 
-
 BOOST_AUTO_TEST_SUITE_END()

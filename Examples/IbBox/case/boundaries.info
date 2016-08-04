@@ -1,0 +1,93 @@
+; Boundary conditions for the 2D immersed boundary box
+
+Boundaries
+{
+  u
+  {
+    x+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    y+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    x-
+    {
+      type fixed
+      value (1,0)
+    }
+
+    y-
+    {
+      type normal_gradient
+      value (0,0)
+    }
+  }
+
+  p
+  {
+    x+
+    {
+      type fixed
+      value 0
+    }
+
+    y+
+    {
+      type fixed
+      value 0
+    }
+
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y-
+    {
+      type fixed
+      value 0
+    }    
+  }
+  
+  gamma
+  {
+    *
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}
+
+ImmersedBoundaries
+{
+  Box1
+  {
+    geometry
+    {
+      type box
+      center (0.75,1)
+      width 0.25
+      height 0.25
+    }
+
+    u
+    {
+      type fixed
+      value (0,0)
+    }
+
+    p
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}

@@ -75,7 +75,7 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(nb.cell()))
                 {
-                    Point2D xc = ibObj.firstIntersect(cell.centroid(), nb.cell().centroid()).first;
+                    Point2D xc = ibObj.shape().firstIntersect(cell.centroid(), nb.cell().centroid()).first;
                     sSqr = (xc - cell.centroid()).magSqr();
                     dx = xc.x - cell.centroid().x;
                     dy = xc.y - cell.centroid().y;
@@ -102,7 +102,7 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(dg.cell()))
                 {
-                    Point2D xc = ibObj.firstIntersect(cell.centroid(), dg.cell().centroid()).first;
+                    Point2D xc = ibObj.shape().firstIntersect(cell.centroid(), dg.cell().centroid()).first;
                     sSqr = (xc - cell.centroid()).magSqr();
                     dx = xc.x - cell.centroid().x;
                     dy = xc.y - cell.centroid().y;
@@ -205,9 +205,9 @@ void Celeste::computeCurvature()
                 {
                     if(ibObj.cells().isInGroup(nb.cell()))
                     {
-                        Point2D xc = ibObj.firstIntersect(cell.centroid(), nb.cell().centroid()).first;
+                        Point2D xc = ibObj.shape().firstIntersect(cell.centroid(), nb.cell().centroid()).first;
                         sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.shape().centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
                         break;
                     }
                 }
@@ -226,9 +226,9 @@ void Celeste::computeCurvature()
                 {
                     if(ibObj.cells().isInGroup(dg.cell()))
                     {
-                        Point2D xc = ibObj.firstIntersect(cell.centroid(), dg.cell().centroid()).first;
+                        Point2D xc = ibObj.shape().firstIntersect(cell.centroid(), dg.cell().centroid()).first;
                         sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.shape().centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
                         break;
                     }
                 }

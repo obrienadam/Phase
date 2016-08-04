@@ -7,7 +7,7 @@
 #include <boost/geometry/index/rtree.hpp>
 
 #include "Cell.h"
-#include "Circle.h"
+#include "Shape2D.h"
 
 typedef std::set< Ref<const Cell> > CellSet;
 
@@ -34,8 +34,7 @@ public:
     virtual void remove(const Cell &cell);
 
     //- Searching
-    std::vector< Ref<const Cell> > rangeSearch(const Circle& circle) const;
-    std::vector< Ref<const Cell> > rangeSearch(const Polygon& pgn) const;
+    std::vector< Ref<const Cell> > rangeSearch(const Shape2D& shape) const;
     std::vector< Ref<const Cell> > kNearestNeighbourSearch(const Point2D& pt, size_t k) const;
 
     //- Iterators
