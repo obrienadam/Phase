@@ -7,17 +7,14 @@ class Node : public Point2D
 {
 public:
 
-    Node(Scalar x = 0., Scalar y = 0., size_t id = 0) : Point2D(x, y), id_(id) { }
+    Node(Scalar x, Scalar y, Label id) : Point2D(x, y), id_(id) { }
+    explicit Node(const Point2D& point, Label id) : Point2D(point), id_(id) {}
 
-    size_t id() const { return id_; }
-
-    bool operator ==(const Node& other) const;
+    Label id() const { return id_; }
 
 private:
 
-    size_t id_;
-
-    friend class FiniteVolumeGrid2D;
+    Label id_;
 };
 
 #endif

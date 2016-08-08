@@ -18,48 +18,51 @@ public:
 
     enum {INACTIVE = -1};
 
-    Cell(const std::vector<size_t>& faceIds, std::vector<Face>& faces, bool isActive = true);
+    Cell(const std::vector<Label>& nodeIds, const std::vector<Node>& nodes);
 
+    //- Status
+    void setActive() { isActive_ = true; }
+    void setInactive() { isActive_ = false; globalIndex_ = INACTIVE; }
     bool isActive() const { return isActive_; }
 
+    //- Geometry
     Scalar volume() const { return volume_; }
     const Point2D& centroid() const { return centroid_; }
 
-    size_t id() const { return id_; }
-    int globalIndex() const { return globalIndex_; }
+    //- Id
+    Label id() const { return id_; }
+    Index globalIndex() const { return globalIndex_; }
 
+    //- Links
     void addDiagonalLink(const Cell& cell);
 
-    const std::vector< Ref<const Face> >& faces() const { return faces_; }
-    const std::vector<size_t>& nodeIds() const { return nodeIds_; }
-    const Polygon& shape() const { return cellShape_; }
     const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
     const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
     const std::vector<DiagonalCellLink>& diagonals() const { return diagonalLinks_; }
 
-    size_t nFaces() const { return faces_.size(); }
-    size_t nInteriorFaces() const { return interiorLinks_.size(); }
-    size_t nBoundaryFaces() const { return boundaryLinks_.size(); }
-    size_t nNeighbours() const { return interiorLinks_.size(); }
+    //- Nodes
+    const std::vector< Ref<const Node>>& nodes() const { return nodes_; }
+    const Polygon& shape() const { return cellShape_; }
+
+    Size nFaces() const { return nodes_.size(); }
+    Size nInteriorFaces() const { return interiorLinks_.size(); }
+    Size nBoundaryFaces() const { return boundaryLinks_.size(); }
+    Size nNeighbours() const { return interiorLinks_.size(); }
 
     bool isInCell(const Point2D& point) const;
 
 private:
 
-    void computeCellAdjacency();
-
     mutable bool isActive_;
-    mutable size_t globalIndex_;
+    mutable Index globalIndex_;
+    Label id_;
 
     Polygon cellShape_;
 
     Scalar volume_;
     Vector2D centroid_;
 
-    size_t id_;
-
-    std::vector< Ref<const Face> > faces_;
-    std::vector<size_t> nodeIds_;
+    std::vector< Ref<const Node> > nodes_;
 
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;

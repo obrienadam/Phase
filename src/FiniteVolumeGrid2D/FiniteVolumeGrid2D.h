@@ -16,21 +16,18 @@ class FiniteVolumeGrid2D
 {
 public:
 
-    FiniteVolumeGrid2D(size_t nNodes = 0, size_t nCells = 0, size_t nFaces = 0);
+    FiniteVolumeGrid2D(Size nNodes = 0, Size nCells = 0, Size nFaces = 0);
 
     //- Size info
-    size_t nNodes() const { return nodes_.size(); }
-    size_t nCells() const { return cells_.size(); }
-    size_t nFaces() const { return faces_.size(); }
-
-    size_t nActiveCells() const { return activeCells_.size(); }
-
+    Size nNodes() const { return nodes_.size(); }
+    Size nCells() const { return cells_.size(); }
+    Size nFaces() const { return faces_.size(); }
+    Size nActiveCells() const { return activeCells_.size(); }
     std::string gridInfo() const;
 
     //- Create grid entities
-    size_t createFace(size_t lNodeId, size_t rNodeId, Face::Type type = Face::INTERIOR);
-    size_t createCell(const std::vector<size_t>& faceIds);
-    size_t addNode(Point2D point);
+    Label createCell(const std::vector<Label> &nodeIds);
+    Label addNode(const Point2D& point);
 
     //- Node related methods
     const std::vector<Node>& nodes() const { return nodes_; }
@@ -56,8 +53,8 @@ public:
     const std::vector< Ref<const Face> >& interiorFaces() const { return interiorFaces_; }
     const std::vector< Ref<const Face> >& boundaryFaces() const { return boundaryFaces_; }
 
-    bool faceExists(size_t lNodeId, size_t rNodeId) const;
-    size_t findFace(size_t lNodeId, size_t rNodeId) const { return faceDirectory_.find(std::pair<size_t, size_t>(lNodeId, rNodeId))->second; }
+    bool faceExists(Label n1, Label n2) const;
+    Label findFace(Label n1, Label n2) const;
 
     //- Patch related methods
     void addPatch(const std::string& patchName);
@@ -93,7 +90,7 @@ protected:
     //- Face related data
     std::vector<Face> faces_;
 
-    std::map<std::pair<size_t, size_t>, size_t> faceDirectory_; // A directory that can find a face given the two node ids
+    std::map<std::pair<Label, Label>, Label> faceDirectory_; // A directory that can find a face given the two node ids
 
     std::vector< Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
     std::vector< Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell

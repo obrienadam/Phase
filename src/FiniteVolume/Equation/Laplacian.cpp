@@ -5,7 +5,7 @@ namespace fv
 
 Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 {
-    const size_t nCells = field.grid.nActiveCells();
+    const Size nCells = field.grid.nActiveCells();
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -14,12 +14,12 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t row = cell.globalIndex();
+        Index row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            size_t col = nb.cell().globalIndex();
+            Index col = nb.cell().globalIndex();
             Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
@@ -58,7 +58,7 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 
 Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, ScalarFiniteVolumeField& field)
 {
-    const size_t nCells = field.grid.nActiveCells();
+    const Size nCells = field.grid.nActiveCells();
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -67,12 +67,12 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t row = cell.globalIndex();
+        Index row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            size_t col = nb.cell().globalIndex();
+            Index col = nb.cell().globalIndex();
             Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
@@ -111,7 +111,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
 Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, VectorFiniteVolumeField& field)
 {
-    const size_t nActiveCells = field.grid.nActiveCells();
+    const Size nActiveCells = field.grid.nActiveCells();
 
     std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -120,15 +120,15 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + nActiveCells;
+        Index rowX = cell.globalIndex();
+        Index rowY = rowX + nActiveCells;
 
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            size_t colX = nb.cell().globalIndex();
-            size_t colY = colX + nActiveCells;
+            Index colX = nb.cell().globalIndex();
+            Index colY = colX + nActiveCells;
 
             Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;

@@ -77,7 +77,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
             std::vector<Scalar> coeffs = bi(imagePoint);
 
-            std::vector<int> cols = {
+            std::vector<Index> cols = {
                 kNN[0].get().globalIndex(),
                 kNN[1].get().globalIndex(),
                 kNN[2].get().globalIndex(),

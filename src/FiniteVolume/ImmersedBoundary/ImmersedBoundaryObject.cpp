@@ -74,7 +74,7 @@ const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const
 void ImmersedBoundaryObject::flagIbCells()
 {
     auto internalCells = grid_.activeCells().rangeSearch(shape());
-    std::vector<size_t> internalCellIds;
+    std::vector<Label> internalCellIds;
 
     for(const Cell &cell: internalCells)
         internalCellIds.push_back(cell.id());

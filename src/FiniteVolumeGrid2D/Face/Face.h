@@ -26,7 +26,7 @@ public:
 
    const Patch &patch() const { return *patchPtr_; }
 
-   size_t id() const { return id_; }
+   Label id() const { return id_; }
 
    bool isInterior() const { return type_ == INTERIOR; }
    bool isBoundary() const { return type_ == BOUNDARY; }
@@ -53,7 +53,7 @@ private:
 
     mutable const Patch *patchPtr_;
 
-    size_t id_;
+    Label id_;
 
     std::vector< Ref<const Node> > nodes_;
     std::vector< Ref<const Cell> > cells_;

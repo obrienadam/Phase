@@ -1,7 +1,7 @@
 #include "StructuredRectilinearGrid.h"
 #include "Exception.h"
 
-StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height, int nCellsX, int nCellsY)
+StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY)
     :
       FiniteVolumeGrid2D((nCellsX + 1)*(nCellsY + 1),
                          nCellsX*nCellsY,
@@ -12,48 +12,33 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     width_ = width;
     height_ = height;
 
-    int nNodesX = nCellsX + 1;
-    int nNodesY = nCellsY + 1;
+    Size nNodesX = nCellsX + 1;
+    Size nNodesY = nCellsY + 1;
     Scalar hx = width/nCellsX_;
     Scalar hy = height/nCellsY_;
 
     //- Create nodes
-    for(int j = 0; j < nNodesY; ++j)
-        for(int i = 0; i < nNodesX; ++i)
+    for(Label j = 0; j < nNodesY; ++j)
+        for(Label i = 0; i < nNodesX; ++i)
             addNode(Point2D(i*hx, j*hy));
 
-    //- Create faces
-    for(int j = 0; j < nCellsY_; ++j)
-        for(int i = 0; i < nNodesX; ++i)
-        {
-            Face::Type type = i == 0 || i == nCellsX ? Face::BOUNDARY : Face::INTERIOR;
-            createFace(node(i, j).id(), node(i, j + 1).id(), type);
-        }
-
-    for(int j = 0; j < nNodesY; ++j)
-        for(int i = 0; i < nCellsX_; ++i)
-        {
-            Face::Type type = j == 0 || j == nCellsY ? Face::BOUNDARY : Face::INTERIOR;
-            createFace(node(i, j).id(), node(i + 1, j).id(), type);
-        }
-
     //- Create cells
-    for(int j = 0; j < nCellsY_; ++j)
-        for(int i = 0; i < nCellsX_; ++i)
+    for(Label j = 0; j < nCellsY_; ++j)
+        for(Label i = 0; i < nCellsX_; ++i)
         {
-            std::vector<size_t> fids = {
-                findFace(node(i, j).id(), node(i + 1, j).id()),
-                findFace(node(i + 1, j).id(), node(i + 1, j + 1).id()),
-                findFace(node(i + 1, j + 1).id(), node(i, j + 1).id()),
-                findFace(node(i, j + 1).id(), node(i, j).id()),
+            std::vector<Label> nids = {
+                node(i, j).id(),
+                node(i + 1, j).id(),
+                node(i + 1, j + 1).id(),
+                node(i, j + 1).id(),
             };
 
-            createCell(fids);
+            createCell(nids);
         }
 
     //- Add the diagonal links
-    for(int j = 0; j < nCellsY_; ++j)
-        for(int i = 0; i < nCellsX_; ++i)
+    for(Label j = 0; j < nCellsY_; ++j)
+        for(Label i = 0; i < nCellsX_; ++i)
         {
             Cell &cell = operator ()(i, j);
 
@@ -80,7 +65,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     std::vector< Ref<Face> > xm, xp, ym, yp;
 
     // x- patch
-    for(int j = 0; j < nCellsY_; ++j)
+    for(Label j = 0; j < nCellsY_; ++j)
     {
         xm.push_back(
                     std::ref(faces_[findFace(node(0, j).id(), node(0, j + 1).id())])
@@ -89,7 +74,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     applyPatch("x-", xm);
 
     // x+ patch
-    for(int j = 0; j < nCellsY_; ++j)
+    for(Label j = 0; j < nCellsY_; ++j)
     {
         xp.push_back(
                     std::ref(faces_[findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())])
@@ -98,7 +83,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     applyPatch("x+", xp);
 
     // y- patch
-    for(int i = 0; i < nCellsX_; ++i)
+    for(Label i = 0; i < nCellsX_; ++i)
     {
         ym.push_back(
                     std::ref(faces_[findFace(node(i, 0).id(), node(i + 1, 0).id())])
@@ -107,7 +92,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     applyPatch("y-", ym);
 
     // y+ patch
-    for(int i = 0; i < nCellsX_; ++i)
+    for(Label i = 0; i < nCellsX_; ++i)
     {
         yp.push_back(
                     std::ref(faces_[findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())])
@@ -120,7 +105,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     computeBoundingBox();
 }
 
-Cell& StructuredRectilinearGrid::operator()(int i, int j)
+Cell& StructuredRectilinearGrid::operator()(Label i, Label j)
 {
     if(i < 0 || i >= nCellsX_
             || j < 0 || j >= nCellsY_)
@@ -129,7 +114,7 @@ Cell& StructuredRectilinearGrid::operator()(int i, int j)
     return cells_[nCellsX_*j + i];
 }
 
-const Cell& StructuredRectilinearGrid::operator()(int i, int j) const
+const Cell& StructuredRectilinearGrid::operator()(Label i, Label j) const
 {
     if(i < 0 || i >= nCellsX_
             || j < 0 || j >= nCellsY_)
@@ -138,7 +123,7 @@ const Cell& StructuredRectilinearGrid::operator()(int i, int j) const
     return cells_[nCellsX_*j + i];
 }
 
-const Node& StructuredRectilinearGrid::node(int i, int j) const
+const Node& StructuredRectilinearGrid::node(Label i, Label j) const
 {
     if(i < 0 || i > nCellsX_
             || j < 0 || j > nCellsY_)

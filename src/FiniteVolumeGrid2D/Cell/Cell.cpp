@@ -2,37 +2,17 @@
 #include "Polygon.h"
 #include "Exception.h"
 
-Cell::Cell(const std::vector<size_t> &faceIds, std::vector<Face> &faces, bool isActive)
+Cell::Cell(const std::vector<Label> &nodeIds, const std::vector<Node> &nodes)
 {   
-    isActive_ = isActive;
+    isActive_ = true;
 
-    for (size_t faceId: faceIds)
-    {
-        Ref<const Face> face = faces[faceId];
-        faces_.push_back(face);
-    }
+    for (Label id: nodeIds)
+        nodes_.push_back(std::cref(nodes[id]));
 
     std::vector<Point2D> vertices;
 
-    for(int i = 0, end = faces_.size(); i < end; ++i)
-    {
-        const Face &face1 = faces_[i], &face2 = faces_[(i + 1)%faces_.size()];
-
-        if (face1.rNode() == face2.lNode() || face1.rNode() == face2.rNode())
-        {
-            vertices.push_back(face1.rNode());
-            nodeIds_.push_back(face1.rNode().id());
-        }
-        else if(face1.lNode() == face2.lNode() || face1.lNode() == face2.rNode())
-        {
-            vertices.push_back(face1.lNode());
-            nodeIds_.push_back(face1.lNode().id());
-        }
-        else
-        {
-            throw Exception("Cell", "Cell", "adjacent faces do not share a node.");
-        }
-    }
+    for(const Node& node: nodes_)
+        vertices.push_back(node);
 
     cellShape_ = Polygon(vertices);
 
@@ -54,28 +34,3 @@ bool Cell::isInCell(const Point2D &point) const
 }
 
 //- Private methods
-
-void Cell::computeCellAdjacency()
-{
-    interiorLinks_.clear();
-    boundaryLinks_.clear();
-
-    for(const Face& face: faces_)
-    {
-        if(face.isInterior())
-        {
-            const Cell& cell = this == &face.lCell() ? face.rCell() : face.lCell();
-            InteriorLink link(*this, face, cell, this == &face.lCell() ? InteriorLink::OUTGOING : InteriorLink::INGOING);
-            interiorLinks_.push_back(link);
-        }
-        else if(face.isBoundary())
-        {
-            BoundaryLink link(*this, face);
-            boundaryLinks_.push_back(link);
-        }
-        else
-        {
-            throw Exception("Cell", "computeCellAdjacency", "unrecognized face type.");
-        }
-    }
-}

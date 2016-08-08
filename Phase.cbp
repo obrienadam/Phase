@@ -5,7 +5,7 @@
       <Option title="Phase" />
       <Option makefile_is_custom="1" />
       <Option compiler="gcc" />
-      <Option virtualFolders="CMake Files\;CMake Files\src\;CMake Files\src\System\;CMake Files\src\Math\;CMake Files\src\Geometry\;CMake Files\src\FiniteVolumeGrid2D\;CMake Files\src\FiniteVolumeGrid2D\Node\;CMake Files\src\FiniteVolumeGrid2D\Cell\;CMake Files\src\FiniteVolumeGrid2D\Face\;CMake Files\src\FiniteVolumeGrid2D\Link\;CMake Files\src\Solvers\;CMake Files\src\Solvers\Multiphase\;CMake Files\src\Solvers\ImmersedBoundary\;CMake Files\src\FiniteVolume\;CMake Files\src\FiniteVolume\Field\;CMake Files\src\FiniteVolume\Equation\;CMake Files\src\Viewers\;CMake Files\modules\;CMake Files\test\;" />
+      <Option virtualFolders="CMake Files\;CMake Files\src\;CMake Files\src\System\;CMake Files\src\Math\;CMake Files\src\Geometry\;CMake Files\src\FiniteVolumeGrid2D\;CMake Files\src\FiniteVolumeGrid2D\Node\;CMake Files\src\FiniteVolumeGrid2D\Cell\;CMake Files\src\FiniteVolumeGrid2D\Face\;CMake Files\src\FiniteVolumeGrid2D\Link\;CMake Files\src\Solvers\;CMake Files\src\Solvers\Multiphase\;CMake Files\src\Solvers\Coupled\;CMake Files\src\FiniteVolume\;CMake Files\src\FiniteVolume\Field\;CMake Files\src\FiniteVolume\Equation\;CMake Files\src\FiniteVolume\Discretization\;CMake Files\src\FiniteVolume\ImmersedBoundary\;CMake Files\src\Viewers\;CMake Files\modules\;CMake Files\test\;" />
       <Build>
       <Target title="all">
          <Option working_dir="/home/aobrien/Projects/Phase" />
@@ -35,9 +35,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -46,7 +47,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -67,9 +68,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -78,7 +80,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -99,9 +101,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -110,7 +113,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -131,9 +134,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -142,7 +146,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -163,9 +167,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -174,7 +179,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -195,9 +200,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -206,7 +212,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -227,9 +233,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -238,7 +245,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -259,9 +266,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -270,7 +278,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -291,9 +299,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -302,7 +311,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -323,9 +332,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -334,7 +344,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -355,9 +365,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -366,7 +377,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -387,9 +398,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -398,7 +410,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -419,9 +431,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -430,7 +443,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -451,9 +464,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -462,7 +476,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -483,9 +497,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -494,7 +509,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -515,9 +530,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -526,7 +542,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -547,9 +563,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -558,7 +575,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -579,9 +596,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -590,7 +608,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -611,9 +629,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -622,7 +641,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -643,9 +662,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -654,7 +674,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -667,17 +687,18 @@
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="ImmersedBoundary">
-         <Option output="/home/aobrien/Projects/Phase/lib/libImmersedBoundary.a" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+      <Target title="Coupled">
+         <Option output="/home/aobrien/Projects/Phase/lib/libCoupled.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
          <Option object_output="./" />
          <Option type="2" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -686,30 +707,31 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 ImmersedBoundary" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 Coupled" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="ImmersedBoundary/fast">
-         <Option output="/home/aobrien/Projects/Phase/lib/libImmersedBoundary.a" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+      <Target title="Coupled/fast">
+         <Option output="/home/aobrien/Projects/Phase/lib/libCoupled.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
          <Option object_output="./" />
          <Option type="2" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -718,17 +740,17 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 ImmersedBoundary/fast" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 Coupled/fast" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Solvers/Coupled/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
       <Target title="Field">
@@ -739,9 +761,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -750,7 +773,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -771,9 +794,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -782,7 +806,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -803,9 +827,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -814,7 +839,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -835,9 +860,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -846,7 +872,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -859,17 +885,18 @@
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Equation/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="Viewers">
-         <Option output="/home/aobrien/Projects/Phase/lib/libViewers.a" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/src/Viewers" />
+      <Target title="Discretization">
+         <Option output="/home/aobrien/Projects/Phase/lib/libDiscretization.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
          <Option object_output="./" />
          <Option type="2" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -878,7 +905,139 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 Discretization" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="Discretization/fast">
+         <Option output="/home/aobrien/Projects/Phase/lib/libDiscretization.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 Discretization/fast" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="ImmersedBoundary">
+         <Option output="/home/aobrien/Projects/Phase/lib/libImmersedBoundary.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 ImmersedBoundary" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="ImmersedBoundary/fast">
+         <Option output="/home/aobrien/Projects/Phase/lib/libImmersedBoundary.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 ImmersedBoundary/fast" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="Viewers">
+         <Option output="/home/aobrien/Projects/Phase/lib/libViewers.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/src/Viewers" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -899,9 +1058,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -910,7 +1070,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -923,17 +1083,18 @@
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/src/Viewers/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="phaseImmersedBoundary">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseImmersedBoundary" prefix_auto="0" extension_auto="0" />
+      <Target title="phaseCoupled">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseCoupled" prefix_auto="0" extension_auto="0" />
          <Option working_dir="/home/aobrien/Projects/Phase/bin" />
          <Option object_output="./" />
          <Option type="1" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -942,30 +1103,31 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseImmersedBoundary" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseCoupled" />
             <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
             <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="phaseImmersedBoundary/fast">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseImmersedBoundary" prefix_auto="0" extension_auto="0" />
+      <Target title="phaseCoupled/fast">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseCoupled" prefix_auto="0" extension_auto="0" />
          <Option working_dir="/home/aobrien/Projects/Phase/bin" />
          <Option object_output="./" />
          <Option type="1" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -974,30 +1136,31 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseImmersedBoundary/fast" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseCoupled/fast" />
             <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
             <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="phaseMultiphase">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseMultiphase" prefix_auto="0" extension_auto="0" />
+      <Target title="phaseFractionalStep">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseFractionalStep" prefix_auto="0" extension_auto="0" />
          <Option working_dir="/home/aobrien/Projects/Phase/bin" />
          <Option object_output="./" />
          <Option type="1" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1006,30 +1169,31 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseMultiphase" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseFractionalStep" />
             <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
             <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="phaseMultiphase/fast">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseMultiphase" prefix_auto="0" extension_auto="0" />
+      <Target title="phaseFractionalStep/fast">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseFractionalStep" prefix_auto="0" extension_auto="0" />
          <Option working_dir="/home/aobrien/Projects/Phase/bin" />
          <Option object_output="./" />
          <Option type="1" />
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1038,14 +1202,80 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
             <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
          </Compiler>
          <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseMultiphase/fast" />
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseFractionalStep/fast" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="phaseFractionalStepMultiphase">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseFractionalStepMultiphase" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseFractionalStepMultiphase" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="phaseFractionalStepMultiphase/fast">
+         <Option output="/home/aobrien/Projects/Phase/bin/phaseFractionalStepMultiphase" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseFractionalStepMultiphase/fast" />
             <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
             <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
@@ -1059,9 +1289,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1070,7 +1301,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1091,9 +1322,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1102,7 +1334,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1110,6 +1342,72 @@
          </Compiler>
          <MakeCommands>
             <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phasePiso/fast" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="phasePisoMultiphase">
+         <Option output="/home/aobrien/Projects/Phase/bin/phasePisoMultiphase" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phasePisoMultiphase" />
+            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="phasePisoMultiphase/fast">
+         <Option output="/home/aobrien/Projects/Phase/bin/phasePisoMultiphase" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
+            <Add directory="/home/aobrien/Projects/Phase/src/System" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phasePisoMultiphase/fast" />
             <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
             <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
@@ -1123,9 +1421,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1134,7 +1433,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1155,9 +1454,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1166,7 +1466,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1179,134 +1479,6 @@
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="phaseSimple">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseSimple" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseSimple" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
-      <Target title="phaseSimple/fast">
-         <Option output="/home/aobrien/Projects/Phase/bin/phaseSimple" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 phaseSimple/fast" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/modules/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
-      <Target title="ImmersedBoundaryTest">
-         <Option output="/home/aobrien/Projects/Phase/bin/ImmersedBoundaryTest" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 ImmersedBoundaryTest" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
-      <Target title="ImmersedBoundaryTest/fast">
-         <Option output="/home/aobrien/Projects/Phase/bin/ImmersedBoundaryTest" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 ImmersedBoundaryTest/fast" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
       <Target title="MatrixTest">
          <Option output="/home/aobrien/Projects/Phase/bin/MatrixTest" prefix_auto="0" extension_auto="0" />
          <Option working_dir="/home/aobrien/Projects/Phase/bin" />
@@ -1315,9 +1487,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1326,7 +1499,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1347,9 +1520,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1358,7 +1532,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1379,9 +1553,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1390,7 +1565,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1411,9 +1586,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1422,7 +1598,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1443,9 +1619,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1454,7 +1631,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1475,9 +1652,10 @@
          <Option compiler="gcc" />
          <Compiler>
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
+            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
             <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
@@ -1486,7 +1664,7 @@
             <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
             <Add directory="/home/aobrien/Projects/Phase/src/Math" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
+            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Coupled" />
             <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
             <Add directory="/home/aobrien/Projects/Phase/src/System" />
             <Add directory="/home/aobrien/Projects/Phase/src/Types" />
@@ -1499,80 +1677,22 @@
             <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
          </MakeCommands>
       </Target>
-      <Target title="RangeSearchTest">
-         <Option output="/home/aobrien/Projects/Phase/bin/RangeSearchTest" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 RangeSearchTest" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
-      <Target title="RangeSearchTest/fast">
-         <Option output="/home/aobrien/Projects/Phase/bin/RangeSearchTest" prefix_auto="0" extension_auto="0" />
-         <Option working_dir="/home/aobrien/Projects/Phase/bin" />
-         <Option object_output="./" />
-         <Option type="1" />
-         <Option compiler="gcc" />
-         <Compiler>
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/BoundaryCondition" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolume/Field" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Face" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link" />
-            <Add directory="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Geometry" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Math" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Solvers/Multiphase" />
-            <Add directory="/home/aobrien/Projects/Phase/src/System" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Types" />
-            <Add directory="/home/aobrien/Projects/Phase/src/Viewers" />
-         </Compiler>
-         <MakeCommands>
-            <Build command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 RangeSearchTest/fast" />
-            <CompileFile command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
-            <Clean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-            <DistClean command="/usr/bin/gmake -f &quot;/home/aobrien/Projects/Phase/test/Makefile&quot;  VERBOSE=1 clean" />
-         </MakeCommands>
-      </Target>
       </Build>
-      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseImmersedBoundary.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseCoupled.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseMultiphase.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseFractionalStep.cpp">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseFractionalStepMultiphase.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/modules/phasePiso.cpp">
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/modules/phasePisoMultiphase.cpp">
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/modules/phasePoisson.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/modules/phaseSimple.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/AdamsBashforth.cpp">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/CrankNicolson.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation/Divergence.cpp">
       </Unit>
@@ -1588,11 +1708,15 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Field/VectorFiniteVolumeField.cpp">
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/GhostCellImmersedBoundary.cpp">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/ImmersedBoundary.cpp">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/ImmersedBoundaryObject.cpp">
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/Cell.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/CellGroup.cpp">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/CellSearch.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/UniqueCellGroup.cpp">
       </Unit>
@@ -1604,15 +1728,17 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/FiniteVolumeGrid2D.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/BoundaryLink.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/BoundaryFaceLink.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/InteriorLink.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/DiagonalCellLink.cpp">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/InteriorFaceLink.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/Link.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node/Node.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/RectilinearGrid2D.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/StructuredRectilinearGrid.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Geometry/BoundingBox.cpp">
       </Unit>
@@ -1626,6 +1752,8 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Geometry/Vector2D.cpp">
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/Math/BilinearInterpolation.cpp">
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/BisectionSearch.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/Matrix.cpp">
@@ -1636,23 +1764,21 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/SparseVector.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ConstructSolver.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Coupled/Coupled.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/BilinearInterpolation.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Coupled/CoupledEquation.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/GhostCellImmersedBoundary.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/FractionalStep.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/ImmersedBoundary.cpp">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/ImmersedBoundaryObject.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Celeste.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Cicsam.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/ContinuumSurfaceForce.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/HeightFunction.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/FractionalStepMultiphase.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Multiphase.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/PisoMultiphase.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Plic.cpp">
       </Unit>
@@ -1661,8 +1787,6 @@
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Piso.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Poisson.cpp">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Simple.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Solver.cpp">
       </Unit>
@@ -1680,15 +1804,15 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/Viewer.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/test/ImmersedBoundaryTest.cpp">
-      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/test/MatrixTest.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/test/PlicTest.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/test/PolygonTest.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/test/RangeSearchTest.cpp">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/AdamsBashforth.h">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/CrankNicolson.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation/Divergence.h">
       </Unit>
@@ -1716,11 +1840,15 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Field/VectorFiniteVolumeField.h">
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/GhostCellImmersedBoundary.h">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/ImmersedBoundary.h">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/ImmersedBoundaryObject.h">
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/Cell.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/CellGroup.h">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/CellSearch.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Cell/UniqueCellGroup.h">
       </Unit>
@@ -1732,15 +1860,17 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/FiniteVolumeGrid2D.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/BoundaryLink.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/BoundaryFaceLink.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/InteriorLink.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/DiagonalCellLink.h">
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/InteriorFaceLink.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Link/Link.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/Node/Node.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/RectilinearGrid2D.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolumeGrid2D/StructuredRectilinearGrid.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Geometry/BoundingBox.h">
       </Unit>
@@ -1760,6 +1890,8 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Geometry/Vector2D.h">
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/Math/BilinearInterpolation.h">
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/BisectionSearch.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/Matrix.h">
@@ -1770,23 +1902,21 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Math/SparseVector.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ConstructSolver.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Coupled/Coupled.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/BilinearInterpolation.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Coupled/CoupledEquation.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/GhostCellImmersedBoundary.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/FractionalStep.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/ImmersedBoundary.h">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/ImmersedBoundaryObject.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Celeste.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Cicsam.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/ContinuumSurfaceForce.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/HeightFunction.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/FractionalStepMultiphase.h">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Multiphase.h">
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/PisoMultiphase.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/Plic.h">
       </Unit>
@@ -1795,8 +1925,6 @@
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Piso.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Poisson.h">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Simple.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Solver.h">
       </Unit>
@@ -1850,8 +1978,8 @@
       <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Multiphase/CMakeLists.txt">
           <Option virtualFolder="CMake Files\src\Solvers\Multiphase\" />
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/ImmersedBoundary/CMakeLists.txt">
-          <Option virtualFolder="CMake Files\src\Solvers\ImmersedBoundary\" />
+      <Unit filename="/home/aobrien/Projects/Phase/src/Solvers/Coupled/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\Solvers\Coupled\" />
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/CMakeLists.txt">
           <Option virtualFolder="CMake Files\src\FiniteVolume\" />
@@ -1861,6 +1989,12 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation/CMakeLists.txt">
           <Option virtualFolder="CMake Files\src\FiniteVolume\Equation\" />
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\FiniteVolume\Discretization\" />
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/ImmersedBoundary/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\FiniteVolume\ImmersedBoundary\" />
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/CMakeLists.txt">
           <Option virtualFolder="CMake Files\src\Viewers\" />

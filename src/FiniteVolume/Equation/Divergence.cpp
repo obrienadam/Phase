@@ -5,7 +5,7 @@ namespace fv
 
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field)
 {
-    const size_t nActiveCells = field.grid.nActiveCells();
+    const Size nActiveCells = field.grid.nActiveCells();
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
@@ -14,12 +14,12 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t row = cell.globalIndex();
+        Index row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            size_t col = nb.cell().globalIndex();
+            Index col = nb.cell().globalIndex();
 
             Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
@@ -60,7 +60,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 
 Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFiniteVolumeField& field)
 {
-    const size_t nActiveCells = field.grid.nActiveCells();
+    const Size nActiveCells = field.grid.nActiveCells();
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -69,14 +69,14 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + nActiveCells;
+        Index rowX = cell.globalIndex();
+        Index rowY = rowX + nActiveCells;
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            size_t colX = nb.cell().globalIndex();
-            size_t colY = colX + nActiveCells;
+            Index colX = nb.cell().globalIndex();
+            Index colY = colX + nActiveCells;
 
             Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
 

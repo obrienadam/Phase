@@ -215,7 +215,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const st
 
             const auto &kNN = ibObj.imagePointCells(cell);
 
-            std::vector<int> cols = {
+            std::vector<Index> cols = {
                 kNN[0].get().globalIndex(),
                 kNN[1].get().globalIndex(),
                 kNN[2].get().globalIndex(),

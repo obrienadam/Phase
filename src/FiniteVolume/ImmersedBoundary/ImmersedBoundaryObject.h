@@ -54,8 +54,8 @@ protected:
     const FiniteVolumeGrid2D &grid_;
     std::shared_ptr<Shape2D> shapePtr_;
 
-    std::map<size_t, std::pair<Vector2D, Vector2D> > stencilPoints_;
-    std::map<size_t, std::pair< std::vector< Ref<const Cell> >, BilinearInterpolation > > imagePointStencils_;
+    std::map<Label, std::pair<Vector2D, Vector2D> > stencilPoints_;
+    std::map<Label, std::pair< std::vector< Ref<const Cell> >, BilinearInterpolation > > imagePointStencils_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefValues_;

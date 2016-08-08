@@ -15,7 +15,7 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
     for(const ImmersedBoundaryObject& ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
         {
-            const size_t row = cell.globalIndex();
+            const Index row = cell.globalIndex();
             const Point2D& imagePoint = ibObj.imagePoint(cell);
 
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
@@ -23,7 +23,7 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
 
             std::vector<Scalar> coeffs = bi(imagePoint);
 
-            std::vector<int> cols = {
+            std::vector<Index> cols = {
                 kNN[0].get().globalIndex(),
                 kNN[1].get().globalIndex(),
                 kNN[2].get().globalIndex(),
@@ -75,15 +75,15 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
 
     std::vector<Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
-    const size_t nActiveCells = field.grid.nActiveCells();
+    const Size nActiveCells = field.grid.nActiveCells();
 
     entries.reserve(10*field.grid.nActiveCells());
 
     for(const ImmersedBoundaryObject &ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
         {
-            const size_t rowX = cell.globalIndex();
-            const size_t rowY = rowX + nActiveCells;
+            const Index rowX = cell.globalIndex();
+            const Index rowY = rowX + nActiveCells;
 
             const Point2D imagePoint = ibObj.imagePoint(cell);
 
@@ -93,14 +93,14 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             std::vector<Scalar> coeffsX = bi(imagePoint), coeffsY;
             coeffsY = coeffsX;
 
-            std::vector<int> colsX = {
+            std::vector<Index> colsX = {
                 kNN[0].get().globalIndex(),
                 kNN[1].get().globalIndex(),
                 kNN[2].get().globalIndex(),
                 kNN[3].get().globalIndex(),
             };
 
-            std::vector<int> colsY(4);
+            std::vector<Index> colsY(4);
             for(int i = 0; i < 4; ++i)
                 colsY[i] = colsX[i] + nActiveCells;
 

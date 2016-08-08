@@ -8,15 +8,15 @@ class StructuredRectilinearGrid : public FiniteVolumeGrid2D
 {
 public:
 
-    StructuredRectilinearGrid(Scalar width, Scalar height, int nCellsX, int nCellsY);
+    StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY);
 
-    Cell& operator ()(int i, int j);
-    const Cell& operator()(int i, int j) const;
-    const Node& node(int i, int j) const;
+    Cell& operator ()(Label i, Label j);
+    const Cell& operator()(Label i, Label j) const;
+    const Node& node(Label i, Label j) const;
 
 protected:
 
-    int nCellsX_, nCellsY_;
+    Size nCellsX_, nCellsY_;
     Scalar width_, height_;
 
 };

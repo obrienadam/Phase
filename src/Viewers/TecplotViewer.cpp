@@ -60,8 +60,9 @@ void TecplotViewer::write(Scalar solutionTime)
 
     for(const Cell& cell: solver_.grid().cells())
     {
-        const auto &nodeIds = cell.nodeIds();
-        fout_ << nodeIds[0] + 1 << " " << nodeIds[1] + 1 << " " << nodeIds[2] + 1 << " " << nodeIds[3] + 1 << "\n";
+        for(const Node& node: cell.nodes())
+            fout_ << node.id() + 1 << " ";
+        fout_ << "\n";
     }
 
     ++nZones_;

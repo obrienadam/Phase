@@ -3,11 +3,10 @@
 
 //- Interior link
 
-InteriorLink::InteriorLink(const Cell &self, const Face &face, const Cell &cell, Direction direction)
+InteriorLink::InteriorLink(const Cell &self, const Face &face, const Cell &cell)
     :
       BoundaryLink(self, face),
-      cell_(cell),
-      direction_(direction)
+      cell_(cell)
 {
     rCellVec_ = cell.centroid() - self.centroid();
 }

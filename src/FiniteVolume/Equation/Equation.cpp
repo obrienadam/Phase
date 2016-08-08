@@ -47,12 +47,12 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +=(const VectorFiniteVolumeField& rhs)
 {
-    const size_t nActiveCells = rhs.grid.nActiveCells();
+    const Size nActiveCells = rhs.grid.nActiveCells();
 
     for(const Cell& cell: rhs.grid.fluidCells())
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + nActiveCells;
+        Index rowX = cell.globalIndex();
+        Index rowY = rowX + nActiveCells;
 
         sources_(rowX) += rhs[cell.id()].x;
         sources_(rowY) += rhs[cell.id()].y;
@@ -64,12 +64,12 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
 template<>
 Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -=(const VectorFiniteVolumeField& rhs)
 {
-    const size_t nActiveCells = rhs.grid.nActiveCells();
+    const Size nActiveCells = rhs.grid.nActiveCells();
 
     for(const Cell& cell: rhs.grid.fluidCells())
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + nActiveCells;
+        Index rowX = cell.globalIndex();
+        Index rowY = rowX + nActiveCells;
 
         sources_(rowX) -= rhs[cell.id()].x;
         sources_(rowY) -= rhs[cell.id()].y;
@@ -83,7 +83,7 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
     {
-        size_t idx = cell.globalIndex();
+        Index idx = cell.globalIndex();
 
         spMat_.coeffRef(idx, idx) /= relaxationFactor;
         boundaries_(idx) += (1. - relaxationFactor)*spMat_.coeff(idx, idx)*field_[cell.id()];
@@ -93,12 +93,12 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 template<>
 void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
-    const size_t nActiveCells = field_.grid.nActiveCells();
+    const Size nActiveCells = field_.grid.nActiveCells();
 
     for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
     {
-        size_t idxX = cell.globalIndex();
-        size_t idxY = idxX + nActiveCells;
+        Index idxX = cell.globalIndex();
+        Index idxY = idxX + nActiveCells;
 
         spMat_.coeffRef(idxX, idxX) /= relaxationFactor;
         boundaries_(idxX) += (1. - relaxationFactor)*spMat_.coeff(idxX, idxX)*field_[cell.id()].x;

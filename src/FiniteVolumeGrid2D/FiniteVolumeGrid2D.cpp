@@ -1,7 +1,7 @@
 #include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
-FiniteVolumeGrid2D::FiniteVolumeGrid2D(size_t nNodes, size_t nCells, size_t nFaces)
+FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
     :
       nodeSearch_(nodes_)
 {
@@ -27,46 +27,66 @@ std::string FiniteVolumeGrid2D::gridInfo() const
 }
 
 //- Create grid entities
-size_t FiniteVolumeGrid2D::createFace(size_t lNodeId, size_t rNodeId, Face::Type type)
+Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
 {
     using namespace std;
-    typedef pair<size_t, size_t> Key;
 
-    Face face(lNodeId, rNodeId, nodes_, type);
-    face.id_ = faces_.size();
+    Label id = cells_.size();
 
-    faces_.push_back(face);
+    cells_.push_back(Cell(nodeIds, nodes_));
 
-    Key key1(lNodeId, rNodeId), key2(rNodeId, lNodeId);
+    Cell &newCell = cells_.back();
+    newCell.id_ = id;
 
-    faceDirectory_.insert(pair<Key, size_t>(key1, face.id()));
-    faceDirectory_.insert(pair<Key, size_t>(key2, face.id()));
+    for(Label i = 0, end = nodeIds.size(); i < end; ++i)
+    {
+        Label n1 = nodeIds[i], n2 = nodeIds[(i + 1)%end];
 
-    if(type == Face::INTERIOR)
-        interiorFaces_.push_back(Ref<const Face>(faces_.back()));
-    else if (type == Face::BOUNDARY)
-        boundaryFaces_.push_back(Ref<const Face>(faces_.back()));
+        auto key = n1 < n2 ? make_pair(n1, n2) : make_pair(n2, n1);
+        auto it = faceDirectory_.find(key);
 
-    return face.id();
+        if(it == faceDirectory_.end()) // face doesn't exist, so create it
+        {
+            Face face = Face(n1, n2, nodes_, Face::BOUNDARY);
+            face.id_ = faces_.size();
+
+            faces_.push_back(face);
+            faceDirectory_[key] = face.id();
+
+            faces_.back().addCell(newCell);
+            newCell.boundaryLinks_.push_back(BoundaryLink(newCell, faces_.back()));
+        }
+        else // face already exists, but is now an interior face
+        {
+            Face &face = faces_[it->second];
+
+            face.type_ = Face::INTERIOR;
+
+            Cell &cell = cells_[face.lCell().id()];
+
+            for(auto it = cell.boundaryLinks_.begin(); it != cell.boundaryLinks_.end(); ++it)
+            {
+                if(it->face().id() == face.id())
+                {
+                    cell.boundaryLinks_.erase(it);
+                    break;
+                }
+            }
+
+            face.addCell(newCell);
+
+            cell.interiorLinks_.push_back(InteriorLink(cell, face, newCell));
+            newCell.interiorLinks_.push_back(InteriorLink(newCell, face, cell));
+        }
+    }
+
+    return newCell.id();
 }
 
-size_t FiniteVolumeGrid2D::createCell(const std::vector<size_t> &faceIds)
+Label FiniteVolumeGrid2D::addNode(const Point2D &point)
 {
-    Cell cell(faceIds, faces_);
-    cell.id_ = cells_.size();
-    cell.globalIndex_ = cell.id();
-    cells_.push_back(cell);
-
-    for(size_t faceId: faceIds)
-        faces_[faceId].addCell(cells_.back());
-
-    return cell.id();
-}
-
-size_t FiniteVolumeGrid2D::addNode(Point2D point)
-{
-    size_t id = nodes_.size();
-    nodes_.push_back(Node(point.x, point.y, id));
+    Label id = nodes_.size();
+    nodes_.push_back(Node(point, id));
     return id;
 }
 
@@ -123,6 +143,28 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& nam
 
 //- Face related methods
 
+bool FiniteVolumeGrid2D::faceExists(Label n1, Label n2) const
+{
+    using namespace std;
+
+    auto it = faceDirectory_.find(
+                n1 < n2 ? make_pair(n1, n2) : make_pair(n2, n1)
+                          );
+
+    return it != faceDirectory_.end();
+}
+
+Label FiniteVolumeGrid2D::findFace(Label n1, Label n2) const
+{
+    using namespace std;
+
+    auto it = faceDirectory_.find(
+                n1 < n2 ? make_pair(n1, n2) : make_pair(n2, n1)
+                          );
+
+    return it->second;
+}
+
 void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Ref<Face> > &faces)
 {
     auto insert = patches_.insert(std::make_pair(patchName, Patch(patches_.size(), patchName)));
@@ -152,9 +194,16 @@ void FiniteVolumeGrid2D::initCells()
 {
     for(Cell &cell: cells_)
     {
-        cell.computeCellAdjacency();
         cell.isActive_ = true;
         fluidCells_.push_back(cell);
+    }
+
+    for(const Face& face: faces_)
+    {
+        if(face.isBoundary())
+            boundaryFaces_.push_back(face);
+        else
+            interiorFaces_.push_back(face);
     }
 
     constructActiveCellGroup();
@@ -162,7 +211,7 @@ void FiniteVolumeGrid2D::initCells()
 
 void FiniteVolumeGrid2D::constructActiveCellGroup() const
 {
-    size_t idx = 0;
+    Index idx = 0;
     activeCells_.clear();
     activeCells_.reserve(cells_.size());
 
