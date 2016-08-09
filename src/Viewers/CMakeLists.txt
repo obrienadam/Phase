@@ -1,10 +1,6 @@
-set(HEADERS Viewer.h
-            TecplotViewer.h
-            MatplotlibViewer.h)
+set(HEADERS Viewer.h)
 
-set(SOURCE Viewer.cpp
-           TecplotViewer.cpp
-           MatplotlibViewer.cpp)
+set(SOURCE Viewer.cpp)
 
 add_library(Viewers ${HEADERS} ${SOURCE})
-target_link_libraries(Viewers python2.7)
+target_link_libraries(Viewers cgns)

@@ -41,5 +41,5 @@ Viewer
 
 System
 {
-	fileWriteFrequency 100
+	fileWriteFrequency 10
 }

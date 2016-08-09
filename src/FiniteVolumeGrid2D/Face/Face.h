@@ -55,8 +55,8 @@ private:
 
     Label id_;
 
-    std::vector< Ref<const Node> > nodes_;
     std::vector< Ref<const Cell> > cells_;
+    std::vector< Ref<const Node> > nodes_;
 
     friend class FiniteVolumeGrid2D;
     friend class Patch;

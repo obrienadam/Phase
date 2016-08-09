@@ -83,6 +83,10 @@ Thumbs.db
 *.map
 *.lay
 
+# CGNS
+*.cgns
+*.adf
+
 # Valgrind files
 *callgrind*
 

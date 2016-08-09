@@ -1798,10 +1798,6 @@
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/System/RunControl.cpp">
       </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/MatplotlibViewer.cpp">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/TecplotViewer.cpp">
-      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/Viewer.cpp">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/test/MatrixTest.cpp">
@@ -1935,10 +1931,6 @@
       <Unit filename="/home/aobrien/Projects/Phase/src/System/Input.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/System/RunControl.h">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/MatplotlibViewer.h">
-      </Unit>
-      <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/TecplotViewer.h">
       </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/Viewers/Viewer.h">
       </Unit>

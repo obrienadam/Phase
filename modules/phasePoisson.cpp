@@ -3,7 +3,7 @@
 #include "Input.h"
 #include "CommandLine.h"
 #include "ConstructGrid.h"
-#include "TecplotViewer.h"
+#include "Viewer.h"
 #include "Poisson.h"
 
 int main(int argc, const char* argv[])
@@ -18,7 +18,7 @@ int main(int argc, const char* argv[])
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
 
     Poisson solver(*gridPtr, input);
-    TecplotViewer viewer(solver, input);
+    Viewer viewer(solver, input);
 
     solver.solve(0.);
     viewer.write(0.);

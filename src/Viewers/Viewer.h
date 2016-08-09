@@ -2,7 +2,6 @@
 #define VIEWER_H
 
 #include <vector>
-#include <fstream>
 
 #include "Solver.h"
 #include "ScalarFiniteVolumeField.h"
@@ -13,21 +12,21 @@ class Viewer
 public:
 
     Viewer(const Solver& solver, const Input& input);
-    ~Viewer();
 
-    virtual void write(Scalar solutionTime) = 0;
+    virtual void write(Scalar solutionTime);
 
 protected:
 
-    void openFile();
-
     const Solver& solver_;
+
+    int fileId_, baseId_, zoneId_;
+    std::vector<Scalar> timeValues_;
+    std::vector<std::string> flowSolutionPointers_;
 
     std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
     std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;
 
     std::string caseName_, outputFilename_;
-    std::ofstream fout_;
 };
 
 #endif

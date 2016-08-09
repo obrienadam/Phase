@@ -3,6 +3,9 @@
 
 #include "Point2D.h"
 
+class Cell;
+class Face;
+
 class Node : public Point2D
 {
 public:
@@ -15,6 +18,9 @@ public:
 private:
 
     Label id_;
+
+    std::vector<Ref<const Cell>> cells_;
+    std::vector<Ref<const Face>> faces_;
 };
 
 #endif

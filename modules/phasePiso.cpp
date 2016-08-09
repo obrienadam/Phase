@@ -4,7 +4,7 @@
 #include "CommandLine.h"
 #include "ConstructGrid.h"
 #include "Piso.h"
-#include "TecplotViewer.h"
+#include "Viewer.h"
 #include "RunControl.h"
 
 int main(int argc, const char* argv[])
@@ -18,7 +18,7 @@ int main(int argc, const char* argv[])
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
     Piso solver(*gridPtr, input);
-    TecplotViewer viewer(solver, input);
+    Viewer viewer(solver, input);
 
     RunControl runControl;
     runControl.run(input, solver, viewer);
