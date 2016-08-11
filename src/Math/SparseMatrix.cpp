@@ -84,7 +84,7 @@ SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, 
         break;
 
     case IncompleteLUT:
-        solverNoPreconditioner_.compute(*this);
+        solverIncompleteLUT_.compute(*this);
         x = solverIncompleteLUT_.solveWithGuess(b, x0);
         error_ = solverIncompleteLUT_.error();
         nIters_ = solverIncompleteLUT_.iterations();

@@ -139,7 +139,7 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:
-                //break;
+                break;
 
             default:
                 throw Exception("CoupledEquation", "assembleMomentumEquation", "unrecognized or unspecified boundary type.");
@@ -229,7 +229,7 @@ void CoupledEquation::assembleContinuityEquation()
             switch(u_.boundaryType(bd.face().id()))
             {
             case VectorFiniteVolumeField::FIXED:
-                rhs_(rowP) -= massFlux;
+                rhs_(rowP) += massFlux;
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
@@ -238,7 +238,7 @@ void CoupledEquation::assembleContinuityEquation()
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:
-                //break;
+                break;
             default:
                 throw Exception("CoupledEquation", "assembleContinuity", "unrecognized or unspecified boundary type.");
             }
@@ -254,7 +254,7 @@ void CoupledEquation::assembleContinuityEquation()
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:
-                //break;
+                break;
 
             default:
                 throw Exception("CoupledEquation", "assembleContinuity", "unrecognized or unspecified boundary type.");
