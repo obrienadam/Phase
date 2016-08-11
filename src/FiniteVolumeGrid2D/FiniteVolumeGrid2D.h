@@ -34,6 +34,8 @@ public:
 
     //- Cell related methods
     const std::vector<Cell>& cells() const { return cells_; }
+    const std::vector< Ref<const Cell> >& quadCells() const { return quadCells_; }
+    const std::vector< Ref<const Cell> >& triCells() const { return triCells_; }
 
     const CellGroup& activeCells() const { return activeCells_; }
     const CellGroup& inactiveCells() const { return inactiveCells_; }
@@ -80,6 +82,9 @@ protected:
 
     //- Cell related data
     std::vector<Cell> cells_;
+
+    std::vector< Ref<const Cell> > quadCells_;
+    std::vector< Ref<const Cell> > triCells_;
 
     mutable CellGroup activeCells_; // Stores all currently active cells for which a solution should be computed
 

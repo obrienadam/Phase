@@ -19,7 +19,9 @@ std::string FiniteVolumeGrid2D::gridInfo() const
     return "Finite volume grid info:\n"
             "------------------------\n"
             "Number of nodes: " + to_string(nodes_.size()) + "\n"
-            "Number of cells: " + to_string(cells_.size()) + "\n"
+            "Number of quad cells: " + to_string(quadCells_.size()) + "\n"
+            "Number of tri cells: " + to_string(triCells_.size()) + "\n"
+            "Number of cells total: " + to_string(cells_.size()) + "\n"
             "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n"
             "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n"
             "Number of faces total: " + to_string(faces_.size()) + "\n"
@@ -63,6 +65,11 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
             face.addCell(newCell);
         }
     }
+
+    if(newCell.nodes().size() == 4)
+        quadCells_.push_back(std::cref(newCell));
+    else if(newCell.nodes().size() == 3)
+        triCells_.push_back(std::cref(newCell));
 
     return newCell.id();
 }

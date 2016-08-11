@@ -52,49 +52,37 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
     int nSections;
     cg_nsections(fileId, baseId, zoneId, &nSections);
 
-    std::vector<cgsize_t> quadElements;
-    std::pair<cgsize_t, cgsize_t> quadElementRange;
-
-    std::vector<cgsize_t> triElements;
-    std::pair<cgsize_t, cgsize_t> triElementRange;
-
-    std::vector<cgsize_t> barElements;
-    std::pair<cgsize_t, cgsize_t> barElementRange;
+    std::map<std::pair<cgsize_t, cgsize_t>, std::vector<cgsize_t>> quadElements;
+    std::map<std::pair<cgsize_t, cgsize_t>, std::vector<cgsize_t>> triElements;
+    std::map<std::pair<cgsize_t, cgsize_t>, std::vector<cgsize_t>> barElements;
 
     for(int sec = 1; sec <= nSections; ++sec)
     {
         ElementType_t type;
         int nBoundary, parentFlag;
         cgsize_t eBeg, eEnd;
+        std::vector<cgsize_t> elems;
 
         cg_section_read(fileId, baseId, zoneId, sec, name, &type, &eBeg, &eEnd, &nBoundary, &parentFlag);
 
         switch(type)
         {
         case QUAD_4:
-            quadElementRange.first = eBeg - 1; // converted to C array notation , range = [first, second)
-            quadElementRange.second = eEnd;
-            quadElements.resize(4*(quadElementRange.second - quadElementRange.first));
-
-            cg_elements_read(fileId, baseId, zoneId, sec, quadElements.data(), NULL);
+            elems.resize(4*(eEnd - eBeg + 1));
+            cg_elements_read(fileId, baseId, zoneId, sec, elems.data(), NULL);
+            quadElements.insert(std::make_pair(std::make_pair(eBeg, eEnd), elems));
             break;
 
         case TRI_3:
-            triElementRange.first = eBeg - 1;
-            triElementRange.second = eEnd;
-            triElements.resize(3*(triElementRange.second - triElementRange.first));
-
-            cg_elements_read(fileId, baseId, zoneId, sec, triElements.data(), NULL);
-            break;
-
+            elems.resize(3*(eEnd - eBeg + 1));
+            cg_elements_read(fileId, baseId, zoneId, sec, elems.data(), NULL);
+            triElements.insert(std::make_pair(std::make_pair(eBeg, eEnd), elems));
             break;
 
         case BAR_2:
-            barElementRange.first = eBeg - 1;
-            barElementRange.second = eEnd;
-            barElements.resize(2*(barElementRange.second - barElementRange.first));
-
-            cg_elements_read(fileId, baseId, zoneId, sec, barElements.data(), NULL);
+            elems.resize(2*(eEnd - eBeg + 1));
+            cg_elements_read(fileId, baseId, zoneId, sec, elems.data(), NULL);
+            barElements.insert(std::make_pair(std::make_pair(eBeg, eEnd), elems));
             break;
 
         default:
@@ -106,25 +94,35 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
     for(int i = 0; i < sizes[0]; ++i)
         addNode(Point2D(coordsX[i], coordsY[i]));
 
-    for(int i = 0, nQuads = quadElements.size()/4; i < nQuads; ++i)
+    for(const auto& quadSec: quadElements)
     {
-        std::vector<Label> nodeIds;
-        nodeIds.push_back(quadElements[4*i] - 1);
-        nodeIds.push_back(quadElements[4*i + 1] - 1);
-        nodeIds.push_back(quadElements[4*i + 2] - 1);
-        nodeIds.push_back(quadElements[4*i + 3] - 1);
+        const std::vector<cgsize_t>& quads = quadSec.second;
 
-        createCell(nodeIds);
+        for(int i = 0, nQuads = quads.size()/4; i < nQuads; ++i)
+        {
+            std::vector<Label> nodeIds;
+            nodeIds.push_back(quads[4*i] - 1);
+            nodeIds.push_back(quads[4*i + 1] - 1);
+            nodeIds.push_back(quads[4*i + 2] - 1);
+            nodeIds.push_back(quads[4*i + 3] - 1);
+
+            createCell(nodeIds);
+        }
     }
 
-    for(int i = 0, nTris = triElements.size()/3; i < nTris; ++i)
+    for(const auto& triSec: triElements)
     {
-        std::vector<Label> nodeIds;
-        nodeIds.push_back(triElements[3*i] - 1);
-        nodeIds.push_back(triElements[3*i + 1] - 1);
-        nodeIds.push_back(triElements[3*i + 2] - 1);
+        const std::vector<cgsize_t>& tris = triSec.second;
 
-        createCell(nodeIds);
+        for(int i = 0, nTris = tris.size()/3; i < nTris; ++i)
+        {
+            std::vector<Label> nodeIds;
+            nodeIds.push_back(tris[3*i] - 1);
+            nodeIds.push_back(tris[3*i + 1] - 1);
+            nodeIds.push_back(tris[3*i + 2] - 1);
+
+            createCell(nodeIds);
+        }
     }
 
     //- Initialize boundary patches
@@ -159,12 +157,23 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
         std::vector< Ref<Face> > faces;
         for(cgsize_t ele: boundaryElements)
         {
-            Label id = ele - 1 - barElementRange.first;
-            Label n1 = barElements[2*id] - 1, n2 = barElements[2*id + 1] - 1;
+            for(const auto& barSec: barElements)
+            {
+                const auto& range = barSec.first;
 
-            Face& face = faces_[findFace(n1, n2)];
+                if(ele >= range.first && ele <= range.second)
+                {
+                    const std::vector<cgsize_t>& bars = barSec.second;
+                    Label id = ele - range.first;
 
-            faces.push_back(std::ref(face));
+                    Label n1 = bars[2*id] - 1, n2 = bars[2*id + 1] - 1;
+
+                    Face& face = faces_[findFace(n1, n2)];
+                    faces.push_back(std::ref(face));
+
+                    break;
+                }
+            }
         }
 
         applyPatch(name, faces);
