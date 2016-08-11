@@ -10,3 +10,15 @@ InteriorLink::InteriorLink(const Cell &self, const Face &face, const Cell &cell)
 {
     rCellVec_ = cell.centroid() - self.centroid();
 }
+
+InteriorLink::InteriorLink(const InteriorLink &other)
+    :
+      InteriorLink(other.self_, other.face_, other.cell_)
+{
+
+}
+
+const Cell& InteriorLink::cell() const
+{
+    return cell_;
+}

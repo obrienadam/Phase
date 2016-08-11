@@ -25,6 +25,7 @@ public:
    Vector2D outwardNorm(const Point2D &point) const;
 
    const Patch &patch() const { return *patchPtr_; }
+   bool belongsToPatch() const { return patchPtr_ != nullptr; }
 
    Label id() const { return id_; }
 

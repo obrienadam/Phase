@@ -87,6 +87,9 @@ Thumbs.db
 *.cgns
 *.adf
 
+# Add an exception for the sudden expsion case
+!se.cgns
+
 # Valgrind files
 *callgrind*
 

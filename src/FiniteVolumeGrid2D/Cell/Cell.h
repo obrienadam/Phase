@@ -53,6 +53,10 @@ public:
 
 private:
 
+    //- Connectivity links, should really only be done by grid classes
+    void addBoundaryLink(const Face& face);
+    void addInteriorLink(const Face& face, const Cell& cell);
+
     mutable bool isActive_;
     mutable Index globalIndex_;
     Label id_;

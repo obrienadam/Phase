@@ -8,3 +8,10 @@ DiagonalCellLink::DiagonalCellLink(const Cell &self, const Cell &cell)
 {
     rCellVec_ = cell.centroid() - self.centroid();
 }
+
+DiagonalCellLink::DiagonalCellLink(const DiagonalCellLink &other)
+    :
+      DiagonalCellLink(other.self_, other.cell_)
+{
+
+}

@@ -3,7 +3,7 @@
 
 Patch::Patch(const Patch &other)
     :
-      Patch(other.id_, other.name)
+      Patch(other.name, other.id_)
 {
     faces_ = other.faces_;
 
@@ -11,7 +11,7 @@ Patch::Patch(const Patch &other)
         face.changePatch(*this);
 }
 
-void Patch::addFace(Face &face)
+void Patch::addFace(const Face &face)
 {
     if(face.isBoundary())
     {

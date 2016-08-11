@@ -34,3 +34,19 @@ bool Cell::isInCell(const Point2D &point) const
 }
 
 //- Private methods
+
+void Cell::addBoundaryLink(const Face& face)
+{
+    if(!face.isBoundary())
+        throw Exception("Cell", "addBoundaryLink", "cannot add a boundary link to a non-boundary face.");
+
+    boundaryLinks_.push_back(BoundaryLink(*this, face));
+}
+
+void Cell::addInteriorLink(const Face& face, const Cell& cell)
+{
+    if(!face.isInterior())
+        throw Exception("Cell", "addInteriorLink", "cannot add an interior link to a non-interior face.");
+
+    interiorLinks_.push_back(InteriorLink(*this, face, cell));
+}

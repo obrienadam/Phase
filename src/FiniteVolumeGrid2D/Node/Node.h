@@ -19,8 +19,8 @@ private:
 
     Label id_;
 
-    std::vector<Ref<const Cell>> cells_;
-    std::vector<Ref<const Face>> faces_;
+    //std::vector<Ref<const Cell>> cells_;
+    //std::vector<Ref<const Face>> faces_;
 };
 
 #endif

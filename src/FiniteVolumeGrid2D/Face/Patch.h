@@ -6,22 +6,19 @@
 #include <stdio.h>
 
 #include "Types.h"
-#include "BoundingBox.h"
 
-class FiniteVolumeGrid2D;
 class Face;
 
 class Patch
 {
    public:
 
-    Patch(size_t id, const std::string& name = "Unnamed_patch") : id_(id), name(name) {}
+    Patch(const std::string& name, Label id) : name(name), id_(id) {}
     Patch(const Patch& other);
 
     size_t id() const { return id_; }
 
-    void addFace(Face& face);
-    void addFaces(FiniteVolumeGrid2D& grid, const BoundingBox& bBox);
+    void addFace(const Face& face);
     void addFaces(const std::vector< Ref<Face> >& faces);
 
     const std::vector< Ref<const Face> >& faces() const { return faces_; }

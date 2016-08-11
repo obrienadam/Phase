@@ -5,19 +5,21 @@
 #include "Types.h"
 
 class Cell;
-class Face;
 
 class Link
 {
 public:
 
-    Link(const Cell& self) : self_(self) {}
+    Link(const Cell& self);
+    explicit Link(const Link& other);
 
-    const Cell& self() const { return self_; }
+    Link& operator=(const Link& rhs);
+
+    const Cell& self() const;
 
 protected:
 
-    Ref<const Cell> self_;
+    const Cell& self_;
 };
 
 #endif

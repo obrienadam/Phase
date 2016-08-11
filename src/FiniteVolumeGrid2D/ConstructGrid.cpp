@@ -2,6 +2,7 @@
 
 #include "ConstructGrid.h"
 #include "StructuredRectilinearGrid.h"
+#include "CgnsUnstructuredQuadGrid.h"
 #include "Exception.h"
 
 std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
@@ -18,6 +19,10 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
         int nCellsY = input.caseInput().get<int>("Grid.nCellsY");
 
         return shared_ptr<FiniteVolumeGrid2D>(new StructuredRectilinearGrid(width, height, nCellsX, nCellsY));
+    }
+    else if(gridType == "cgns")
+    {
+        return shared_ptr<FiniteVolumeGrid2D>(new CgnsUnstructuredQuadGrid(input));
     }
     else
     {
