@@ -11,7 +11,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
     Equation<VectorFiniteVolumeField> eqn(field);
     const VectorFiniteVolumeField &field0 = field.prev(0);
 
-    entries.reserve(5*nActiveCells);
+    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {

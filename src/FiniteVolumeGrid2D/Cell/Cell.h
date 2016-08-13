@@ -75,4 +75,6 @@ private:
     friend class FiniteVolumeGrid2D;
 };
 
+bool cellsShareFace(const Cell& cellA, const Cell& cellB);
+
 #endif

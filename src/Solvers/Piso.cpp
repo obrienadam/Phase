@@ -33,6 +33,7 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     uEqn_.matrix().setFill(3);
     pCorrEqn_.matrix().setFill(3);
 
+    //- Perform a pseudo initialization
     u.savePreviousTimeStep(0., 1);
 }
 
@@ -198,6 +199,7 @@ void Piso::correctPressure()
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
     interpolateFaces(p);
+    computeStaticPressure();
 
     //for(const Face &face: p.grid.boundaryFaces())
     //    p.faces()[face.id()] += rho[face.lCell().id()]*dot(face.centroid() - face.lCell().centroid(), g_);
@@ -247,6 +249,15 @@ void Piso::correctVelocity()
 
         for(const BoundaryLink& bd: cell.boundaries())
             mDot += dot(u.faces()[bd.face().id()], bd.outwardNorm());
+    }
+}
+
+void Piso::computeStaticPressure()
+{
+    for(const Face& face: grid_.boundaryFaces())
+    {
+        if(p.boundaryType(face.id()) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
+            p.faces()[face.id()] = p[face.lCell().id()] + rho[face.lCell().id()]*dot(g_, face.centroid() - face.lCell().centroid());
     }
 }
 

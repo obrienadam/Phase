@@ -5,7 +5,8 @@
 
 CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
 {
-    std::string filename = input.caseInput().get<std::string>("Grid.filename");
+    const std::string filename = input.caseInput().get<std::string>("Grid.filename");
+    const Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
 
     int fileId;
     char name[256];
@@ -92,7 +93,7 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
 
     //- Initialize nodes and cells (must be done before patches are constructed)
     for(int i = 0; i < sizes[0]; ++i)
-        addNode(Point2D(coordsX[i], coordsY[i]));
+        addNode(Point2D(convertToMeters*coordsX[i], convertToMeters*coordsY[i]));
 
     for(const auto& quadSec: quadElements)
     {
@@ -180,8 +181,7 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
     }
 
     cg_close(fileId);
-    initNodes();
-    initCells();
+    initConnectivity();
 
     //- Too a quick validity check!
     for(const Face& face: faces_)

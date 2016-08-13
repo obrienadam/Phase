@@ -28,6 +28,8 @@ protected:
     void correctPressure();
     void correctVelocity();
 
+    void computeStaticPressure();
+
     Scalar courantNumber(Scalar timeStep);
 
     Vector2D g_;

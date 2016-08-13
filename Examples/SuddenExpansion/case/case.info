@@ -10,9 +10,9 @@ Solver
 	maxTime 5
 	maxCo 0.8
 
-	numInnerIterations 3
+	numInnerIterations 1
 	numPressureCorrections 2
-	momentumRelaxation 0.5
+	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
 }
 

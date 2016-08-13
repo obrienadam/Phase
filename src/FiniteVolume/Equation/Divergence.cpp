@@ -65,7 +65,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    entries.reserve(5*nActiveCells);
+    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {

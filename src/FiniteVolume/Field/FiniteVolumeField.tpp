@@ -110,6 +110,18 @@ FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousIteration()
     return previousIteration_.front();
 }
 
+template<class T>
+SparseVector FiniteVolumeField<T>::sparseVector() const
+{
+    const auto& self = *this;
+    SparseVector vec = SparseVector::Zero(grid.nActiveCells());
+
+    for(const Cell& cell: grid.activeCells())
+        vec[cell.globalIndex()] = self[cell.id()];
+
+    return vec;
+}
+
 //- Operators
 
 template<class T>

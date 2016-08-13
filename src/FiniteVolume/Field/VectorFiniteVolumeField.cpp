@@ -16,6 +16,22 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
     return self;
 }
 
+template<>
+SparseVector VectorFiniteVolumeField::sparseVector() const
+{
+    const auto& self = *this;
+    const Size nActiveCells = grid.nActiveCells();
+    SparseVector vec = SparseVector::Zero(2*nActiveCells);
+
+    for(const Cell& cell: grid.activeCells())
+    {
+        vec[cell.globalIndex()] = self[cell.id()].x;
+        vec[nActiveCells + cell.globalIndex()] = self[cell.id()].y;
+    }
+
+    return vec;
+}
+
 //- Protected methods
 
 template<>

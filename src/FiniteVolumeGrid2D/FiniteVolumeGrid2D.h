@@ -72,6 +72,7 @@ protected:
 
     void initNodes();
     void initCells();
+    void initConnectivity();
 
     void constructActiveCellGroup() const;
     void computeBoundingBox();

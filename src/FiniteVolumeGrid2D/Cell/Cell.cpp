@@ -50,3 +50,15 @@ void Cell::addInteriorLink(const Face& face, const Cell& cell)
 
     interiorLinks_.push_back(InteriorLink(*this, face, cell));
 }
+
+//- External functions
+bool cellsShareFace(const Cell& cellA, const Cell& cellB)
+{
+    for(const InteriorLink& nb: cellA.neighbours())
+    {
+        if(nb.cell().id() == cellB.id() || &nb.cell() == &cellB)
+            return true;
+    }
+
+    return false;
+}

@@ -38,6 +38,9 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
     Cell &newCell = cells_.back();
     newCell.id_ = cells_.size() - 1;
 
+    for(Label id: nodeIds)
+        nodes_[id].cells_.push_back(std::cref(newCell));
+
     for(Label i = 0, end = nodeIds.size(); i < end; ++i)
     {
         Label n1 = nodeIds[i], n2 = nodeIds[(i + 1)%end];
@@ -213,7 +216,24 @@ void FiniteVolumeGrid2D::initCells()
         }
     }
 
+    //- Initialize diagonal links
+    for(Cell& cell: cells_)
+        for(const Node& node: cell.nodes())
+            for(const Cell& kCell: node.cells())
+            {
+                if(&cell == &kCell)
+                    continue;
+                else if(!cellsShareFace(cell, kCell))
+                    cell.addDiagonalLink(kCell);
+            }
+
     constructActiveCellGroup();
+}
+
+void FiniteVolumeGrid2D::initConnectivity()
+{
+    initNodes();
+    initCells();
 }
 
 void FiniteVolumeGrid2D::constructActiveCellGroup() const

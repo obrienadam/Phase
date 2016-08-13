@@ -36,31 +36,6 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
             createCell(nids);
         }
 
-    //- Add the diagonal links
-    for(Label j = 0; j < nCellsY_; ++j)
-        for(Label i = 0; i < nCellsX_; ++i)
-        {
-            Cell &cell = operator ()(i, j);
-
-            if(i > 0)
-            {
-                if(j > 0)
-                    cell.addDiagonalLink(operator ()(i - 1, j - 1));
-
-                if(j < nCellsY_ - 1)
-                    cell.addDiagonalLink(operator ()(i - 1, j + 1));
-            }
-
-            if(i < nCellsX_ - 1)
-            {
-                if(j > 0)
-                    cell.addDiagonalLink(operator ()(i + 1, j - 1));
-
-                if(j < nCellsY_ - 1)
-                    cell.addDiagonalLink(operator ()(i + 1, j + 1));
-            }
-        }
-
     //- Construct default patches
     std::vector< Ref<Face> > xm, xp, ym, yp;
 
@@ -100,8 +75,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     }
     applyPatch("y+", yp);
 
-    initNodes();
-    initCells();
+    initConnectivity();
     computeBoundingBox();
 }
 

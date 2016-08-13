@@ -41,6 +41,8 @@ public:
     FiniteVolumeField& prevIter() { return previousIteration_.front(); }
     const FiniteVolumeField& prev() const { return previousIteration_.front(); }
 
+    SparseVector sparseVector() const;
+
     FiniteVolumeField& operator=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator=(const SparseVector& rhs);
     FiniteVolumeField& operator+=(const FiniteVolumeField& rhs);

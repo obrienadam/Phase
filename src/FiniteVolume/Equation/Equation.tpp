@@ -23,6 +23,14 @@ Scalar Equation<T>::solve()
 }
 
 template<class T>
+Scalar Equation<T>::solve(const SparseVector &x0)
+{
+    field_ = spMat_.solve(boundaries_ + sources_, x0, precon_);
+    printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
+    return error();
+}
+
+template<class T>
 Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
     spMat_ += rhs.spMat_;

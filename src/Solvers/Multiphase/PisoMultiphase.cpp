@@ -22,7 +22,7 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
 
-    std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel", "CSF");
+    std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     if(tmp == "CSF")
     {

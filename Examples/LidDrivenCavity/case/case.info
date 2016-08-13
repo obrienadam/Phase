@@ -8,11 +8,11 @@ Solver
 	maxIterations 100
 	timeStep 0.1
 	maxTime 100
-	maxCo 1e12
+	maxCo 1
 	numInnerIterations 1
-	numPressureCorrections 1
+	numPressureCorrections 2
 	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	pressureCorrectionRelaxation 0.5
 }
 
 Properties

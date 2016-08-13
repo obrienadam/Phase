@@ -35,6 +35,7 @@ public:
     Equation<T>& operator==(const T& rhs);
 
     Scalar solve();
+    Scalar solve(const SparseVector& x0);
 
     Scalar error() const { return spMat_.error(); }
     int iterations() const { return spMat_.nIterations(); }

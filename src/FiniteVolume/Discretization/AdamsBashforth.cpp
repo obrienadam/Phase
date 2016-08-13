@@ -49,9 +49,6 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
-                source = bd.outwardNorm().mag()/coeff*field.boundaryRefValue(bd.face().id());
-                eqn.boundaries()(rowX) -= source.x;
-                eqn.boundaries()(rowY) -= source.y;
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:

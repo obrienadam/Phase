@@ -25,13 +25,6 @@ FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &gri
 
 Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 {
-    computeRho();
-    computeMu();
-
-    u.savePreviousTimeStep(timeStep, 1);
-    p.savePreviousTimeStep(timeStep, 1);
-    gamma.savePreviousTimeStep(timeStep, 1);
-
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -46,22 +39,27 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_.compute()/rho;
-    sp = p/rho;
-    gradSp = grad(sp);
+    u.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(u, timeStep) + cn::div(u, u) + ib_.eqns(u) == ab::laplacian(mu/rho, u) - fv::source(gradSp) + fv::source(ft));
+    ft = surfaceTensionForce_.compute();
+
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(grad(p)) + fv::source(ft));
+
     Scalar error = uEqn_.solve();
     computeAdvectingVelocity(timeStep);
+
     return error;
 }
 
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
+    gamma.savePreviousTimeStep(timeStep, 1);
+
     interpolateFaces(gamma);
 
     //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
     gammaEqn_ = (cicsam::div(u, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
+
     Scalar error = gammaEqn_.solve();
 
     return error;
@@ -85,6 +83,6 @@ void FractionalStepMultiphase::computeMu()
     for(const Cell &cell: grid_.activeCells())
         mu[cell.id()] = (1. - w[cell.id()])*mu1_ + w[cell.id()]*mu2_;
 
-    //interpolateFaces(mu);
-    harmonicInterpolateFaces(mu);
+    interpolateFaces(mu);
+    //harmonicInterpolateFaces(mu);
 }
