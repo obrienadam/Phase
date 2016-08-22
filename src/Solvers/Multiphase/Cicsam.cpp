@@ -14,11 +14,15 @@ Scalar uq(Scalar gammaTilde, Scalar coD) // Fairly sharp interface but fewer fun
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min((8.*coD*gammaTilde + (1. - coD)*(6.*gammaTilde + 3.))/8., hc(gammaTilde, coD)) : gammaTilde;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, Type type)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
+                                      const VectorFiniteVolumeField&
+                                      gradField,
+                                      ScalarFiniteVolumeField &field,
+                                      Scalar timeStep,
+                                      Type type)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-    VectorFiniteVolumeField gradField = grad(field);
 
     entries.reserve(5*field.grid.nActiveCells());
 
@@ -109,11 +113,15 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFi
     return eqn;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const std::vector<ImmersedBoundaryObject> &ibObjs, ScalarFiniteVolumeField &field, Scalar timeStep, Type type)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
+                                      const VectorFiniteVolumeField& gradField,
+                                      const std::vector<ImmersedBoundaryObject> &ibObjs,
+                                      ScalarFiniteVolumeField &field,
+                                      Scalar timeStep,
+                                      Type type)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-    VectorFiniteVolumeField gradField = grad(field);
 
     entries.reserve(5*field.grid.nActiveCells());
 
@@ -237,11 +245,14 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const st
     return eqn;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField &m, ScalarFiniteVolumeField &field, Scalar timeStep)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
+                                      const VectorFiniteVolumeField& gradField,
+                                      const VectorFiniteVolumeField &m,
+                                      ScalarFiniteVolumeField &field,
+                                      Scalar timeStep)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-    VectorFiniteVolumeField gradField = grad(field);
     const Scalar k = 1.;
 
     entries.reserve(5*field.grid.nActiveCells());

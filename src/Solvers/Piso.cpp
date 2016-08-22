@@ -2,6 +2,7 @@
 #include "Exception.h"
 #include "CrankNicolson.h"
 #include "AdamsBashforth.h"
+#include "GradientEvaluation.h"
 
 Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -9,6 +10,8 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
       u(addVectorField(input, "u")),
       h(addVectorField("h")),
       sg(addVectorField("sg")),
+      gradP(addVectorField("gradP")),
+      gradPCorr(addVectorField("gradPCorr")),
       p(addScalarField(input, "p")),
       pCorr(addScalarField("pCorr")),
       rho(addScalarField("rho")),
@@ -81,7 +84,7 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 {
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::grad(p) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(gradP) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -108,14 +111,13 @@ Scalar Piso::solvePCorrEqn()
 
     Scalar error = pCorrEqn_.solve();
 
-    interpolateFaces(pCorr);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, pCorr, gradPCorr);
 
     return error;
 }
 
 void Piso::rhieChowInterpolation()
 {   
-    VectorFiniteVolumeField gradP = grad(p);
     VectorFiniteVolumeField& uStar = u.prevIter();
     VectorFiniteVolumeField& uPrev = u.prev(0);
     const Scalar dt = u.prevTimeStep(0);
@@ -198,7 +200,7 @@ void Piso::correctPressure()
     for(const Cell& cell: p.grid.activeCells())
         p[cell.id()] += pCorrOmega_*pCorr[cell.id()];
 
-    interpolateFaces(p);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
     computeStaticPressure();
 
     //for(const Face &face: p.grid.boundaryFaces())
@@ -207,8 +209,6 @@ void Piso::correctPressure()
 
 void Piso::correctVelocity()
 {
-    VectorFiniteVolumeField gradPCorr = grad(pCorr);
-
     for(const Cell& cell: u.grid.fluidCells())
         u[cell.id()] -= d[cell.id()]*gradPCorr[cell.id()];
 

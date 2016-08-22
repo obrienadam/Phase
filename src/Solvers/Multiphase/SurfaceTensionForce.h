@@ -30,10 +30,10 @@ protected:
 
     Scalar sigma_, thetaAdv_, thetaRec_;
 
-    const ScalarFiniteVolumeField &gamma_;
+    ScalarFiniteVolumeField &gamma_;
     const VectorFiniteVolumeField &u_;
     ScalarFiniteVolumeField &kappa_;
-    VectorFiniteVolumeField &n_;
+    VectorFiniteVolumeField &gradGamma_, &n_;
 
     std::vector< Ref<const Patch> > contactAnglePatches_;
 

@@ -320,13 +320,21 @@ void interpolateFaces(FiniteVolumeField<T>& field)
 {
     Vector2D rf, sf;
 
+    auto computeAlpha = [](const Face& face) { return face.rCell().volume()/(face.lCell().volume() + face.rCell().volume()); };
+
+//    auto computeAlpha = [](const Face& face)
+//    {
+//        Scalar rd = (face.centroid() - face.rCell().centroid()).mag();
+//        Scalar ld = (face.centroid() - face.lCell().centroid()).mag();
+
+//        return rd/(ld + rd);
+//    };
+
     for(const Face& face: field.grid.interiorFaces())
     {
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
+        Scalar alpha = computeAlpha(face);
 
-        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-        field.faces()[face.id()] = field[lCell.id()]*alpha + field[rCell.id()]*(1. - alpha);
+        field.faces()[face.id()] = field[face.lCell().id()]*alpha + field[face.rCell().id()]*(1. - alpha);
     }
 
     for(const Face& face: field.grid.boundaryFaces())
@@ -362,6 +370,49 @@ void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
 
         Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
         field.faces()[face.id()] = 1./(alpha/field[lCell.id()] + (1. - alpha)/field[rCell.id()]);
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
+        {
+        case FiniteVolumeField<T>::FIXED:
+            break;
+
+        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+
+        case FiniteVolumeField<T>::SYMMETRY:
+            field.faces()[face.id()] = field[face.lCell().id()];
+            break;
+
+        default:
+            throw Exception("FiniteVolumeField<T>", "harmonicInterpolateFaces", "unrecongnized boundary condition type.");
+        }
+    }
+}
+
+template<class T>
+void interpolateNodes(FiniteVolumeField<T> &field)
+{
+    for(const Node& node: field.grid.nodes())
+    {
+        const Scalar nCells = node.cells().size();
+        field.nodes()[node.id()] = T();
+
+        for(const Cell &cell: node.cells())
+        {
+            field.nodes()[node.id()] += field[cell.id()]/nCells;
+        }
+    }
+
+    for(const Face& face: field.grid.interiorFaces())
+    {
+        const Node& lNode = face.lNode();
+        const Node& rNode = face.rNode();
+
+        field.faces()[face.id()] = 0.5*(field.nodes()[lNode.id()] + field.nodes()[rNode.id()]);
     }
 
     for(const Face& face: field.grid.boundaryFaces())

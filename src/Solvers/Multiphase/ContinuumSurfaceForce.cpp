@@ -1,5 +1,6 @@
 #include "ContinuumSurfaceForce.h"
 #include "BilinearInterpolation.h"
+#include "GradientEvaluation.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              Solver &solver)
@@ -19,10 +20,10 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-    VectorFiniteVolumeField gradGamma = grad(gamma_);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma[cell.id()];
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma_[cell.id()];
 
     return ft;
 }
@@ -42,7 +43,7 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     interpolateFaces(gammaTilde_);
-    gradGammaTilde_ = grad(gammaTilde_);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gammaTilde_, gradGammaTilde_);
     interpolateFaces(gradGammaTilde_);
 }
 

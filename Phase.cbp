@@ -1718,6 +1718,18 @@
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/CrankNicolson.h">
          <Option target="Discretization"/>
       </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/FaceInterpolation.h">
+         <Option target="Discretization"/>
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/FaceInterpolation.tpp">
+         <Option target="Discretization"/>
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/GradientEvaluation.cpp">
+         <Option target="Discretization"/>
+      </Unit>
+      <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Discretization/GradientEvaluation.h">
+         <Option target="Discretization"/>
+      </Unit>
       <Unit filename="/home/aobrien/Projects/Phase/src/FiniteVolume/Equation/Divergence.cpp">
          <Option target="Equation"/>
       </Unit>

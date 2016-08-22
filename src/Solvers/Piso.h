@@ -14,7 +14,7 @@ public:
     virtual Scalar solve(Scalar timeStep);
     Scalar computeMaxTimeStep(Scalar maxCo) const;
 
-    VectorFiniteVolumeField &u, &h, &sg;
+    VectorFiniteVolumeField &u, &h, &sg, &gradP, &gradPCorr;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:

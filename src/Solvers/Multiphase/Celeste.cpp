@@ -1,4 +1,5 @@
 #include "Celeste.h"
+#include "GradientEvaluation.h"
 
 Celeste::Celeste(const Input &input,
                  Solver &solver)
@@ -16,10 +17,10 @@ VectorFiniteVolumeField Celeste::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-    VectorFiniteVolumeField gradGamma = grad(gamma_);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma[cell.id()];
+        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma_[cell.id()];
 
     return ft;
 }
@@ -143,7 +144,6 @@ void Celeste::constructMatrices()
 void Celeste::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    // interpolateFaces(gammaTilde_);
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
     Matrix b(8, 1);
@@ -169,17 +169,12 @@ void Celeste::computeGradGammaTilde()
         b = gradGammaTildeMatrices_[cell.id()]*b;
         gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
     }
-
-    //interpolateFaces(gradGammaTilde_);
 }
 
 void Celeste::computeInterfaceNormals()
 {
     for(const Cell &cell: n_.grid.fluidCells())
         n_[cell.id()] = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
-
-    //for(const Face &face: n_.grid.faces())
-    //    n_.faces()[face.id()] = gradGammaTilde_.faces()[face.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : gradGammaTilde_.faces()[face.id()].unitVec();
 }
 
 void Celeste::computeCurvature()

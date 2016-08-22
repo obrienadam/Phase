@@ -14,23 +14,32 @@ class FiniteVolumeField : public Field<T>
 public:
     enum BoundaryType{FIXED, NORMAL_GRADIENT, SYMMETRY, OUTFLOW};
 
+    //- Constructors
     FiniteVolumeField(const FiniteVolumeGrid2D& grid, const std::string& name);
     FiniteVolumeField(const Input& input, const FiniteVolumeGrid2D& grid, const std::string& name);
     FiniteVolumeField(const FiniteVolumeField& other);
 
+    //- Initialization
     void fill(const T& val);
     void fillInterior(const T& val);
 
+    //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField& other);
-
     BoundaryType boundaryType(size_t faceId) const;
     T boundaryRefValue(size_t faceId) const;
-
     std::pair<BoundaryType, T> boundaryInfo(size_t faceId) const;
 
+    //- Face-centered values
     const std::vector<T>& faces() const { return faces_; }
     std::vector<T>& faces() { return faces_; }
 
+    //- Node-centered values
+    void initNodes() { nodes_.resize(grid.nNodes()); }
+    std::vector<T>& nodes() { return nodes_; }
+    const std::vector<T>& nodes() const { return nodes_; }
+    bool hasNodalValues() const { return !nodes_.empty(); }
+
+    //- Field history
     FiniteVolumeField& savePreviousTimeStep(Scalar timeStep, int nPreviousFields);
     FiniteVolumeField& savePreviousIteration();
 
@@ -41,8 +50,10 @@ public:
     FiniteVolumeField& prevIter() { return previousIteration_.front(); }
     const FiniteVolumeField& prev() const { return previousIteration_.front(); }
 
+    //- Vectorization
     SparseVector sparseVector() const;
 
+    //- Operators
     FiniteVolumeField& operator=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator=(const SparseVector& rhs);
     FiniteVolumeField& operator+=(const FiniteVolumeField& rhs);
@@ -61,7 +72,7 @@ protected:
 
     std::map<size_t, std::pair<BoundaryType, T> > patchBoundaries_;
 
-    std::vector<T> faces_;
+    std::vector<T> faces_, nodes_;
 
     std::deque< std::pair<Scalar, FiniteVolumeField<T> > > previousTimeSteps_;
     std::deque< FiniteVolumeField<T> > previousIteration_;
@@ -72,6 +83,9 @@ void interpolateFaces(FiniteVolumeField<T>& field);
 
 template<class T>
 void harmonicInterpolateFaces(FiniteVolumeField<T>& field);
+
+template<class T>
+void interpolateNodes(FiniteVolumeField<T> &field);
 
 template<class T>
 FiniteVolumeField<T> smooth(const Field<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar epsilon);

@@ -9,6 +9,7 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
     :
       Piso(grid, input),
       gamma(addScalarField(input, "gamma")),
+      gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
       gammaEqn_(gamma, "gamma", SparseMatrix::NoPreconditioner)
 {
@@ -85,8 +86,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeMu();
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u)
-             == ab::laplacian(mu, u) - fv::grad(p) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
+             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -105,11 +106,11 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
 
-        gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) == 0.);
+        gammaEqn_ = (cicsam::div(u, gradGamma, gamma, timeStep, cicsam::HC) == 0.);
         break;
     case PLIC:
 
-        gammaEqn_ = (plic::div(u, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
+        gammaEqn_ = (plic::div(u, gradGamma, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
     }
 

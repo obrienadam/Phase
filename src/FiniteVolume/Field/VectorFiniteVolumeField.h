@@ -7,14 +7,10 @@
 
 typedef FiniteVolumeField<Vector2D> VectorFiniteVolumeField;
 
-VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& scalarField);
-
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs);
 VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vector2D& rhs);
 VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
-
-void extrapolateBoundaryFaces(ScalarFiniteVolumeField& field);
 
 void interpolateFaces(VectorFiniteVolumeField& field);
 

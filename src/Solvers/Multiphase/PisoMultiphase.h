@@ -16,7 +16,7 @@ public:
     virtual Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &gamma;
-    VectorFiniteVolumeField &ft;
+    VectorFiniteVolumeField &gradGamma, &ft;
 
 protected:
 

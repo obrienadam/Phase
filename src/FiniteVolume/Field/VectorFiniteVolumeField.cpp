@@ -73,26 +73,6 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 
 //- External functions
 
-VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &scalarField)
-{
-    VectorFiniteVolumeField gradField(scalarField.grid, "grad_" + scalarField.name);
-
-    for(const Cell& cell: scalarField.grid.fluidCells())
-    {
-        Vector2D &gradPhi = gradField[cell.id()];
-
-        for(const InteriorLink& nb: cell.neighbours())
-            gradPhi += scalarField.faces()[nb.face().id()]*nb.outwardNorm();
-
-        for(const BoundaryLink& bd: cell.boundaries())
-            gradPhi += scalarField.faces()[bd.face().id()]*bd.outwardNorm();
-
-        gradPhi /= cell.volume();
-    }
-
-    return gradField;
-}
-
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs)
 {
     rhs *= lhs;
@@ -122,18 +102,6 @@ VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFinit
 {
     lhs /= rhs;
     return lhs;
-}
-
-void extrapolateBoundaryFaces(ScalarFiniteVolumeField& field)
-{
-    VectorFiniteVolumeField gradField = grad(field);
-
-    for(const Cell &cell: field.grid.activeCells())
-        for(const BoundaryLink &bd: cell.boundaries())
-        {
-            if(field.boundaryType(bd.face().id()) != ScalarFiniteVolumeField::FIXED)
-                field.faces()[bd.face().id()] = field[bd.face().lCell().id()] + dot(bd.rFaceVec(), gradField[bd.face().lCell().id()]);
-        }
 }
 
 void interpolateFaces(VectorFiniteVolumeField& field)

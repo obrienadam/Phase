@@ -7,6 +7,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
       u_(solver.vectorFields().find("u")->second),
       n_(solver.addVectorField("n")),
       kappa_(solver.addScalarField("kappa")),
+      gradGamma_(solver.vectorFields().find("gradGamma")->second),
       solver_(solver)
 {
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");

@@ -19,6 +19,7 @@ public:
     virtual std::string info() const;
     virtual Scalar solve(Scalar timeStep) = 0;
     virtual Scalar computeMaxTimeStep(Scalar maxCo) const = 0;
+    virtual Scalar computeSmartTimeStep(Scalar maxCo, Scalar lastTimeStep);
 
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& name);
     ScalarFiniteVolumeField& addScalarField(const std::string& name);
@@ -55,6 +56,7 @@ protected:
     mutable std::map<std::string, std::vector<Polygon> > geometries_;
 
     TimeDependent timeDependent_;
+    Scalar timeStepRelaxation_;
 
     ImmersedBoundary ib_;
 };

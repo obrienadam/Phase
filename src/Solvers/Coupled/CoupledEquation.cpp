@@ -1,4 +1,5 @@
 #include "CoupledEquation.h"
+#include "GradientEvaluation.h"
 
 CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)
     :
@@ -269,8 +270,7 @@ void CoupledEquation::assembleContinuityEquation()
 
 void CoupledEquation::rhieChowInterpolation()
 {
-    interpolateFaces(p_);
-    gradP_ = grad(p_);
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p_, gradP_);
 
     for(const Face& face: u_.grid.interiorFaces())
     {

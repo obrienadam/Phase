@@ -1,6 +1,8 @@
 #include "FractionalStep.h"
 #include "CrankNicolson.h"
 #include "AdamsBashforth.h"
+#include "GradientEvaluation.h"
+#include "FaceInterpolation.h"
 
 FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -18,6 +20,8 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
+
+    p.initNodes();
 
     uEqn_.matrix().setFill(2);
     pEqn_.matrix().setFill(3);
@@ -69,7 +73,9 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(gradP));
+    sg = fv::gravity(rho, g_);
+
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) + fv::source(sg - gradP));
 
     Scalar error = uEqn_.solve();
     computeAdvectingVelocity(timeStep);
@@ -78,6 +84,56 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 }
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
+{
+    computeMassSource(timeStep);
+
+    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
+    Scalar error = pEqn_.solve(p.sparseVector());
+
+    gradP.savePreviousTimeStep(timeStep, 1);
+
+    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
+
+    return error;
+}
+
+void FractionalStep::correctVelocity(Scalar timeStep)
+{
+    const ScalarFiniteVolumeField &p0 = p.prev(0);
+    const VectorFiniteVolumeField &gradP0 = gradP.prev(0);
+
+
+    for(const Cell &cell: grid_.fluidCells())
+        u[cell.id()] += timeStep/rho[cell.id()]*(gradP0[cell.id()] - gradP[cell.id()]);
+
+    for(const Face &face: grid_.interiorFaces())
+    {
+        const Cell &lCell = face.lCell();
+        const Cell &rCell = face.rCell();
+        Vector2D rc = rCell.centroid() - lCell.centroid();
+
+        const Scalar rhof = rho.faces()[face.id()];
+
+        u.faces()[face.id()] += timeStep/rhof*((p0[rCell.id()] - p0[lCell.id()] - p[rCell.id()] + p[lCell.id()])*rc/rc.magSqr());
+    }
+
+    for(const Face &face: grid_.boundaryFaces())
+    {
+        const Cell &cell = face.lCell();
+        Vector2D rf = face.centroid() - cell.centroid();
+
+        if(u.boundaryType(face.id()) == VectorFiniteVolumeField::FIXED)
+            continue;
+        else if(u.boundaryType(face.id()) == VectorFiniteVolumeField::NORMAL_GRADIENT) // Not correct
+            continue;
+        else if(u.boundaryType(face.id()) == VectorFiniteVolumeField::SYMMETRY) // This is not correct
+            continue;
+        else
+            u.faces()[face.id()] += timeStep/rho.faces()[face.id()]*((p0.faces()[face.id()] - p0[cell.id()] - p.faces()[face.id()] + p[cell.id()])*rf/rf.magSqr());
+    }
+}
+
+void FractionalStep::computeMassSource(Scalar timeStep)
 {
     p.savePreviousTimeStep(timeStep, 1);
     divUStar.fill(0.);
@@ -98,7 +154,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
             p1 = p[nb.cell().id()];
 
-            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rc, sf)/dot(rc, rc);
+            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rc, sf)/dot(rc, rc) - rhof*dot(g_, sf);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -111,54 +167,8 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
             p1 = p.faces()[bd.face().id()];
 
-            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rf, sf)/dot(rf, rf);
+            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rf, sf)/dot(rf, rf) - rhof*dot(g_, sf);
         }
-    }
-
-    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
-    Scalar error = pEqn_.solve();
-
-    gradP.savePreviousTimeStep(timeStep, 1);
-
-    interpolateFaces(p);
-    gradP = grad(p);
-
-    return error;
-}
-
-void FractionalStep::correctVelocity(Scalar timeStep)
-{
-    const ScalarFiniteVolumeField &p0 = p.prev(0);
-    const VectorFiniteVolumeField &gradP0 = gradP.prev(0);
-
-
-    for(const Cell &cell: grid_.fluidCells())
-    {
-        u[cell.id()] -= timeStep/rho[cell.id()]*gradP[cell.id()] - timeStep/rho[cell.id()]*gradP0[cell.id()];
-    }
-
-    for(const Face &face: grid_.interiorFaces())
-    {
-        const Cell &lCell = face.lCell();
-        const Cell &rCell = face.rCell();
-        Vector2D rc = rCell.centroid() - lCell.centroid();
-
-        u.faces()[face.id()] -= timeStep/rho.faces()[face.id()]*(p[rCell.id()] - p[lCell.id()]
-                - p0[rCell.id()] + p0[lCell.id()])*rc/rc.magSqr();
-    }
-
-    for(const Face &face: grid_.boundaryFaces())
-    {
-        const Cell &cell = face.lCell();
-        Vector2D rf = face.centroid() - cell.centroid();
-
-        if(u.boundaryType(face.id()) == VectorFiniteVolumeField::FIXED)
-            continue;
-        else if(u.boundaryType(face.id()) == VectorFiniteVolumeField::SYMMETRY)
-            continue;
-        else
-            u.faces()[face.id()] -= timeStep/rho.faces()[face.id()]*(p.faces()[face.id()] - p[cell.id()]
-                    - p0.faces()[face.id()] + p0[cell.id()])*rf/rf.magSqr();
     }
 }
 
@@ -172,9 +182,13 @@ void FractionalStep::computeAdvectingVelocity(Scalar timeStep)
         Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
         Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u.faces()[face.id()] = g*(u[lCell.id()] + timeStep*gradP[lCell.id()]/rho[lCell.id()])
-                + (1. - g)*(u[rCell.id()] + timeStep*gradP[rCell.id()]/rho[rCell.id()])
-                - timeStep/rho.faces()[face.id()]*(p[rCell.id()] - p[lCell.id()])*rc/rc.magSqr();
+        const Scalar rhof = rho.faces()[face.id()];
+        const Scalar p0 = p[lCell.id()], p1 = p[rCell.id()];
+
+        u.faces()[face.id()] = g*(u[lCell.id()] + timeStep*(gradP[lCell.id()] - sg[lCell.id()])/rho[lCell.id()])
+                + (1. - g)*(u[rCell.id()] + timeStep*(gradP[rCell.id()] - sg[rCell.id()])/rho[rCell.id()])
+                - timeStep/rhof*(p1 - p0)*rc/rc.magSqr()
+                + timeStep/rhof*g_;
     }
 
     for(const Face &face: u.grid.boundaryFaces())
@@ -189,9 +203,13 @@ void FractionalStep::computeAdvectingVelocity(Scalar timeStep)
         case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
         {
             Vector2D rf = face.centroid() - cell.centroid();
+            const Scalar rhof = rho.faces()[face.id()];
+            const Scalar p0 = p[cell.id()], p1 = p.faces()[face.id()];
 
-            u.faces()[face.id()] = u[cell.id()] + timeStep*gradP[cell.id()]/rho[cell.id()]
-                    - timeStep/rho.faces()[face.id()]*(p.faces()[face.id()] - p[cell.id()])*rf/rf.magSqr();
+            u.faces()[face.id()] = u[cell.id()]
+                    + timeStep*(gradP[cell.id()] - sg[cell.id()])/rho[cell.id()]
+                    - timeStep/rhof*(p1 - p0)*rf/rf.magSqr()
+                    + timeStep/rhof*g_;
         }
             break;
 

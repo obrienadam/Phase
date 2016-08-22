@@ -84,11 +84,6 @@ Equation<T> operator*(Equation<T> lhs, Scalar rhs);
 template<class T>
 Equation<T> operator*(Scalar lhs, Equation<T> rhs);
 
-namespace cn // Crank-Nicholson schemes
-{
-Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep);
-}
-
 #include "Equation.tpp"
 
 #endif

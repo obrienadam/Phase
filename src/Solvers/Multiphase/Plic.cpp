@@ -5,14 +5,13 @@
 namespace plic
 {
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
+Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradField, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
 
     for(int componentNo = 0; componentNo < 2; ++componentNo)
     {
         Equation<ScalarFiniteVolumeField> eqn(field);
-        VectorFiniteVolumeField gradField = grad(field);
         entries.clear();
         entries.reserve(4*field.grid.nActiveCells());
 
