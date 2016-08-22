@@ -65,12 +65,6 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar
 
 //- Protected methods
 
-const std::vector< Ref<const Cell> > ImmersedBoundaryObject::boundingCells(const Point2D &pt) const
-{
-    const Node &node = grid_.findNearestNode(pt);
-    return grid_.activeCells().kNearestNeighbourSearch(node, 4);
-}
-
 void ImmersedBoundaryObject::flagIbCells()
 {
     auto internalCells = grid_.activeCells().rangeSearch(shape());
@@ -123,7 +117,7 @@ void ImmersedBoundaryObject::constructStencils()
 
         stencilPoints_[cell.id()] = std::make_pair(bp, ip);
 
-        auto kNN = boundingCells(ip);
+        const auto& kNN = grid_.findNearestNode(ip).cells();
 
         std::vector<Point2D> centroids = {
             kNN[0].get().centroid(),

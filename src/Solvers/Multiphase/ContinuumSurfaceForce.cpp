@@ -1,6 +1,7 @@
 #include "ContinuumSurfaceForce.h"
 #include "BilinearInterpolation.h"
 #include "GradientEvaluation.h"
+#include "FaceInterpolation.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              Solver &solver)
@@ -42,9 +43,9 @@ void ContinuumSurfaceForce::constructSmoothingKernels()
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    interpolateFaces(gammaTilde_);
+    interpolateFaces(fv::INVERSE_VOLUME, gammaTilde_);
     computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gammaTilde_, gradGammaTilde_);
-    interpolateFaces(gradGammaTilde_);
+    interpolateFaces(fv::INVERSE_VOLUME, gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
@@ -121,7 +122,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
         return;
     }
 
-    interpolateFaces(n_);
+    interpolateFaces(fv::INVERSE_VOLUME, n_);
 
     for(const Cell &cell: n_.grid.activeCells())
         n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
@@ -145,5 +146,5 @@ void ContinuumSurfaceForce::computeCurvature()
         k /= cell.volume();
     }
 
-    interpolateFaces(kappa_);
+    interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }

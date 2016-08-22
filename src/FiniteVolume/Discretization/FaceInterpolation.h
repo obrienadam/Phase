@@ -11,8 +11,11 @@ enum InterpolationMethod{UNWEIGHTED, INVERSE_VOLUME, INVERSE_DISTANCE, INVERSE_S
 template<class T>
 void interpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field);
 
+//template<class T>
+//void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field);
+
 template<class T>
-void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field);
+void interpolateFaces(const FiniteVolumeField<Scalar>& w, FiniteVolumeField<T>& field, bool inverseWeighting = false);
 
 }
 

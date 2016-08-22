@@ -76,7 +76,7 @@ ImmersedBoundaries
       center (1.3,1) ; will center the polygon here
       file naca0015
 
-      scale 2
+      scale 1.2
       rotate -12
     }
 

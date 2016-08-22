@@ -11,6 +11,7 @@ public:
 
     enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP};
 
+    //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string& name,
                            const FiniteVolumeGrid2D& grid,
                            const Point2D& center,
@@ -20,16 +21,20 @@ public:
                            const FiniteVolumeGrid2D& grid,
                            const std::vector<Point2D>& vertices);
 
+    //- The shape
     Shape2D& shape() { return *shapePtr_; }
     const Shape2D& shape() const { return *shapePtr_; }
 
+    //- Accessing stencil poings
     const Point2D& boundaryPoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).first; }
     const Point2D& imagePoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).second; }
     const std::pair<Point2D, Point2D>& stencilPoints(const Cell &cell) const { return stencilPoints_.find(cell.id())->second; }
 
+    //- For interpolating the image point
     const std::vector< Ref<const Cell> >& imagePointCells(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).first; }
     const BilinearInterpolation& imagePointInterpolation(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).second; }
 
+    //- Interpolate a value to the image point
     Scalar imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const;
     Vector2D imagePointVal(const Cell &ell, const VectorFiniteVolumeField& field) const;
 
@@ -46,7 +51,6 @@ public:
 
 protected:
 
-    const std::vector< Ref<const Cell> > boundingCells(const Point2D& pt) const;
     void flagIbCells();
     void constructStencils();
 

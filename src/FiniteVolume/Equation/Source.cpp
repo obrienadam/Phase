@@ -1,4 +1,5 @@
 #include "Source.h"
+#include "FaceInterpolation.h"
 
 namespace fv
 {
@@ -28,7 +29,7 @@ VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector
         gs /= cell.volume();
     }
 
-    interpolateFaces(gravity);
+    interpolateFaces(fv::INVERSE_VOLUME, gravity);
 
     return gravity;
 }

@@ -1,6 +1,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "Solver.h"
+#include "FaceInterpolation.h"
 
 Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -192,7 +193,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
             field[cell.id()] = innerValue;
     }
 
-    interpolateFaces(field);
+    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field)
@@ -203,7 +204,7 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
             field[cell.id()] = innerValue;
     }
 
-    interpolateFaces(field);
+    interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeField& field)
@@ -214,7 +215,7 @@ void Solver::setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeFie
             field[cell.id()] = innerValue;
     }
 
-    interpolateFaces(field);
+    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setBox(const Polygon& box, const Vector2D& innerValue, VectorFiniteVolumeField& field)
@@ -225,7 +226,7 @@ void Solver::setBox(const Polygon& box, const Vector2D& innerValue, VectorFinite
             field[cell.id()] = innerValue;
     }
 
-    interpolateFaces(field);
+    interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field)

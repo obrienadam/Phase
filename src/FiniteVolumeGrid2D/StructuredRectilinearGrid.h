@@ -8,7 +8,7 @@ class StructuredRectilinearGrid : public FiniteVolumeGrid2D
 {
 public:
 
-    StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY);
+    StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY, Scalar convertToMeters);
 
     Cell& operator ()(Label i, Label j);
     const Cell& operator()(Label i, Label j) const;

@@ -78,7 +78,37 @@ Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
 
 std::pair<Point2D, bool> Polygon::firstIntersect(Point2D ptA, Point2D ptB) const
 {
-    throw Exception("Polygon", "firstIntersect", "not yet implemented.");
+    const Vector2D v1 = ptB - ptA;
+
+    const auto& ring = boost::geometry::exterior_ring(poly_);
+
+    for(const Point2D &vtx: ring)
+    {
+        const Vector2D v2 = vtx - ptA;
+
+        //- Check for a vertex intersection
+        if(v2.magSqr() < v1.magSqr() && v1.unitVec() == v2.unitVec())
+            return std::make_pair(vtx, true);
+    }
+
+
+    auto vtx1 = ring.begin();
+    auto vtx2 = vtx1 + 1;
+
+    const Line2D lineA = Line2D(ptA, ptB - ptA);
+
+    for(; vtx2 != ring.end(); ++vtx2, ++vtx1)
+    {
+        const Line2D lineB = Line2D(*vtx1, *vtx2 - *vtx1);
+
+        auto intersection = Line2D::intersection(lineA, lineB);
+
+        if(intersection.second) // an intersection exists
+            return intersection;
+    }
+
+    throw Exception("Polygon", "firstIntersect", "No intersection found.");
+    return std::make_pair(Point2D(), false);
 }
 
 void Polygon::operator+=(const Vector2D& translationVec)

@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_SUITE (PlicTest)
 
 BOOST_AUTO_TEST_CASE(PlicConstruction)
 {
-    StructuredRectilinearGrid grid(1, 1, 40, 40);
+    StructuredRectilinearGrid grid(1, 1, 40, 40, 1.);
 
     Scalar gamma;
     Vector2D normal;

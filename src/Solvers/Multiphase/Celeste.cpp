@@ -1,5 +1,6 @@
 #include "Celeste.h"
 #include "GradientEvaluation.h"
+#include "FaceInterpolation.h"
 
 Celeste::Celeste(const Input &input,
                  Solver &solver)
@@ -248,12 +249,12 @@ void Celeste::computeCurvature()
     }
 
     //weightCurvatures();
-    interpolateFaces(kappa_);
+    interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }
 
 void Celeste::weightCurvatures()
 {
-    auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
+    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
 
     for(const Cell &cell: wGamma_.grid.fluidCells())
         wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
@@ -276,7 +277,7 @@ void Celeste::weightCurvatures()
             sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()];
         }
 
-        kappa_[cell.id()] = fabs(sumW) < 1e-15 ? 0. : sumKappaW/sumW;
+        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
     }
 
 //    kappa_.savePreviousIteration();
@@ -301,7 +302,6 @@ void Celeste::weightCurvatures()
 //            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()]*mQ;
 //        }
 
-//        Scalar kappa = sumKappaW/sumW;
-//        kappa_[cell.id()] = isnan(kappa) ? 0. : kappa;
+//        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
 //    }
 }

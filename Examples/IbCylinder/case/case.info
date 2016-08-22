@@ -21,6 +21,7 @@ Properties
 {
 	rho 998
 	mu 8.94e-4
+	g (0,0)
 }
 
 Grid

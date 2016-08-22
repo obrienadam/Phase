@@ -18,6 +18,8 @@ public:
 
     const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
 
+    bool isIbCell(const Cell& cell) const;
+
     ScalarFiniteVolumeField &cellStatus_;
 
 protected:

@@ -2,6 +2,7 @@
 #include "Cicsam.h"
 #include "CrankNicolson.h"
 #include "AdamsBashforth.h"
+#include "FaceInterpolation.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -58,7 +59,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
 
-    interpolateFaces(gamma);
+    interpolateFaces(fv::INVERSE_VOLUME, gamma);
 
     //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
     gammaEqn_ = (cicsam::div(u, gradGamma, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
@@ -69,51 +70,6 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     computeMu();
 
     return error;
-}
-
-void FractionalStepMultiphase::computeMassSource(Scalar timeStep)
-{
-    p.savePreviousTimeStep(timeStep, 1);
-    divUStar.fill(0.);
-    const Scalar sigma = surfaceTensionForce_.sigma();
-
-    for(const Cell &cell: grid_.fluidCells())
-    {
-        Scalar rhof, kf, p1, g1;
-
-        const Scalar p0 = p[cell.id()];
-        const Scalar g0 = gamma[cell.id()];
-
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            rhof = rho.faces()[nb.face().id()];
-            kf = surfaceTensionForce_.kappa().faces()[nb.face().id()];
-
-            const Vector2D& uf = u.faces()[nb.face().id()];
-            const Vector2D& sf = nb.outwardNorm();
-            const Vector2D& rc = nb.rCellVec();
-
-            p1 = p[nb.cell().id()];
-            g1 = gamma[nb.cell().id()];
-
-            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rc, sf)/dot(rc, rc);// - rhof*dot(g_, sf) - sigma*kf*(g1 - g0)*dot(rc, sf)/dot(rc, rc);
-        }
-
-        for(const BoundaryLink &bd: cell.boundaries())
-        {
-            rhof = rho.faces()[bd.face().id()];
-            kf = surfaceTensionForce_.kappa().faces()[bd.face().id()];
-
-            const Vector2D& uf = u.faces()[bd.face().id()];
-            const Vector2D& sf = bd.outwardNorm();
-            const Vector2D& rf = bd.rFaceVec();
-
-            p1 = p.faces()[bd.face().id()];
-            g1 = gamma.faces()[bd.face().id()];
-
-            divUStar[cell.id()] += rhof/timeStep*dot(uf, sf) + (p1 - p0)*dot(rf, sf)/dot(rf, rf);// - rhof*dot(g_, sf) - sigma*kf*(g1 - g0)*dot(rf, sf)/dot(rf, rf);
-        }
-    }
 }
 
 void FractionalStepMultiphase::computeAdvectingVelocity(Scalar timeStep)
@@ -129,13 +85,13 @@ void FractionalStepMultiphase::computeAdvectingVelocity(Scalar timeStep)
         Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
         Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        const Scalar rhof = rho.faces()[face.id()];
-        const Scalar kf = surfaceTensionForce_.kappa().faces()[face.id()];
-        const Scalar p0 = p[lCell.id()], p1 = p[rCell.id()];
-        const Scalar g0 = gamma[lCell.id()], g1 = gamma[rCell.id()];
+        const Scalar rhof = rho(face);
+        const Scalar kf = surfaceTensionForce_.kappa()(face);
+        const Scalar p0 = p(lCell), p1 = p(rCell);
+        const Scalar g0 = gamma(lCell), g1 = gamma(rCell);
 
-        u.faces()[face.id()] = g*(u[lCell.id()] + timeStep*(gradP[lCell.id()] - sg[lCell.id()] - ft[lCell.id()])/rho[lCell.id()])
-                + (1. - g)*(u[rCell.id()] + timeStep*(gradP[rCell.id()] - sg[rCell.id()] - ft[rCell.id()])/rho[rCell.id()])
+        u(face) = g*(u(lCell) + timeStep*(gradP(lCell) - sg(lCell) - ft(lCell))/rho(lCell))
+                + (1. - g)*(u(rCell) + timeStep*(gradP(rCell) - sg(rCell) - ft(rCell))/rho(rCell))
                 - timeStep/rhof*(p1 - p0)*rc/rc.magSqr()
                 + timeStep/rhof*g_;
                 + timeStep/rhof*sigma*kf*(g1 - g0)*rc/rc.magSqr();
@@ -153,13 +109,13 @@ void FractionalStepMultiphase::computeAdvectingVelocity(Scalar timeStep)
         case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
         {
             Vector2D rf = face.centroid() - cell.centroid();
-            const Scalar rhof = rho.faces()[face.id()];
-            const Scalar kf = surfaceTensionForce_.kappa().faces()[face.id()];
-            const Scalar p0 = p[cell.id()], p1 = p.faces()[face.id()];
-            const Scalar g0 = gamma[cell.id()], g1 = gamma.faces()[face.id()];
+            const Scalar rhof = rho(face);
+            const Scalar kf = surfaceTensionForce_.kappa()(face);
+            const Scalar p0 = p(cell), p1 = p(face);
+            const Scalar g0 = gamma(cell), g1 = gamma(face);
 
-            u.faces()[face.id()] = u[cell.id()]
-                    + timeStep*(gradP[cell.id()] - sg[cell.id()] - ft[cell.id()])/rho[cell.id()]
+            u(face) = u(cell)
+                    + timeStep*(gradP(cell) - sg(cell) - ft(cell))/rho(cell)
                     - timeStep/rhof*(p1 - p0)*rf/rf.magSqr()
                     + timeStep/rhof*g_
                     + timeStep/rhof*sigma*kf*(g1 - g0)*rf/rf.magSqr();
@@ -169,7 +125,7 @@ void FractionalStepMultiphase::computeAdvectingVelocity(Scalar timeStep)
         case VectorFiniteVolumeField::SYMMETRY:
         {
             Vector2D nWall = face.outwardNorm(face.lCell().centroid());
-            u.faces()[face.id()] = u[face.lCell().id()] - dot(u[face.lCell().id()], nWall)*nWall/nWall.magSqr();
+            u(face) = u[face.lCell().id()] - dot(u[face.lCell().id()], nWall)*nWall/nWall.magSqr();
             break;
         }
 
@@ -184,9 +140,9 @@ void FractionalStepMultiphase::computeRho()
     const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
 
     for(const Cell &cell: grid_.activeCells())
-        rho[cell.id()] = (1. - w[cell.id()])*rho1_ + w[cell.id()]*rho2_;
+        rho(cell) = (1. - w(cell))*rho1_ + w(cell)*rho2_;
 
-    interpolateFaces(rho);
+    interpolateFaces(fv::INVERSE_VOLUME, rho);
     //harmonicInterpolateFaces(rho);
 }
 
@@ -195,8 +151,8 @@ void FractionalStepMultiphase::computeMu()
     const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
 
     for(const Cell &cell: grid_.activeCells())
-        mu[cell.id()] = (1. - w[cell.id()])*mu1_ + w[cell.id()]*mu2_;
+        mu(cell) = (1. - w(cell))*mu1_ + w(cell)*mu2_;
 
-    interpolateFaces(mu);
+    interpolateFaces(fv::INVERSE_VOLUME, mu);
     //harmonicInterpolateFaces(mu);
 }

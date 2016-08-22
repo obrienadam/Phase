@@ -158,6 +158,17 @@ Equation<VectorFiniteVolumeField> ImmersedBoundary::eqns(VectorFiniteVolumeField
     return gc::ib(ibObjs_, field);
 }
 
+bool ImmersedBoundary::isIbCell(const Cell &cell) const
+{
+    for(const ImmersedBoundaryObject& ibObj: ibObjs_)
+    {
+        if(ibObj.cells().isInGroup(cell))
+            return true;
+    }
+
+    return false;
+}
+
 //- Protected
 
 void ImmersedBoundary::setCellStatus()

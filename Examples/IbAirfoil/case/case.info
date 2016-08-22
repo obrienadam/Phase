@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-2
+	timeStep 5e-3
 	maxCo 0.8
 	maxTime 10
 
@@ -27,8 +27,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 120
-	nCellsY 80
+	nCellsX 240
+	nCellsY 160
 
 	; Rectilinear parameters
 	width 3

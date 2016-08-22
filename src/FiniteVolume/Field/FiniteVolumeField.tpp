@@ -52,7 +52,8 @@ template<class T>
 void FiniteVolumeField<T>::fillInterior(const T &val)
 {
     std::fill(FiniteVolumeField<T>::begin(), FiniteVolumeField<T>::end(), val);
-    interpolateFaces(*this);
+    for(const Face& face: grid.interiorFaces())
+        faces_[face.id()] = val;
 }
 
 template<class T>
@@ -314,84 +315,6 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
 }
 
 //- External functions
-
-template<class T>
-void interpolateFaces(FiniteVolumeField<T>& field)
-{
-    Vector2D rf, sf;
-
-    auto computeAlpha = [](const Face& face) { return face.rCell().volume()/(face.lCell().volume() + face.rCell().volume()); };
-
-//    auto computeAlpha = [](const Face& face)
-//    {
-//        Scalar rd = (face.centroid() - face.rCell().centroid()).mag();
-//        Scalar ld = (face.centroid() - face.lCell().centroid()).mag();
-
-//        return rd/(ld + rd);
-//    };
-
-    for(const Face& face: field.grid.interiorFaces())
-    {
-        Scalar alpha = computeAlpha(face);
-
-        field.faces()[face.id()] = field[face.lCell().id()]*alpha + field[face.rCell().id()]*(1. - alpha);
-    }
-
-    for(const Face& face: field.grid.boundaryFaces())
-    {
-        switch(field.boundaryType(face.id()))
-        {
-        case FiniteVolumeField<T>::FIXED:
-            break;
-
-        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-
-        case FiniteVolumeField<T>::SYMMETRY:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-
-        default:
-            throw Exception("FiniteVolumeField<T>", "interpolateFaces", "unrecongnized boundary condition type.");
-        }
-    }
-}
-
-template<class T>
-void harmonicInterpolateFaces(FiniteVolumeField<T>& field)
-{
-    Vector2D rf, sf;
-
-    for(const Face& face: field.grid.interiorFaces())
-    {
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
-
-        Scalar alpha = rCell.volume()/(lCell.volume() + rCell.volume());
-        field.faces()[face.id()] = 1./(alpha/field[lCell.id()] + (1. - alpha)/field[rCell.id()]);
-    }
-
-    for(const Face& face: field.grid.boundaryFaces())
-    {
-        switch(field.boundaryType(face.id()))
-        {
-        case FiniteVolumeField<T>::FIXED:
-            break;
-
-        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-
-        case FiniteVolumeField<T>::SYMMETRY:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-
-        default:
-            throw Exception("FiniteVolumeField<T>", "harmonicInterpolateFaces", "unrecongnized boundary condition type.");
-        }
-    }
-}
 
 template<class T>
 void interpolateNodes(FiniteVolumeField<T> &field)

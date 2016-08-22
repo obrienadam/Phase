@@ -39,6 +39,16 @@ public:
     const std::vector<T>& nodes() const { return nodes_; }
     bool hasNodalValues() const { return !nodes_.empty(); }
 
+    //- Access operators
+    T& operator()(const Cell& cell) { return std::vector<T>::operator[](cell.id()); }
+    const T& operator()(const Cell& cell) const { return std::vector<T>::operator[](cell.id()); }
+
+    T& operator ()(const Face& face) { return faces_[face.id()]; }
+    const T& operator ()(const Face& face) const { return faces_[face.id()]; }
+
+    T& operator ()(const Node& node) { return nodes_[node.id()]; }
+    const T& operator ()(const Node& node) const { return nodes_[node.id()]; }
+
     //- Field history
     FiniteVolumeField& savePreviousTimeStep(Scalar timeStep, int nPreviousFields);
     FiniteVolumeField& savePreviousIteration();
@@ -77,12 +87,6 @@ protected:
     std::deque< std::pair<Scalar, FiniteVolumeField<T> > > previousTimeSteps_;
     std::deque< FiniteVolumeField<T> > previousIteration_;
 };
-
-template<class T>
-void interpolateFaces(FiniteVolumeField<T>& field);
-
-template<class T>
-void harmonicInterpolateFaces(FiniteVolumeField<T>& field);
 
 template<class T>
 void interpolateNodes(FiniteVolumeField<T> &field);

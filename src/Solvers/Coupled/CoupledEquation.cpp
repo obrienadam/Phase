@@ -1,5 +1,6 @@
 #include "CoupledEquation.h"
 #include "GradientEvaluation.h"
+#include "FaceInterpolation.h"
 
 CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)
     :
@@ -171,7 +172,7 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
         triplets_.push_back(SparseMatrix::Triplet(rowV, rowP, centralCoeffVP));
     }
 
-    interpolateFaces(d_);
+    interpolateFaces(fv::INVERSE_VOLUME, d_);
 }
 
 void CoupledEquation::assembleContinuityEquation()

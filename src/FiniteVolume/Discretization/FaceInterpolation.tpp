@@ -72,10 +72,41 @@ void interpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field)
     }
 }
 
-template<class T>
-void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field)
-{
+//template<class T>
+//void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field)
+//{
 
+//}
+
+template<class T>
+void interpolateFaces(const FiniteVolumeField<Scalar> &w, FiniteVolumeField<T>& field, bool inverseWeighting)
+{
+    if(inverseWeighting)
+    {
+        for(const Face& face: field.grid.interiorFaces())
+            field(face) = (field(face.lCell())/w(face.lCell()) + field(face.rCell())/w(face.rCell()))/(1./w(face.lCell()) + 1./w(face.rCell()));
+    }
+    else
+    {
+        for(const Face& face: field.grid.interiorFaces())
+            field(face) = (w(face.lCell())*field(face.lCell()) + w(face.rCell())*field(face.rCell()))/(w(face.lCell()) + w(face.rCell()));
+    }
+
+    for(const Face& face: field.grid.boundaryFaces())
+    {
+        switch(field.boundaryType(face.id()))
+        {
+        case FiniteVolumeField<T>::FIXED:
+            break;
+
+        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW: case FiniteVolumeField<T>::SYMMETRY:
+            field(face) = field(face.lCell());
+            break;
+
+        default:
+            throw Exception("fv", "interpolateFaces", "unrecongnized boundary condition type.");
+        }
+    }
 }
 
 }

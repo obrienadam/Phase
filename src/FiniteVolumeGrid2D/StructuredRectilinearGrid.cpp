@@ -1,12 +1,15 @@
 #include "StructuredRectilinearGrid.h"
 #include "Exception.h"
 
-StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY)
+StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height, Size nCellsX, Size nCellsY, Scalar convertToMeters)
     :
       FiniteVolumeGrid2D((nCellsX + 1)*(nCellsY + 1),
                          nCellsX*nCellsY,
                          (nCellsX + 1)*nCellsY + nCellsX*(nCellsY + 1))
 {
+    width *= convertToMeters;
+    height *= convertToMeters;
+
     nCellsX_ = nCellsX;
     nCellsY_ = nCellsY;
     width_ = width;

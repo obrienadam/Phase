@@ -21,7 +21,6 @@ protected:
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
-    virtual void computeMassSource(Scalar timeStep);
     virtual void computeAdvectingVelocity(Scalar timeStep);
 
     void computeRho();

@@ -4,6 +4,7 @@
 #include "Celeste.h"
 #include "CrankNicolson.h"
 #include "AdamsBashforth.h"
+#include "FaceInterpolation.h"
 
 PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -57,12 +58,10 @@ void PisoMultiphase::computeRho()
 
     for(const Cell& cell: rho.grid.activeCells())
     {
-        size_t id = cell.id();
-        rho[id] = (1. - gammaTilde[id])*rho1_ + gammaTilde[id]*rho2_;
+        rho(cell) = (1. - gammaTilde(cell))*rho1_ + gammaTilde(cell)*rho2_;
     }
 
-    //interpolateFaces(rho);
-    harmonicInterpolateFaces(rho);
+    interpolateFaces(fv::INVERSE_VOLUME, rho);
 }
 
 void PisoMultiphase::computeMu()
@@ -71,12 +70,11 @@ void PisoMultiphase::computeMu()
 
     for(const Cell& cell: mu.grid.activeCells())
     {
-        size_t id = cell.id();
-        mu[id] = (1. - gammaTilde[id])*mu1_ + gammaTilde[id]*mu2_;
+        mu(cell) = (1. - gammaTilde(cell))*mu1_ + gammaTilde(cell)*mu2_;
         //mu[id] = rho[id]/((1. - gammaTilde[id])*rho1_/mu1_ + gammaTilde[id]*rho2_/mu2_);
     }
 
-    harmonicInterpolateFaces(mu);
+    interpolateFaces(fv::INVERSE_VOLUME, mu);
 }
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
@@ -86,7 +84,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeMu();
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
              == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
@@ -100,13 +98,14 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 { 
     gamma.savePreviousTimeStep(timeStep, 1);
-    interpolateFaces(gamma);
+    interpolateFaces(fv::INVERSE_VOLUME, gamma);
 
     switch(interfaceAdvectionMethod_)
     {
     case CICSAM:
 
-        gammaEqn_ = (cicsam::div(u, gradGamma, gamma, timeStep, cicsam::HC) == 0.);
+        //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
+        gammaEqn_ = (cicsam::div(u, gradGamma, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
         break;
     case PLIC:
 
@@ -120,6 +119,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 void PisoMultiphase::rhieChowInterpolation()
 {
     Piso::rhieChowInterpolation();
+    const Scalar sigma = surfaceTensionForce_->sigma();
 
     for(const Face& face: u.grid.interiorFaces())
     {
@@ -131,36 +131,43 @@ void PisoMultiphase::rhieChowInterpolation()
 
         const Scalar df = d.faces()[id];
         const Scalar rhof = rho.faces()[id];
-        const Scalar rhoP = rho[lCell.id()];
-        const Scalar rhoQ = rho[rCell.id()];
+        const Scalar rhoP = rho(lCell);
+        const Scalar rhoQ = rho(rCell);
 
         Scalar kf;
 
         if(!u.grid.fluidCells().isInGroup(lCell))
-            kf = surfaceTensionForce_->kappa()[rCell.id()];
+            kf = surfaceTensionForce_->kappa()(rCell);
         else if(!u.grid.fluidCells().isInGroup(rCell))
-            kf = surfaceTensionForce_->kappa()[lCell.id()];
+            kf = surfaceTensionForce_->kappa()(lCell);
         else
             kf = surfaceTensionForce_->kappa().faces()[id];
 
-        const Scalar gP = gamma[lCell.id()];
-        const Scalar gQ = gamma[rCell.id()];
+        const Scalar gP = gamma(lCell);
+        const Scalar gQ = gamma(rCell);
 
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        u.faces()[id] += surfaceTensionForce_->sigma()*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d[lCell.id()]*ft[lCell.id()]/rhoP + (1. - g)*d[rCell.id()]*ft[rCell.id()]/rhoQ)/2.;
+        if(ib_.isIbCell(lCell) || ib_.isIbCell(rCell))
+        {
+            continue;
+        }
+        else
+        {
+            u(face) += sigma*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d(lCell)*ft(lCell)/rhoP + (1. - g)*d(rCell)*ft(rCell)/rhoQ)/2.;
+        }
     }
 
     for(const Face& face: u.grid.boundaryFaces())
     {
         const Cell& cellP = face.lCell();
         const Vector2D rf = face.centroid() - cellP.centroid();
-        const Scalar df = d.faces()[face.id()];
-        const Scalar kf = surfaceTensionForce_->kappa().faces()[face.id()];
-        const Scalar gf = gamma.faces()[face.id()];
-        const Scalar gP = gamma[cellP.id()];
-        const Scalar rhoP = rho[cellP.id()];
-        const Scalar rhof = rho.faces()[face.id()];
+        const Scalar df = d(face);
+        const Scalar kf = surfaceTensionForce_->kappa()(face);
+        const Scalar gf = gamma(face);
+        const Scalar gP = gamma(cellP);
+        const Scalar rhoP = rho(cellP);
+        const Scalar rhof = rho(face);
 
         switch(u.boundaryType(face.id()))
         {
@@ -168,16 +175,16 @@ void PisoMultiphase::rhieChowInterpolation()
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u.faces()[face.id()] += surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
-                    - rhof*d[cellP.id()]*ft[cellP.id()]/rhoP;
+            u(face) += surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
+                    - rhof*d(cellP)*ft(cellP)/rhoP;
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
             break;
 
         case VectorFiniteVolumeField::OUTFLOW:
-            u.faces()[face.id()] += dot(u.faces()[face.id()], face.outwardNorm(cellP.centroid())) > 0. ? surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
-                                                                                                         - rhof*d[cellP.id()]*ft[cellP.id()]/rhoP : Vector2D(0., 0.);
+            u(face) += dot(u(face), face.outwardNorm(cellP.centroid())) > 0. ? surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
+                                                                                                         - rhof*d(cellP)*ft(cellP)/rhoP : Vector2D(0., 0.);
             break;
 
         default:

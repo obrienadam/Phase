@@ -18,7 +18,7 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
         int nCellsX = input.caseInput().get<int>("Grid.nCellsX");
         int nCellsY = input.caseInput().get<int>("Grid.nCellsY");
 
-        return shared_ptr<FiniteVolumeGrid2D>(new StructuredRectilinearGrid(width, height, nCellsX, nCellsY));
+        return shared_ptr<FiniteVolumeGrid2D>(new StructuredRectilinearGrid(width, height, nCellsX, nCellsY, input.caseInput().get<Scalar>("Grid.convertToMeters", 1.)));
     }
     else if(gridType == "cgns")
     {

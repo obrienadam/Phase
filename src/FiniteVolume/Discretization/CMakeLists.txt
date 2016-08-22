@@ -6,6 +6,7 @@ set(HEADERS CrankNicolson.h
 set(SOURCES CrankNicolson.cpp
             AdamsBashforth.cpp
             FaceInterpolation.tpp
+            FaceInterpolation.cpp
             GradientEvaluation.cpp)
 
 add_library(Discretization ${HEADERS} ${SOURCES})
