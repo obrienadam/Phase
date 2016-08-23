@@ -38,6 +38,10 @@ public:
     Scalar imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const;
     Vector2D imagePointVal(const Cell &ell, const VectorFiniteVolumeField& field) const;
 
+    //- Operations
+    std::pair<Point2D, Vector2D> intersectionStencil(const Point2D& ptA, const Point2D& ptB) const; // returns a intersection point and the edge normal
+
+    //- Internal cells and boundaries
     void setInternalCells();
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);

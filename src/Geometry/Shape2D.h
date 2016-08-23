@@ -22,6 +22,7 @@ public:
     //- Intersections
     virtual std::vector<Point2D> intersections(const Line2D& line) const = 0;
     virtual Point2D nearestIntersect(const Point2D& point) const = 0;
+    virtual std::pair<Point2D, Point2D> nearestEdge(const Point2D& point) const = 0;
 
     //- Transformations
     virtual void scale(Scalar factor) = 0;

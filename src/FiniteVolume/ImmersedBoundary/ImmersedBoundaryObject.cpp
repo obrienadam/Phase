@@ -47,6 +47,17 @@ Vector2D ImmersedBoundaryObject::imagePointVal(const Cell &cell, const VectorFin
     return bi(vals, ip);
 }
 
+std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D& ptA, const Point2D& ptB) const
+{
+    const Line2D line(ptA, (ptB - ptA).normalVec());
+    const Point2D xc = nearestPoint(ptA, shapePtr_->intersections(line));
+    const std::pair<Point2D, Point2D> edge = shapePtr_->nearestEdge(xc);
+
+    return std::make_pair(
+                xc, -(edge.second - edge.first).normalVec()
+                );
+}
+
 void ImmersedBoundaryObject::setInternalCells()
 {
     flagIbCells();

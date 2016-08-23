@@ -56,4 +56,3 @@ message(STATUS "C debug flags: ${CMAKE_C_FLAGS_DEBUG}")
 
 add_subdirectory(src)
 add_subdirectory(modules)
-add_subdirectory(test)

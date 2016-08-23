@@ -54,7 +54,7 @@ protected:
 
     std::string name_;
 
-    std::map<size_t, Ref<const Cell> > cellSet_; // Allows cell lookup via an id
+    std::map<Label, Ref<const Cell> > cellSet_; // Allows cell lookup via an id
     std::vector< Ref<const Cell> > cells_; // Used for faster iteration over all cells
 
     Rtree rTree_;

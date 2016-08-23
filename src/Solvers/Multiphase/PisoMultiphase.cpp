@@ -126,7 +126,7 @@ void PisoMultiphase::rhieChowInterpolation()
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
 
-        if(ib_.isIbCell(lCell) || ib_.isIbCell(rCell))
+        if(!(lCell.isFluidCell() && rCell.isFluidCell()))
             continue;
 
         const Vector2D rc = rCell.centroid() - lCell.centroid();

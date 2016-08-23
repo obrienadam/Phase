@@ -20,7 +20,10 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
         std::string status = boundaryInput.second.get<std::string>("contactAngle", "off");
 
         if(status == "on")
+        {
             contactAnglePatches_.push_back(std::cref(gamma_.grid.patches().find(boundaryInput.first)->second));
+            printf("Contact angles will be applied to patch \"%s\".\n", boundaryInput.first.c_str());
+        }
         else if(status == "off")
             continue;
         else
@@ -34,4 +37,15 @@ Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D& gradGamma
     const Vector2D nt = wallNormal.tangentVec();
     const Scalar theta = dot(-gradGamma, vel) >= 0. ? thetaAdv_ : thetaRec_;
     return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI/2. - theta).unitVec() : nt.rotate(M_PI/2. + theta).unitVec();
+}
+
+bool SurfaceTensionForce::isContactLinePatch(const Patch &patch) const
+{
+    for(const Patch &clPatch: contactAnglePatches_)
+    {
+        if(clPatch.id() == patch.id())
+            return true;
+    }
+
+    return false;
 }

@@ -21,7 +21,7 @@ VectorFiniteVolumeField Celeste::compute()
     computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma_[cell.id()];
+        ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
     return ft;
 }
@@ -34,7 +34,7 @@ void Celeste::constructMatrices()
     gradGammaTildeStencils_.resize(gradGammaTilde_.size());
     for(const Cell &cell: gammaTilde_.grid.fluidCells())
     {
-        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         A.resize(8, 5);
         int i = 0;
@@ -77,12 +77,11 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(nb.cell()))
                 {
-                    auto intersections = ibObj.shape().intersections(Line2D(cell.centroid(), (nb.cell().centroid() - cell.centroid()).tangentVec()));
-                    Point2D xc = nearestPoint(cell.centroid(), intersections);
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-                    sSqr = (xc - cell.centroid()).magSqr();
-                    dx = xc.x - cell.centroid().x;
-                    dy = xc.y - cell.centroid().y;
+                    sSqr = (stencil.first - cell.centroid()).magSqr();
+                    dx = stencil.first.x - cell.centroid().x;
+                    dy = stencil.first.y - cell.centroid().y;
                     break;
                 }
             }
@@ -106,12 +105,11 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(dg.cell()))
                 {
-                    auto intersections = ibObj.shape().intersections(Line2D(cell.centroid(), (dg.cell().centroid() - cell.centroid()).tangentVec()));
-                    Point2D xc = nearestPoint(cell.centroid(), intersections);
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-                    sSqr = (xc - cell.centroid()).magSqr();
-                    dx = xc.x - cell.centroid().x;
-                    dy = xc.y - cell.centroid().y;
+                    sSqr = (stencil.first - cell.centroid()).magSqr();
+                    dx = stencil.first.x - cell.centroid().x;
+                    dy = stencil.first.y - cell.centroid().y;
                     break;
                 }
             }
@@ -172,14 +170,22 @@ void Celeste::computeGradGammaTilde()
         }
 
         b = gradGammaTildeMatrices_[cell.id()]*b;
-        gradGammaTilde_[cell.id()] = Vector2D(b(0, 0), b(1, 0));
+        gradGammaTilde_(cell) = Vector2D(b(0, 0), b(1, 0));
     }
 }
 
 void Celeste::computeInterfaceNormals()
 {
     for(const Cell &cell: n_.grid.fluidCells())
-        n_[cell.id()] = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
+        n_(cell) = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+
+    for(const Face &face: n_.grid.boundaryFaces())
+    {
+        if(isContactLinePatch(face.patch()))
+            n_(face) = computeContactLineNormal(gradGammaTilde_(face.lCell()), face.outwardNorm(face.lCell().centroid()), u_(face.lCell()));
+        else
+            n_(face) = n_(face.lCell());
+    }
 }
 
 void Celeste::computeCurvature()
@@ -199,17 +205,16 @@ void Celeste::computeCurvature()
             for(const InteriorLink &nb: cell.neighbours())
             {
                 Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-                Scalar n = n_[nb.cell().id()](compNo) - n_[cell.id()](compNo);
+                Scalar n = n_(nb.cell())(compNo) - n_(cell)(compNo);
 
                 for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
                 {
                     if(ibObj.cells().isInGroup(nb.cell()))
                     {
-                        auto intersections = ibObj.shape().intersections(Line2D(cell.centroid(), (nb.cell().centroid() - cell.centroid()).tangentVec()));
-                        Point2D xc = nearestPoint(cell.centroid(), intersections);
+                        auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-                        sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.shape().centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        sSqr = (stencil.first - cell.centroid()).magSqr();
+                        n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
                         break;
                     }
                 }
@@ -228,11 +233,10 @@ void Celeste::computeCurvature()
                 {
                     if(ibObj.cells().isInGroup(dg.cell()))
                     {
-                        auto intersections = ibObj.shape().intersections(Line2D(cell.centroid(), (dg.cell().centroid() - cell.centroid()).tangentVec()));
-                        Point2D xc = nearestPoint(cell.centroid(), intersections);
+                        auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-                        sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_[cell.id()], ibObj.shape().centroid() - xc, u_[cell.id()])(compNo) - n_[cell.id()](compNo);
+                        sSqr = (stencil.first - cell.centroid()).magSqr();
+                        n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
                         break;
                     }
                 }
@@ -245,7 +249,7 @@ void Celeste::computeCurvature()
             for(const BoundaryLink &bd: cell.boundaries())
             {
                 const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (n_.faces()[bd.face().id()](compNo) - n_[cell.id()](compNo))/sSqr;
+                b(i, 0) = (n_(bd.face())(compNo) - n_(cell)(compNo))/sSqr; // contact line faces should already be computed
 
                 ++i;
             }
@@ -260,33 +264,33 @@ void Celeste::computeCurvature()
     interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }
 
-void Celeste::weightCurvatures()
-{
-    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
+//void Celeste::weightCurvatures()
+//{
+//    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
 
-    for(const Cell &cell: wGamma_.grid.fluidCells())
-        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
+//    for(const Cell &cell: wGamma_.grid.fluidCells())
+//        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
 
-    kappa_.savePreviousIteration();
+//    kappa_.savePreviousIteration();
 
-    for(const Cell &cell: kappa_.grid.fluidCells())
-    {
-        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
+//    for(const Cell &cell: kappa_.grid.fluidCells())
+//    {
+//        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
 
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            sumW += wGamma_[nb.cell().id()];
-            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()];
-        }
+//        for(const InteriorLink &nb: cell.neighbours())
+//        {
+//            sumW += wGamma_[nb.cell().id()];
+//            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()];
+//        }
 
-        for(const DiagonalCellLink &dg: cell.diagonals())
-        {
-            sumW += wGamma_[dg.cell().id()];
-            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()];
-        }
+//        for(const DiagonalCellLink &dg: cell.diagonals())
+//        {
+//            sumW += wGamma_[dg.cell().id()];
+//            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()];
+//        }
 
-        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
-    }
+//        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
+//    }
 
 //    kappa_.savePreviousIteration();
 
@@ -312,4 +316,4 @@ void Celeste::weightCurvatures()
 
 //        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
 //    }
-}
+// }

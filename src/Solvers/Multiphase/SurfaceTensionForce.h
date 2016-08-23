@@ -14,6 +14,8 @@ public:
     virtual VectorFiniteVolumeField compute() = 0;
     Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel) const;
 
+    bool isContactLinePatch(const Patch& patch) const;
+
     const ScalarFiniteVolumeField& gamma() const { return gamma_; }
     virtual const ScalarFiniteVolumeField& gammaTilde() const { return gamma_; }
     virtual const VectorFiniteVolumeField& gradGammaTilde() const = 0;

@@ -74,34 +74,86 @@ std::vector<Point2D> Polygon::intersections(const Line2D& line) const
 
 Point2D Polygon::nearestIntersect(const Point2D& point) const
 {
-    auto vtxIter = vertices().begin();
-    Point2D vtx0 = *(vtxIter++);
+    auto vtx0 = vertices().begin();
+    auto vtx1 = vtx0 + 1;
 
-    Point2D currNearestIntersect(INFINITY, INFINITY);
-    for(; vtxIter != vertices().end(); vtxIter++)
+    std::pair<Point2D, Point2D> edge(*vtx0, *vtx1);
+
+    Vector2D rel = point - edge.first;
+    Vector2D tan = dot(rel, (edge.second - edge.first).unitVec());
+    Vector2D norm = rel - tan;
+
+    Scalar minDistSqr = norm.magSqr();
+    Point2D nearestPoint = edge.first + tan;
+
+    ++vtx0;
+    ++vtx1;
+
+    for(; vtx1 != vertices().end(); ++vtx0, ++vtx1)
     {
-        Point2D vtx1 = *(vtxIter);
+        edge = std::make_pair(*vtx0, *vtx1);
+        const Vector2D edgeVec = edge.second - edge.first;
 
-        Point2D ptVec = point - vtx0;
-        Point2D segmentVec = vtx1 - vtx0;
+        rel = point - edge.first;
+        tan = dot(rel, edgeVec)*edgeVec/edgeVec.magSqr();
+        norm = rel - tan;
 
-        Scalar l = dot(ptVec, segmentVec.unitVec());
+        const Scalar distSqr = norm.magSqr();
+        const Point2D xc = edge.first + tan;
 
-        Point2D intersect;
+        const Scalar t = dot(xc - edge.first, tan.unitVec());
+        const Scalar tmax = edgeVec.mag();
 
-        if(l <= 0)
-            intersect = vtx0;
-        else if (l*l > segmentVec.magSqr())
-            intersect = vtx1;
-        else
-            intersect = vtx0 + l*segmentVec.unitVec();
-
-        currNearestIntersect = (intersect - point).magSqr() < (currNearestIntersect - point).magSqr() ? intersect : currNearestIntersect;
-
-        vtx0 = vtx1;
+        if(distSqr < minDistSqr && t >= 0 && t < tmax)
+        {
+            minDistSqr = distSqr;
+            nearestPoint = edge.first + tan;
+        }
     }
 
-    return currNearestIntersect;
+    return nearestPoint;
+}
+
+std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D& point) const
+{
+    auto vtx0 = vertices().begin();
+    auto vtx1 = vtx0 + 1;
+
+    std::pair<Point2D, Point2D> edge(*vtx0, *vtx1);
+
+    Vector2D rel = point - edge.first;
+    Vector2D tan = dot(rel, (edge.second - edge.first).unitVec());
+    Vector2D norm = rel - tan;
+
+    Scalar minDistSqr = norm.magSqr();
+    std::pair<Point2D, Point2D> nearestEdge = edge;
+
+    ++vtx0;
+    ++vtx1;
+
+    for(; vtx1 != vertices().end(); ++vtx0, ++vtx1)
+    {
+        edge = std::make_pair(*vtx0, *vtx1);
+        const Vector2D edgeVec = edge.second - edge.first;
+
+        rel = point - edge.first;
+        tan = dot(rel, edgeVec)*edgeVec/edgeVec.magSqr();
+        norm = rel - tan;
+
+        const Scalar distSqr = norm.magSqr();
+        const Point2D xc = edge.first + tan;
+
+        const Scalar t = dot(xc - edge.first, tan.unitVec());
+        const Scalar tmax = edgeVec.mag();
+
+        if(distSqr < minDistSqr && t >= 0 && t < tmax)
+        {
+            minDistSqr = distSqr;
+            nearestEdge = edge;
+        }
+    }
+
+    return nearestEdge;
 }
 
 //- Transformations

@@ -147,7 +147,7 @@ void Piso::rhieChowInterpolation()
 
         const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
 
-        if(ib_.isIbCell(cellP) || ib_.isIbCell(cellQ))
+        if(!(cellP.isFluidCell() && cellQ.isFluidCell()))
         {
             u(face) = g*u(cellP) + (1. - g)*u(cellQ);
         }

@@ -30,6 +30,7 @@ public:
     //- Intersections
     std::vector<Point2D> intersections(const Line2D& line) const;
     Point2D nearestIntersect(const Point2D &point) const;
+    std::pair<Point2D, Point2D> nearestEdge(const Point2D& point) const;
 
     //- Transformations
     void scale(Scalar factor);

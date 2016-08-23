@@ -43,7 +43,6 @@ void ContinuumSurfaceForce::constructSmoothingKernels()
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    interpolateFaces(fv::INVERSE_VOLUME, gammaTilde_);
     computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gammaTilde_, gradGammaTilde_);
     interpolateFaces(fv::INVERSE_VOLUME, gradGammaTilde_);
 }
