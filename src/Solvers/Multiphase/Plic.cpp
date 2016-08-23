@@ -130,7 +130,7 @@ Polygon computeInterfacePolygon(const Cell &cell, Scalar& gamma,  const Vector2D
         Scalar cMin, cMax;
 
         bool init = true;
-        for(const Point2D& vtx: cell.shape())
+        for(const Point2D& vtx: cell.shape().vertices())
         {
             Scalar c = dot(vtx - plic.r0(), plic.n());
 

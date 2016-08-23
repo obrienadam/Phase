@@ -1,6 +1,8 @@
 #ifndef CIRCLE_H
 #define CIRCLE_H
 
+#include <math.h>
+
 #include "Types.h"
 #include "Shape2D.h"
 #include "Polygon.h"
@@ -13,22 +15,29 @@ public:
 
     void init(const Point2D &center, Scalar radius);
 
+    //- Circle parameters
     const Point2D& centroid() const { return center_; }
-    Scalar area() const;
+    Scalar area() const { return area_; }
     Scalar radius() const { return radius_; }
 
-    void scale(Scalar factor);
-    void rotate(Scalar theta) {}
-
+    //- Tests
     bool isInside(const Point2D &testPoint) const;
     bool isOnEdge(const Point2D &testPoint) const;
-    Point2D nearestIntersect(const Point2D &testPoint) const;
-    std::pair<Point2D, bool> firstIntersect(Point2D ptA, Point2D ptB) const;
 
-    boost::geometry::model::box<Point2D> boundingBox() const;
+    //- Intersections
+    std::vector<Point2D> intersections(const Line2D &line) const;
+    Point2D nearestIntersect(const Point2D &point) const;
 
+    //- Transformations
+    void scale(Scalar factor);
+    void rotate(Scalar theta) { }
+
+    //- Translations
     void operator+=(const Vector2D& translationVec);
     void operator-=(const Vector2D& translationVec);
+
+    //- Bounding box
+    boost::geometry::model::box<Point2D> boundingBox() const;
 
 private:
 

@@ -24,6 +24,7 @@ Polygon::Polygon(const boost::geometry::model::polygon<Point2D, false, true> &bo
     init();
 }
 
+//- Tests
 bool Polygon::isInside(const Point2D& testPoint) const
 {
     return boost::geometry::within(testPoint, poly_);
@@ -44,17 +45,44 @@ bool Polygon::isEmpty() const
     return vertices().size() == 0;
 }
 
-Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
+//- Intersections
+std::vector<Point2D> Polygon::intersections(const Line2D& line) const
 {
-    auto vtxIter = begin();
+    auto vtx0 = vertices().begin();
+    auto vtx1 = vtx0 + 1;
+    std::vector<Point2D> intersections;
+
+    for(; vtx1 != vertices().end(); ++vtx1, ++vtx0)
+    {
+        //- check for vertex intersections
+        if(line.isApproximatelyOnLine(*vtx1))
+            intersections.push_back(*vtx1);
+        else if(line.isApproximatelyOnLine(*vtx0))
+            continue;
+        else // check for edge intersection
+        {
+            const Line2D edge(*vtx0, (*vtx1 - *vtx0).tangentVec());
+            const Point2D xc = Line2D::intersection(edge, line).first;
+
+            if((xc - *vtx0).magSqr() < (*vtx1 - *vtx0).magSqr() && dot(*vtx1 - *vtx0, xc - *vtx0) > 0.)
+                intersections.push_back(xc);
+        }
+    }
+
+    return intersections;
+}
+
+Point2D Polygon::nearestIntersect(const Point2D& point) const
+{
+    auto vtxIter = vertices().begin();
     Point2D vtx0 = *(vtxIter++);
 
     Point2D currNearestIntersect(INFINITY, INFINITY);
-    for(; vtxIter != end(); vtxIter++)
+    for(; vtxIter != vertices().end(); vtxIter++)
     {
         Point2D vtx1 = *(vtxIter);
 
-        Point2D ptVec = testPoint - vtx0;
+        Point2D ptVec = point - vtx0;
         Point2D segmentVec = vtx1 - vtx0;
 
         Scalar l = dot(ptVec, segmentVec.unitVec());
@@ -68,7 +96,7 @@ Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
         else
             intersect = vtx0 + l*segmentVec.unitVec();
 
-        currNearestIntersect = (intersect - testPoint).magSqr() < (currNearestIntersect - testPoint).magSqr() ? intersect : currNearestIntersect;
+        currNearestIntersect = (intersect - point).magSqr() < (currNearestIntersect - point).magSqr() ? intersect : currNearestIntersect;
 
         vtx0 = vtx1;
     }
@@ -76,65 +104,7 @@ Point2D Polygon::nearestIntersect(const Point2D& testPoint) const
     return currNearestIntersect;
 }
 
-std::pair<Point2D, bool> Polygon::firstIntersect(Point2D ptA, Point2D ptB) const
-{
-    const Vector2D v1 = ptB - ptA;
-
-    const auto& ring = boost::geometry::exterior_ring(poly_);
-
-    for(const Point2D &vtx: ring)
-    {
-        const Vector2D v2 = vtx - ptA;
-
-        //- Check for a vertex intersection
-        if(v2.magSqr() < v1.magSqr() && v1.unitVec() == v2.unitVec())
-            return std::make_pair(vtx, true);
-    }
-
-
-    auto vtx1 = ring.begin();
-    auto vtx2 = vtx1 + 1;
-
-    const Line2D lineA = Line2D(ptA, ptB - ptA);
-
-    for(; vtx2 != ring.end(); ++vtx2, ++vtx1)
-    {
-        const Line2D lineB = Line2D(*vtx1, *vtx2 - *vtx1);
-
-        auto intersection = Line2D::intersection(lineA, lineB);
-
-        if(intersection.second) // an intersection exists
-            return intersection;
-    }
-
-    throw Exception("Polygon", "firstIntersect", "No intersection found.");
-    return std::make_pair(Point2D(), false);
-}
-
-void Polygon::operator+=(const Vector2D& translationVec)
-{
-    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
-        vtx += translationVec;
-
-    centroid_ += translationVec;
-}
-
-void Polygon::operator-=(const Vector2D& translationVec)
-{
-    operator +=(-translationVec);
-}
-
-Polygon Polygon::scale(Scalar factor) const
-{
-    std::vector<Point2D> verts;
-    verts.reserve(vertices().size());
-
-    for(const Point2D &vtx: boost::geometry::exterior_ring(poly_))
-        verts.push_back(factor*(vtx - centroid_) + centroid_);
-
-    return Polygon(verts);
-}
-
+//- Transformations
 void Polygon::scale(Scalar factor)
 {
     for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
@@ -149,6 +119,32 @@ void Polygon::rotate(Scalar theta)
         vtx = (vtx - centroid_).rotate(theta) + centroid_;
 }
 
+Polygon Polygon::scale(Scalar factor) const
+{
+    std::vector<Point2D> verts;
+    verts.reserve(vertices().size());
+
+    for(const Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        verts.push_back(factor*(vtx - centroid_) + centroid_);
+
+    return Polygon(verts);
+}
+
+//- Translations
+void Polygon::operator+=(const Vector2D& translationVec)
+{
+    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx += translationVec;
+
+    centroid_ += translationVec;
+}
+
+void Polygon::operator-=(const Vector2D& translationVec)
+{
+    operator +=(-translationVec);
+}
+
+//- Bounding box
 boost::geometry::model::box<Point2D> Polygon::boundingBox() const
 {
     boost::geometry::model::box<Point2D> box;
@@ -175,7 +171,6 @@ void Polygon::init()
 }
 
 //- External functions
-
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 {
     std::vector< boost::geometry::model::polygon<Point2D, false, true> > pgn;
@@ -194,7 +189,7 @@ Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
 {
     std::vector<Point2D> verts;
 
-    for(auto vertIt = pgn.begin(); vertIt != pgn.end() - 1; ++vertIt)
+    for(auto vertIt = pgn.vertices().begin(); vertIt != pgn.vertices().end() - 1; ++vertIt)
     {
         const Vector2D& vtx = *vertIt;
         const Vector2D& nextVtx = *(vertIt + 1);

@@ -90,7 +90,8 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector
 {
     for(size_t id: ids)
     {
-        cells_[id].isActive_ = true;
+        cells_[id].setActive();
+        cells_[id].setFluidCell();
         fluidCells_.moveToGroup(cells_[id]);
     }
 
@@ -101,7 +102,10 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector
 UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup() const
 {
     for(const Cell &cell: cells_)
-        cell.isActive_ = true;
+    {
+        cell.setActive();
+        cell.setFluidCell();
+    }
 
     fluidCells_.moveAllCellsToThisGroup();
 
@@ -113,7 +117,8 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vec
 {
     for(size_t id: ids)
     {
-        cells_[id].isActive_ = false;
+        cells_[id].setInactive();
+        cells_[id].setNonFluidCell();
         inactiveCells_.moveToGroup(cells_[id]);
     }
 
@@ -127,7 +132,8 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& nam
 
     for(size_t id: ids)
     {
-        cells_[id].isActive_ = true;
+        cells_[id].setActive();
+        cells_[id].setNonFluidCell();
         group.moveToGroup(cells_[id]);
     }
 

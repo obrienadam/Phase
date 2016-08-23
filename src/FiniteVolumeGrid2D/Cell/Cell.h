@@ -20,10 +20,14 @@ public:
 
     Cell(const std::vector<Label>& nodeIds, const std::vector<Node>& nodes);
 
-    //- Status
-    void setActive() { isActive_ = true; }
-    void setInactive() { isActive_ = false; globalIndex_ = INACTIVE; }
+    //- Status, note the use of mutable types
+    void setActive() const { isActive_ = true; }
+    void setInactive() const { isActive_ = false; globalIndex_ = INACTIVE; }
+    void setFluidCell() const { isFluidCell_ = true; }
+    void setNonFluidCell() const { isFluidCell_ = false; }
+
     bool isActive() const { return isActive_; }
+    bool isFluidCell() const { return isFluidCell_; }
 
     //- Geometry
     Scalar volume() const { return volume_; }
@@ -57,7 +61,7 @@ private:
     void addBoundaryLink(const Face& face);
     void addInteriorLink(const Face& face, const Cell& cell);
 
-    mutable bool isActive_;
+    mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
     mutable Index globalIndex_;
     Label id_;
 

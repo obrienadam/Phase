@@ -1,5 +1,3 @@
-#include <math.h>
-
 #include "Circle.h"
 
 Circle::Circle(Point2D center, Scalar radius)
@@ -17,17 +15,7 @@ void Circle::init(const Point2D &center, Scalar radius)
     area_ = M_PI*radius_*radius_;
 }
 
-Scalar Circle::area() const
-{
-    return area_;
-}
-
-void Circle::scale(Scalar factor)
-{
-    radius_ *= factor;
-    area_ *= factor*factor;
-}
-
+//- Tests
 bool Circle::isInside(const Point2D &testPoint) const
 {
     return (testPoint - center_).magSqr() < radius_*radius_;
@@ -35,48 +23,55 @@ bool Circle::isInside(const Point2D &testPoint) const
 
 bool Circle::isOnEdge(const Point2D &testPoint) const
 {
-    return fabs((testPoint - center_).mag() - radius_) < 1e-12;
+    return (testPoint - center_).magSqr() - radius_*radius_ <= Point2D::epsilon();
 }
 
-Point2D Circle::nearestIntersect(const Point2D &testPoint) const
+//- Intersections
+std::vector<Point2D> Circle::intersections(const Line2D &line) const
 {
-    Vector2D rVec = testPoint - center_;
-    return center_ + rVec.unitVec()*radius_;
+    Vector2D origin = line.r0() - center_;
+
+    const Scalar dx = line.d().x, dy = line.d().y;
+    const Scalar a = dx*dx + dy*dy;
+    const Scalar b = 2.*(origin.x*dx + origin.y*dy);
+    const Scalar c = origin.x*origin.x + origin.y*origin.y - radius_*radius_;
+
+    const Scalar disc = b*b - 4.*a*c;
+
+    origin += center_;
+
+    if(disc < 0.)
+        return std::vector<Point2D>();
+    else if (disc < Point2D::epsilon())
+    {
+        return std::vector<Point2D>({
+                                        origin - b/(2.*a)*line.n()
+                                    });
+    }
+    else
+    {
+        const Scalar t1 = (-b + sqrt(disc))/(2.*a), t2 = (-b + sqrt(disc))/(2.*a);
+
+        return std::vector<Point2D>({
+                                        line(t1),
+                                        line(t2)
+                                    });
+    }
 }
 
-std::pair<Point2D, bool> Circle::firstIntersect(Point2D ptA, Point2D ptB) const
+Point2D Circle::nearestIntersect(const Point2D &point) const
 {
-    ptA -= center_;
-    ptB -= center_;
-
-    Scalar dx = ptB.x - ptA.x;
-    Scalar dy = ptB.y - ptA.y;
-
-    Scalar a = dx*dx + dy*dy;
-    Scalar b = 2.*(ptA.x*dx + ptA.y*dy);
-    Scalar c = ptA.x*ptA.x + ptA.y*ptA.y - radius_*radius_;
-    Scalar delta = b*b - 4.*a*c;
-
-    if(delta < 0.) //- no intersection
-        return std::make_pair(Point2D(), false);
-
-    Scalar t1 = (-b + sqrt(delta))/(2.*a),
-            t2 = (-b - sqrt(delta))/(2.*a);
-
-    ptA += center_;
-    ptB += center_;
-
-    return fabs(t1) < fabs(t2) ? std::make_pair(ptA + t1*(ptB - ptA), true) : std::make_pair(ptA + t2*(ptB - ptA), true);
+    return (point - center_).unitVec()*radius_ + center_;
 }
 
-boost::geometry::model::box<Point2D> Circle::boundingBox() const
+//- Transformations
+void Circle::scale(Scalar factor)
 {
-    return boost::geometry::model::box<Point2D>(Point2D(center_.x - radius_,
-                                                        center_.y - radius_),
-                                                Point2D(center_.x + radius_,
-                                                        center_.y + radius_));
+    radius_ *= factor;
+    area_ *= factor*factor;
 }
 
+//- Translations
 void Circle::operator +=(const Vector2D& translationVec)
 {
     center_ += translationVec;
@@ -85,6 +80,14 @@ void Circle::operator +=(const Vector2D& translationVec)
 void Circle::operator -=(const Vector2D& translationVec)
 {
     center_ -= translationVec;
+}
+
+boost::geometry::model::box<Point2D> Circle::boundingBox() const
+{
+    return boost::geometry::model::box<Point2D>(Point2D(center_.x - radius_,
+                                                        center_.y - radius_),
+                                                Point2D(center_.x + radius_,
+                                                        center_.y + radius_));
 }
 
 //- External functions

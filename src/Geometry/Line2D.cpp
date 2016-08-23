@@ -7,7 +7,7 @@ Line2D::Line2D()
     r0_ = n_ = d_ = Vector2D(0., 0.);
 }
 
-Line2D::Line2D(const Point2D &r0, const Point2D &n)
+Line2D::Line2D(const Point2D &r0, const Vector2D &n)
     :
       r0_(r0),
       n_(n.unitVec())

@@ -11,7 +11,7 @@ public:
     static std::pair<Point2D, bool> intersection(const Line2D& lineA, const Line2D& lineB);
 
     Line2D();
-    Line2D(const Point2D& r0, const Point2D& n);
+    Line2D(const Point2D& r0, const Vector2D& n);
 
     Point2D operator()(Scalar t) const;
 

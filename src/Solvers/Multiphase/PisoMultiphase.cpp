@@ -123,39 +123,27 @@ void PisoMultiphase::rhieChowInterpolation()
 
     for(const Face& face: u.grid.interiorFaces())
     {
-        const size_t id = face.id();
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
 
+        if(ib_.isIbCell(lCell) || ib_.isIbCell(rCell))
+            continue;
+
         const Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        const Scalar df = d.faces()[id];
-        const Scalar rhof = rho.faces()[id];
+        const Scalar df = d(face);
+        const Scalar rhof = rho(face);
         const Scalar rhoP = rho(lCell);
         const Scalar rhoQ = rho(rCell);
 
-        Scalar kf;
-
-        if(!u.grid.fluidCells().isInGroup(lCell))
-            kf = surfaceTensionForce_->kappa()(rCell);
-        else if(!u.grid.fluidCells().isInGroup(rCell))
-            kf = surfaceTensionForce_->kappa()(lCell);
-        else
-            kf = surfaceTensionForce_->kappa().faces()[id];
+        const Scalar kf = surfaceTensionForce_->kappa()(face);
 
         const Scalar gP = gamma(lCell);
         const Scalar gQ = gamma(rCell);
 
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        if(ib_.isIbCell(lCell) || ib_.isIbCell(rCell))
-        {
-            continue;
-        }
-        else
-        {
-            u(face) += sigma*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d(lCell)*ft(lCell)/rhoP + (1. - g)*d(rCell)*ft(rCell)/rhoQ)/2.;
-        }
+        u(face) += sigma*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d(lCell)*ft(lCell)/rhoP + (1. - g)*d(rCell)*ft(rCell)/rhoQ)/2.;
     }
 
     for(const Face& face: u.grid.boundaryFaces())

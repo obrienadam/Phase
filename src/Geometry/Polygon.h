@@ -16,9 +16,9 @@ public:
     Polygon(const std::vector<Point2D>& vertices);
     Polygon(const boost::geometry::model::polygon<Point2D, false, true>& boostPgn);
 
-    //- Polygon properties
-    virtual const Point2D& centroid() const { return centroid_; }
-    virtual Scalar area() const { return area_; }
+    //- Polygon parameters
+    const Point2D& centroid() const { return centroid_; }
+    Scalar area() const { return area_; }
     const boost::geometry::model::polygon<Point2D, false, true>& boostPolygon() const { return poly_; }
 
     //- Tests
@@ -28,24 +28,22 @@ public:
     bool isEmpty() const;
 
     //- Intersections
-    virtual Point2D nearestIntersect(const Point2D& testPoint) const;
-    virtual std::pair<Point2D, bool> firstIntersect(Point2D ptA, Point2D ptB) const;
+    std::vector<Point2D> intersections(const Line2D& line) const;
+    Point2D nearestIntersect(const Point2D &point) const;
 
+    //- Transformations
+    void scale(Scalar factor);
+    void rotate(Scalar theta);
+    Polygon scale(Scalar factor) const;
+
+    //- Translations
     virtual void operator+=(const Vector2D& translationVec);
     virtual void operator-=(const Vector2D& translationVec);
 
-    Polygon scale(Scalar factor) const;
-
-    virtual void scale(Scalar factor);
-    virtual void rotate(Scalar theta);
-
+    //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;
 
-    //- Iterators
-    std::vector<Point2D>::const_iterator begin() const { return boost::geometry::exterior_ring(poly_).begin(); }
-    std::vector<Point2D>::const_iterator end() const { return boost::geometry::exterior_ring(poly_).end(); }
-
-    //- Verts
+    //- Vertices
     const std::vector<Point2D>& vertices() const { return boost::geometry::exterior_ring(poly_); }
 
 protected:
@@ -58,6 +56,7 @@ protected:
     Scalar area_;
 };
 
+//- External functions
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB);
 Polygon clipPolygon(const Polygon& pgn, const Line2D& line);
 

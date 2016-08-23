@@ -3,12 +3,15 @@
 
 #include <ostream>
 #include <math.h>
+#include <vector>
 
 #include "Types.h"
 
 class Vector2D
 {
 public:
+
+    static Scalar epsilon() { return EPSILON_; }
 
     Vector2D(Scalar x = 0., Scalar y = 0.);
     Vector2D(std::string vecStr);

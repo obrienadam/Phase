@@ -5,6 +5,7 @@
 Cell::Cell(const std::vector<Label> &nodeIds, const std::vector<Node> &nodes)
 {   
     isActive_ = true;
+    isFluidCell_ = true;
 
     for (Label id: nodeIds)
         nodes_.push_back(std::cref(nodes[id]));
