@@ -12,4 +12,4 @@ add_subdirectory(Multiphase)
 add_subdirectory(Coupled)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
-target_link_libraries(Solvers Discretization ImmersedBoundary)
+target_link_libraries(Solvers Discretization ImmersedBoundary Utilities)

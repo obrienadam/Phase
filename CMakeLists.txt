@@ -40,7 +40,8 @@ set(INCLUDE_DIR src/Types
                 src/Solvers
                 src/Solvers/Multiphase
                 src/Solvers/Coupled
-                src/Viewers)
+                src/Viewers
+                src/Utilities)
 
 include_directories(${INCLUDE_DIR})
 

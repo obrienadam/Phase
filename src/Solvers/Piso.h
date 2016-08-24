@@ -4,6 +4,7 @@
 #include "Solver.h"
 #include "Input.h"
 #include "FiniteVolumeEquation.h"
+#include "ForceIntegrator.h"
 
 class Piso : public Solver
 {
@@ -39,6 +40,8 @@ protected:
 
     size_t nInnerIterations_, nPCorrections_;
     Scalar momentumOmega_, pCorrOmega_;
+
+    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

@@ -32,6 +32,9 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     correctVelocity(timeStep);
     solveGammaEqn(timeStep);
 
+    for(const ForceIntegrator &fi: forceIntegrators_)
+        fi.integrate();
+
     printf("Max Co = %lf\n", courantNumber(timeStep));
 
     return 0.;

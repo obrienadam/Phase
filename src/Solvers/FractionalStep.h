@@ -3,6 +3,7 @@
 
 #include "Solver.h"
 #include "FiniteVolumeEquation.h"
+#include "ForceIntegrator.h"
 
 class FractionalStep: public Solver
 {
@@ -33,6 +34,8 @@ protected:
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pEqn_;
+
+    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

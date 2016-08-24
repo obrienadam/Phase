@@ -32,9 +32,17 @@ Grid
 
 Viewer
 {
-	type tecplot
-	vectorFields u,gradP
-	scalarFields p,pCorr,m
+  type tecplot
+  vectorFields u,gradP
+  scalarFields p,pCorr,m
+}
+
+Integrators
+{
+  ForceIntegrators
+  {
+    patches Walls	
+  }
 }
 
 System

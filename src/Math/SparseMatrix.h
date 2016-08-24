@@ -43,8 +43,8 @@ private:
     mutable Scalar error_;
     mutable size_t nIters_;
 
-    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::IncompleteLUT<Scalar> > solverIncompleteLUT_;
-    mutable Eigen::BiCGSTAB< SparseMatrix, Eigen::DiagonalPreconditioner<Scalar> > solverNoPreconditioner_;
+    mutable Eigen::BiCGSTAB< Eigen::SparseMatrix<Scalar>, Eigen::IncompleteLUT<Scalar> > solverIncompleteLUT_;
+    mutable Eigen::BiCGSTAB< Eigen::SparseMatrix<Scalar>, Eigen::DiagonalPreconditioner<Scalar> > solverNoPreconditioner_;
 };
 
 #endif
