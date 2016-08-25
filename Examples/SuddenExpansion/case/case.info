@@ -27,7 +27,7 @@ Properties
 Grid
 {
 	type cgns
-	filename "case/se.cgns"
+	filename "case/SuddenExpansionMesh.cgns"
 }
 
 Viewer
@@ -35,14 +35,6 @@ Viewer
   type tecplot
   vectorFields u,gradP
   scalarFields p,pCorr,m
-}
-
-Integrators
-{
-  ForceIntegrators
-  {
-    patches Walls	
-  }
 }
 
 System

@@ -87,8 +87,10 @@ Thumbs.db
 *.cgns
 *.adf
 
-# Add an exception for the sudden expsion case
-!se.cgns
+# Add an exceptions for the example cases
+!SuddenExpansionMesh.cgns
+!CylinderMesh.cgns
+!BoxMesh.cgns
 
 # Valgrind files
 *callgrind*

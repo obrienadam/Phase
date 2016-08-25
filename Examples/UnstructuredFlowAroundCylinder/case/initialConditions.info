@@ -1,0 +1,13 @@
+; Initial conditions for the 2D flow around unstructured cylinder
+
+InitialConditions
+{ 
+  u
+  {
+    all
+    {
+      type uniform
+      value (5,0)
+    }
+  }
+}

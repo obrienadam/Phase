@@ -1,0 +1,50 @@
+; Test case for the 2D flow around unstructured cylinder
+
+CaseName FlowAroundUnstructuredCylinder
+
+Solver
+{
+	timeDependent Off
+	maxIterations 100
+	timeStep 0.00025
+	maxTime 100
+	maxCo 0.5
+
+	numInnerIterations 1
+	numPressureCorrections 2
+	momentumRelaxation 1
+	pressureCorrectionRelaxation 0.5
+}
+
+Properties
+{
+	rho 998
+	mu 8.94e-4
+	g (0,0)
+}
+
+Grid
+{
+	type cgns
+	filename "case/CylinderMesh.cgns"
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,m,rho,mu
+}
+
+Integrators
+{
+  ForceIntegrators
+  {
+    patches Cylinder
+  }
+}
+
+System
+{
+  fileWriteFrequency 150
+}

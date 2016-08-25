@@ -1,0 +1,58 @@
+; Boundary conditions for the 2D flow unstructured cylinder
+
+Boundaries
+{
+  u
+  {
+    Inlet
+    {
+      type fixed
+      value (5,0)
+    }
+
+    Outlet
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    Cylinder
+    {
+      type fixed
+      value (0,0)
+    }
+
+    TopBottom
+    {
+      type normal_gradient
+      value (0,0)
+    }
+  }
+
+  p
+  {
+    Inlet
+    {
+      type normal_gradient
+      value 0
+    }
+
+    Outlet
+    {
+      type fixed
+      value 0
+    }
+
+    Cylinder
+    {
+      type normal_gradient
+      value 0
+    }
+
+    TopBottom
+    {
+      type fixed
+      value 0
+    }
+  }
+}
