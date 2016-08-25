@@ -9,6 +9,7 @@ Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
       phiEqn_(phi, "phi")
 {
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 }
 
 Scalar Poisson::solve(Scalar timeStep)

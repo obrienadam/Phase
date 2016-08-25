@@ -31,7 +31,9 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
 
-    forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, mu, u);
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+
+    forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     pCorr.copyBoundaryTypes(p);
 
@@ -61,6 +63,9 @@ Scalar Piso::solve(Scalar timeStep)
 
     for(const ForceIntegrator &fi: forceIntegrators_)
         fi.integrate();
+
+    for(const VolumeIntegrator &vi: volumeIntegrators_)
+        vi.integrate();
 
     printf("Max Co = %lf\n", courantNumber(timeStep));
 

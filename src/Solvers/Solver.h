@@ -7,6 +7,7 @@
 #include "VectorFiniteVolumeField.h"
 #include "Circle.h"
 #include "ImmersedBoundary.h"
+#include "VolumeIntegrator.h"
 
 class Solver
 {
@@ -59,6 +60,8 @@ protected:
     Scalar timeStepRelaxation_;
 
     ImmersedBoundary ib_;
+
+    std::vector<VolumeIntegrator> volumeIntegrators_;
 };
 
 #endif

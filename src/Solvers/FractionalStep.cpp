@@ -21,7 +21,9 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
-    forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, mu, u);
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+
+    forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     p.initNodes();
 
@@ -47,8 +49,11 @@ Scalar FractionalStep::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    for(const ForceIntegrator &f: forceIntegrators_)
-        f.integrate();
+    for(const ForceIntegrator &fi: forceIntegrators_)
+        fi.integrate();
+
+    for(const VolumeIntegrator &vi: volumeIntegrators_)
+        vi.integrate();
 
     printf("Current time step = %lf\n", timeStep);
     printf("Max Co = %lf\n", courantNumber(timeStep));

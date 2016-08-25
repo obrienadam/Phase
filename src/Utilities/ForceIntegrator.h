@@ -13,11 +13,13 @@ public:
 
     static std::vector<ForceIntegrator> initForceIntegrators(const Input &input,
                                                              const ScalarFiniteVolumeField& p,
+                                                             const ScalarFiniteVolumeField& rho,
                                                              const ScalarFiniteVolumeField& mu,
                                                              const VectorFiniteVolumeField &u);
 
     ForceIntegrator(const Patch &patch,
                     const ScalarFiniteVolumeField& p,
+                    const ScalarFiniteVolumeField& rho,
                     const ScalarFiniteVolumeField& mu,
                     const VectorFiniteVolumeField& u);
 
@@ -26,7 +28,7 @@ public:
 private:
 
     const Patch &patch_;
-    const ScalarFiniteVolumeField &p_, &mu_;
+    const ScalarFiniteVolumeField &p_, &rho_, &mu_;
     const VectorFiniteVolumeField &u_;
 };
 

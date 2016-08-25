@@ -13,6 +13,8 @@ Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
 
     timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
     timeStepRelaxation_ = input.caseInput().get<Scalar>("Solver.timeStepRelaxation", 1.);
+
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 }
 
 std::string Solver::info() const

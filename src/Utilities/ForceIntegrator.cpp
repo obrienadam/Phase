@@ -6,13 +6,16 @@
 
 std::vector<ForceIntegrator> ForceIntegrator::initForceIntegrators(const Input &input,
                                                                    const ScalarFiniteVolumeField &p,
+                                                                   const ScalarFiniteVolumeField &rho,
                                                                    const ScalarFiniteVolumeField &mu,
                                                                    const VectorFiniteVolumeField &u)
 {
-    if(input.caseInput().count("Integrators") == 0)
-        return std::vector<ForceIntegrator>();
-
     std::vector<ForceIntegrator> forceIntegrators;
+
+    boost::optional<std::string> forceIntegratorInput = input.caseInput().get_optional<std::string>("Integrators.ForceIntegrators");
+
+    if(!forceIntegratorInput)
+        return forceIntegrators;
 
     std::string patchInput = input.caseInput().get<std::string>("Integrators.ForceIntegrators.patches");
     std::vector<std::string> patchNames;
@@ -24,7 +27,7 @@ std::vector<ForceIntegrator> ForceIntegrator::initForceIntegrators(const Input &
         printf("Initializing a force integrator on patch \"%s\".\n", patchName.c_str());
 
         forceIntegrators.push_back(
-                    ForceIntegrator(p.grid.patches().find(patchName)->second, p, mu, u)
+                    ForceIntegrator(p.grid.patches().find(patchName)->second, p, rho, mu, u)
                     );
     }
 
@@ -34,11 +37,13 @@ std::vector<ForceIntegrator> ForceIntegrator::initForceIntegrators(const Input &
 // Constructors
 ForceIntegrator::ForceIntegrator(const Patch &patch,
                                  const ScalarFiniteVolumeField &p,
+                                 const ScalarFiniteVolumeField &rho,
                                  const ScalarFiniteVolumeField &mu,
                                  const VectorFiniteVolumeField &u)
     :
       patch_(patch),
       p_(p),
+      rho_(rho),
       mu_(mu),
       u_(u)
 {
@@ -49,13 +54,15 @@ Vector2D ForceIntegrator::integrate() const
 {
     Vector2D fn = Vector2D(0., 0.), ft = Vector2D(0., 0.);
 
+    const auto sqr = [](Scalar x) { return x*x; };
+
     for(const Face &face: patch_.faces())
     {
         const Cell &cell = face.lCell();
         const Vector2D sfn = face.outwardNorm(cell.centroid());
         const Vector2D sft = -sfn.tangentVec();
 
-        fn += p_(face)*sfn;
+        fn += (p_(face) + 0.5*rho_(face)*sqr(dot(u_(face), sfn))/sfn.magSqr())*sfn;
         ft += mu_(cell)*dot(u_(cell) - u_(face), sft.unitVec())*sft;
     }
 

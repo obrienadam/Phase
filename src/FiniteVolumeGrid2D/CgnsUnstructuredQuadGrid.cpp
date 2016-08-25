@@ -183,7 +183,7 @@ CgnsUnstructuredQuadGrid::CgnsUnstructuredQuadGrid(const Input &input)
     cg_close(fileId);
     initConnectivity();
 
-    //- Too a quick validity check!
+    //- Do a quick validity check!
     for(const Face& face: faces_)
     {
         if(face.isBoundary() && !face.belongsToPatch())

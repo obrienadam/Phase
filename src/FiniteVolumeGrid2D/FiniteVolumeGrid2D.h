@@ -40,7 +40,6 @@ public:
     const CellGroup& activeCells() const { return activeCells_; }
     const CellGroup& inactiveCells() const { return inactiveCells_; }
     const UniqueCellGroup& fluidCells() const { return fluidCells_; }
-    const UniqueCellGroup& cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
@@ -48,6 +47,9 @@ public:
     UniqueCellGroup& moveAllCellsToFluidCellGroup() const;
     UniqueCellGroup& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids) const;
     UniqueCellGroup& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids) const;
+
+    CellGroup& cellGroup(const std::string &name);
+    const CellGroup& cellGroup(const std::string &name) const;
 
     //- Face related methods
     const std::vector<Face>& faces() const { return faces_; }

@@ -48,6 +48,20 @@ Viewer
 	scalarFields p,pCorr,m,gamma,rho,mu,gammaTilde
 }
 
+Integrators
+{
+  ForceIntegrators
+  {
+    patches y-
+  }
+
+  VolumeIntegrators
+  {
+    fields gamma
+    cellGroups fluidCells
+  }
+}
+
 System
 {
   fileWriteFrequency 15

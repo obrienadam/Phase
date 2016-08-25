@@ -141,6 +141,26 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& nam
     return group;
 }
 
+CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name)
+{
+    if(name == "fluidCells")
+        return fluidCells_;
+    else if(name == "activeCells")
+        return activeCells_;
+    else
+        return cellGroups_[name];
+}
+
+const CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name) const
+{
+    if(name == "fluidCells")
+        return fluidCells_;
+    else if(name == "activeCells")
+        return activeCells_;
+    else
+        return cellGroups_.find(name)->second;
+}
+
 //- Face related methods
 
 bool FiniteVolumeGrid2D::faceExists(Label n1, Label n2) const

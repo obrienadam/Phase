@@ -19,6 +19,8 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
 
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+
     setInitialConditions(input);
 
     //- Configuration

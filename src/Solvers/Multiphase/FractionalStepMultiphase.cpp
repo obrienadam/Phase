@@ -18,6 +18,8 @@ FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &gri
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
 
+    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+
     setInitialConditions(input);
 
     surfaceTensionForce_.compute();
@@ -34,6 +36,9 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 
     for(const ForceIntegrator &fi: forceIntegrators_)
         fi.integrate();
+
+    for(const VolumeIntegrator &vi: volumeIntegrators_)
+        vi.integrate();
 
     printf("Max Co = %lf\n", courantNumber(timeStep));
 
