@@ -22,6 +22,10 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
 
 endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 
+find_package(Boost REQUIRED)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+
 # Includes
 set(INCLUDE_DIR src/Types
                 src/System

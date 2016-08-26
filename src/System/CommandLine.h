@@ -1,7 +1,8 @@
 #ifndef COMMAND_LINE_H
 #define COMMAND_LINE_H
 
-#include <boost/program_options.hpp>
+#include <vector>
+#include <map>
 
 #include "Input.h"
 
@@ -16,8 +17,11 @@ public:
 
 private:
 
-    boost::program_options::options_description desc_;
-    boost::program_options::variables_map vm_;
+    void printHelpMessage(const char programName[]);
+    void printVersrionInfo(const char programName[]);
+
+    std::map<std::string, std::string> options_;
+    std::map<std::string, std::string> parsedArgs_;
 
 };
 

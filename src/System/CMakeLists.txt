@@ -9,4 +9,4 @@ set(SOURCES Input.cpp
             RunControl.cpp)
 
 add_library(System ${HEADERS} ${SOURCES})
-target_link_libraries(System boost_program_options boost_system)
+target_link_libraries(System)
