@@ -69,10 +69,15 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
         }
     }
 
-    if(newCell.nodes().size() == 4)
-        quadCells_.push_back(std::cref(newCell));
-    else if(newCell.nodes().size() == 3)
+    switch(nodeIds.size())
+    {
+    case 3:
         triCells_.push_back(std::cref(newCell));
+        break;
+    case 4:
+        quadCells_.push_back(std::cref(newCell));
+        break;
+    };
 
     return newCell.id();
 }

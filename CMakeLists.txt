@@ -42,6 +42,7 @@ set(INCLUDE_DIR src/Types
                 src/FiniteVolume/Discretization
                 src/FiniteVolume/ImmersedBoundary
                 src/Solvers
+                src/Communicator
                 src/Solvers/Multiphase
                 src/Solvers/Coupled
                 src/Viewers

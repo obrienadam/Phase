@@ -120,10 +120,10 @@ void Viewer::write(Scalar solutionTime)
             fieldBuffer.reserve(field.size());
 
             for(const Cell& cell: field.grid.quadCells())
-                fieldBuffer.push_back(field[cell.id()]);
+                fieldBuffer.push_back(field(cell));
 
             for(const Cell& cell: field.grid.triCells())
-                fieldBuffer.push_back(field[cell.id()]);
+                fieldBuffer.push_back(field(cell));
 
             cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name.c_str(), fieldBuffer.data(), &fieldId);
         }
@@ -138,14 +138,14 @@ void Viewer::write(Scalar solutionTime)
 
         for(const Cell& cell: field.grid.quadCells())
         {
-            xComps.push_back(field[cell.id()].x);
-            yComps.push_back(field[cell.id()].y);
+            xComps.push_back(field(cell).x);
+            yComps.push_back(field(cell).y);
         }
 
         for(const Cell& cell: field.grid.triCells())
         {
-            xComps.push_back(field[cell.id()].x);
-            yComps.push_back(field[cell.id()].y);
+            xComps.push_back(field(cell).x);
+            yComps.push_back(field(cell).y);
         }
 
         int fieldId;

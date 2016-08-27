@@ -97,12 +97,13 @@ protected:
 
     //- Face related data
     std::vector<Face> faces_;
-
     std::map<std::pair<Label, Label>, Label> faceDirectory_; // A directory that can find a face given the two node ids
 
+    //- Interior adn boundary face data structures
     std::vector< Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
     std::vector< Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell
 
+    //- Patches
     std::map<std::string, Patch> patches_;
 
     BoundingBox bBox_;

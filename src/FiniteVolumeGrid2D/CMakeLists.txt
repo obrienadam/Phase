@@ -1,11 +1,11 @@
 set(HEADERS FiniteVolumeGrid2D.h
             StructuredRectilinearGrid.h
-            CgnsUnstructuredQuadGrid.h
+            CgnsUnstructuredGrid.h
             ConstructGrid.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
             StructuredRectilinearGrid.cpp
-            CgnsUnstructuredQuadGrid.cpp
+            CgnsUnstructuredGrid.cpp
             ConstructGrid.cpp)
 
 add_subdirectory(Node)

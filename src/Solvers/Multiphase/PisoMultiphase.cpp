@@ -26,7 +26,7 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
 
-    std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
+    const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     if(tmp == "CSF")
     {
@@ -46,8 +46,24 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
 
 Scalar PisoMultiphase::solve(Scalar timeStep)
 {
-    Piso::solve(timeStep);
+    u.savePreviousTimeStep(timeStep, 1);
+
+    for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
+    {
+        u.savePreviousIteration();
+        solveUEqn(timeStep);
+
+        for(size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
+        {
+            solvePCorrEqn();
+            correctPressure();
+            correctVelocity();
+        }
+    }
+
     solveGammaEqn(timeStep);
+
+    printf("Max Co = %lf\n", courantNumber(timeStep));
 
     return 0.; // just to get rid of warning
 }

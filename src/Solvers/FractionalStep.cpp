@@ -55,7 +55,6 @@ Scalar FractionalStep::solve(Scalar timeStep)
     for(const VolumeIntegrator &vi: volumeIntegrators_)
         vi.integrate();
 
-    printf("Current time step = %lf\n", timeStep);
     printf("Max Co = %lf\n", courantNumber(timeStep));
 
     return 0.;
