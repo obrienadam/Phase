@@ -63,23 +63,27 @@ Viewer::Viewer(const Solver &solver, const Input &input)
     cg_coord_write(fileId_, baseId_, zoneId_, RealDouble, "CoordinateY", coordsY.data(), &xid);
 
     //- Write connectivity
-    std::vector<int> connectivity;
-    connectivity.reserve(4*solver.grid().nNodes());
+    std::vector<cgsize_t> connectivity;
+    connectivity.reserve(5*solver.grid().nNodes());
 
-    //- Quad cells
-    for(const Cell& cell: solver.grid().quadCells())
+    for(const Cell& cell: solver.grid().cells())
+    {
+        switch(cell.nodes().size())
+        {
+        case 3:
+            connectivity.push_back(TRI_3);
+            break;
+        case 4:
+            connectivity.push_back(QUAD_4);
+            break;
+        }
+
         for(const Node& node: cell.nodes())
             connectivity.push_back(node.id() + 1);
-    int sid;
-    cg_section_write(fileId_, baseId_, zoneId_, "Quad Cells", QUAD_4, 1, solver.grid().quadCells().size(), 0, connectivity.data(), &sid);
+    }
 
-    //- Tri cells
-    connectivity.clear();
-    for(const Cell& cell: solver.grid().triCells())
-        for(const Node& node: cell.nodes())
-            connectivity.push_back(node.id() + 1);
-
-    cg_section_write(fileId_, baseId_, zoneId_, "Tri Cells", TRI_3, solver.grid().quadCells().size() + 1, solver.grid().cells().size(), 0, connectivity.data(), &sid);
+    int secId;
+    cg_section_write(fileId_, baseId_, zoneId_, "Cells", MIXED, 1, solver.grid().cells().size(), 0, connectivity.data(), &secId);
 
     cg_close(fileId_);
 }
@@ -108,26 +112,9 @@ void Viewer::write(Scalar solutionTime)
     int solutionId;
     cg_sol_write(fileId_, baseId_, zoneId_, solutionName.c_str(), CellCenter, &solutionId);
 
+    int fieldId;
     for(const ScalarFiniteVolumeField& field: scalarFields_)
-    {
-        int fieldId;
-
-        if(field.grid.quadCells().size() == 0 || field.grid.triCells().size() == 0) // No need to buffer output, only one type of cell
-            cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name.c_str(), field.data(), &fieldId);
-        else
-        {
-            std::vector<Scalar> fieldBuffer;
-            fieldBuffer.reserve(field.size());
-
-            for(const Cell& cell: field.grid.quadCells())
-                fieldBuffer.push_back(field(cell));
-
-            for(const Cell& cell: field.grid.triCells())
-                fieldBuffer.push_back(field(cell));
-
-            cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name.c_str(), fieldBuffer.data(), &fieldId);
-        }
-    }
+        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name.c_str(), field.data(), &fieldId);
 
     for(const VectorFiniteVolumeField& field: vectorFields_)
     {
@@ -136,19 +123,12 @@ void Viewer::write(Scalar solutionTime)
         xComps.reserve(field.size());
         yComps.reserve(field.size());
 
-        for(const Cell& cell: field.grid.quadCells())
+        for(const Vector2D& vec: field)
         {
-            xComps.push_back(field(cell).x);
-            yComps.push_back(field(cell).y);
+            xComps.push_back(vec.x);
+            yComps.push_back(vec.y);
         }
 
-        for(const Cell& cell: field.grid.triCells())
-        {
-            xComps.push_back(field(cell).x);
-            yComps.push_back(field(cell).y);
-        }
-
-        int fieldId;
         cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name + "X").c_str(), xComps.data(), &fieldId);
         cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name + "Y").c_str(), yComps.data(), &fieldId);
     }
@@ -169,7 +149,7 @@ void Viewer::write(Scalar solutionTime)
     dim[0] = 32;
     dim[1] = flowSolutionPointers_.size();
 
-     cg_array_write("FlowSolutionPointers", Character, 2, dim, sout.str().c_str());
+    cg_array_write("FlowSolutionPointers", Character, 2, dim, sout.str().c_str());
 
     cg_close(fileId_);
 }
