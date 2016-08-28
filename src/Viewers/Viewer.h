@@ -11,7 +11,7 @@ class Viewer
 {
 public:
 
-    Viewer(const Solver& solver, const Input& input);
+    Viewer(const Solver& solver, const Input& input, const std::string &customName = "");
 
     virtual void write(Scalar solutionTime);
 

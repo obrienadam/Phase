@@ -25,6 +25,7 @@ endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 find_package(Boost REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(MPI REQUIRED)
 
 # Includes
 set(INCLUDE_DIR src/Types

@@ -22,6 +22,9 @@ CommandLine::CommandLine(int argc, const char *argv[], Input &input)
 
 void CommandLine::parseArguments(int argc, const char *argv[], Input& input)
 {
+    argc_ = argc;
+    argv_ = argv;
+
     for(int argNo = 1; argNo < argc; ++argNo)
     {
         auto it = options_.find(argv[argNo]);

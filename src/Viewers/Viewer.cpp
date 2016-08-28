@@ -7,7 +7,7 @@
 #include "Viewer.h"
 #include "Exception.h"
 
-Viewer::Viewer(const Solver &solver, const Input &input)
+Viewer::Viewer(const Solver &solver, const Input &input, const std::string &customName)
     :
       solver_(solver),
       caseName_(input.caseInput().get<std::string>("CaseName"))
@@ -15,7 +15,10 @@ Viewer::Viewer(const Solver &solver, const Input &input)
     using namespace std;
     using namespace boost;
 
-    outputFilename_ = input.outputPath + "/" + caseName_ + ".cgns";
+    if(customName.empty())
+        outputFilename_ = input.outputPath + "/" + caseName_ + ".cgns";
+    else
+        outputFilename_ = customName;
 
     string vectorFields = input.caseInput().get<string>("Viewer.vectorFields");
     string scalarFields = input.caseInput().get<string>("Viewer.scalarFields");
