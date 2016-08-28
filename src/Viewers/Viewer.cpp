@@ -83,7 +83,34 @@ Viewer::Viewer(const Solver &solver, const Input &input)
     }
 
     int secId;
-    cg_section_write(fileId_, baseId_, zoneId_, "Cells", MIXED, 1, solver.grid().cells().size(), 0, connectivity.data(), &secId);
+    cg_section_write(fileId_, baseId_, zoneId_, "GridElements", MIXED, 1, solver.grid().cells().size(), 0, connectivity.data(), &secId);
+
+    //- Now write the boundary mesh elements
+    cgsize_t start = solver.grid().nCells() + 1;
+    for(const auto& patchEntry: solver.grid().patches())
+    {
+        const Patch& patch = patchEntry.second;
+
+        cgsize_t end = start + patch.faces().size() - 1;
+        connectivity.clear();
+
+        std::vector<cgsize_t> elemIds;
+        cgsize_t elemId = start;
+        for(const Face &face: patch.faces())
+        {
+            connectivity.push_back(face.lNode().id() + 1);
+            connectivity.push_back(face.rNode().id() + 1);
+            elemIds.push_back(elemId++);
+        }
+
+        cg_section_write(fileId_, baseId_, zoneId_, (patch.name + "Elements").c_str(), BAR_2, start, end, 0, connectivity.data(), &secId);
+
+        int bcId;
+        cg_boco_write(fileId_, baseId_, zoneId_, patch.name.c_str(), BCGeneral, PointList, elemIds.size(), elemIds.data(), &bcId);
+        cg_boco_gridlocation_write(fileId_, baseId_, zoneId_, bcId, EdgeCenter);
+
+        start = end + 1;
+    }
 
     cg_close(fileId_);
 }
