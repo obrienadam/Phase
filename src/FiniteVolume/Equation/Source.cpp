@@ -12,21 +12,41 @@ VectorFiniteVolumeField source(VectorFiniteVolumeField field)
     return field;
 }
 
+VectorFiniteVolumeField gravity(const FiniteVolumeGrid2D& grid, const Vector2D& g)
+{
+    VectorFiniteVolumeField gravity(grid, "g");
+    gravity.fill(0.);
+
+    for(const Cell& cell: grid.fluidCells())
+    {
+        for(const InteriorLink &nb: cell.neighbours())
+            gravity(cell) += dot(g, nb.rFaceVec())*nb.outwardNorm();
+
+        for(const BoundaryLink &bd: cell.boundaries())
+            gravity(cell) += dot(g, bd.rFaceVec())*bd.outwardNorm();
+
+        gravity(cell) /= cell.volume();
+    }
+
+    interpolateFaces(fv::INVERSE_VOLUME, gravity);
+
+    return gravity;
+}
+
 VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector2D& g)
 {
     VectorFiniteVolumeField gravity(rho.grid, "g");
+    gravity.fill(0.);
 
     for(const Cell& cell: rho.grid.fluidCells())
     {
-        Vector2D &gs = gravity[cell.id()] = Vector2D(0., 0.);
-
         for(const InteriorLink &nb: cell.neighbours())
-            gs += dot(g, nb.rFaceVec())*rho.faces()[nb.face().id()]*nb.outwardNorm();
+            gravity(cell) += dot(g, nb.rFaceVec())*rho(nb.face())*nb.outwardNorm();
 
         for(const BoundaryLink &bd: cell.boundaries())
-            gs += dot(g, bd.rFaceVec())*rho.faces()[bd.face().id()]*bd.outwardNorm();
+            gravity(cell) += dot(g, bd.rFaceVec())*rho(bd.face())*bd.outwardNorm();
 
-        gs /= cell.volume();
+        gravity(cell) /= cell.volume();
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, gravity);

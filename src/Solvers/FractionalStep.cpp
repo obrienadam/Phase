@@ -22,16 +22,14 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     p.initNodes();
 
-    uEqn_.matrix().setFill(2);
+    uEqn_.matrix().setFill(1);
     pEqn_.matrix().setFill(3);
 
-    u.savePreviousTimeStep(0., 1);
-    computeAdvectingVelocity(0.);
+    interpolateFaces(fv::INVERSE_VOLUME, u);
 }
 
 std::string FractionalStep::info() const
@@ -87,7 +85,11 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) + fv::source(sg - gradP));
 
     Scalar error = uEqn_.solve();
-    computeAdvectingVelocity(timeStep);
+
+    for(const Cell& cell: u.grid.fluidCells())
+        u(cell) += timeStep*(gradP(cell) - sg(cell))/rho(cell);
+
+    interpolateFaces(fv::INVERSE_VOLUME, u);
 
     return error;
 }
@@ -99,8 +101,6 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
     Scalar error = pEqn_.solve(p.sparseVector());
 
-    gradP.savePreviousTimeStep(timeStep, 1);
-
     computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
 
     return error;
@@ -108,12 +108,8 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
 void FractionalStep::correctVelocity(Scalar timeStep)
 {
-    const ScalarFiniteVolumeField &p0 = p.prev(0);
-    const VectorFiniteVolumeField &gradP0 = gradP.prev(0);
-
-
     for(const Cell &cell: grid_.fluidCells())
-        u(cell) += timeStep/rho(cell)*(gradP0(cell) - gradP(cell));
+        u(cell) += timeStep/rho(cell)*(sg(cell) - gradP(cell));
 
     for(const Face &face: grid_.interiorFaces())
     {
@@ -121,7 +117,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
         const Cell &rCell = face.rCell();
         Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u(face) += timeStep/rho(face)*((p0(rCell) - p0(lCell) - p(rCell) + p(lCell))*rc/rc.magSqr());
+        u(face) += timeStep/rho(face)*(p(lCell) - p(rCell))*rc/dot(rc, rc) + timeStep*g_;
     }
 
     for(const Face &face: grid_.boundaryFaces())
@@ -131,18 +127,15 @@ void FractionalStep::correctVelocity(Scalar timeStep)
 
         if(u.boundaryType(face.id()) == VectorFiniteVolumeField::FIXED)
             continue;
-        else if(u.boundaryType(face.id()) == VectorFiniteVolumeField::NORMAL_GRADIENT) // Not correct
-            continue;
         else if(u.boundaryType(face.id()) == VectorFiniteVolumeField::SYMMETRY) // This is not correct
             continue;
         else
-            u(face) += timeStep/rho(face)*((p0(face) - p0(cell) - p(face) + p(cell))*rf/rf.magSqr());
+            u(face) += timeStep/rho(face)*(p(cell) - p(face))*rf/dot(rf, rf) + timeStep*g_;
     }
 }
 
 void FractionalStep::computeMassSource(Scalar timeStep)
 {
-    p.savePreviousTimeStep(timeStep, 1);
     divUStar.fill(0.);
 
     for(const Cell &cell: grid_.fluidCells())
@@ -150,66 +143,13 @@ void FractionalStep::computeMassSource(Scalar timeStep)
         for(const InteriorLink &nb: cell.neighbours())
         {
             const Vector2D& sf = nb.outwardNorm();
-            const Vector2D& rc = nb.rCellVec();
-
-            divUStar(cell) += rho(nb.face())/timeStep*dot(u(nb.face()), sf) + (p(nb.cell()) - p(cell))*dot(rc, sf)/dot(rc, rc);
+            divUStar(cell) += rho(nb.face())/timeStep*dot(u(nb.face()), sf);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
             const Vector2D& sf = bd.outwardNorm();
-            const Vector2D& rf = bd.rFaceVec();
-
-            divUStar(cell) += rho(bd.face())/timeStep*dot(u(bd.face()), sf) + (p(bd.face()) - p(cell))*dot(rf, sf)/dot(rf, rf);
-        }
-    }
-}
-
-void FractionalStep::computeAdvectingVelocity(Scalar timeStep)
-{
-    for(const Face &face: u.grid.interiorFaces())
-    {
-        const Cell &lCell = face.lCell();
-        const Cell &rCell = face.rCell();
-
-        Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
-        Vector2D rc = rCell.centroid() - lCell.centroid();
-
-        u(face) = g*(u(lCell) + timeStep*(gradP(lCell) - sg(lCell))/rho(lCell))
-                + (1. - g)*(u(rCell) + timeStep*(gradP(rCell) - sg(rCell))/rho(rCell))
-                - timeStep/rho(face)*(p(rCell) - p(lCell))*rc/rc.magSqr()
-                + timeStep/rho(face)*g_;
-    }
-
-    for(const Face &face: u.grid.boundaryFaces())
-    {
-        const Cell &cell = face.lCell();
-
-        switch(u.boundaryType(face.id()))
-        {
-        case VectorFiniteVolumeField::FIXED:
-            break;
-
-        case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
-        {
-            Vector2D rf = face.centroid() - cell.centroid();
-
-            u(face) = u(cell)
-                    + timeStep*(gradP(cell) - sg(cell))/rho(cell)
-                    - timeStep/rho(face)*(p(face) - p(cell))*rf/rf.magSqr()
-                    + timeStep/rho(face)*g_;
-        }
-            break;
-
-        case VectorFiniteVolumeField::SYMMETRY:
-        {
-            Vector2D nWall = face.outwardNorm(face.lCell().centroid());
-            u(face) = u(cell) - dot(u(cell), nWall)*nWall/nWall.magSqr();
-            break;
-        }
-
-        default:
-            throw Exception("FractionalStep", "computeAdvectingVelocity", "unrecongnized boundary condition type.");
+            divUStar(cell) += rho(bd.face())/timeStep*dot(u(bd.face()), sf);
         }
     }
 }

@@ -2,6 +2,7 @@
 #include "Cicsam.h"
 #include "CrankNicolson.h"
 #include "AdamsBashforth.h"
+#include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
@@ -54,11 +55,15 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     ft = surfaceTensionForce_.compute();
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(sg) + fv::source(ft));
+    uEqn_ = (fv::ddt(u, timeStep) + cn::div(u, u) + ib_.eqns(u)
+             == ab::laplacian(mu/rho, u) - fv::source(gradP/rho) + fv::source(sg/rho) + fv::source(ft/rho));
 
     Scalar error = uEqn_.solve();
-    computeAdvectingVelocity(timeStep);
+
+    for(const Cell& cell: u.grid.fluidCells())
+        u(cell) += timeStep*(gradP(cell) - sg(cell))/rho(cell);
+
+    balancedForceInterpolation(timeStep);
 
     return error;
 }
@@ -66,10 +71,8 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
-
     interpolateFaces(fv::INVERSE_VOLUME, gamma);
 
-    //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
     gammaEqn_ = (cicsam::div(u, gradGamma, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
 
     Scalar error = gammaEqn_.solve();
@@ -80,65 +83,47 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     return error;
 }
 
-void FractionalStepMultiphase::computeAdvectingVelocity(Scalar timeStep)
+void FractionalStepMultiphase::balancedForceInterpolation(Scalar timeStep)
 {
-    //FractionalStep::computeAdvectingVelocity(timeStep);
     const Scalar sigma = surfaceTensionForce_.sigma();
 
     for(const Face &face: u.grid.interiorFaces())
     {
-        const Cell &lCell = face.lCell();
-        const Cell &rCell = face.rCell();
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
 
-        Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
-        Vector2D rc = rCell.centroid() - lCell.centroid();
-
-        const Scalar rhof = rho(face);
+        const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
         const Scalar kf = surfaceTensionForce_.kappa()(face);
-        const Scalar p0 = p(lCell), p1 = p(rCell);
-        const Scalar g0 = gamma(lCell), g1 = gamma(rCell);
+        const Vector2D rc = rCell.centroid() - lCell.centroid();
 
-        u(face) = g*(u(lCell) + timeStep*(gradP(lCell) - sg(lCell) - ft(lCell))/rho(lCell))
-                + (1. - g)*(u(rCell) + timeStep*(gradP(rCell) - sg(rCell) - ft(rCell))/rho(rCell))
-                - timeStep/rhof*(p1 - p0)*rc/rc.magSqr()
-                + timeStep/rhof*g_;
-                + timeStep/rhof*sigma*kf*(g1 - g0)*rc/rc.magSqr();
+        u(face) = g*(u(lCell) - timeStep*ft(lCell)/rho(lCell))
+                + (1. - g)*(u(rCell) - timeStep*ft(rCell)/rho(rCell))
+                + timeStep/rho(face)*sigma*kf*(gamma(rCell) - gamma(lCell))*rc/dot(rc, rc);
     }
 
     for(const Face &face: u.grid.boundaryFaces())
     {
-        const Cell &cell = face.lCell();
+        const Cell& cell = face.lCell();
+
+        const Scalar kf = surfaceTensionForce_.kappa()(face);
+        const Vector2D rf = face.centroid() - cell.centroid();
 
         switch(u.boundaryType(face.id()))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
 
-        case VectorFiniteVolumeField::NORMAL_GRADIENT: case VectorFiniteVolumeField::OUTFLOW:
-        {
-            Vector2D rf = face.centroid() - cell.centroid();
-            const Scalar rhof = rho(face);
-            const Scalar kf = surfaceTensionForce_.kappa()(face);
-            const Scalar p0 = p(cell), p1 = p(face);
-            const Scalar g0 = gamma(cell), g1 = gamma(face);
-
-            u(face) = u(cell)
-                    + timeStep*(gradP(cell) - sg(cell) - ft(cell))/rho(cell)
-                    - timeStep/rhof*(p1 - p0)*rf/rf.magSqr()
-                    + timeStep/rhof*g_
-                    + timeStep/rhof*sigma*kf*(g1 - g0)*rf/rf.magSqr();
-        }
-            break;
-
         case VectorFiniteVolumeField::SYMMETRY:
         {
-            Vector2D nWall = face.outwardNorm(face.lCell().centroid());
-            u(face) = u[face.lCell().id()] - dot(u[face.lCell().id()], nWall)*nWall/nWall.magSqr();
+            const Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+            u(face) = u(cell) - dot(u(cell), nWall)*nWall/nWall.magSqr();
             break;
         }
 
-        default:
-            throw Exception("FractionalStepMultiphase", "computeAdvectingVelocity", "unrecongnized boundary condition type.");
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            u(face) = u(cell) - timeStep*ft(cell)/rho(cell)
+                    + timeStep/rho(face)*sigma*kf*(gamma(face) - gamma(cell))*rf/dot(rf, rf);
+            break;
         }
     }
 }
@@ -150,8 +135,8 @@ void FractionalStepMultiphase::computeRho()
     for(const Cell &cell: grid_.activeCells())
         rho(cell) = (1. - w(cell))*rho1_ + w(cell)*rho2_;
 
-    interpolateFaces(fv::INVERSE_VOLUME, rho);
-    //harmonicInterpolateFaces(rho);
+    //interpolateFaces(fv::INVERSE_VOLUME, rho);
+    harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
 }
 
 void FractionalStepMultiphase::computeMu()

@@ -260,60 +260,89 @@ void Celeste::computeCurvature()
         }
     }
 
-    //weightCurvatures();
+    weightCurvatures();
     interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }
 
-//void Celeste::weightCurvatures()
-//{
-//    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
+void Celeste::weightCurvatures()
+{
+    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
+    const Scalar cutoff = 1e-12;
 
-//    for(const Cell &cell: wGamma_.grid.fluidCells())
-//        wGamma_[cell.id()] = pow8(1. - 2*fabs(0.5 - gammaTilde_[cell.id()]));
+    for(const Cell &cell: wGamma_.grid.fluidCells())
+        wGamma_(cell) = pow8(1. - 2*fabs(0.5 - gammaTilde_(cell)));
+
+    for(const Cell &cell: kappa_.grid.fluidCells())
+    {
+        Scalar sumW1 = wGamma_(cell), sumW2 = wGamma_(cell);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            sumW1 += wGamma_(nb.cell());
+            sumW2 += wGamma_(nb.cell())*pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
+        }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            sumW1 += wGamma_(dg.cell());
+            sumW2 += wGamma_(dg.cell())*pow8(dot(n_(dg.cell()), dg.rCellVec().unitVec()));
+        }
+
+        if(fabs(sumW1) < cutoff || fabs(sumW2) < cutoff)
+            kappa_(cell) = 0.;
+    }
 
 //    kappa_.savePreviousIteration();
 
 //    for(const Cell &cell: kappa_.grid.fluidCells())
 //    {
-//        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
+//        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
 
 //        for(const InteriorLink &nb: cell.neighbours())
 //        {
-//            sumW += wGamma_[nb.cell().id()];
-//            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()];
+//            sumW += wGamma_(nb.cell());
+//            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell());
 //        }
 
 //        for(const DiagonalCellLink &dg: cell.diagonals())
 //        {
-//            sumW += wGamma_[dg.cell().id()];
-//            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()];
+//            sumW += wGamma_(dg.cell());
+//            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell());
 //        }
 
-//        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
+//        if(fabs(sumW) < cutoff)
+//        {
+//            kappa_(cell) = 0.;
+//            continue;
+//        }
 //    }
 
 //    kappa_.savePreviousIteration();
 
 //    for(const Cell &cell: kappa_.grid.fluidCells())
 //    {
-//        Scalar sumW = wGamma_[cell.id()], sumKappaW = wGamma_[cell.id()]*kappa_.prevIter()[cell.id()];
+//        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
 
 //        for(const InteriorLink &nb: cell.neighbours())
 //        {
-//            const Scalar mQ = pow8(dot(n_[cell.id()], nb.rCellVec().unitVec()));
+//            const Scalar mQ = pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
 
-//            sumW += wGamma_[nb.cell().id()]*mQ;
-//            sumKappaW += kappa_.prevIter()[nb.cell().id()]*wGamma_[nb.cell().id()]*mQ;
+//            sumW += wGamma_(nb.cell())*mQ;
+//            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell())*mQ;
 //        }
 
 //        for(const DiagonalCellLink &dg: cell.diagonals())
 //        {
-//            const Scalar mQ = pow8(dot(n_[cell.id()], dg.rCellVec().unitVec()));
+//            const Scalar mQ = pow8(dot(n_(cell), dg.rCellVec().unitVec()));
 
-//            sumW += wGamma_[dg.cell().id()]*mQ;
-//            sumKappaW += kappa_.prevIter()[dg.cell().id()]*wGamma_[dg.cell().id()]*mQ;
+//            sumW += wGamma_(dg.cell())*mQ;
+//            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell())*mQ;
 //        }
 
-//        kappa_[cell.id()] = fabs(sumKappaW) < 1e-12 ? 0. : sumKappaW/sumW;
+//        if(fabs(sumW) < cutoff)
+//        {
+//            kappa_(cell) = 0.;
+//            continue;
+//        }
 //    }
-// }
+ }

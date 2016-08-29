@@ -31,6 +31,7 @@ public:
 
     //- Node related methods
     const std::vector<Node>& nodes() const { return nodes_; }
+    void assignNodeIds();
 
     //- Cell related methods
     const std::vector<Cell>& cells() const { return cells_; }
@@ -51,6 +52,8 @@ public:
     CellGroup& cellGroup(const std::string &name);
     const CellGroup& cellGroup(const std::string &name) const;
 
+    void assignCellIds();
+
     //- Face related methods
     const std::vector<Face>& faces() const { return faces_; }
 
@@ -59,6 +62,8 @@ public:
 
     bool faceExists(Label n1, Label n2) const;
     Label findFace(Label n1, Label n2) const;
+
+    void assignFaceIds();
 
     //- Patch related methods
     void addPatch(const std::string& patchName);

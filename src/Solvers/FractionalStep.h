@@ -26,7 +26,6 @@ protected:
     virtual void correctVelocity(Scalar timeStep);
 
     virtual void computeMassSource(Scalar timeStep);
-    virtual void computeAdvectingVelocity(Scalar timeStep);
 
     Scalar courantNumber(Scalar timeStep);
 

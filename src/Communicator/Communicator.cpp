@@ -12,7 +12,12 @@ Communicator::Communicator(MPI_Comm comm)
     :
       comm_(comm)
 {
+    scalarSendBuffers_.resize(nProcs());
+    scalarRecvBuffers_.resize(nProcs());
+    vector2DSendBuffers_.resize(nProcs());
+    vector2DRecvBuffers_.resize(nProcs());
 
+    recvIdOrdering_.resize(nProcs());
 }
 
 Communicator::~Communicator()
@@ -220,7 +225,57 @@ void Communicator::partitionGrid(const FiniteVolumeGrid2D &grid)
     broadcast(mainProcNo(), nodePart);
 }
 
+//- Perform field communications across processes
+void Communicator::sendMessages(ScalarFiniteVolumeField& field) const
+{
+    for(int procNo = 0; procNo < nProcs(); ++procNo)
+    {
+        scalarSendBuffers_[procNo].clear();
+
+        for(const Cell& cell: sendCellGroups_[procNo])
+            scalarSendBuffers_[procNo].push_back(field(cell));
+
+        isend(procNo, scalarSendBuffers_[procNo]);
+    }
+
+    for(int procNo = 0; procNo < nProcs(); ++procNo)
+        irecv(procNo, scalarRecvBuffers_[procNo]);
+
+    waitAll(); // Allow comms to finalize
+
+    for(int procNo = 0; procNo < nProcs(); ++procNo) // Unload recv buffers
+    {
+        for(int i = 0; i < scalarRecvBuffers_.size(); ++i)
+            field[recvIdOrdering_[procNo][i]] = scalarRecvBuffers_[procNo][i];
+    }
+}
+
+void Communicator::sendMessages(VectorFiniteVolumeField& field) const
+{
+    for(int procNo = 0; procNo < nProcs(); ++procNo)
+    {
+        vector2DSendBuffers_[procNo].clear();
+
+        for(const Cell& cell: sendCellGroups_[procNo])
+            vector2DSendBuffers_[procNo].push_back(field(cell));
+
+        isend(procNo, vector2DSendBuffers_[procNo]);
+    }
+
+    for(int procNo = 0; procNo < nProcs(); ++procNo)
+        irecv(procNo, vector2DRecvBuffers_[procNo]);
+
+    waitAll(); // Allow comms to finalize
+
+    for(int procNo = 0; procNo < nProcs(); ++procNo) // Unload recv buffers
+    {
+        for(int i = 0; i < vector2DRecvBuffers_.size(); ++i)
+            field[recvIdOrdering_[procNo][i]] = vector2DRecvBuffers_[procNo][i];
+    }
+}
+
 //- Private methods
+
 MPI_Datatype Communicator::initVector2DDataType()
 {
     MPI_Datatype MPI_VECTOR2D;

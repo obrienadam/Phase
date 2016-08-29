@@ -11,7 +11,8 @@
 #include <mpi.h>
 
 #include "FiniteVolumeGrid2D.h"
-#include "CommandLine.h"
+#include "ScalarFiniteVolumeField.h"
+#include "VectorFiniteVolumeField.h"
 
 class Communicator
 {
@@ -65,12 +66,27 @@ public:
     //- Partitions the grid on the communicator
     void partitionGrid(const FiniteVolumeGrid2D& grid);
 
+    //- Perform field communications across processes
+    void sendMessages(ScalarFiniteVolumeField& field) const;
+    void sendMessages(VectorFiniteVolumeField& field) const;
+
 private:
 
     static MPI_Datatype MPI_VECTOR2D_;
     static MPI_Datatype initVector2DDataType();
 
     MPI_Comm comm_;
+
+    Field<Label> globalCellIds_;
+
+    mutable std::vector< std::vector<double> > scalarSendBuffers_, scalarRecvBuffers_;
+    mutable std::vector< std::vector<Vector2D> > vector2DSendBuffers_, vector2DRecvBuffers_;
+
+    std::vector<UniqueCellGroup> sendCellGroups_;
+    std::vector<CellGroup> recvCellGroups_;
+
+    std::vector< std::vector<Label> > recvIdOrdering_;
+
     mutable std::vector<MPI_Request> currentRequests_;
 };
 

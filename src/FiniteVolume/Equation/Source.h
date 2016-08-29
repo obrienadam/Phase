@@ -7,6 +7,7 @@ namespace fv
 {
 
 VectorFiniteVolumeField source(VectorFiniteVolumeField field);
+VectorFiniteVolumeField gravity(const FiniteVolumeGrid2D& grid, const Vector2D& g);
 VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField &rho, const Vector2D& g);
 ScalarFiniteVolumeField hydroStaticPressureBoundaries(const ScalarFiniteVolumeField& p, const ScalarFiniteVolumeField& rho, const Vector2D& g);
 

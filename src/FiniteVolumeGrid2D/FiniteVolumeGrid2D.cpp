@@ -89,6 +89,13 @@ Label FiniteVolumeGrid2D::addNode(const Point2D &point)
     return id;
 }
 
+void FiniteVolumeGrid2D::assignNodeIds()
+{
+    Label id = 0;
+    for(Node &node: nodes_)
+        node.id_ = id++;
+}
+
 //- Cell related methods
 
 UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const
@@ -166,6 +173,13 @@ const CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name) const
         return cellGroups_.find(name)->second;
 }
 
+void FiniteVolumeGrid2D::assignCellIds()
+{
+    Label id = 0;
+    for(Cell &cell: cells_)
+        cell.id_ = id++;
+}
+
 //- Face related methods
 
 bool FiniteVolumeGrid2D::faceExists(Label n1, Label n2) const
@@ -193,6 +207,14 @@ Label FiniteVolumeGrid2D::findFace(Label n1, Label n2) const
     return it->second;
 }
 
+void FiniteVolumeGrid2D::assignFaceIds()
+{
+    Label id = 0;
+    for(Face &face: faces_)
+        face.id_ = id++;
+}
+
+//- Patch related methods
 void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Ref<Face> > &faces)
 {
     auto insert = patches_.insert(std::make_pair(patchName, Patch(patchName, patches_.size())));
