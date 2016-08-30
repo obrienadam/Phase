@@ -18,7 +18,7 @@ VectorFiniteVolumeField Celeste::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gamma_, gradGamma_);
+    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
         ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);

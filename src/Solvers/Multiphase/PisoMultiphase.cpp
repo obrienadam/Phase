@@ -102,6 +102,9 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeMu();
     sg = fv::gravity(rho, g_);
 
+    for(const Cell& cell: gamma.grid.fluidCells())
+        ft(cell) *= 2.*rho(cell)/(rho1_ + rho2_);
+
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
              == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
@@ -150,10 +153,6 @@ void PisoMultiphase::rhieChowInterpolation()
         const Vector2D rc = rCell.centroid() - lCell.centroid();
 
         const Scalar df = d(face);
-        const Scalar rhof = rho(face);
-        const Scalar rhoP = rho(lCell);
-        const Scalar rhoQ = rho(rCell);
-
         const Scalar kf = surfaceTensionForce_->kappa()(face);
 
         const Scalar gP = gamma(lCell);
@@ -161,7 +160,7 @@ void PisoMultiphase::rhieChowInterpolation()
 
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        u(face) += sigma*df*kf*(gQ - gP)*rc/dot(rc, rc) - rhof*(g*d(lCell)*ft(lCell)/rhoP + (1. - g)*d(rCell)*ft(rCell)/rhoQ)/2.;
+        u(face) += sigma*df*kf*(gQ - gP)*rc/dot(rc, rc) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell));
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -172,8 +171,6 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar kf = surfaceTensionForce_->kappa()(face);
         const Scalar gf = gamma(face);
         const Scalar gP = gamma(cellP);
-        const Scalar rhoP = rho(cellP);
-        const Scalar rhof = rho(face);
 
         switch(u.boundaryType(face.id()))
         {
@@ -182,15 +179,10 @@ void PisoMultiphase::rhieChowInterpolation()
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) += surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
-                    - rhof*d(cellP)*ft(cellP)/rhoP;
+                    - d(cellP)*ft(cellP);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
-            break;
-
-        case VectorFiniteVolumeField::OUTFLOW:
-            u(face) += dot(u(face), face.outwardNorm(cellP.centroid())) > 0. ? surfaceTensionForce_->sigma()*df*kf*(gf - gP)*rf/dot(rf, rf)
-                                                                                                         - rhof*d(cellP)*ft(cellP)/rhoP : Vector2D(0., 0.);
             break;
 
         default:

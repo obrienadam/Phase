@@ -101,7 +101,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
     Scalar error = pEqn_.solve(p.sparseVector());
 
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
+    computeGradient(fv::FACE_TO_CELL, p, gradP);
 
     return error;
 }

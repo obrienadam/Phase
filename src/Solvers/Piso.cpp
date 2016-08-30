@@ -121,7 +121,7 @@ Scalar Piso::solvePCorrEqn()
 
     Scalar error = pCorrEqn_.solve();
 
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, pCorr, gradPCorr);
+    computeGradient(fv::FACE_TO_CELL, pCorr, gradPCorr);
 
     return error;
 }
@@ -165,8 +165,8 @@ void Piso::rhieChowInterpolation()
             u(face) = g*u(cellP) + (1. - g)*u(cellQ)
                     + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
                     + (rhof*df*uPrev(face) - (g*rhoP*dP*uPrev(cellP) + (1. - g)*rhoQ*dQ*uPrev(cellQ)))/dt //- This term is very important!
-                    - df*(p(cellQ) - p(cellP))*rc/dot(rc, rc) + rhof*(g*dP*gradP(cellP)/rhoP + (1. - g)*dQ*gradP(cellQ)/rhoQ)/2.
-                    + df*rhof*g_ - rhof*(g*dP*sg(cellP)/rhoP + (1. - g)*dQ*sg(cellQ)/rhoQ)/2.;
+                    - df*(p(cellQ) - p(cellP))*rc/dot(rc, rc) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
+                    + df*rhof*g_ - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
         }
     }
 
@@ -183,8 +183,8 @@ void Piso::rhieChowInterpolation()
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) = u(face.lCell())
-                    - df*((p(face) - p(face.lCell()))*rf/dot(rf, rf) - rhof*gradP(face.lCell())/rho(face.lCell()))
-                    + df*(rhof*g_ - rhof*sg(face.lCell())/rho(face.lCell()));
+                    - df*(p(face) - p(face.lCell()))*rf/dot(rf, rf) + d(face.lCell())*gradP(face.lCell())
+                    + df*rhof*g_ - d(face.lCell())*sg(face.lCell());
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -194,11 +194,6 @@ void Piso::rhieChowInterpolation()
             u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall)*nWall/nWall.magSqr();
         }
             break;
-
-        case VectorFiniteVolumeField::OUTFLOW:
-            u(face) = u(face.lCell())
-                    - df*((p(face) - p(face.lCell()))*rf/dot(rf, rf) - rhof*gradP(face.lCell())/rho(face.lCell()))
-                    + df*(rhof*g_ - rhof*sg(face.lCell())/rho(face.lCell()));
 
             if(dot(u(face), face.outwardNorm(face.lCell().centroid())) < 0.)
                 u(face) = Vector2D(0., 0.);
@@ -217,7 +212,7 @@ void Piso::correctPressure()
 
     interpolateFaces(fv::INVERSE_VOLUME, p);
     computeStaticPressure();
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
+    computeGradient(fv::FACE_TO_CELL, p, gradP);
 }
 
 void Piso::correctVelocity()

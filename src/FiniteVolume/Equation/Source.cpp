@@ -12,44 +12,54 @@ VectorFiniteVolumeField source(VectorFiniteVolumeField field)
     return field;
 }
 
-VectorFiniteVolumeField gravity(const FiniteVolumeGrid2D& grid, const Vector2D& g)
-{
-    VectorFiniteVolumeField gravity(grid, "g");
-    gravity.fill(0.);
-
-    for(const Cell& cell: grid.fluidCells())
-    {
-        for(const InteriorLink &nb: cell.neighbours())
-            gravity(cell) += dot(g, nb.rFaceVec())*nb.outwardNorm();
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            gravity(cell) += dot(g, bd.rFaceVec())*bd.outwardNorm();
-
-        gravity(cell) /= cell.volume();
-    }
-
-    interpolateFaces(fv::INVERSE_VOLUME, gravity);
-
-    return gravity;
-}
-
 VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector2D& g)
 {
     VectorFiniteVolumeField gravity(rho.grid, "g");
-    gravity.fill(0.);
+    gravity.fill(Vector2D(0., 0.));
+
+    //    case POTENTIAL:
+    //        for(const Cell& cell: rho.grid.fluidCells())
+    //        {
+    //            for(const InteriorLink &nb: cell.neighbours())
+    //                gravity(cell) += dot(g, nb.rFaceVec())*rho(nb.face())*nb.outwardNorm();
+
+    //            for(const BoundaryLink &bd: cell.boundaries())
+    //                gravity(cell) += dot(g, bd.rFaceVec())*rho(bd.face())*bd.outwardNorm();
+
+    //            gravity(cell) /= cell.volume();
+    //        }
+
+    //        interpolateFaces(fv::INVERSE_VOLUME, gravity);
 
     for(const Cell& cell: rho.grid.fluidCells())
     {
+        Scalar sumSfx = 0., sumSfy = 0.;
+
         for(const InteriorLink &nb: cell.neighbours())
-            gravity(cell) += dot(g, nb.rFaceVec())*rho(nb.face())*nb.outwardNorm();
+        {
+            const Vector2D& sf = nb.outwardNorm();
+
+            gravity(cell) += rho(nb.face())*Vector2D(g.x*fabs(sf.x), g.y*fabs(sf.y));
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
 
         for(const BoundaryLink &bd: cell.boundaries())
-            gravity(cell) += dot(g, bd.rFaceVec())*rho(bd.face())*bd.outwardNorm();
+        {
+            const Vector2D& sf = bd.outwardNorm();
 
-        gravity(cell) /= cell.volume();
+            gravity(cell) += rho(bd.face())*Vector2D(g.x*fabs(sf.x), g.y*fabs(sf.y));
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
+
+        gravity(cell) = Vector2D(gravity(cell).x/sumSfx, gravity(cell).y/sumSfy);
     }
 
-    interpolateFaces(fv::INVERSE_VOLUME, gravity);
+    for(const Face& face: gravity.grid.faces())
+        gravity(face) = rho(face)*g;
 
     return gravity;
 }

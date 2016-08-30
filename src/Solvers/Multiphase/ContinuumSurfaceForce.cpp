@@ -21,7 +21,7 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gamma_, gradGamma_);
+    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
         ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma_[cell.id()];
@@ -43,7 +43,7 @@ void ContinuumSurfaceForce::constructSmoothingKernels()
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, gammaTilde_, gradGammaTilde_);
+    computeGradient(fv::FACE_TO_CELL, gammaTilde_, gradGammaTilde_);
     interpolateFaces(fv::INVERSE_VOLUME, gradGammaTilde_);
 }
 
