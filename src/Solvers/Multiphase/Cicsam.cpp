@@ -14,36 +14,35 @@ Scalar uq(Scalar gammaTilde, Scalar coD) // Fairly sharp interface but fewer fun
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min((8.*coD*gammaTilde + (1. - coD)*(6.*gammaTilde + 3.))/8., hc(gammaTilde, coD)) : gammaTilde;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
-                                      const VectorFiniteVolumeField&
-                                      gradField,
-                                      ScalarFiniteVolumeField &field,
-                                      Scalar timeStep,
-                                      Type type)
+Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField& u,
+                                     const VectorFiniteVolumeField& gradGamma,
+                                     ScalarFiniteVolumeField& gamma,
+                                     Scalar timeStep,
+                                     Type type)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
-    Equation<ScalarFiniteVolumeField> eqn(field);
+    Equation<ScalarFiniteVolumeField> eqn(gamma);
 
-    entries.reserve(5*field.grid.nActiveCells());
+    entries.reserve(5*gamma.grid.nActiveCells());
 
-    for(const Cell &cell: field.grid.fluidCells())
+    for(const Cell &cell: gamma.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
-        const size_t row = cell.globalIndex();
+        const Index row = cell.globalIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
             //- Determine the donor and acceptor cell
 
-            const Scalar flux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            const Scalar flux = dot(u(nb.face()), nb.outwardNorm());
             const Cell &donor = flux > 0. ? cell : nb.cell();
             const Cell &acceptor = flux > 0. ? nb.cell() : cell;
 
-            const Scalar gammaD = field[donor.id()];
-            const Scalar gammaA = field[acceptor.id()];
-            const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradField[donor.id()]), 1.), 0.);
+            const Scalar gammaD = gamma(donor);
+            const Scalar gammaA = gamma(acceptor);
+            const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradGamma(donor)), 1.), 0.);
 
-            const Scalar coD = sqrt(u.faces()[nb.face().id()].magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
+            const Scalar coD = sqrt(u(nb.face()).magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
 
             const Scalar gammaTilde = (gammaD - gammaU)/(gammaA - gammaU);
 
@@ -57,222 +56,91 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
             case UQ:
                 gammaTildeF = uq(gammaTilde, coD);
                 break;
-            }
-
-            Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
-
-            if(isnan(betaFace)) // Upwind if a valid value is not found
-                betaFace = &cell == &donor ? 0. : 1.;
-
-            betaFace = std::max(std::min(betaFace, 1.), 0.);
-
-            const size_t col = nb.cell().globalIndex();
-            Scalar coeff;
-            if(&cell == &donor)
-            {
-                coeff = betaFace*flux;
-                centralCoeff += (1. - betaFace)*flux;
-            }
-            else
-            {
-                coeff = (1. - betaFace)*flux;
-                centralCoeff += betaFace*flux;
-            }
-
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
-            eqn.boundaries()(row) -= coeff*field.prev()[nb.cell().id()];
-        }
-
-        for(const BoundaryLink &bd: cell.boundaries())
-        {
-            const Scalar flux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
-
-            switch(field.boundaryType(bd.face().id()))
-            {
-            case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= 2.*flux*field.faces()[bd.face().id()];
-                break;
-
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += flux;
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("hc", "div", "unrecognized or unspecified boundary type.");
-            }
-        }
-
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff + 2.*cell.volume()/timeStep));
-        eqn.boundaries()(row) += 2.*cell.volume()*field.prev()[cell.id()]/timeStep - centralCoeff*field.prev()[cell.id()];
-    }
-
-    eqn.matrix().assemble(entries);
-    return eqn;
-}
-
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
-                                      const VectorFiniteVolumeField& gradField,
-                                      const std::vector<ImmersedBoundaryObject> &ibObjs,
-                                      ScalarFiniteVolumeField &field,
-                                      Scalar timeStep,
-                                      Type type)
-{
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
-    Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(5*field.grid.nActiveCells());
-
-    for(const Cell &cell: field.grid.fluidCells())
-    {
-        Scalar centralCoeff = 0.;
-        const size_t row = cell.globalIndex();
-
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            //- Determine the donor and acceptor cell
-
-            const Scalar flux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
-            const Cell &donor = flux > 0. ? cell : nb.cell();
-            const Cell &acceptor = flux > 0. ? nb.cell() : cell;
-
-            const Scalar gammaD = field[donor.id()];
-            const Scalar gammaA = field[acceptor.id()];
-            const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradField[donor.id()]), 1.), 0.);
-
-            const Scalar coD = sqrt(u.faces()[nb.face().id()].magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
-
-            const Scalar gammaTilde = (gammaD - gammaU)/(gammaA - gammaU);
-
-            Scalar gammaTildeF;
-
-            switch(type)
-            {
-            case HC:
-                gammaTildeF = hc(gammaTilde, coD);
-                break;
-            case UQ:
-                gammaTildeF = uq(gammaTilde, coD);
-                break;
-            }
-
-            Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
-
-            if(isnan(betaFace)) // Upwind if a valid value is not found
-                betaFace = &cell == &donor ? 0. : 1.;
-
-            betaFace = std::max(std::min(betaFace, 1.), 0.);
-
-            const size_t col = nb.cell().globalIndex();
-            Scalar coeff;
-            if(&cell == &donor)
-            {
-                coeff = betaFace*flux;
-                centralCoeff += (1. - betaFace)*flux;
-            }
-            else
-            {
-                coeff = (1. - betaFace)*flux;
-                centralCoeff += betaFace*flux;
-            }
-
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
-            eqn.boundaries()(row) -= coeff*field.prev()[nb.cell().id()];
-        }
-
-        for(const BoundaryLink &bd: cell.boundaries())
-        {
-            const Scalar flux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
-
-            switch(field.boundaryType(bd.face().id()))
-            {
-            case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= 2.*flux*field.faces()[bd.face().id()];
-                break;
-
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += flux;
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("hc", "div", "unrecognized or unspecified boundary type.");
-            }
-        }
-
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff + 2.*cell.volume()/timeStep));
-        eqn.boundaries()(row) += 2.*cell.volume()*field.prev()[cell.id()]/timeStep - centralCoeff*field.prev()[cell.id()];
-    }
-
-    for(const ImmersedBoundaryObject &ibObj: ibObjs)
-    {
-        for(const Cell &cell: ibObj.cells())
-        {
-            const size_t row = cell.globalIndex();
-
-            const Point2D &bp = ibObj.boundaryPoint(cell);
-            const Point2D &ip = ibObj.imagePoint(cell);
-            const Scalar gammaIp = ibObj.imagePointVal(cell, field);
-            const Vector2D gradGammaIp = ibObj.imagePointVal(cell, gradField);
-
-            const Scalar gammaBp = std::min(std::max(gammaIp + dot(gradGammaIp, bp - ip), 0.), 1.);
-
-            const auto &kNN = ibObj.imagePointCells(cell);
-
-            std::vector<Index> cols = {
-                kNN[0].get().globalIndex(),
-                kNN[1].get().globalIndex(),
-                kNN[2].get().globalIndex(),
-                kNN[3].get().globalIndex(),
             };
 
-            auto coeffs = ibObj.imagePointInterpolation(cell)(ip);
+            Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, 0.5));
+            if(isnan(betaFace)) // Upwind if a valid value is not found
+                betaFace = &cell == &donor ? 0. : 1.;
 
-            for(int i = 0; i < cols.size(); ++i)
-                entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, cols[i], 0.5*coeffs[i]));
+            betaFace = std::max(std::min(betaFace, 1.), 0.);
 
-            eqn.boundaries()(row) = gammaBp;
+            const Index col = nb.cell().globalIndex();
+            Scalar coeff;
+            if(&cell == &donor)
+            {
+                coeff = betaFace*flux/2.;
+                centralCoeff += (1. - betaFace)*flux/2.;
+            }
+            else
+            {
+                coeff = (1. - betaFace)*flux/2.;
+                centralCoeff += betaFace*flux/2.;
+            }
+
+            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.boundaries()(row) -= coeff*gamma.prev(0)(nb.cell());
         }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            const Scalar flux = dot(u(bd.face()), bd.outwardNorm());
+
+            switch(gamma.boundaryType(bd.face().id()))
+            {
+            case ScalarFiniteVolumeField::FIXED:
+                eqn.boundaries()(row) -= flux*gamma(bd.face());
+                break;
+
+            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                centralCoeff += flux/2.;
+                eqn.boundaries()(row) -= flux/2.*gamma.prev(0)(cell);
+                break;
+
+            case ScalarFiniteVolumeField::SYMMETRY:
+                break;
+
+            default:
+                throw Exception("hc", "div", "unrecognized or unspecified boundary type.");
+            }
+        }
+
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.boundaries()(row) -= centralCoeff*gamma.prev(0)(cell);
     }
 
     eqn.matrix().assemble(entries);
     return eqn;
 }
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
-                                      const VectorFiniteVolumeField& gradField,
-                                      const VectorFiniteVolumeField &m,
-                                      ScalarFiniteVolumeField &field,
-                                      Scalar timeStep)
+Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
+                                     const VectorFiniteVolumeField& gradGamma,
+                                     const VectorFiniteVolumeField &m,
+                                     ScalarFiniteVolumeField &gamma,
+                                     Scalar timeStep)
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
-    Equation<ScalarFiniteVolumeField> eqn(field);
+    Equation<ScalarFiniteVolumeField> eqn(gamma);
     const Scalar k = 1.;
 
-    entries.reserve(5*field.grid.nActiveCells());
+    entries.reserve(5*gamma.grid.nActiveCells());
 
-    for(const Cell &cell: field.grid.fluidCells())
+    for(const Cell &cell: gamma.grid.fluidCells())
     {
         Scalar centralCoeff = 0.;
-        const size_t row = cell.globalIndex();
+        const Index row = cell.globalIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
             //- Determine the donor and acceptor cell
 
-            const Scalar flux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            const Scalar flux = dot(u(nb.face()), nb.outwardNorm());
             const Cell &donor = flux > 0. ? cell : nb.cell();
             const Cell &acceptor = flux > 0. ? nb.cell() : cell;
 
-            const Scalar gammaD = field[donor.id()];
-            const Scalar gammaA = field[acceptor.id()];
-            const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradField[donor.id()]), 1.), 0.);
+            const Scalar gammaD = gamma(donor);
+            const Scalar gammaA = gamma(acceptor);
+            const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradGamma(donor)), 1.), 0.);
 
             const Scalar coD = sqrt(u.faces()[nb.face().id()].magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
 
@@ -294,31 +162,32 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
             Scalar coeff;
             if(&cell == &donor)
             {
-                coeff = betaFace*flux;
-                centralCoeff += (1. - betaFace)*flux;
+                coeff = betaFace*flux/2.;
+                centralCoeff += (1. - betaFace)*flux/2.;
             }
             else
             {
-                coeff = (1. - betaFace)*flux;
-                centralCoeff += betaFace*flux;
+                coeff = (1. - betaFace)*flux/2.;
+                centralCoeff += betaFace*flux/2.;
             }
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
-            eqn.boundaries()(row) -= coeff*field.prev()[nb.cell().id()];
+            eqn.boundaries()(row) -= coeff*gamma.prev()(nb.cell());
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            const Scalar flux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            const Scalar flux = dot(u(bd.face()), bd.outwardNorm());
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(gamma.boundaryType(bd.face().id()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= 2.*flux*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= flux*gamma(bd.face());
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += flux;
+                centralCoeff += flux/2.;
+                eqn.boundaries()(row) -= flux/2.*gamma.prev()(cell);
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:
@@ -329,8 +198,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u,
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff + 2.*cell.volume()/timeStep));
-        eqn.boundaries()(row) += 2.*cell.volume()*field.prev()[cell.id()]/timeStep - centralCoeff*field.prev()[cell.id()];
+        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.boundaries()(row) -= centralCoeff*gamma.prev()(cell);
     }
 
     eqn.matrix().assemble(entries);

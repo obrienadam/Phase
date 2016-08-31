@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-4
+	timeStep 5e-5
 	maxCo 0.3
 	maxTime 1
 
@@ -28,8 +28,8 @@ Properties
 	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 30
-	recedingContactAngle 30
+	advancingContactAngle 150
+	recedingContactAngle 150
 }
 
 Grid

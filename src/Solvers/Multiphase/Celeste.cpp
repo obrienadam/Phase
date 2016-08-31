@@ -260,8 +260,8 @@ void Celeste::computeCurvature()
         }
     }
 
-    weightCurvatures();
-    interpolateFaces(fv::INVERSE_VOLUME, kappa_);
+    applyCurvatureCutoff();
+    interpolateCurvatureFaces();
 }
 
 void Celeste::weightCurvatures()

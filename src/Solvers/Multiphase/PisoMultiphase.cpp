@@ -105,8 +105,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     for(const Cell& cell: gamma.grid.fluidCells())
         ft(cell) *= 2.*rho(cell)/(rho1_ + rho2_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u)
+             == ab::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -125,8 +125,8 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
 
-        //gammaEqn_ = (cicsam::div(u, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
-        gammaEqn_ = (cicsam::div(u, gradGamma, ib_.ibObjs(), gamma, timeStep, cicsam::HC) == 0.);
+        //gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, gamma, timeStep, cicsam::HC) + ib_.eqns(gamma) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
         break;
     case PLIC:
 

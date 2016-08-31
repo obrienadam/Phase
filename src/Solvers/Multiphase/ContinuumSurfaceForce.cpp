@@ -147,3 +147,51 @@ void ContinuumSurfaceForce::computeCurvature()
 
     interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }
+
+void ContinuumSurfaceForce::applyCurvatureCutoff()
+{
+    const Scalar toler = 1e-20;
+
+    for(const Cell& cell: kappa_.grid.cells())
+    {
+        const Scalar gradGammaMagSqr = gradGamma_(cell).magSqr();
+
+        if(gradGammaMagSqr < toler)
+            kappa_(cell) = 0.;
+    }
+}
+
+void ContinuumSurfaceForce::interpolateCurvatureFaces()
+{
+    const Scalar toler = 1e-20;
+
+    for(const Face &face: kappa_.grid.interiorFaces())
+    {
+        const Cell& lCell = face.lCell();
+        const Cell& rCell = face.rCell();
+        const Vector2D rc = rCell.centroid() - lCell.centroid();
+
+        const Scalar gradGammaMagSqr = ((gamma_(rCell) - gamma_(lCell))*rc/dot(rc, rc)).magSqr();
+
+        if(gradGammaMagSqr < toler)
+        {
+            const Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
+            kappa_(face) = g*kappa_(lCell) + (1. - g)*kappa_(rCell);
+        }
+        else
+            kappa_(face) = 0.;
+    }
+
+    for(const Face &face: kappa_.grid.boundaryFaces())
+    {
+        const Cell& cell = face.lCell();
+        const Vector2D rf = face.centroid() - cell.centroid();
+
+        const Scalar gradGammaMagSqr = ((gamma_(face) - gamma_(cell))*rf/dot(rf, rf)).magSqr();
+
+        if(false)
+            kappa_(face) = kappa_(cell);
+        else
+            kappa_(face) = 0.;
+    }
+}
