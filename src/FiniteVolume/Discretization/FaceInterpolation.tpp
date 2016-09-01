@@ -48,22 +48,22 @@ void interpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field)
     {
         const Scalar tmp = alpha(face);
 
-        field.faces()[face.id()] = field[face.lCell().id()]*tmp + field[face.rCell().id()]*(1. - tmp);
+        field(face) = field(face.lCell())*tmp + field(face.rCell())*(1. - tmp);
     }
 
     for(const Face& face: field.grid.boundaryFaces())
     {
-        switch(field.boundaryType(face.id()))
+        switch(field.boundaryType(face))
         {
         case FiniteVolumeField<T>::FIXED:
             break;
 
         case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
-            field.faces()[face.id()] = field[face.lCell().id()];
+            field(face) = field(face.lCell());
             break;
 
         case FiniteVolumeField<T>::SYMMETRY:
-            field.faces()[face.id()] = field[face.lCell().id()];
+            field(face) = field(face.lCell());
             break;
 
         default:
@@ -119,7 +119,7 @@ void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& 
 
     for(const Face& face: field.grid.boundaryFaces())
     {
-        switch(field.boundaryType(face.id()))
+        switch(field.boundaryType(face))
         {
         case FiniteVolumeField<T>::FIXED:
             break;
@@ -154,7 +154,7 @@ void interpolateFaces(const FiniteVolumeField<Scalar> &w, FiniteVolumeField<T>& 
 
     for(const Face& face: field.grid.boundaryFaces())
     {
-        switch(field.boundaryType(face.id()))
+        switch(field.boundaryType(face))
         {
         case FiniteVolumeField<T>::FIXED:
             break;

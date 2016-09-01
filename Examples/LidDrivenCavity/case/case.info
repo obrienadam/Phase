@@ -6,18 +6,18 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1
+	timeStep 0.1
 	maxTime 100
 	maxCo 10
 	numInnerIterations 1
 	numPressureCorrections 1
-	momentumRelaxation 0.8
-	pressureCorrectionRelaxation 0.2
+	momentumRelaxation 0.7
+	pressureCorrectionRelaxation 0.3
 }
 
 Properties
 {
-	rho 1.43
+	rho 1
 	mu 1e-2
 	g (0,0)
 	gamma 0.0001

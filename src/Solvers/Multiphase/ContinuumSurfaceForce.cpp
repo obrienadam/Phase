@@ -11,6 +11,8 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
       gradGammaTilde_(solver.addVectorField("gradGammaTilde"))
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
+    curvatureCutoffTolerance_ = input.caseInput().get<Scalar>("Solver.curvatureCutoffTolerance", 1e-14);
+
     constructSmoothingKernels();
 }
 
@@ -150,21 +152,17 @@ void ContinuumSurfaceForce::computeCurvature()
 
 void ContinuumSurfaceForce::applyCurvatureCutoff()
 {
-    const Scalar toler = 1e-20;
-
     for(const Cell& cell: kappa_.grid.cells())
     {
         const Scalar gradGammaMagSqr = gradGamma_(cell).magSqr();
 
-        if(gradGammaMagSqr < toler)
+        if(gradGammaMagSqr < curvatureCutoffTolerance_)
             kappa_(cell) = 0.;
     }
 }
 
 void ContinuumSurfaceForce::interpolateCurvatureFaces()
 {
-    const Scalar toler = 1e-20;
-
     for(const Face &face: kappa_.grid.interiorFaces())
     {
         const Cell& lCell = face.lCell();
@@ -173,13 +171,13 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
 
         const Scalar gradGammaMagSqr = ((gamma_(rCell) - gamma_(lCell))*rc/dot(rc, rc)).magSqr();
 
-        if(gradGammaMagSqr < toler)
+        if(gradGammaMagSqr < curvatureCutoffTolerance_)
+            kappa_(face) = 0.;
+        else
         {
             const Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
             kappa_(face) = g*kappa_(lCell) + (1. - g)*kappa_(rCell);
         }
-        else
-            kappa_(face) = 0.;
     }
 
     for(const Face &face: kappa_.grid.boundaryFaces())
@@ -189,9 +187,9 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
 
         const Scalar gradGammaMagSqr = ((gamma_(face) - gamma_(cell))*rf/dot(rf, rf)).magSqr();
 
-        if(false)
-            kappa_(face) = kappa_(cell);
-        else
+        if(gradGammaMagSqr < curvatureCutoffTolerance_)
             kappa_(face) = 0.;
+        else
+            kappa_(face) = kappa_(cell);
     }
 }

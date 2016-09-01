@@ -63,30 +63,30 @@ void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 }
 
 template<class T>
-typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(size_t faceId) const
+typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Face &face) const
 {
     if(patchBoundaries_.size() == 0)
         return NORMAL_GRADIENT;
 
-    return (patchBoundaries_.find(grid.faces()[faceId].patch().id())->second).first;
+    return (patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second).first;
 }
 
 template<class T>
-T FiniteVolumeField<T>::boundaryRefValue(size_t faceId) const
+T FiniteVolumeField<T>::boundaryRefValue(const Face &face) const
 {
     if(patchBoundaries_.size() == 0)
         return T();
 
-    return (patchBoundaries_.find(grid.faces()[faceId].patch().id())->second).second;
+    return (patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second).second;
 }
 
 template<class T>
-std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::boundaryInfo(size_t faceId) const
+std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::boundaryInfo(const Face &face) const
 {
     if(patchBoundaries_.size() == 0)
         return std::make_pair(NORMAL_GRADIENT, T());
 
-    return patchBoundaries_.find(grid.faces()[faceId].patch().id())->second;
+    return patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second;
 }
 
 template<class T>
@@ -322,39 +322,28 @@ void interpolateNodes(FiniteVolumeField<T> &field)
     for(const Node& node: field.grid.nodes())
     {
         const Scalar nCells = node.cells().size();
-        field.nodes()[node.id()] = T();
+        field(node) = T();
 
         for(const Cell &cell: node.cells())
-        {
-            field.nodes()[node.id()] += field[cell.id()]/nCells;
-        }
+            field(node) += field(cell)/nCells;
     }
 
     for(const Face& face: field.grid.interiorFaces())
-    {
-        const Node& lNode = face.lNode();
-        const Node& rNode = face.rNode();
-
-        field.faces()[face.id()] = 0.5*(field.nodes()[lNode.id()] + field.nodes()[rNode.id()]);
-    }
+        field(face) = 0.5*(field(face.lNode()) + field(face.rNode()));
 
     for(const Face& face: field.grid.boundaryFaces())
     {
-        switch(field.boundaryType(face.id()))
+        switch(field.boundaryType(face))
         {
         case FiniteVolumeField<T>::FIXED:
             break;
 
-        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
-            field.faces()[face.id()] = field[face.lCell().id()];
-            break;
-
-        case FiniteVolumeField<T>::SYMMETRY:
-            field.faces()[face.id()] = field[face.lCell().id()];
+        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::SYMMETRY:
+            field(face) = field(face.lCell());
             break;
 
         default:
-            throw Exception("FiniteVolumeField<T>", "harmonicInterpolateFaces", "unrecongnized boundary condition type.");
+            throw Exception("FiniteVolumeField<T>", "interpolateNodes", "unrecongnized boundary condition type.");
         }
     }
 }

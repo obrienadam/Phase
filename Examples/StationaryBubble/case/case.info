@@ -15,15 +15,15 @@ Solver
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.000105
+	smoothingKernelRadius 0.0001
 	surfaceTensionModel CELESTE
 }
 
 Properties
 {
-	rho1 958
+	rho1 998
 	rho2 998
-	mu1 9e-3
+	mu1 8.94e-4
 	mu2 8.94e-4
 	sigma 0.0262
 	g (0,0)

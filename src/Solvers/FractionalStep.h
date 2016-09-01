@@ -25,6 +25,7 @@ protected:
     virtual Scalar solvePEqn(Scalar timeStep);
     virtual void correctVelocity(Scalar timeStep);
 
+    virtual void computeFaceVelocities(Scalar timeStep);
     virtual void computeMassSource(Scalar timeStep);
 
     Scalar courantNumber(Scalar timeStep);

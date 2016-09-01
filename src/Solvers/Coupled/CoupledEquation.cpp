@@ -18,9 +18,9 @@ CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const Scala
     rhs_ = SparseVector::Zero(nVars_);
     phi_ = SparseVector::Zero(nVars_);
 
-    spMat_.setTolerance(1e-7);
+    spMat_.setTolerance(1e-10);
     spMat_.setMaxIterations(1000);
-    spMat_.setFill(0);
+    spMat_.setFill(2);
 }
 
 Scalar CoupledEquation::solve(Scalar timeStep)
@@ -46,13 +46,13 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", spMat_.error(), spMat_.nIterations());
 
     for(const Cell &cell: u_.grid.activeCells())
-        u_[cell.id()].x = phi_(cell.globalIndex());
+        u_(cell).x = phi_(cell.globalIndex());
 
     for(const Cell &cell: u_.grid.activeCells())
-        u_[cell.id()].y = phi_(cell.globalIndex() + nActiveCells_);
+        u_(cell).y = phi_(cell.globalIndex() + nActiveCells_);
 
     for(const Cell &cell: p_.grid.activeCells())
-        p_[cell.id()] = phi_(cell.globalIndex() + 2*nActiveCells_);
+        p_(cell) = phi_(cell.globalIndex() + 2*nActiveCells_);
 
     return spMat_.error();
 }
@@ -65,19 +65,19 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
 
     for(const Cell &cell: u_.grid.fluidCells())
     {
-        const size_t rowU = cell.globalIndex();
-        const size_t rowV = rowU + nActiveCells_;
-        const size_t rowP = rowV + nActiveCells_;
-        Scalar centralCoeff = 0.;
+        const Index rowU = cell.globalIndex();
+        const Index rowV = rowU + nActiveCells_;
+        const Index rowP = rowV + nActiveCells_;
+        Scalar centralCoeffUV = 0.;
         Scalar centralCoeffUP = 0.;
         Scalar centralCoeffVP = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const size_t colU = nb.cell().globalIndex();
-            const size_t colV = colU + nActiveCells_;
-            const size_t colP = colV + nActiveCells_;
-            Scalar coeff = 0.;
+            const Index colU = nb.cell().globalIndex();
+            const Index colV = colU + nActiveCells_;
+            const Index colP = colV + nActiveCells_;
+            Scalar coeffUV = 0.;
             Scalar coeffUP = 0.;
             Scalar coeffVP = 0.;
 
@@ -86,22 +86,22 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
             const Vector2D& rc = nb.rCellVec();
 
             //- Time term
-            centralCoeff += cell.volume()/timeStep;
+            centralCoeffUV += cell.volume()/timeStep;
 
-            rhs_(rowU) += cell.volume()*u_.prev(0)[cell.id()].x/timeStep;
-            rhs_(rowV) += cell.volume()*u_.prev(0)[cell.id()].y/timeStep;
+            rhs_(rowU) += cell.volume()*u_.prev(0)(cell).x/timeStep;
+            rhs_(rowV) += cell.volume()*u_.prev(0)(cell).y/timeStep;
 
             //- Advection term
-            const Scalar massFlux = rho_.faces()[face.id()]*dot(u_.faces()[face.id()], sf);
+            const Scalar massFlux = rho_(face)*dot(u_(face), sf);
 
-            centralCoeff += std::max(massFlux, 0.);
-            coeff += std::min(massFlux, 0.);
+            centralCoeffUV += std::max(massFlux, 0.);
+            coeffUV += std::min(massFlux, 0.);
 
             //- Diffusion term
-            const Scalar diffFlux = mu_.faces()[face.id()]*dot(rc, sf)/dot(rc, rc);
+            const Scalar diffFlux = mu_(face)*dot(rc, sf)/dot(rc, rc);
 
-            centralCoeff += diffFlux;
-            coeff -= diffFlux;
+            centralCoeffUV += diffFlux;
+            coeffUV -= diffFlux;
 
             //- Pressure term
             const Scalar g = nb.cell().volume()/(cell.volume() + nb.cell().volume());
@@ -112,8 +112,8 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
             coeffUP += (1. - g)*sf.x;
             coeffVP += (1. - g)*sf.y;
 
-            triplets_.push_back(SparseMatrix::Triplet(rowU, colU, coeff));
-            triplets_.push_back(SparseMatrix::Triplet(rowV, colV, coeff));
+            triplets_.push_back(SparseMatrix::Triplet(rowU, colU, coeffUV));
+            triplets_.push_back(SparseMatrix::Triplet(rowV, colV, coeffUV));
             triplets_.push_back(SparseMatrix::Triplet(rowU, colP, coeffUP));
             triplets_.push_back(SparseMatrix::Triplet(rowV, colP, coeffVP));
         }
@@ -124,20 +124,20 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
             const Vector2D& sf = bd.outwardNorm();
             const Vector2D& rf = bd.rFaceVec();
 
-            const Scalar massFlux = rho_.faces()[face.id()]*dot(u_.faces()[face.id()], sf);
-            const Scalar diffFlux = mu_.faces()[face.id()]*dot(rf, sf)/dot(rf, rf);
+            const Scalar massFlux = rho_(face)*dot(u_(face), sf);
+            const Scalar diffFlux = mu_(face)*dot(rf, sf)/dot(rf, rf);
 
-            switch(u_.boundaryType(bd.face().id()))
+            switch(u_.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
-                centralCoeff += diffFlux;
+                centralCoeffUV += diffFlux;
 
-                rhs_(rowU) += (diffFlux - massFlux)*u_.faces()[bd.face().id()].x;
-                rhs_(rowV) += (diffFlux - massFlux)*u_.faces()[bd.face().id()].y;
+                rhs_(rowU) += (diffFlux - massFlux)*u_(bd.face()).x;
+                rhs_(rowV) += (diffFlux - massFlux)*u_(bd.face()).y;
                 break;
 
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += massFlux;
+                centralCoeffUV += massFlux;
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:
@@ -147,11 +147,11 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
                 throw Exception("CoupledEquation", "assembleMomentumEquation", "unrecognized or unspecified boundary type.");
             }
 
-            switch(p_.boundaryType(bd.face().id()))
+            switch(p_.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                rhs_(rowU) -= p_.faces()[bd.face().id()]*sf.x;
-                rhs_(rowV) -= p_.faces()[bd.face().id()]*sf.y;
+                rhs_(rowU) -= p_(bd.face())*sf.x;
+                rhs_(rowV) -= p_(bd.face())*sf.y;
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT: case ScalarFiniteVolumeField::SYMMETRY:
@@ -164,10 +164,10 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
             }
         }
 
-        d_[cell.id()] = cell.volume()/centralCoeff;
+        d_(cell) = cell.volume()/centralCoeffUV;
 
-        triplets_.push_back(SparseMatrix::Triplet(rowU, rowU, centralCoeff));
-        triplets_.push_back(SparseMatrix::Triplet(rowV, rowV, centralCoeff));
+        triplets_.push_back(SparseMatrix::Triplet(rowU, rowU, centralCoeffUV));
+        triplets_.push_back(SparseMatrix::Triplet(rowV, rowV, centralCoeffUV));
         triplets_.push_back(SparseMatrix::Triplet(rowU, rowP, centralCoeffUP));
         triplets_.push_back(SparseMatrix::Triplet(rowV, rowP, centralCoeffVP));
     }
@@ -180,19 +180,19 @@ void CoupledEquation::assembleContinuityEquation()
 
     for(const Cell &cell: p_.grid.fluidCells())
     {
-        const size_t rowU = cell.globalIndex();
-        const size_t rowV = rowU + nActiveCells_;
-        const size_t rowP = rowV + nActiveCells_;
-        Scalar centralCoeff = 0.;
+        const Index rowU = cell.globalIndex();
+        const Index rowV = rowU + nActiveCells_;
+        const Index rowP = rowV + nActiveCells_;
+        Scalar centralCoeffP = 0.;
         Scalar centralCoeffU = 0.;
         Scalar centralCoeffV = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const size_t colU = nb.cell().globalIndex();
-            const size_t colV = colU + nActiveCells_;
-            const size_t colP = colV + nActiveCells_;
-            Scalar coeff = 0.;
+            const Index colU = nb.cell().globalIndex();
+            const Index colV = colU + nActiveCells_;
+            const Index colP = colV + nActiveCells_;
+            Scalar coeffP = 0.;
             Scalar coeffU = 0.;
             Scalar coeffV = 0.;
 
@@ -204,8 +204,8 @@ void CoupledEquation::assembleContinuityEquation()
             //- Pressure poisson equation
             const Scalar diffFlux = df*dot(rc, sf)/dot(rc, rc);
 
-            centralCoeff -= diffFlux;
-            coeff += diffFlux;
+            centralCoeffP -= diffFlux;
+            coeffP += diffFlux;
 
             //- Source terms
             const Scalar g = nb.cell().volume()/(cell.volume() + nb.cell().volume());
@@ -215,20 +215,23 @@ void CoupledEquation::assembleContinuityEquation()
             coeffU -= (1. - g)*sf.x;
             coeffV -= (1. - g)*sf.y;
 
-            rhs_(rowP) += dot(g*d_[cell.id()]*gradP_[cell.id()] + (1. - g)*d_[nb.cell().id()]*gradP_[nb.cell().id()], sf);
+            rhs_(rowP) += dot(g*d_(cell)*gradP_(cell) + (1. - g)*d_(nb.cell())*gradP_(nb.cell()), sf);
 
-            triplets_.push_back(SparseMatrix::Triplet(rowP, colP, coeff));
+            triplets_.push_back(SparseMatrix::Triplet(rowP, colP, coeffP));
             triplets_.push_back(SparseMatrix::Triplet(rowP, colU, coeffU));
             triplets_.push_back(SparseMatrix::Triplet(rowP, colV, coeffV));
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
+            const Face &face = bd.face();
             const Vector2D &sf = bd.outwardNorm();
-            const Scalar massFlux = dot(u_.faces()[bd.face().id()], sf);
-            const Scalar diffFlux = d_.faces()[bd.face().id()]*dot(bd.rFaceVec(), sf)/dot(bd.rFaceVec(), bd.rFaceVec());
+            const Vector2D &rf = bd.rFaceVec();
 
-            switch(u_.boundaryType(bd.face().id()))
+            const Scalar massFlux = dot(u_(face), sf);
+            const Scalar diffFlux = d_(face)*dot(rf, sf)/dot(rf, rf);
+
+            switch(u_.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
                 rhs_(rowP) += massFlux;
@@ -245,14 +248,13 @@ void CoupledEquation::assembleContinuityEquation()
                 throw Exception("CoupledEquation", "assembleContinuity", "unrecognized or unspecified boundary type.");
             }
 
-            switch(p_.boundaryType(bd.face().id()))
+            switch(p_.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                rhs_(rowP) -= diffFlux*p_.faces()[bd.face().id()];
+                rhs_(rowP) -= diffFlux*p_(face);
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:
@@ -263,7 +265,7 @@ void CoupledEquation::assembleContinuityEquation()
             }
         }
 
-        triplets_.push_back(SparseMatrix::Triplet(rowP, rowP, centralCoeff));
+        triplets_.push_back(SparseMatrix::Triplet(rowP, rowP, centralCoeffP));
         triplets_.push_back(SparseMatrix::Triplet(rowP, rowU, centralCoeffU));
         triplets_.push_back(SparseMatrix::Triplet(rowP, rowV, centralCoeffV));
     }
@@ -271,7 +273,7 @@ void CoupledEquation::assembleContinuityEquation()
 
 void CoupledEquation::rhieChowInterpolation()
 {
-    computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p_, gradP_);
+    computeGradient(fv::FACE_TO_CELL, p_, gradP_);
 
     for(const Face& face: u_.grid.interiorFaces())
     {
@@ -280,32 +282,27 @@ void CoupledEquation::rhieChowInterpolation()
 
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        const Vector2D sf = face.outwardNorm(lCell.centroid());
-        const Vector2D rc = rCell.centroid() - lCell.centroid();
-
-        u_.faces()[face.id()] -= d_.faces()[face.id()]*((p_[rCell.id()] - p_[lCell.id()])*sf/dot(rc, rc) - gradP_.faces()[face.id()]);
-
-        u_.faces()[face.id()] = g*u_[lCell.id()] + (1. - g)*u_[rCell.id()]
-                - d_.faces()[face.id()]*(p_[rCell.id()] - p_[lCell.id()])*rc/dot(rc, rc)
-                + g*d_[lCell.id()]*gradP_[lCell.id()] + (1. - g)*d_[rCell.id()]*gradP_[rCell.id()];
+        u_(face) = g*(u_(lCell) + d_(lCell)*gradP_(lCell)) + (1. - g)*(u_(rCell) + d_(rCell)*gradP_(rCell))
+                - d_(face)*gradP_(face);
     }
 
     for(const Face& face: u_.grid.boundaryFaces())
     {
-        Vector2D nWall;
-
-        switch(u_.boundaryType(face.id()))
+        switch(u_.boundaryType(face))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u_.faces()[face.id()] = u_[face.lCell().id()];
+            u_(face) = u_(face.lCell()) + d_(face.lCell())*gradP_(face.lCell())
+                    - d_(face)*gradP_(face);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
-            nWall = face.outwardNorm(face.lCell().centroid()).unitVec();
-            u_.faces()[face.id()] = u_[face.lCell().id()] - dot(u_[face.lCell().id()], nWall)*nWall;
+        {
+            const Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+            u_(face) = u_(face.lCell()) - dot(u_(face.lCell()), nWall)*nWall/nWall.magSqr();
+        }
             break;
 
         default:

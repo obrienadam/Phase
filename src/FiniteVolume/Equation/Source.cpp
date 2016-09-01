@@ -66,18 +66,20 @@ VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector
 
 ScalarFiniteVolumeField hydroStaticPressureBoundaries(const ScalarFiniteVolumeField& p, const ScalarFiniteVolumeField& rho, const Vector2D& g)
 {
+    //- This function corrects the pressure along boundary faces to account for the presence of gravity
+
     ScalarFiniteVolumeField rgh(p.grid, "rgh");
     rgh.fill(0.);
 
     for(const Face &face: p.grid.boundaryFaces())
     {
-        if(!p.boundaryType(face.id()) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
+        if(!p.boundaryType(face) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
             continue;
 
-        Vector2D rf = face.centroid() - face.lCell().centroid();
-        Vector2D sf = face.outwardNorm(face.lCell().centroid());
+        const Vector2D rf = face.centroid() - face.lCell().centroid();
+        const Vector2D sf = face.outwardNorm(face.lCell().centroid());
 
-        rgh[face.lCell().id()] -= rho[face.lCell().id()]*dot(g, rf)*dot(rf, sf)/dot(rf, rf);
+        rgh(face.lCell()) -= rho(face.lCell())*dot(g, rf)*dot(rf, sf)/dot(rf, rf);
     }
 
     return rgh;

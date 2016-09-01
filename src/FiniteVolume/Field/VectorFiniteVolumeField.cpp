@@ -68,7 +68,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     auto &self = *this;
 
     for(const Face &face: grid.boundaryFaces())
-        self.faces()[face.id()] = boundaryRefValue(face.id());
+        self(face) = boundaryRefValue(face);
 }
 
 //- External functions

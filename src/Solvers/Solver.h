@@ -44,6 +44,8 @@ protected:
     void setCircle(const Circle& circle, Scalar innerValue, ScalarFiniteVolumeField& field);
     void setCircle(const Circle& circle, const Vector2D& innerValue, VectorFiniteVolumeField& field);
 
+    void setCircleSector(const Circle& circle, Scalar thetaMin, Scalar thetaMax, Scalar innerValue, ScalarFiniteVolumeField& field);
+
     void setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeField& field);
     void setBox(const Polygon& box, const Vector2D& innerValue, VectorFiniteVolumeField& field);
 

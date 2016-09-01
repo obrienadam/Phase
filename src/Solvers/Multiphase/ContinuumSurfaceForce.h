@@ -29,6 +29,8 @@ protected:
     std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
     Scalar kernelWidth_;
 
+    Scalar curvatureCutoffTolerance_;
+
     ScalarFiniteVolumeField &gammaTilde_;
     VectorFiniteVolumeField &gradGammaTilde_;
 };

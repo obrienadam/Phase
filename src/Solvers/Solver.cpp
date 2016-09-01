@@ -102,6 +102,14 @@ void Solver::setInitialConditions(const Input& input)
                     Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
                     setCircle(circle, icTree.get<Scalar>("value"), field);
                 }
+                else if(type == "circleSector")
+                {
+                    Circle circle = Circle(Vector2D(icTree.get<string>("center")), icTree.get<Scalar>("radius"));
+                    Scalar thetaMin = icTree.get<Scalar>("thetaMin");
+                    Scalar thetaMax = icTree.get<Scalar>("thetaMax");
+                    Scalar innerValue = icTree.get<Scalar>("value");
+                    setCircleSector(circle, thetaMin, thetaMax, innerValue, field);
+                }
                 else if(type == "box")
                 {
                     Point2D center = Point2D(icTree.get<string>("center"));
@@ -204,6 +212,41 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
     {
         if (circle.isInside(cell.centroid()))
             field[cell.id()] = innerValue;
+    }
+
+    interpolateFaces(fv::INVERSE_VOLUME, field);
+}
+
+void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar thetaMax, Scalar innerValue, ScalarFiniteVolumeField &field)
+{
+    thetaMin *= M_PI/180;
+    thetaMax *= M_PI/180;
+
+    while(thetaMin > 2*M_PI)
+        thetaMin -= 2*M_PI;
+
+    while(thetaMin < 0.)
+        thetaMin += 2*M_PI;
+
+    while(thetaMax > 2*M_PI)
+        thetaMax -= 2*M_PI;
+
+    while(thetaMax < 0.)
+        thetaMax += 2*M_PI;
+
+    for(const Cell& cell: field.grid.cells())
+    {
+        if(circle.isInside(cell.centroid()))
+        {
+            const Vector2D rVec = cell.centroid() - circle.centroid();
+            Scalar theta = atan2(rVec.y, rVec.x);
+
+            if(theta < 0.)
+                theta += 2*M_PI;
+
+            if(thetaMin < theta && theta < thetaMax)
+                field(cell) = innerValue;
+        }
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, field);

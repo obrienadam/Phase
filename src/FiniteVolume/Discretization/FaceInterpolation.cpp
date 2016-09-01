@@ -51,7 +51,7 @@ void interpolateFaces(InterpolationMethod method, VectorFiniteVolumeField& field
 
     for(const Face& face: field.grid.boundaryFaces())
     {
-        switch(field.boundaryType(face.id()))
+        switch(field.boundaryType(face))
         {
         case VectorFiniteVolumeField::FIXED:
             break;

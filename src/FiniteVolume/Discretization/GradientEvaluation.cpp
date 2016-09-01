@@ -94,6 +94,18 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
             gradField(cell) = Vector2D(gradField(cell).x/sumSfx, gradField(cell).y/sumSfy);
         }
 
+        for(const Face& face: field.grid.interiorFaces())
+        {
+            const Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+            gradField(face) = (field(face.rCell()) - field(face.lCell()))*rc/dot(rc, rc);
+        }
+
+        for(const Face& face: field.grid.boundaryFaces())
+        {
+            const Vector2D rf = face.centroid() - face.lCell().centroid();
+            gradField(face) = (field(face) - field(face.lCell()))*rf/dot(rf, rf);
+        }
+
         break;
 
     default:

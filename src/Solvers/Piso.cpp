@@ -37,7 +37,7 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
 
     pCorr.copyBoundaryTypes(p);
 
-    uEqn_.matrix().setFill(3);
+    uEqn_.matrix().setFill(1);
     pCorrEqn_.matrix().setFill(3);
 
     //- Perform a pseudo initialization
@@ -108,17 +108,16 @@ Scalar Piso::solvePCorrEqn()
 {
     for(const Cell& cell: m.grid.fluidCells())
     {
-        Scalar &mass = m[cell.id()] = 0.;
+        m(cell) = 0.;
 
         for(const InteriorLink& nb: cell.neighbours())
-            mass += dot(u.faces()[nb.face().id()], nb.outwardNorm());
+            m(cell) += dot(u(nb.face()), nb.outwardNorm());
 
         for(const BoundaryLink& bd: cell.boundaries())
-            mass += dot(u.faces()[bd.face().id()], bd.outwardNorm());
+            m(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
-
     Scalar error = pCorrEqn_.solve();
 
     computeGradient(fv::FACE_TO_CELL, pCorr, gradPCorr);
@@ -136,7 +135,7 @@ void Piso::rhieChowInterpolation()
 
     d.fill(0.);
     for(const Cell& cell: d.grid.fluidCells())
-        d[cell.id()] = cell.volume()/diag[cell.globalIndex()];
+        d(cell) = cell.volume()/diag[cell.globalIndex()];
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 
@@ -144,8 +143,6 @@ void Piso::rhieChowInterpolation()
     {
         const Cell& cellP = face.lCell();
         const Cell& cellQ = face.rCell();
-
-        const Vector2D rc = cellQ.centroid() - cellP.centroid();
 
         const Scalar dP = d(cellP);
         const Scalar dQ = d(cellQ);
@@ -165,26 +162,24 @@ void Piso::rhieChowInterpolation()
             u(face) = g*u(cellP) + (1. - g)*u(cellQ)
                     + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
                     + (rhof*df*uPrev(face) - (g*rhoP*dP*uPrev(cellP) + (1. - g)*rhoQ*dQ*uPrev(cellQ)))/dt //- This term is very important!
-                    - df*(p(cellQ) - p(cellP))*rc/dot(rc, rc) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
-                    + df*rhof*g_ - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
+                    - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
+                    + df*sg(face) - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
         }
     }
 
     for(const Face& face: u.grid.boundaryFaces())
     {
-        const Vector2D rf = face.centroid() - face.lCell().centroid();
         const Scalar df = d(face);
-        const Scalar rhof = rho(face);
 
-        switch(u.boundaryType(face.id()))
+        switch(u.boundaryType(face))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) = u(face.lCell())
-                    - df*(p(face) - p(face.lCell()))*rf/dot(rf, rf) + d(face.lCell())*gradP(face.lCell())
-                    + df*rhof*g_ - d(face.lCell())*sg(face.lCell());
+                    - df*gradP(face) + d(face.lCell())*gradP(face.lCell())
+                    + df*sg(face) - d(face.lCell())*sg(face.lCell());
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -193,10 +188,6 @@ void Piso::rhieChowInterpolation()
 
             u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall)*nWall/nWall.magSqr();
         }
-            break;
-
-            if(dot(u(face), face.outwardNorm(face.lCell().centroid())) < 0.)
-                u(face) = Vector2D(0., 0.);
             break;
 
         default:
@@ -212,7 +203,7 @@ void Piso::correctPressure()
 
     interpolateFaces(fv::INVERSE_VOLUME, p);
     computeStaticPressure();
-    computeGradient(fv::FACE_TO_CELL, p, gradP);
+    computeGradient(fv::FACE_TO_CELL, p, gradP, true);
 }
 
 void Piso::correctVelocity()
@@ -221,25 +212,24 @@ void Piso::correctVelocity()
         u(cell) -= d(cell)*gradPCorr(cell);
 
     for(const Face& face: u.grid.interiorFaces())
-    {
-        const Cell& lCell = face.lCell();
-        const Cell& rCell = face.rCell();
-
-        Vector2D rc = rCell.centroid() - lCell.centroid();
-
-        u(face) -= d(face)*(pCorr(rCell) - pCorr(lCell))*rc/dot(rc, rc);
-    }
+        u(face) -= d(face)*gradPCorr(face);
 
     for(const Face& face: u.grid.boundaryFaces())
     {
-        const Vector2D rf = face.centroid() - face.lCell().centroid();
-
-        switch(u.boundaryType(face.id()))
+        switch(u.boundaryType(face))
         {
         case VectorFiniteVolumeField::FIXED:
             break;
+
+        case VectorFiniteVolumeField::SYMMETRY:
+        {
+            const Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+            u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall)*nWall/nWall.magSqr();
+        }
+            break;
+
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u(face) -= d(face)*(pCorr(face) - pCorr(face.lCell()))*rf/dot(rf, rf);
+            u(face) -= d(face)*gradPCorr(face);
             break;
         }
     }
@@ -262,7 +252,7 @@ void Piso::computeStaticPressure()
 {
     for(const Face& face: grid_.boundaryFaces())
     {
-        if(p.boundaryType(face.id()) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
+        if(p.boundaryType(face) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
             p(face) = p(face.lCell()) + rho(face.lCell())*dot(g_, face.centroid() - face.lCell().centroid());
     }
 

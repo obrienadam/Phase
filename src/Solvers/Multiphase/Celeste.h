@@ -12,6 +12,7 @@ public:
             Solver &solver);
 
     virtual VectorFiniteVolumeField compute();
+
     void constructMatrices();
 
 protected:

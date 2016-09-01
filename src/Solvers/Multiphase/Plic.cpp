@@ -50,17 +50,17 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
 
             for(const BoundaryLink &bd: cell.boundaries())
             {
-                Polygon fluxPgn = computeFluxPolygon(bd, u.faces()[bd.face().id()], timeStep, componentNo);
+                Polygon fluxPgn = computeFluxPolygon(bd, u(bd.face()), timeStep, componentNo);
 
                 if(fluxPgn.isEmpty())
                     continue;
 
                 Scalar massTransfer = 0.;
 
-                switch(field.boundaryType(bd.face().id()))
+                switch(field.boundaryType(bd.face()))
                 {
                 case ScalarFiniteVolumeField::FIXED:
-                    massTransfer = fluxPgn.area()*field.faces()[bd.face().id()];
+                    massTransfer = fluxPgn.area()*field(bd.face());
 
                     break;
 

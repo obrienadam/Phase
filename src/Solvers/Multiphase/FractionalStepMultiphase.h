@@ -21,7 +21,8 @@ protected:
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
-    virtual void balancedForceInterpolation(Scalar timeStep);
+    virtual void computeFaceVelocities(Scalar timeStep);
+    virtual void computeMassSource(Scalar timeStep);
 
     void computeRho();
     void computeMu();

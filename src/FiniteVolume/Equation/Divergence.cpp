@@ -33,7 +33,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
         {
             Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm());
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(field.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 eqn.boundaries()(row) -= faceFlux*field.faces()[bd.face().id()];
@@ -91,7 +91,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
         {
             Scalar faceFlux = dot(u.faces()[bd.face().id()], bd.outwardNorm()), boundaryCoeff;
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(field.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
                 eqn.boundaries()(rowX) -= faceFlux*field.faces()[bd.face().id()].x;

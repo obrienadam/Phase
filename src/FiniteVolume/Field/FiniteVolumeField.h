@@ -25,9 +25,9 @@ public:
 
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField& other);
-    BoundaryType boundaryType(size_t faceId) const;
-    T boundaryRefValue(size_t faceId) const;
-    std::pair<BoundaryType, T> boundaryInfo(size_t faceId) const;
+    BoundaryType boundaryType(const Face& face) const;
+    T boundaryRefValue(const Face& face) const;
+    std::pair<BoundaryType, T> boundaryInfo(const Face& face) const;
 
     //- Face-centered values
     const std::vector<T>& faces() const { return faces_; }

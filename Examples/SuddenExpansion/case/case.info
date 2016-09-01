@@ -7,7 +7,7 @@ Solver
 	timeDependent Off
 	maxIterations 100
 	timeStep 0.01
-	maxTime 5
+	maxTime 10
 	maxCo 0.8
 
 	numInnerIterations 1

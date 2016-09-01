@@ -30,7 +30,7 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
         {
             Scalar coeff = dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(field.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
@@ -79,7 +79,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         {
             Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(field.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
@@ -132,9 +132,8 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         for(const BoundaryLink &bd: cell.boundaries())
         {
             Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
-            Vector2D source, nWall;
 
-            switch(field.boundaryType(bd.face().id()))
+            switch(field.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
@@ -147,13 +146,15 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
                 break;
 
             case VectorFiniteVolumeField::SYMMETRY:
-                nWall = bd.outwardNorm().unitVec();
+            {
+                const Vector2D nWall = bd.outwardNorm().unitVec();
 
                 entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, -coeff*nWall.x*nWall.x));
                 entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(rowX, rowY, -coeff*nWall.y*nWall.x));
 
                 entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, -coeff*nWall.y*nWall.y));
                 entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(rowY, rowX, -coeff*nWall.x*nWall.y));
+            }
                 break;
 
             default:

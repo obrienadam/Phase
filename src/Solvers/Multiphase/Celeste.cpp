@@ -23,6 +23,9 @@ VectorFiniteVolumeField Celeste::compute()
     for(const Cell &cell: gamma_.grid.fluidCells())
         ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
+    for(const Face &face: gamma_.grid.faces())
+        ft(face) = sigma_*kappa_(face)*gradGamma_(face);
+
     return ft;
 }
 
