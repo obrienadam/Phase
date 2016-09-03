@@ -50,9 +50,11 @@ public:
     void isend(int dest, const::std::vector<double>& vals) const;
     void isend(int dest, const::std::vector<Vector2D>& vals) const;
 
+    void ibsend(int dest, const std::vector<unsigned long>& vals) const;
     void ibsend(int dest, const std::vector<double>& vals) const; // buffered sends
     void ibsend(int dest, const std::vector<Vector2D>& vals) const;
 
+    void irecv(int source, std::vector<unsigned long>& vals) const;
     void irecv(int source, std::vector<double>& vals) const;
     void irecv(int source, std::vector<Vector2D>& vals) const;
 
@@ -82,8 +84,8 @@ private:
     mutable std::vector< std::vector<double> > scalarSendBuffers_, scalarRecvBuffers_;
     mutable std::vector< std::vector<Vector2D> > vector2DSendBuffers_, vector2DRecvBuffers_;
 
-    std::vector<UniqueCellGroup> sendCellGroups_;
-    std::vector<CellGroup> recvCellGroups_;
+    std::vector<CellGroup> sendBufferCells_;
+    std::vector<CellGroup> recvBufferCells_;
 
     std::vector< std::vector<Label> > recvIdOrdering_;
 

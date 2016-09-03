@@ -25,6 +25,7 @@ public:
     virtual void clear();
     void reserve(size_t size) { cells_.reserve(size); }
     size_t size() const { return cells_.size(); }
+    bool empty() const { return cells_.empty(); }
 
     //- Data access
     const std::vector< Ref<const Cell> >& cells() const { return cells_; }

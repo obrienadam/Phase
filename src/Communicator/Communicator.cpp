@@ -114,6 +114,14 @@ void Communicator::isend(int dest, const::std::vector<Vector2D>& vals) const
     currentRequests_.push_back(request);
 }
 
+void Communicator::ibsend(int dest, const std::vector<unsigned long> &vals) const
+{
+    MPI_Request request;
+    MPI_Ibsend(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, MPI_ANY_TAG, comm_, &request);
+
+    currentRequests_.push_back(request);
+}
+
 void Communicator::ibsend(int dest, const std::vector<double> &vals) const
 {
     MPI_Request request;
@@ -126,6 +134,14 @@ void Communicator::ibsend(int dest, const std::vector<Vector2D>& vals) const
 {
     MPI_Request request;
     MPI_Ibsend(vals.data(), vals.size(), MPI_VECTOR2D_, dest, MPI_ANY_TAG, comm_, &request);
+
+    currentRequests_.push_back(request);
+}
+
+void Communicator::irecv(int source, std::vector<unsigned long> &vals) const
+{
+    MPI_Request request;
+    MPI_Irecv(vals.data(), vals.size(), MPI_UNSIGNED_LONG, source, MPI_ANY_TAG, comm_, &request);
 
     currentRequests_.push_back(request);
 }
@@ -179,36 +195,37 @@ double Communicator::max(double val) const
 //- Partitioning
 void Communicator::partitionGrid(const FiniteVolumeGrid2D &grid)
 {
-    using namespace std;
+    using std::vector;
 
-    int nElems = grid.cells().size();
-    int nNodes = grid.nodes().size();
-
-    vector<idx_t> elems;
-    vector<idx_t> elemInds;
-
-    elems.reserve(4*nElems);
-    elemInds.reserve(nElems + 1);
-    elemInds.push_back(0);
-
-    for(const Cell &cell: grid.cells())
-    {
-        const Size nVerts = cell.nodes().size();
-        elemInds.push_back(elemInds.back() + nVerts);
-
-        for(const Node &node: cell.nodes())
-            elems.push_back(node.id());
-    }
-
-    vector<idx_t> elemPart(nElems);
-    vector<idx_t> nodePart(nNodes);
-
-    idx_t nCommon = 1;
-    idx_t nParts = nProcs();
-    idx_t objVal;
+    vector<idx_t> elemPart(grid.cells().size());
 
     if(mainProc())
     {
+        int nElems = grid.cells().size();
+        int nNodes = grid.nodes().size();
+
+        vector<idx_t> elems;
+        vector<idx_t> elemInds;
+
+        elems.reserve(4*nElems);
+        elemInds.reserve(nElems + 1);
+        elemInds.push_back(0); // for the first element
+
+        for(const Cell &cell: grid.cells())
+        {
+            const Size nVerts = cell.nodes().size();
+            elemInds.push_back(elemInds.back() + nVerts);
+
+            for(const Node &node: cell.nodes())
+                elems.push_back(node.id());
+        }
+
+        vector<idx_t> nodePart(nNodes);
+
+        idx_t nCommon = 2;
+        idx_t nParts = nProcs();
+        idx_t objVal;
+
         printf("Partitioning mesh into %d subdomains...\n", nParts);
         int status = METIS_PartMeshDual(&nElems, &nNodes,
                                         elemInds.data(), elems.data(),
@@ -221,8 +238,78 @@ void Communicator::partitionGrid(const FiniteVolumeGrid2D &grid)
             throw Exception("Communicator", "partitionGrid", "an error was encountered while partitioning the grid.");
     }
 
-    broadcast(mainProcNo(), elemPart);
-    broadcast(mainProcNo(), nodePart);
+    broadcast(mainProcNo(), elemPart); // broadcast the partitioning result
+    std::vector<Label> cellsToBeRemoved;
+
+    sendBufferCells_.resize(nProcs());
+    recvBufferCells_.resize(nProcs());
+    recvIdOrdering_.resize(nProcs());
+
+    for(const Cell& cell: grid.cells())
+    {
+        int cellProcNo = elemPart[cell.id()];
+
+        if(cellProcNo != rank()) // Cell is not part of this partition
+        {
+            // Remove cell if it does not neighbour a local cell. Otherwise,
+            // flag it as a buffer cell
+            bool removeCell = true;
+
+            for(const InteriorLink &nb: cell.neighbours())
+                if(elemPart[nb.cell().id()] == rank())
+                {
+                    removeCell = false;
+                    break;
+                }
+
+            for(const DiagonalCellLink &dg: cell.diagonals())
+                if(!removeCell || elemPart[dg.cell().id()] == rank())
+                {
+                    removeCell = false;
+                    break;
+                }
+
+            if(removeCell)
+                cellsToBeRemoved.push_back(cell.id());
+            else
+            {
+                recvBufferCells_[cellProcNo].push_back(cell);
+                cell.setInactive();
+            }
+        }
+        else // Cell is part of the partition, check if it must send data
+        {
+            for(const InteriorLink &nb: cell.neighbours())
+                if(elemPart[nb.cell().id()] != rank())
+                    sendBufferCells_[elemPart[nb.cell().id()]].push_back(cell);
+
+            for(const DiagonalCellLink &dg: cell.diagonals())
+                if(elemPart[dg.cell().id()] != rank())
+                    sendBufferCells_[elemPart[dg.cell().id()]].push_back(cell);
+        }
+    }
+
+    //- Send the global id ordering to each neighbouring process. These are global ids
+    std::vector<Label> sendBuff;
+    for(int procNo = 0; procNo < nProcs(); ++procNo)
+    {
+        if(!sendBufferCells_[procNo].empty())
+        {
+            for(const Cell& cell: sendBufferCells_[procNo])
+                sendBuff.push_back(cell.id());
+
+            ibsend(procNo, sendBuff);
+
+            recvIdOrdering_[procNo].resize(recvBufferCells_[procNo].size());
+
+            irecv(procNo, recvIdOrdering_[procNo]);
+        }
+    }
+
+    waitAll();
+
+    //grid.removeDefunctNodes(); // Nodes that are no longer connected to any cell
+    //grid.initConnectivity(); // Must re-determine connectivity
 }
 
 //- Perform field communications across processes
@@ -232,14 +319,18 @@ void Communicator::sendMessages(ScalarFiniteVolumeField& field) const
     {
         scalarSendBuffers_[procNo].clear();
 
-        for(const Cell& cell: sendCellGroups_[procNo])
+        for(const Cell& cell: sendBufferCells_[procNo])
             scalarSendBuffers_[procNo].push_back(field(cell));
 
-        isend(procNo, scalarSendBuffers_[procNo]);
+        if(!scalarSendBuffers_[procNo].empty())
+            isend(procNo, scalarSendBuffers_[procNo]);
     }
 
     for(int procNo = 0; procNo < nProcs(); ++procNo)
-        irecv(procNo, scalarRecvBuffers_[procNo]);
+    {
+        if(!scalarRecvBuffers_[procNo].empty())
+            irecv(procNo, scalarRecvBuffers_[procNo]);
+    }
 
     waitAll(); // Allow comms to finalize
 
@@ -256,14 +347,18 @@ void Communicator::sendMessages(VectorFiniteVolumeField& field) const
     {
         vector2DSendBuffers_[procNo].clear();
 
-        for(const Cell& cell: sendCellGroups_[procNo])
+        for(const Cell& cell: sendBufferCells_[procNo])
             vector2DSendBuffers_[procNo].push_back(field(cell));
 
-        isend(procNo, vector2DSendBuffers_[procNo]);
+        if(!vector2DSendBuffers_[procNo].empty())
+            isend(procNo, vector2DSendBuffers_[procNo]);
     }
 
     for(int procNo = 0; procNo < nProcs(); ++procNo)
-        irecv(procNo, vector2DRecvBuffers_[procNo]);
+    {
+        if(!vector2DRecvBuffers_[procNo].empty())
+            irecv(procNo, vector2DRecvBuffers_[procNo]);
+    }
 
     waitAll(); // Allow comms to finalize
 
