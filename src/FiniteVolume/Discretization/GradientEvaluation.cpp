@@ -6,7 +6,7 @@ namespace fv
 
 VectorFiniteVolumeField computeGradient(GradientEvaluationMethod method,  ScalarFiniteVolumeField& field, bool useCurrentFacesValues)
 {
-    VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name);
+    VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name());
 
     computeGradient(method, field, gradField, useCurrentFacesValues);
 

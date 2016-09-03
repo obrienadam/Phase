@@ -1,6 +1,5 @@
 #include "FractionalStep.h"
 #include "CrankNicolson.h"
-#include "AdamsBashforth.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 
@@ -27,9 +26,12 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
     p.initNodes();
 
     uEqn_.matrix().setFill(1);
-    pEqn_.matrix().setFill(3);
+    pEqn_.matrix().setFill(8);
 
     interpolateFaces(fv::INVERSE_VOLUME, u);
+
+    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == 0.);
+    pEqn_.solve(); // dummy solve
 }
 
 std::string FractionalStep::info() const
@@ -46,12 +48,6 @@ Scalar FractionalStep::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-
-    for(const ForceIntegrator &fi: forceIntegrators_)
-        fi.integrate();
-
-    for(const VolumeIntegrator &vi: volumeIntegrators_)
-        vi.integrate();
 
     printf("Max Co = %lf\n", courantNumber(timeStep));
 
@@ -83,7 +79,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     sg.savePreviousTimeStep(timeStep, 1);
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(gradP - sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP - sg));
 
     Scalar error = uEqn_.solve();
 
@@ -98,7 +94,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
     pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar + fv::hydroStaticPressureBoundaries(p, rho, g_));
 
-    Scalar error = pEqn_.solve(p.sparseVector());
+    Scalar error = pEqn_.solve(p.sparseVector(), false);
 
     for(const Face& face: p.grid.boundaryFaces())
     {
@@ -179,7 +175,7 @@ void FractionalStep::computeFaceVelocities(Scalar timeStep)
             break;
 
         default:
-            throw Exception("Piso", "rhieChowInterpolation", "unrecognized boundary condition type.");
+            throw Exception("FractionalStep", "computeFaceVelocities", "unrecognized boundary condition type.");
         };
     }
 }

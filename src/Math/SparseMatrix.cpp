@@ -68,7 +68,7 @@ SparseVector SparseMatrix::solve(const SparseVector &b, Preconditioner precon) c
     return x;
 }
 
-SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon) const
+SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon, bool recomputePreconditioner) const
 {
     SparseVector x;
     Eigen::ComputationInfo info;
@@ -76,7 +76,9 @@ SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, 
     switch(precon)
     {
     case NoPreconditioner:
-        solverNoPreconditioner_.compute(*this);
+        if(recomputePreconditioner)
+            solverNoPreconditioner_.compute(*this);
+
         x = solverNoPreconditioner_.solveWithGuess(b, x0);
         error_ = solverNoPreconditioner_.error();
         nIters_ = solverNoPreconditioner_.iterations();
@@ -84,7 +86,9 @@ SparseVector SparseMatrix::solve(const SparseVector &b, const SparseVector &x0, 
         break;
 
     case IncompleteLUT:
-        solverIncompleteLUT_.compute(*this);
+        if(recomputePreconditioner)
+            solverIncompleteLUT_.compute(*this);
+
         x = solverIncompleteLUT_.solveWithGuess(b, x0);
         error_ = solverIncompleteLUT_.error();
         nIters_ = solverIncompleteLUT_.iterations();

@@ -232,7 +232,7 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
     using namespace std;
 
 
-    std::string typeStr = input.boundaryInput().get<string>("Boundaries." + Field<T>::name + ".*.type", "");
+    std::string typeStr = input.boundaryInput().get<string>("Boundaries." + Field<T>::name() + ".*.type", "");
     BoundaryType boundaryType;
     std::vector<Scalar> coeffs;
 
@@ -257,7 +257,7 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
 
     for(const auto &entry: grid.patches())
     {
-        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name + "." + entry.first + ".type", "");
+        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name() + "." + entry.first + ".type", "");
 
         if(typeStr.empty())
             continue;
@@ -351,7 +351,7 @@ void interpolateNodes(FiniteVolumeField<T> &field)
 template<class T>
 FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector< std::vector< Ref<const Cell> > >& rangeSearch, Scalar e)
 {
-    FiniteVolumeField<T> smoothedField(field.grid, field.name);
+    FiniteVolumeField<T> smoothedField(field.grid, field.name());
     Scalar A = 1.;
     const Scalar eSqr = e*e;
 

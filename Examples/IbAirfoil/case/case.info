@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
+	timeStep 1e-4
 	maxCo 0.8
 	maxTime 10
 
@@ -19,16 +19,16 @@ Solver
 
 Properties
 {
-	rho 998
-	mu 8.94e-4
+	rho 1.225
+	mu 1.81e-5
 	g (0,0)
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 240
-	nCellsY 160
+	nCellsX 480
+	nCellsY 320
 
 	; Rectilinear parameters
 	width 3
@@ -39,7 +39,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields rho,mu,cell_status,p,pCorr
+	scalarFields cell_status,p,pCorr,m
 }
 
 System

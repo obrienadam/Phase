@@ -3,7 +3,6 @@
 #include "Plic.h"
 #include "Celeste.h"
 #include "CrankNicolson.h"
-#include "AdamsBashforth.h"
 #include "FaceInterpolation.h"
 
 PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
@@ -25,7 +24,6 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
 
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
-
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     if(tmp == "CSF")

@@ -24,6 +24,8 @@ public:
     //- Tests
     virtual bool isInside(const Point2D& testPoint) const;
     virtual bool isOnEdge(const Point2D& testPoint) const;
+    virtual bool isCovered(const Point2D &point) const;
+
     bool isValid() const;
     bool isEmpty() const;
 
@@ -43,6 +45,9 @@ public:
 
     //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;
+
+    //- Convenience
+    Polygon polygonize() const { return *this; }
 
     //- Vertices
     const std::vector<Point2D>& vertices() const { return boost::geometry::exterior_ring(poly_); }

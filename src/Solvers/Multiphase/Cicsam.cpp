@@ -35,7 +35,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
         {
             //- Determine the donor and acceptor cell
 
-            const Scalar flux = dot(u(nb.face()), nb.outwardNorm());
+            Scalar flux = dot(u(nb.face()), nb.outwardNorm());
             const Cell &donor = flux > 0. ? cell : nb.cell();
             const Cell &acceptor = flux > 0. ? nb.cell() : cell;
 

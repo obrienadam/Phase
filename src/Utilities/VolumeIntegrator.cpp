@@ -37,7 +37,7 @@ std::vector<VolumeIntegrator> VolumeIntegrator::initVolumeIntegrators(const Inpu
         const ScalarFiniteVolumeField &field = fieldIt->second;
         const CellGroup &cellGroup = solver.grid().cellGroup(cellGroupNames[i]);
 
-        printf("Initializing a volume integrator for field \"%s\" on cell group \"%s\".\n", field.name.c_str(), cellGroup.name().c_str());
+        printf("Initializing a volume integrator for field \"%s\" on cell group \"%s\".\n", field.name().c_str(), cellGroup.name().c_str());
 
         volumeIntegrators.push_back(
                     VolumeIntegrator(field, cellGroup)
@@ -58,14 +58,16 @@ VolumeIntegrator::VolumeIntegrator(const ScalarFiniteVolumeField &field, const C
 
 //- public methods
 
-Scalar VolumeIntegrator::integrate() const
+Scalar VolumeIntegrator::integrate()
 {
     Scalar volInt = 0.;
 
     for(const Cell &cell: cellGroup_)
         volInt += field_(cell)*cell.volume();
 
-    printf("Volume integral of field \"%s\" over the region \"%s\": %lf\n", field_.name.c_str(), cellGroup_.name().c_str(), volInt);
+    printf("Volume integral of field \"%s\" over the region \"%s\": %lf\n", field_.name().c_str(), cellGroup_.name().c_str(), volInt);
+
+    volumeData_.push_back(volInt);
 
     return volInt;
 }

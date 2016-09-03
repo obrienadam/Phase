@@ -40,8 +40,6 @@ protected:
 
     size_t nInnerIterations_, nPCorrections_;
     Scalar momentumOmega_, pCorrOmega_;
-
-    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

@@ -19,7 +19,7 @@ Boundaries
     x-
     {
       type fixed
-      value (1,0)
+      value (32,0)
     }
 
     y-

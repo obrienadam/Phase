@@ -14,6 +14,9 @@ public:
     Viewer(const Solver& solver, const Input& input, const std::string &customName = "");
 
     virtual void write(Scalar solutionTime);
+    virtual void write(const std::vector<VolumeIntegrator>& volumeIntegrators);
+
+    void addPolygons(const std::vector<Polygon>& polygons, const std::string& zoneName = "Polygon Zone");
 
 protected:
 

@@ -76,18 +76,18 @@ void Celeste::constructMatrices()
             Scalar dx = nb.cell().centroid().x - cell.centroid().x;
             Scalar dy = nb.cell().centroid().y - cell.centroid().y;
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-            {
-                if(ibObj.cells().isInGroup(nb.cell()))
-                {
-                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+//            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+//            {
+//                if(ibObj.cells().isInGroup(nb.cell()))
+//                {
+//                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-                    sSqr = (stencil.first - cell.centroid()).magSqr();
-                    dx = stencil.first.x - cell.centroid().x;
-                    dy = stencil.first.y - cell.centroid().y;
-                    break;
-                }
-            }
+//                    sSqr = (stencil.first - cell.centroid()).magSqr();
+//                    dx = stencil.first.x - cell.centroid().x;
+//                    dy = stencil.first.y - cell.centroid().y;
+//                    break;
+//                }
+//            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -104,18 +104,18 @@ void Celeste::constructMatrices()
             Scalar dx = dg.cell().centroid().x - cell.centroid().x;
             Scalar dy = dg.cell().centroid().y - cell.centroid().y;
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-            {
-                if(ibObj.cells().isInGroup(dg.cell()))
-                {
-                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+//            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+//            {
+//                if(ibObj.cells().isInGroup(dg.cell()))
+//                {
+//                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-                    sSqr = (stencil.first - cell.centroid()).magSqr();
-                    dx = stencil.first.x - cell.centroid().x;
-                    dy = stencil.first.y - cell.centroid().y;
-                    break;
-                }
-            }
+//                    sSqr = (stencil.first - cell.centroid()).magSqr();
+//                    dx = stencil.first.x - cell.centroid().x;
+//                    dy = stencil.first.y - cell.centroid().y;
+//                    break;
+//                }
+//            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -216,7 +216,7 @@ void Celeste::computeCurvature()
                     {
                         auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-                        sSqr = (stencil.first - cell.centroid()).magSqr();
+                        //sSqr = (stencil.first - cell.centroid()).magSqr();
                         n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
                         break;
                     }

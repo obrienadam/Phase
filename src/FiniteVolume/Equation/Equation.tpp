@@ -23,9 +23,9 @@ Scalar Equation<T>::solve()
 }
 
 template<class T>
-Scalar Equation<T>::solve(const SparseVector &x0)
+Scalar Equation<T>::solve(const SparseVector &x0, bool recomputePreconditioner)
 {
-    field_ = spMat_.solve(boundaries_ + sources_, x0, precon_);
+    field_ = spMat_.solve(boundaries_ + sources_, x0, precon_, recomputePreconditioner);
     printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
     return error();
 }

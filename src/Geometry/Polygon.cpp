@@ -35,6 +35,11 @@ bool Polygon::isOnEdge(const Point2D &testPoint) const
     return boost::geometry::covered_by(testPoint, poly_) && !isInside(testPoint);
 }
 
+bool Polygon::isCovered(const Point2D &point) const
+{
+    return boost::geometry::covered_by(point, poly_);
+}
+
 bool Polygon::isValid() const
 {
     return boost::geometry::is_valid(poly_);

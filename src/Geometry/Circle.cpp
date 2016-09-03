@@ -26,6 +26,11 @@ bool Circle::isOnEdge(const Point2D &testPoint) const
     return (testPoint - center_).magSqr() - radius_*radius_ <= Point2D::epsilon();
 }
 
+bool Circle::isCovered(const Point2D &point) const
+{
+    return (point - center_).magSqr() <= radius_*radius_;
+}
+
 //- Intersections
 std::vector<Point2D> Circle::intersections(const Line2D &line) const
 {
@@ -100,6 +105,24 @@ boost::geometry::model::box<Point2D> Circle::boundingBox() const
                                                         center_.y - radius_),
                                                 Point2D(center_.x + radius_,
                                                         center_.y + radius_));
+}
+
+Polygon Circle::polygonize(int nVerts) const
+{
+    std::vector<Point2D> verts(nVerts);
+
+    for(int i = 0; i < nVerts; ++i)
+    {
+        const Scalar theta = 2.*M_PI*i/Scalar(nVerts);
+        verts[i] = center_ + Point2D(radius_*cos(theta), radius_*sin(theta));
+    }
+
+    return Polygon(verts);
+}
+
+Polygon Circle::polygonize() const
+{
+    return polygonize(200);
 }
 
 //- External functions

@@ -12,11 +12,13 @@ class Field : public std::vector<T>
 public:
 
     Field(size_t size = 0, const T& initialValue = T(), const std::string& name = "N/A");
-    Field(const Field<T>& other) : std::vector<T>(other), name(other.name) {}
+    Field(const Field<T>& other) : std::vector<T>(other), name_(other.name_) {}
 
-    std::string name;
+    const std::string& name() const { return name_; }
 
 protected:
+
+    std::string name_;
 
 };
 

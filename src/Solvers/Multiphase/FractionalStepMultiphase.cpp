@@ -1,7 +1,6 @@
 #include "FractionalStepMultiphase.h"
 #include "Cicsam.h"
 #include "CrankNicolson.h"
-#include "AdamsBashforth.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 
@@ -34,12 +33,6 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
     solveGammaEqn(timeStep);
-
-    for(const ForceIntegrator &fi: forceIntegrators_)
-        fi.integrate();
-
-    for(const VolumeIntegrator &vi: volumeIntegrators_)
-        vi.integrate();
 
     printf("Max Co = %lf\n", courantNumber(timeStep));
 

@@ -39,7 +39,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 {
     using namespace std;
 
-    string valStr = input.boundaryInput().get<string>("Boundaries." + name + ".*.value", "");
+    string valStr = input.boundaryInput().get<string>("Boundaries." + name_ + ".*.value", "");
 
     if(!valStr.empty())
     {
@@ -54,7 +54,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 
     for(const auto &entry: grid.patches())
     {
-        valStr = input.boundaryInput().get<string>("Boundaries." + name + "." + entry.first + ".value", "");
+        valStr = input.boundaryInput().get<string>("Boundaries." + name_ + "." + entry.first + ".value", "");
 
         if(valStr.empty())
             continue;
@@ -87,7 +87,7 @@ VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFinit
 
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vector2D& rhs)
 {
-    VectorFiniteVolumeField result(lhs.grid, lhs.name);
+    VectorFiniteVolumeField result(lhs.grid, lhs.name());
 
     for(const Cell& cell: lhs.grid.cells())
         result[cell.id()] = lhs[cell.id()]*rhs;

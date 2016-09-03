@@ -32,7 +32,7 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
 
             Scalar centralCoeff, l;
             // Then here we shall do the boundary assembly!
-            switch(ibObj.boundaryType(field.name))
+            switch(ibObj.boundaryType(field.name()))
             {
             case ImmersedBoundaryObject::FIXED:
                 centralCoeff = 1.;
@@ -48,10 +48,10 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
 
             case ImmersedBoundaryObject::PARTIAL_SLIP:
                 l = (cell.centroid() - imagePoint).mag();
-                centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name)/l;
+                centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name())/l;
 
                 for(Scalar &coeff: coeffs)
-                    coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name)/l;
+                    coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name())/l;
 
                 break;
 
@@ -107,7 +107,7 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             // Then here we shall do the boundary assembly!
             Scalar centralCoeffX, centralCoeffY, l, tmpScalar;
             Vector2D n, t;
-            switch(ibObj.boundaryType(field.name))
+            switch(ibObj.boundaryType(field.name()))
             {
             case ImmersedBoundaryObject::FIXED:
                 centralCoeffX = centralCoeffY = 1.;
@@ -129,7 +129,7 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
 
                 l = (imagePoint - cell.centroid()).mag();
 
-                tmpScalar = ibObj.boundaryRefValue(field.name);
+                tmpScalar = ibObj.boundaryRefValue(field.name());
                 tmpScalar = (1. + 2.*tmpScalar/l)/(1. - 2.*tmpScalar/l);
 
                 centralCoeffX = tmpScalar*t.x;

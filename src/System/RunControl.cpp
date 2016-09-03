@@ -29,7 +29,17 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
         )
     {
         if(iterNo%fileWriteFrequency == 0)
+        {
             viewer.write(time);
+
+            for(VolumeIntegrator &vi: solver.volumeIntegrators())
+                vi.integrate();
+
+            for(ForceIntegrator &fi: solver.forceIntegrators())
+                fi.integrate();
+
+            viewer.write(solver.volumeIntegrators());
+        }
 
         solver.solve(timeStep);
         printf("Time step: %.2e s\n", timeStep);

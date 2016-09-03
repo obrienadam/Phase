@@ -42,7 +42,7 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     triplets_.clear();
 
     printf("Solving coupled Navier-Stokes equations...\n");
-    phi_ = spMat_.solve(rhs_, phi_, SparseMatrix::IncompleteLUT);
+    phi_ = spMat_.solve(rhs_, phi_, SparseMatrix::IncompleteLUT, true);
     printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", spMat_.error(), spMat_.nIterations());
 
     for(const Cell &cell: u_.grid.activeCells())

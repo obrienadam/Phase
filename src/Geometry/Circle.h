@@ -23,6 +23,7 @@ public:
     //- Tests
     bool isInside(const Point2D &testPoint) const;
     bool isOnEdge(const Point2D &testPoint) const;
+    bool isCovered(const Point2D &point) const;
 
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;
@@ -39,6 +40,10 @@ public:
 
     //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;
+
+    //- Convenience
+    Polygon polygonize(int nVerts) const;
+    Polygon polygonize() const;
 
 private:
 

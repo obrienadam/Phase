@@ -1,7 +1,6 @@
 #include "Piso.h"
 #include "Exception.h"
 #include "CrankNicolson.h"
-#include "AdamsBashforth.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
 
@@ -32,7 +31,6 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     pCorr.copyBoundaryTypes(p);
@@ -61,12 +59,6 @@ Scalar Piso::solve(Scalar timeStep)
         }
     }
 
-    for(const ForceIntegrator &fi: forceIntegrators_)
-        fi.integrate();
-
-    for(const VolumeIntegrator &vi: volumeIntegrators_)
-        vi.integrate();
-
     printf("Max Co = %lf\n", courantNumber(timeStep));
 
     return 0.;
@@ -94,7 +86,7 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 {
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u) + ib_.eqns(u) == ab::laplacian(mu, u) - fv::source(gradP) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -260,7 +252,7 @@ void Piso::computeStaticPressure()
         for(const Cell &cell: ibObj.cells())
             for(const InteriorLink &nb: cell.neighbours())
             {
-                if(grid_.fluidCells().isInGroup(nb.cell()) && ibObj.boundaryType(p.name) == ImmersedBoundaryObject::NORMAL_GRADIENT)
+                if(grid_.fluidCells().isInGroup(nb.cell()) && ibObj.boundaryType(p.name()) == ImmersedBoundaryObject::NORMAL_GRADIENT)
                 {
                     p(nb.face()) = p(nb.cell()) + rho(nb.cell())*dot(g_, nb.face().centroid() - nb.cell().centroid());
                 }

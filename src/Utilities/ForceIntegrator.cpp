@@ -50,7 +50,7 @@ ForceIntegrator::ForceIntegrator(const Patch &patch,
 
 }
 
-Vector2D ForceIntegrator::integrate() const
+Vector2D ForceIntegrator::integrate()
 {
     Vector2D fn = Vector2D(0., 0.), ft = Vector2D(0., 0.);
 
@@ -70,5 +70,7 @@ Vector2D ForceIntegrator::integrate() const
     printf("Net tangential force on patch \"%s\": %s\n", patch_.name.c_str(), to_string(ft).c_str());
     printf("Net force on patch \"%s\": %s\n", patch_.name.c_str(), to_string(fn + ft).c_str());
 
-    return fn + ft;
+    data_.push_back(fn + ft);
+
+    return data_.back();
 }

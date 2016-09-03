@@ -13,12 +13,17 @@ public:
 
     VolumeIntegrator(const ScalarFiniteVolumeField& field, const CellGroup &cellGroup);
 
-    Scalar integrate() const;
+    Scalar integrate();
+
+    const std::vector<Scalar>& data() const { return volumeData_; }
+    const ScalarFiniteVolumeField& field() const { return field_; }
 
 private:
 
     const ScalarFiniteVolumeField &field_;
     const CellGroup &cellGroup_;
+
+    std::vector<Scalar> volumeData_;
 
 };
 

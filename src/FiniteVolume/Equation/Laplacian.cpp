@@ -14,13 +14,13 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        Index row = cell.globalIndex();
+        const Index row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Index col = nb.cell().globalIndex();
-            Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            const Index col = nb.cell().globalIndex();
+            const Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
@@ -28,13 +28,13 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            const Scalar coeff = dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.boundaries()(row) -= coeff*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= coeff*field(bd.face());
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT: case ScalarFiniteVolumeField::SYMMETRY:
@@ -63,13 +63,13 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        Index row = cell.globalIndex();
+        const Index row = cell.globalIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Index col = nb.cell().globalIndex();
-            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            const Index col = nb.cell().globalIndex();
+            const Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
@@ -77,13 +77,13 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            const Scalar coeff = gamma(bd.face())*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.boundaries()(row) -= coeff*field.faces()[bd.face().id()];
+                eqn.boundaries()(row) -= coeff*field(bd.face());
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT: case ScalarFiniteVolumeField::SYMMETRY:
@@ -112,17 +112,17 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        Index rowX = cell.globalIndex();
-        Index rowY = rowX + nActiveCells;
+        const Index rowX = cell.globalIndex();
+        const Index rowY = rowX + nActiveCells;
 
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Index colX = nb.cell().globalIndex();
-            Index colY = colX + nActiveCells;
+            const Index colX = nb.cell().globalIndex();
+            const Index colY = colX + nActiveCells;
 
-            Scalar coeff = gamma.faces()[nb.face().id()]*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
+            const Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
             entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, coeff));
@@ -131,14 +131,14 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = gamma.faces()[bd.face().id()]*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
+            const Scalar coeff = gamma(bd.face())*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch(field.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
                 centralCoeff -= coeff;
-                eqn.boundaries()(rowX) -= coeff*field.faces()[bd.face().id()].x;
-                eqn.boundaries()(rowY) -= coeff*field.faces()[bd.face().id()].y;
+                eqn.boundaries()(rowX) -= coeff*field(bd.face()).x;
+                eqn.boundaries()(rowY) -= coeff*field(bd.face()).y;
 
                 break;
 

@@ -4,6 +4,8 @@
 #include "Point2D.h"
 #include "Line2D.h"
 
+class Polygon;
+
 class Shape2D
 {
 public:
@@ -18,6 +20,7 @@ public:
     virtual bool isInside(const Point2D& point) const = 0;
     virtual bool isOutside(const Point2D& point) const { return !isInside(point); }
     virtual bool isOnEdge(const Point2D& point) const = 0;
+    virtual bool isCovered(const Point2D& point) const = 0;
 
     //- Intersections
     virtual std::vector<Point2D> intersections(const Line2D& line) const = 0;
@@ -34,6 +37,9 @@ public:
 
     //- Bounding box
     virtual boost::geometry::model::box<Point2D> boundingBox() const = 0;
+
+    //- Convenience
+    virtual Polygon polygonize() const = 0;
 
 private:
 };

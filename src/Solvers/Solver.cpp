@@ -137,7 +137,7 @@ void Solver::setInitialConditions(const Input& input)
                 else
                     throw Exception("Input", "setInitialConditions", "invalid initial condition type \"" + type + "\".");
 
-                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
+                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name().c_str());
             }
 
             continue;
@@ -187,7 +187,7 @@ void Solver::setInitialConditions(const Input& input)
                 else
                     throw Exception("Input", "setInitialConditions", "invalid initial condition type \"" + type + "\".");
 
-                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name.c_str());
+                printf("Set initial condition \"%s\" of type %s on field \"%s\".\n", ic.first.c_str(), type.c_str(), field.name().c_str());
             }
         }
     }

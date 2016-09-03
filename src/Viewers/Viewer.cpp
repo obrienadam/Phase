@@ -88,6 +88,14 @@ Viewer::Viewer(const Solver &solver, const Input &input, const std::string &cust
     int secId;
     cg_section_write(fileId_, baseId_, zoneId_, "GridElements", MIXED, 1, solver.grid().cells().size(), 0, connectivity.data(), &secId);
 
+
+    std::vector<cgsize_t> ibCells;
+    for(const ImmersedBoundaryObject& ibObj: solver.ib().ibObjs())
+        for(const Cell& cell: ibObj.cells())
+            ibCells.push_back(cell.id() + 1);
+
+    cg_subreg_ptset_write(fileId_, baseId_, zoneId_, "ImmersedBoundaryCells", 2, FaceCenter, PointList, ibCells.size(), ibCells.data(), &secId);
+
     //- Now write the boundary mesh elements
     cgsize_t start = solver.grid().nCells() + 1;
     for(const auto& patchEntry: solver.grid().patches())
@@ -113,6 +121,41 @@ Viewer::Viewer(const Solver &solver, const Input &input, const std::string &cust
         cg_boco_gridlocation_write(fileId_, baseId_, zoneId_, bcId, EdgeCenter);
 
         start = end + 1;
+    }
+
+    //- Create new zones for the ibs and write them
+    int ibBase;
+    cg_base_write(fileId_, "IBs", 1, 2, &ibBase);
+    for(const ImmersedBoundaryObject& ibObj: solver.ib().ibObjs())
+    {
+        Polygon pgn = ibObj.shape().polygonize();
+        int nVerts = pgn.vertices().size() - 1;
+        sizes = vector<int>({nVerts, 1, 0});
+
+        int ibZoneId;
+        cg_zone_write(fileId_, ibBase, ibObj.name().c_str(), sizes.data(), Unstructured, &ibZoneId);
+
+        coordsX.clear();
+        coordsY.clear();
+
+        for(const Point2D &vtx: pgn.vertices())
+        {
+            coordsX.push_back(vtx.x);
+            coordsY.push_back(vtx.y);
+        }
+
+        cg_coord_write(fileId_, ibBase, ibZoneId, RealDouble, "CoordinateX", coordsX.data(), &xid);
+        cg_coord_write(fileId_, ibBase, ibZoneId, RealDouble, "CoordinateY", coordsY.data(), &xid);
+
+        connectivity.clear();
+
+        for(int i = 0; i < nVerts; ++i)
+        {
+            connectivity.push_back(i + 1);
+            connectivity.push_back((i + 1)%nVerts + 1);
+        }
+
+        cg_section_write(fileId_, ibBase, ibZoneId, "Edges", BAR_2, 1, nVerts, 0, connectivity.data(), &secId);
     }
 
     cg_close(fileId_);
@@ -144,7 +187,7 @@ void Viewer::write(Scalar solutionTime)
 
     int fieldId;
     for(const ScalarFiniteVolumeField& field: scalarFields_)
-        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name.c_str(), field.data(), &fieldId);
+        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name().c_str(), field.data(), &fieldId);
 
     for(const VectorFiniteVolumeField& field: vectorFields_)
     {
@@ -159,8 +202,8 @@ void Viewer::write(Scalar solutionTime)
             yComps.push_back(vec.y);
         }
 
-        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name + "X").c_str(), xComps.data(), &fieldId);
-        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name + "Y").c_str(), yComps.data(), &fieldId);
+        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name() + "X").c_str(), xComps.data(), &fieldId);
+        cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name() + "Y").c_str(), yComps.data(), &fieldId);
     }
 
     //- Update the flow solution pointers
@@ -180,6 +223,23 @@ void Viewer::write(Scalar solutionTime)
     dim[1] = flowSolutionPointers_.size();
 
     cg_array_write("FlowSolutionPointers", Character, 2, dim, sout.str().c_str());
+
+    cg_close(fileId_);
+}
+
+void Viewer::write(const std::vector<VolumeIntegrator> &volumeIntegrators)
+{
+    cg_open(outputFilename_.c_str(), CG_MODE_MODIFY, &fileId_);
+
+    for(const VolumeIntegrator& vi: volumeIntegrators)
+    {
+        int nSteps = vi.data().size();
+
+        cg_goto(fileId_, baseId_, "end");
+        cg_convergence_write(vi.data().size(), "");
+        cg_goto(fileId_, baseId_, "ConvergenceHistory_t", 1, "end");
+        cg_array_write((vi.field().name() + "VolumeIntegral").c_str(), RealDouble, 1, &nSteps, vi.data().data());
+    }
 
     cg_close(fileId_);
 }

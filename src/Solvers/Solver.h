@@ -8,6 +8,7 @@
 #include "Circle.h"
 #include "ImmersedBoundary.h"
 #include "VolumeIntegrator.h"
+#include "ForceIntegrator.h"
 
 class Solver
 {
@@ -39,6 +40,12 @@ public:
 
     const ImmersedBoundary& ib() const { return ib_; }
 
+    const std::vector<VolumeIntegrator>& volumeIntegrators() const { return volumeIntegrators_; }
+    std::vector<VolumeIntegrator>& volumeIntegrators() { return volumeIntegrators_; }
+
+    const std::vector<ForceIntegrator>& forceIntegrators() const { return forceIntegrators_; }
+    std::vector<ForceIntegrator>& forceIntegrators() { return forceIntegrators_; }
+
 protected:
 
     void setCircle(const Circle& circle, Scalar innerValue, ScalarFiniteVolumeField& field);
@@ -64,6 +71,7 @@ protected:
     ImmersedBoundary ib_;
 
     std::vector<VolumeIntegrator> volumeIntegrators_;
+    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

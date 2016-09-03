@@ -34,8 +34,6 @@ protected:
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pEqn_;
-
-    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

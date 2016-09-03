@@ -18,9 +18,9 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
 {
     using namespace std;
 
-    if(input.boundaryInput().count("Boundaries." + name + ".*") != 0)
+    if(input.boundaryInput().count("Boundaries." + name_ + ".*") != 0)
     {
-        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name + ".*.value");
+        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name_ + ".*.value");
 
         for(const auto &entry: grid.patches())
         {
@@ -31,7 +31,7 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
 
     for(const auto &entry: grid.patches())
     {
-        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name + "." + entry.first + ".value", 0);
+        Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name_ + "." + entry.first + ".value", 0);
         BoundaryType type = patchBoundaries_[entry.second.id()].first;
         patchBoundaries_[entry.second.id()] = std::make_pair(type, refVal);
     }

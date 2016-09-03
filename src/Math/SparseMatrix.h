@@ -28,7 +28,7 @@ public:
     void assemble(const std::vector< Eigen::Triplet<Scalar> >& entries);
 
     SparseVector solve(const SparseVector& b, Preconditioner precon = IncompleteLUT) const;
-    SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon = IncompleteLUT) const;
+    SparseVector solve(const SparseVector &b, const SparseVector &x0, Preconditioner precon, bool recomputePreconditioner) const;
 
     Scalar error() const { return error_; }
     int nIterations() const { return nIters_; }
