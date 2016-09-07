@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "VectorFiniteVolumeField.h"
+#include "TensorFiniteVolumeField.h"
 
 namespace fv
 {
@@ -11,10 +12,10 @@ namespace fv
 enum GradientEvaluationMethod{GREEN_GAUSS_CELL_CENTERED, GREEN_GAUSS_NODE_CENTERED, LEAST_SQUARES_CELL_CENTERED, FACE_TO_CELL};
 
 //- Scalar gradients
-VectorFiniteVolumeField computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& field, bool useCurrentFacesValues = false);
 void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& field, VectorFiniteVolumeField& gradField, bool useCurrentFaceValues = false);
 
 //- Vector gradients (jacobians)
+void computeGradient(GradientEvaluationMethod method, VectorFiniteVolumeField &field, TensorFiniteVolumeField& gradField, bool useCurrentFacesValues = false);
 
 }
 

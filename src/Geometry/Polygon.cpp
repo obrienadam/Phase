@@ -238,6 +238,19 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
     return Polygon(pgn.front());
 }
 
+Polygon difference(const Polygon &pgnA, const Polygon &pgnB)
+{
+    std::vector< boost::geometry::model::polygon<Point2D, false, true> > pgn;
+    boost::geometry::difference(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
+
+    if(pgn.size() == 0)
+        return Polygon();
+    else if(pgn.size() > 1)
+        throw Exception("Polygon", "difference", "there is more than one output polygon!");
+
+    return Polygon(pgn.front());
+}
+
 Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
 {
     std::vector<Point2D> verts;

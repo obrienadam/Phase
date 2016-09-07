@@ -108,8 +108,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     for(const Cell& cell: gamma.grid.fluidCells())
         ft(cell) *= 2.*rho(cell)/(rho1_ + rho2_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u)
+             == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
 
     uEqn_.relax(momentumOmega_);
     Scalar error = uEqn_.solve();

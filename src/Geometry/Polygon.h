@@ -64,6 +64,7 @@ protected:
 
 //- External functions
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB);
+Polygon difference(const Polygon &pgnA, const Polygon &pgnB);
 Polygon clipPolygon(const Polygon& pgn, const Line2D& line);
 
 #endif

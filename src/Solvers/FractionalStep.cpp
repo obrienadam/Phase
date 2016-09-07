@@ -1,4 +1,5 @@
 #include "FractionalStep.h"
+#include "TotalVariationDiminishing.h"
 #include "CrankNicolson.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"

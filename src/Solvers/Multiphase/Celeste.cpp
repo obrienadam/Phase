@@ -76,18 +76,18 @@ void Celeste::constructMatrices()
             Scalar dx = nb.cell().centroid().x - cell.centroid().x;
             Scalar dy = nb.cell().centroid().y - cell.centroid().y;
 
-//            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-//            {
-//                if(ibObj.cells().isInGroup(nb.cell()))
-//                {
-//                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(nb.cell()))
+                {
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-//                    sSqr = (stencil.first - cell.centroid()).magSqr();
-//                    dx = stencil.first.x - cell.centroid().x;
-//                    dy = stencil.first.y - cell.centroid().y;
-//                    break;
-//                }
-//            }
+                    sSqr = (stencil.first - cell.centroid()).magSqr();
+                    dx = stencil.first.x - cell.centroid().x;
+                    dy = stencil.first.y - cell.centroid().y;
+                    break;
+                }
+            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -104,18 +104,18 @@ void Celeste::constructMatrices()
             Scalar dx = dg.cell().centroid().x - cell.centroid().x;
             Scalar dy = dg.cell().centroid().y - cell.centroid().y;
 
-//            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-//            {
-//                if(ibObj.cells().isInGroup(dg.cell()))
-//                {
-//                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(dg.cell()))
+                {
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-//                    sSqr = (stencil.first - cell.centroid()).magSqr();
-//                    dx = stencil.first.x - cell.centroid().x;
-//                    dy = stencil.first.y - cell.centroid().y;
-//                    break;
-//                }
-//            }
+                    sSqr = (stencil.first - cell.centroid()).magSqr();
+                    dx = stencil.first.x - cell.centroid().x;
+                    dy = stencil.first.y - cell.centroid().y;
+                    break;
+                }
+            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -181,6 +181,13 @@ void Celeste::computeInterfaceNormals()
 {
     for(const Cell &cell: n_.grid.fluidCells())
         n_(cell) = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+
+    for(const Face &face: n_.grid.interiorFaces()) // Not super important how this is computed, it's just for the cicsam scheme
+    {
+        const Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+        n_(face) = -(gammaTilde_(face.rCell()) - gammaTilde_(face.lCell()))*rc/rc.magSqr();
+        n_(face) = n_(face).magSqr() < 1e-15 ? Vector2D(0., 0.) : n_(face).unitVec();
+    }
 
     for(const Face &face: n_.grid.boundaryFaces())
     {

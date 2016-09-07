@@ -1,5 +1,6 @@
 set(HEADERS Vector2D.h
             Point2D.h
+            Tensor2D.h
             Line2D.h
             Shape2D.h
             Circle.h
@@ -8,6 +9,7 @@ set(HEADERS Vector2D.h
             Search.h)
 
 set(SOURCES Vector2D.cpp
+            Tensor2D.cpp
             Line2D.cpp
             Shape2D.cpp
             Circle.cpp

@@ -197,21 +197,33 @@ void Solver::setInitialConditions(const Input& input)
 
 void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolumeField &field)
 {
+    const Polygon pgn = circle.polygonize(400);
+
     for(const Cell& cell: field.grid.cells())
     {
-        if (circle.isInside(cell.centroid()))
-            field[cell.id()] = innerValue;
+        const Polygon xc = intersectionPolygon(pgn, cell.shape());
+
+        if(xc.area() == 0.)
+            continue;
+
+        field(cell) = innerValue*xc.area()/cell.shape().area();
     }
 
-    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
+    interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
+    const Polygon pgn = circle.polygonize(400);
+
     for(const Cell& cell: field.grid.cells())
     {
-        if (circle.isInside(cell.centroid()))
-            field[cell.id()] = innerValue;
+        const Polygon xc = intersectionPolygon(pgn, cell.shape());
+
+        if(xc.area() == 0.)
+            continue;
+
+        field(cell) = innerValue*xc.area()/cell.shape().area();
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, field);
@@ -234,19 +246,28 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
     while(thetaMax < 0.)
         thetaMax += 2*M_PI;
 
+    std::vector<Point2D> vtx;
+    const int nPts = 400;
+    const Scalar dTheta = (thetaMax - thetaMin)/(nPts - 1);
+
+    for(int i = 0; i < nPts; ++i)
+    {
+        const Scalar theta = thetaMin + i*dTheta;
+        const Vector2D rVec(circle.radius()*cos(theta), circle.radius()*sin(theta));
+
+        vtx.push_back(circle.centroid() + rVec);
+    }
+
+    const Polygon pgn(vtx);
+
     for(const Cell& cell: field.grid.cells())
     {
-        if(circle.isInside(cell.centroid()))
-        {
-            const Vector2D rVec = cell.centroid() - circle.centroid();
-            Scalar theta = atan2(rVec.y, rVec.x);
+        const Polygon xc = intersectionPolygon(pgn, cell.shape());
 
-            if(theta < 0.)
-                theta += 2*M_PI;
+        if(xc.area() == 0.)
+            continue;
 
-            if(thetaMin < theta && theta < thetaMax)
-                field(cell) = innerValue;
-        }
+        field(cell) = innerValue*xc.area()/cell.shape().area();
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, field);
@@ -256,8 +277,12 @@ void Solver::setBox(const Polygon& box, Scalar innerValue, ScalarFiniteVolumeFie
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if (box.isInside(cell.centroid()))
-            field[cell.id()] = innerValue;
+        const Polygon xc = intersectionPolygon(box, cell.shape());
+
+        if(xc.area() == 0.)
+            continue;
+
+        field(cell) = innerValue*xc.area()/cell.shape().area();
     }
 
     fv::interpolateFaces(fv::INVERSE_VOLUME, field);
@@ -267,11 +292,15 @@ void Solver::setBox(const Polygon& box, const Vector2D& innerValue, VectorFinite
 {
     for(const Cell& cell: field.grid.cells())
     {
-        if (box.isInside(cell.centroid()))
-            field[cell.id()] = innerValue;
+        const Polygon xc = intersectionPolygon(box, cell.shape());
+
+        if(xc.area() == 0.)
+            continue;
+
+        field(cell) = innerValue*xc.area()/cell.shape().area();
     }
 
-    interpolateFaces(fv::INVERSE_VOLUME, field);
+    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
 }
 
 void Solver::setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field)

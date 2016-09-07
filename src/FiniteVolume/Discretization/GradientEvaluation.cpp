@@ -4,14 +4,7 @@
 namespace fv
 {
 
-VectorFiniteVolumeField computeGradient(GradientEvaluationMethod method,  ScalarFiniteVolumeField& field, bool useCurrentFacesValues)
-{
-    VectorFiniteVolumeField gradField(field.grid, "grad_" + field.name());
-
-    computeGradient(method, field, gradField, useCurrentFacesValues);
-
-    return gradField;
-}
+//- Scalar gradients
 
 void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& field, VectorFiniteVolumeField& gradField, bool useCurrentFaceValues)
 {
@@ -65,7 +58,6 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
         {
             Scalar sumSfx = 0., sumSfy = 0.;
             Vector2D grad(0., 0.);
-            gradField(cell) = grad;
 
             for(const InteriorLink &nb: cell.neighbours())
             {
@@ -104,6 +96,92 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
         {
             const Vector2D rf = face.centroid() - face.lCell().centroid();
             gradField(face) = (field(face) - field(face.lCell()))*rf/dot(rf, rf);
+        }
+
+        break;
+
+    default:
+        throw Exception("fv", "computeGradient", "unrecognized gradient evaluation method.");
+    }
+}
+
+//- Vector Gradients
+
+void computeGradient(GradientEvaluationMethod method, VectorFiniteVolumeField& field, TensorFiniteVolumeField& gradField, bool useCurrentFaceValues)
+{
+    gradField.fill(Tensor2D(0., 0., 0., 0.));
+
+    switch(method)
+    {
+    case GREEN_GAUSS_CELL_CENTERED:
+        if(!useCurrentFaceValues)
+            interpolateFaces(INVERSE_VOLUME, field);
+
+        for(const Cell& cell: field.grid.fluidCells())
+        {
+            Tensor2D &grad = gradField(cell);
+
+            for(const InteriorLink& nb: cell.neighbours())
+                grad += outer(field(nb.face()), nb.outwardNorm());
+
+            for(const BoundaryLink& bd: cell.boundaries())
+                grad += outer(field(bd.face()), bd.outwardNorm());
+
+            grad /= cell.volume();
+        }
+
+        break;
+
+    case FACE_TO_CELL:
+        if(!useCurrentFaceValues)
+            interpolateFaces(fv::INVERSE_VOLUME, field);
+
+        for(const Cell &cell: field.grid.fluidCells())
+        {
+            Scalar sumSfx = 0., sumSfy = 0.;
+            Tensor2D grad(0., 0., 0., 0.);
+
+            for(const InteriorLink &nb: cell.neighbours())
+            {
+                const Vector2D& rc = nb.rCellVec();
+                const Vector2D& sf = nb.outwardNorm();
+
+                grad = outer(field(nb.cell()) - field(cell), rc/dot(rc, rc));
+
+                gradField(cell) += Tensor2D(grad.xx*fabs(sf.x), grad.xy*fabs(sf.y),
+                                            grad.yx*fabs(sf.x), grad.yy*fabs(sf.y));
+                sumSfx += fabs(sf.x);
+                sumSfy += fabs(sf.y);
+            }
+
+            for(const BoundaryLink &bd: cell.boundaries())
+            {
+                const Vector2D& rf = bd.rFaceVec();
+                const Vector2D& sf = bd.outwardNorm();
+
+                grad = outer(field(bd.face()) - field(cell), rf/dot(rf, rf));
+
+                gradField(cell) += Tensor2D(grad.xx*fabs(sf.x), grad.xy*fabs(sf.y),
+                                            grad.yx*fabs(sf.x), grad.yy*fabs(sf.y));
+
+                sumSfx += fabs(sf.x);
+                sumSfy += fabs(sf.y);
+            }
+
+            gradField(cell) = Tensor2D(gradField(cell).xx/sumSfx, gradField(cell).xy/sumSfy,
+                                       gradField(cell).yx/sumSfx, gradField(cell).yy/sumSfy);
+        }
+
+        for(const Face& face: field.grid.interiorFaces())
+        {
+            const Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+            gradField(face) = outer(field(face.rCell()) - field(face.lCell()), rc/dot(rc, rc));
+        }
+
+        for(const Face& face: field.grid.boundaryFaces())
+        {
+            const Vector2D rf = face.centroid() - face.lCell().centroid();
+            gradField(face) = outer(field(face) - field(face.lCell()), rf/dot(rf, rf));
         }
 
         break;

@@ -47,7 +47,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
 
             const Scalar gammaTilde = (gammaD - gammaU)/(gammaA - gammaU);
 
-            const Scalar thetaF = acos(fabs(dot(m(cell), nb.rCellVec().unitVec())));
+            const Scalar thetaF = acos(fabs(dot(m(nb.face()), nb.rCellVec().unitVec())));
             const Scalar psiF = std::min(k*(cos(2*thetaF) + 1.)/2., 1.);
 
             const Scalar gammaTildeF = psiF*hc(gammaTilde, coD) + (1. - psiF)*uq(gammaTilde, coD);

@@ -18,7 +18,7 @@ Solver
 
 Properties
 {
-	rho 998
+	rho 1
 	mu 8.94e-4
 	g (0,0)
 	gamma 0.001
