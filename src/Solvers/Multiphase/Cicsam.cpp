@@ -103,7 +103,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
         eqn.boundaries()(row) -= centralCoeff*gamma.prev()(cell);
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

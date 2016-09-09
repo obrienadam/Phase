@@ -51,7 +51,7 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
 {
-    VectorEquation eqn(n_, "IB contact line normal", SparseMatrix::IncompleteLUT);
+    VectorEquation eqn(n_, "IB contact line normal");
     const Scalar centralCoeff = 1.;
 
     for(const Cell &cell: n_.grid.fluidCells())

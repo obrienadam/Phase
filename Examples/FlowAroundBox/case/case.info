@@ -16,6 +16,30 @@ Solver
 	pressureCorrectionRelaxation 0.5
 }
 
+LinearAlgebra
+{
+  uEqn
+  {
+    maxIterations 50
+    tolerance 1e-15
+    iluFill 0
+  }
+
+  pCorrEqn
+  {
+    maxIterations 300
+    tolerance 1e-15
+    iluFill 3
+  }
+
+  pEqn
+  {
+    maxIterations 300
+    tolerance 1e-15
+    iluFill 6
+  }
+}
+
 Properties
 {
 	rho 1

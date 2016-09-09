@@ -2,7 +2,7 @@
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 
-CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)
+CoupledEquation::CoupledEquation(const Input &input, const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)
     :
       rho_(rho),
       mu_(mu),
@@ -14,13 +14,15 @@ CoupledEquation::CoupledEquation(const ScalarFiniteVolumeField &rho, const Scala
     nActiveCells_ = u.grid.nActiveCells();
     nVars_ = 3*nActiveCells_;
 
-    spMat_ = SparseMatrix(nVars_, nVars_, 13);
+    spMat_ = SparseMatrix(nVars_, nVars_);
+    spMat_.reserve(nVars_*14);
+
     rhs_ = SparseVector::Zero(nVars_);
     phi_ = SparseVector::Zero(nVars_);
 
-    spMat_.setTolerance(1e-10);
-    spMat_.setMaxIterations(1000);
-    spMat_.setFill(2);
+    solver_.setMaxIterations(input.caseInput().get<int>("LinearAlgebra.CoupledEqn.maxIterations", 1000));
+    solver_.setTolerance(input.caseInput().get<Scalar>("LinearAlgebra.CoupledEqn.tolerance", 1e-10));
+    //solver_.preconditioner().setFillfactor(input.caseInput().get<int>("LinearAlgebra.CoupledEqn.iluFill", 2));
 }
 
 Scalar CoupledEquation::solve(Scalar timeStep)
@@ -38,12 +40,14 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     assembleContinuityEquation();
 
     printf("Assembling global coupled matrix...\n");
-    spMat_.assemble(triplets_);
+    spMat_.setFromTriplets(triplets_.begin(), triplets_.end());
     triplets_.clear();
 
     printf("Solving coupled Navier-Stokes equations...\n");
-    phi_ = spMat_.solve(rhs_, phi_, SparseMatrix::IncompleteLUT, true);
-    printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", spMat_.error(), spMat_.nIterations());
+    solver_.compute(spMat_);
+    phi_ = solver_.solveWithGuess(rhs_, phi_);
+
+    printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", solver_.error(), solver_.iterations());
 
     for(const Cell &cell: u_.grid.activeCells())
         u_(cell).x = phi_(cell.globalIndex());
@@ -54,7 +58,7 @@ Scalar CoupledEquation::solve(Scalar timeStep)
     for(const Cell &cell: p_.grid.activeCells())
         p_(cell) = phi_(cell.globalIndex() + 2*nActiveCells_);
 
-    return spMat_.error();
+    return solver_.error();
 }
 
 //- Protected methods
@@ -112,10 +116,10 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
             coeffUP += (1. - g)*sf.x;
             coeffVP += (1. - g)*sf.y;
 
-            triplets_.push_back(SparseMatrix::Triplet(rowU, colU, coeffUV));
-            triplets_.push_back(SparseMatrix::Triplet(rowV, colV, coeffUV));
-            triplets_.push_back(SparseMatrix::Triplet(rowU, colP, coeffUP));
-            triplets_.push_back(SparseMatrix::Triplet(rowV, colP, coeffVP));
+            triplets_.push_back(Triplet(rowU, colU, coeffUV));
+            triplets_.push_back(Triplet(rowV, colV, coeffUV));
+            triplets_.push_back(Triplet(rowU, colP, coeffUP));
+            triplets_.push_back(Triplet(rowV, colP, coeffVP));
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -166,10 +170,10 @@ void CoupledEquation::assembleMomentumEquation(Scalar timeStep)
 
         d_(cell) = cell.volume()/centralCoeffUV;
 
-        triplets_.push_back(SparseMatrix::Triplet(rowU, rowU, centralCoeffUV));
-        triplets_.push_back(SparseMatrix::Triplet(rowV, rowV, centralCoeffUV));
-        triplets_.push_back(SparseMatrix::Triplet(rowU, rowP, centralCoeffUP));
-        triplets_.push_back(SparseMatrix::Triplet(rowV, rowP, centralCoeffVP));
+        triplets_.push_back(Triplet(rowU, rowU, centralCoeffUV));
+        triplets_.push_back(Triplet(rowV, rowV, centralCoeffUV));
+        triplets_.push_back(Triplet(rowU, rowP, centralCoeffUP));
+        triplets_.push_back(Triplet(rowV, rowP, centralCoeffVP));
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, d_);
@@ -217,9 +221,9 @@ void CoupledEquation::assembleContinuityEquation()
 
             rhs_(rowP) += dot(g*d_(cell)*gradP_(cell) + (1. - g)*d_(nb.cell())*gradP_(nb.cell()), sf);
 
-            triplets_.push_back(SparseMatrix::Triplet(rowP, colP, coeffP));
-            triplets_.push_back(SparseMatrix::Triplet(rowP, colU, coeffU));
-            triplets_.push_back(SparseMatrix::Triplet(rowP, colV, coeffV));
+            triplets_.push_back(Triplet(rowP, colP, coeffP));
+            triplets_.push_back(Triplet(rowP, colU, coeffU));
+            triplets_.push_back(Triplet(rowP, colV, coeffV));
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -265,9 +269,9 @@ void CoupledEquation::assembleContinuityEquation()
             }
         }
 
-        triplets_.push_back(SparseMatrix::Triplet(rowP, rowP, centralCoeffP));
-        triplets_.push_back(SparseMatrix::Triplet(rowP, rowU, centralCoeffU));
-        triplets_.push_back(SparseMatrix::Triplet(rowP, rowV, centralCoeffV));
+        triplets_.push_back(Triplet(rowP, rowP, centralCoeffP));
+        triplets_.push_back(Triplet(rowP, rowU, centralCoeffU));
+        triplets_.push_back(Triplet(rowP, rowV, centralCoeffV));
     }
 }
 

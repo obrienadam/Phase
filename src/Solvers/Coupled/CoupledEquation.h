@@ -10,7 +10,7 @@ class CoupledEquation
 {
 public:
 
-    CoupledEquation(const ScalarFiniteVolumeField& rho, const ScalarFiniteVolumeField& mu, VectorFiniteVolumeField& u, ScalarFiniteVolumeField& p);
+    CoupledEquation(const Input& input, const ScalarFiniteVolumeField& rho, const ScalarFiniteVolumeField& mu, VectorFiniteVolumeField& u, ScalarFiniteVolumeField& p);
 
     Scalar solve(Scalar timeStep);
 
@@ -28,8 +28,9 @@ protected:
 
     //const Vector2D& g_;
 
-    std::vector<SparseMatrix::Triplet> triplets_;
+    std::vector<Triplet> triplets_;
     SparseMatrix spMat_;
+    BiCGSTABDiagonalPreconditioner solver_;
     SparseVector rhs_, phi_;
 };
 

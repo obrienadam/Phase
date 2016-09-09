@@ -19,6 +19,30 @@ Solver
 	surfaceTensionModel CELESTE
 }
 
+LinearAlgebra
+{
+  uEqn
+  {
+    maxIterations 50
+    tolerance 1e-12
+    iluFill 1
+  }
+
+  pCorrEqn
+  {
+    maxIterations 500
+    tolerance 1e-15
+    iluFill 5
+  }
+
+  gammaEqn
+  {
+    maxIterations 20
+    tolerance 1e-13
+    iluFill 1
+  }
+}
+
 Properties
 {
 	rho1 900

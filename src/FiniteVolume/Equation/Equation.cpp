@@ -3,27 +3,27 @@
 #include "VectorFiniteVolumeField.h"
 
 template<>
-Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field, const std::string& name, SparseMatrix::Preconditioner precon)
+Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field, const std::string& name)
     :
       name(name),
-      spMat_(field.grid.nActiveCells(), field.grid.nActiveCells(), 5),
-      field_(field),
-      precon_(precon)
+      spMat_(field.grid.nActiveCells(), field.grid.nActiveCells()),
+      field_(field)
 {
     boundaries_ = SparseVector::Zero(field.grid.nActiveCells());
     sources_ = SparseVector::Zero(field.grid.nActiveCells());
+    spMat_.reserve(5*field.grid.nActiveCells());
 }
 
 template<>
-Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, const std::string& name, SparseMatrix::Preconditioner precon)
+Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, const std::string& name)
     :
       name(name),
-      spMat_(2*field.grid.nActiveCells(), 2*field.grid.nActiveCells(), 5),
-      field_(field),
-      precon_(precon)
+      spMat_(2*field.grid.nActiveCells(), 2*field.grid.nActiveCells()),
+      field_(field)
 {
     boundaries_ = SparseVector::Zero(2*field.grid.nActiveCells());
     sources_ = SparseVector::Zero(2*field.grid.nActiveCells());
+    spMat_.reserve(10*field.grid.nActiveCells());
 }
 
 template<>

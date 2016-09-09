@@ -19,8 +19,8 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
       mu(addScalarField("mu")),
       m(addScalarField("m")),
       d(addScalarField("d")),
-      uEqn_(u, "momentum", SparseMatrix::IncompleteLUT),
-      pCorrEqn_(pCorr, "pressure correction", SparseMatrix::IncompleteLUT)
+      uEqn_(input, u, "uEqn"),
+      pCorrEqn_(input, pCorr, "pCorrEqn")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -35,9 +35,6 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     pCorr.copyBoundaryTypes(p);
-
-    uEqn_.matrix().setFill(1);
-    pCorrEqn_.matrix().setFill(3);
 
     //- Perform a pseudo initialization
     u.savePreviousTimeStep(0., 1);
@@ -124,11 +121,9 @@ void Piso::rhieChowInterpolation()
     VectorFiniteVolumeField& uPrev = u.prev(0);
     const Scalar dt = u.prevTimeStep(0);
 
-    const auto diag = uEqn_.matrix().diagonal();
-
     d.fill(0.);
     for(const Cell& cell: d.grid.fluidCells())
-        d(cell) = cell.volume()/diag[cell.globalIndex()];
+        d(cell) = cell.volume()/uEqn_.matrix().coeff(cell.globalIndex(), cell.globalIndex());
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 

@@ -91,7 +91,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
         }
 
-        eqn.matrix().assemble(entries);
+        eqn.assemble(entries);
 
         if(componentNo == 0)
             eqn.solve(); // Solve and compute the next component

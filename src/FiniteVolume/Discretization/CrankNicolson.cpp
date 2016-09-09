@@ -70,7 +70,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
         eqn.boundaries()(rowY) -= (1. - theta)*centralCoeff*field0(cell).y;
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 
@@ -149,7 +149,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
         eqn.boundaries()(rowY) -= (1. - theta)*centralCoeff*field0(cell).y;
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

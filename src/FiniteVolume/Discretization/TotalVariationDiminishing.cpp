@@ -38,9 +38,6 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    TensorFiniteVolumeField gradField(field.grid, "gradField");
-    computeGradient(fv::FACE_TO_CELL, field, gradField, true);
-
     entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
@@ -55,7 +52,9 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
             const Index colY = colX + nActiveCells;
             const Vector2D& rc = nb.rCellVec();
 
-            Vector2D r = dot(gradField(cell), rc);
+            Tensor2D gradField = outer(field(nb.cell()) - field(cell), rc/rc.magSqr());
+
+            Vector2D r = dot(gradField, rc);
             r.x /= field(nb.cell()).x - field(cell).x;
             r.y /= field(nb.cell()).y - field(cell).y;
 
@@ -129,7 +128,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeffY));
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

@@ -14,8 +14,8 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
       rho(addScalarField("rho")),
       mu(addScalarField("mu")),
       divUStar(addScalarField("uStar")),
-      uEqn_(u, "uEqn", SparseMatrix::IncompleteLUT),
-      pEqn_(p, "pEqn", SparseMatrix::IncompleteLUT)
+      uEqn_(input, u, "uEqn"),
+      pEqn_(input, p, "pEqn")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -26,13 +26,10 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
 
     p.initNodes();
 
-    uEqn_.matrix().setFill(1);
-    pEqn_.matrix().setFill(8);
-
     interpolateFaces(fv::INVERSE_VOLUME, u);
 
     pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == 0.);
-    pEqn_.solve(); // dummy solve
+    pEqn_.computeSolver();
 }
 
 std::string FractionalStep::info() const

@@ -64,7 +64,7 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
                 entries.push_back(Triplet(row, cols[i], coeffs[i]));
         }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 
@@ -178,7 +178,7 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             }
         }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

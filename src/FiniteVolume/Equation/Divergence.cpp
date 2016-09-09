@@ -54,7 +54,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(row, row, centralCoeff));
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 
@@ -117,7 +117,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeff));
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

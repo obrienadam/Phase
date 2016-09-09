@@ -13,7 +13,9 @@ public:
 
     typedef Eigen::Triplet<Scalar> Triplet;
 
-    Equation(T& field, const std::string& name = "Unknown", SparseMatrix::Preconditioner precon = SparseMatrix::IncompleteLUT);
+    Equation(T& field, const std::string& name = "Unknown");
+    Equation(const Input& input, T& field, const std::string& name = "Unknown");
+
     Equation(const Equation<T>& other);
 
     SparseMatrix& matrix(){ return spMat_; }
@@ -34,11 +36,14 @@ public:
     Equation<T>& operator==(const Equation<T>& rhs);
     Equation<T>& operator==(const T& rhs);
 
-    Scalar solve();
+    Equation<T>& assemble(const std::vector<Triplet> &triplets);
+    void computeSolver() const { solver_.compute(spMat_); }
+
+    Scalar solve(bool recomputePreconditioner = true);
     Scalar solve(const SparseVector& x0, bool recomputePreconditioner = true);
 
-    Scalar error() const { return spMat_.error(); }
-    int iterations() const { return spMat_.nIterations(); }
+    Scalar error() const { return solver_.error(); }
+    int iterations() const { return solver_.iterations(); }
 
     const SparseMatrix& matrix() const { return spMat_; }
 
@@ -48,10 +53,10 @@ public:
 
 private:
     SparseMatrix spMat_;
+    mutable BiCGSTABIncompleteLUT solver_;
     SparseVector boundaries_, sources_;
-    T& field_;
 
-    SparseMatrix::Preconditioner precon_;
+    T& field_;
 };
 
 typedef Equation<ScalarFiniteVolumeField> ScalarEquation;

@@ -11,7 +11,7 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
-      gammaEqn_(gamma, "gamma", SparseMatrix::NoPreconditioner)
+      gammaEqn_(input, gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");

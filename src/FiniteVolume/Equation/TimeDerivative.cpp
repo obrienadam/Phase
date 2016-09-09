@@ -20,7 +20,7 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
         eqn.boundaries()(row) += cell.volume()*prevField[cell.id()]/timeStep;
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 
@@ -46,7 +46,7 @@ Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar tim
         eqn.boundaries()(rowY) += cell.volume()*prevField[cell.id()].y/timeStep;
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 
@@ -72,7 +72,7 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
         eqn.boundaries()(rowY) += a[cell.id()]*cell.volume()*prevField[cell.id()].y/timeStep;
     }
 
-    eqn.matrix().assemble(entries);
+    eqn.assemble(entries);
     return eqn;
 }
 

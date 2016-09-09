@@ -7,7 +7,7 @@ Coupled::Coupled(const FiniteVolumeGrid2D &grid, const Input &input)
       p(addScalarField(input, "p")),
       rho(addScalarField("rho")),
       mu(addScalarField("mu")),
-      eqn_(rho, mu, u, p)
+      eqn_(input, rho, mu, u, p)
 
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho"));

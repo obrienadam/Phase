@@ -10,7 +10,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &gri
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
-      gammaEqn_(gamma, "gammaEqn"),
+      gammaEqn_(input, gamma, "gammaEqn"),
       surfaceTensionForce_(input, *this)
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");

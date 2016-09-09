@@ -6,14 +6,31 @@ Solver
 {
 	timeDependent Off
 	maxIterations 100
-	timeStep 0.000025
-	maxTime 100
+	timeStep 0.00025
+	maxTime 15
 	maxCo 0.5
 
 	numInnerIterations 1
 	numPressureCorrections 2
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
+}
+
+LinearAlgebra
+{
+	uEqn
+	{
+	  maxIterations 50
+	  tolerance 1e-15
+	  iluFill 1
+	}
+
+	pEqn
+	{
+	  maxIterations 300
+	  tolerance 1e-15
+	  iluFill 6
+	}
 }
 
 Properties
