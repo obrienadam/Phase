@@ -73,11 +73,11 @@ Point2D Circle::nearestIntersect(const Point2D &point) const
 std::pair<Point2D, Point2D> Circle::nearestEdge(const Point2D &point) const
 {
     const Point2D xc = nearestIntersect(point);
-    const Vector2D utan = (xc - center_).tangentVec().unitVec();
+    const Vector2D utan = (center_ - xc).tangentVec();
 
     return std::make_pair(
-                xc + 0.5*utan,
-                xc - 0.5*utan
+                xc - 0.5*utan,
+                xc + 0.5*utan
                 );
 }
 
