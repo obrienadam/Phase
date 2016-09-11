@@ -148,9 +148,6 @@ void PisoMultiphase::rhieChowInterpolation()
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
 
-        if(!(lCell.isFluidCell() && rCell.isFluidCell()))
-            continue;
-
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 

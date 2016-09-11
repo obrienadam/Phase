@@ -43,20 +43,12 @@ std::vector<Point2D> Circle::intersections(const Line2D &line) const
 
     const Scalar disc = b*b - 4.*a*c;
 
-    origin += center_;
-
     if(disc < 0.)
         return std::vector<Point2D>();
-    else if (disc < Point2D::epsilon())
-    {
-        return std::vector<Point2D>({
-                                        origin - b/(2.*a)*line.n()
-                                    });
-    }
     else
     {
         const Scalar tmp = sqrt(disc);
-        const Scalar t1 = (-b + tmp)/(2.*a), t2 = (-b + tmp)/(2.*a);
+        const Scalar t1 = (-b + tmp)/(2.*a), t2 = (-b - tmp)/(2.*a);
 
         return std::vector<Point2D>({
                                         line(t1),
@@ -76,8 +68,8 @@ std::pair<Point2D, Point2D> Circle::nearestEdge(const Point2D &point) const
     const Vector2D utan = (center_ - xc).tangentVec();
 
     return std::make_pair(
-                xc - 0.5*utan,
-                xc + 0.5*utan
+                xc + 0.5*utan,
+                xc - 0.5*utan
                 );
 }
 

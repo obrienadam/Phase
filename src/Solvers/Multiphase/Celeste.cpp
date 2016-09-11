@@ -1,6 +1,7 @@
 #include "Celeste.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
+#include "LineSegment2D.h"
 
 Celeste::Celeste(const Input &input,
                  Solver &solver)
@@ -80,11 +81,12 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(nb.cell()))
                 {
-                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+                    const LineSegment2D ls(cell.centroid(), nb.cell().centroid());
+                    const Point2D xc = intersection(ls, ibObj.shape())[0];
 
-                    sSqr = (stencil.first - cell.centroid()).magSqr();
-                    dx = stencil.first.x - cell.centroid().x;
-                    dy = stencil.first.y - cell.centroid().y;
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    dx = (xc - cell.centroid()).x;
+                    dy = (xc - cell.centroid()).y;
                     break;
                 }
             }
@@ -108,11 +110,12 @@ void Celeste::constructMatrices()
             {
                 if(ibObj.cells().isInGroup(dg.cell()))
                 {
-                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+                    const LineSegment2D ls(cell.centroid(), dg.cell().centroid());
+                    const Point2D xc = intersection(ls, ibObj.shape())[0];
 
-                    sSqr = (stencil.first - cell.centroid()).magSqr();
-                    dx = stencil.first.x - cell.centroid().x;
-                    dy = stencil.first.y - cell.centroid().y;
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    dx = (xc - cell.centroid()).x;
+                    dy = (xc - cell.centroid()).y;
                     break;
                 }
             }
@@ -167,7 +170,7 @@ void Celeste::computeGradGammaTilde()
                 continue;
 
             const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
-            b(i, 0) = (gammaTilde_[kCell.id()] - gammaTilde_[cell.id()])/sSqr;
+            b(i, 0) = (gammaTilde_(kCell) - gammaTilde_(cell))/sSqr;
 
             ++i;
         }
@@ -222,8 +225,10 @@ void Celeste::computeCurvature()
                     if(ibObj.cells().isInGroup(nb.cell()))
                     {
                         auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+                        LineSegment2D ls(cell.centroid(), nb.cell().centroid());
+                        Point2D xc = intersection(ls, ibObj.shape())[0];
 
-                        //sSqr = (stencil.first - cell.centroid()).magSqr();
+                        sSqr = (xc - cell.centroid()).magSqr();
                         n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
                         break;
                     }
@@ -245,7 +250,10 @@ void Celeste::computeCurvature()
                     {
                         auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-                        sSqr = (stencil.first - cell.centroid()).magSqr();
+                        LineSegment2D ls(cell.centroid(), dg.cell().centroid());
+                        Point2D xc = intersection(ls, ibObj.shape())[0];
+
+                        sSqr = (xc - cell.centroid()).magSqr();
                         n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
                         break;
                     }

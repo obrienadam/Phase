@@ -141,18 +141,12 @@ void Piso::rhieChowInterpolation()
 
         const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
 
-        if(!(cellP.isFluidCell() && cellQ.isFluidCell()))
-        {
-            u(face) = g*u(cellP) + (1. - g)*u(cellQ);
-        }
-        else
-        {
-            u(face) = g*u(cellP) + (1. - g)*u(cellQ)
-                    + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
-                    + (rhof*df*uPrev(face) - (g*rhoP*dP*uPrev(cellP) + (1. - g)*rhoQ*dQ*uPrev(cellQ)))/dt //- This term is very important!
-                    - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
-                    + df*sg(face) - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
-        }
+
+        u(face) = g*u(cellP) + (1. - g)*u(cellQ)
+                + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
+                + (rhof*df*uPrev(face) - (g*rhoP*dP*uPrev(cellP) + (1. - g)*rhoQ*dQ*uPrev(cellQ)))/dt //- This term is very important!
+                - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
+                + df*sg(face) - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
     }
 
     for(const Face& face: u.grid.boundaryFaces())
