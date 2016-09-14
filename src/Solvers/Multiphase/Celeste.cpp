@@ -38,7 +38,7 @@ void Celeste::constructMatrices()
     gradGammaTildeStencils_.resize(gradGammaTilde_.size());
     for(const Cell &cell: gammaTilde_.grid.fluidCells())
     {
-        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         A.resize(8, 5);
         int i = 0;
@@ -203,79 +203,81 @@ void Celeste::computeInterfaceNormals()
 
 void Celeste::computeCurvature()
 {
-    Matrix b(8, 1);
+    Matrix bx(8, 1), by(8, 1);
     kappa_.fill(0.);
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
+        int i = 0;
+        bx.resize(stencilSize, 1);
+        by.resize(stencilSize, 1);
 
-        for(int compNo = 0; compNo < 2; ++compNo)
+        for(const InteriorLink &nb: cell.neighbours())
         {
-            int i = 0;
-            b.resize(stencilSize, 1);
+            Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
+            Vector2D n = n_(nb.cell()) - n_(cell);
 
-            for(const InteriorLink &nb: cell.neighbours())
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
-                Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
-                Scalar n = n_(nb.cell())(compNo) - n_(cell)(compNo);
-
-                for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+                if(ibObj.cells().isInGroup(nb.cell()))
                 {
-                    if(ibObj.cells().isInGroup(nb.cell()))
-                    {
-                        auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
-                        LineSegment2D ls(cell.centroid(), nb.cell().centroid());
-                        Point2D xc = intersection(ls, ibObj.shape())[0];
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+                    LineSegment2D ls(cell.centroid(), nb.cell().centroid());
+                    Point2D xc = intersection(ls, ibObj.shape())[0];
 
-                        sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
-                        break;
-                    }
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell)) - n_(cell);
+                    break;
                 }
-
-                b(i, 0) = n/sSqr;
-
-                ++i;
             }
 
-            for(const DiagonalCellLink &dg: cell.diagonals())
-            {
-                Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
-                Scalar n = n_[dg.cell().id()](compNo) - n_[cell.id()](compNo);
+            bx(i, 0) = n.x/sSqr;
+            by(i, 0) = n.y/sSqr;
 
-                for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-                {
-                    if(ibObj.cells().isInGroup(dg.cell()))
-                    {
-                        auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
-
-                        LineSegment2D ls(cell.centroid(), dg.cell().centroid());
-                        Point2D xc = intersection(ls, ibObj.shape())[0];
-
-                        sSqr = (xc - cell.centroid()).magSqr();
-                        n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell))(compNo) - n_(cell)(compNo);
-                        break;
-                    }
-                }
-
-                b(i, 0) = n/sSqr;
-
-                ++i;
-            }
-
-            for(const BoundaryLink &bd: cell.boundaries())
-            {
-                const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
-                b(i, 0) = (n_(bd.face())(compNo) - n_(cell)(compNo))/sSqr; // contact line faces should already be computed
-
-                ++i;
-            }
-
-            b = kappaMatrices_[cell.id()]*b;
-
-            kappa_[cell.id()] += b(compNo, 0);
+            ++i;
         }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+            Vector2D n = n_(dg.cell()) - n_(cell);
+
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(dg.cell()))
+                {
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+                    LineSegment2D ls(cell.centroid(), dg.cell().centroid());
+                    Point2D xc = intersection(ls, ibObj.shape())[0];
+
+                    sSqr = (xc - cell.centroid()).magSqr();
+                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell)) - n_(cell);
+                    break;
+                }
+            }
+
+            bx(i, 0) = n.x/sSqr;
+            by(i, 0) = n.y/sSqr;
+
+            ++i;
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            const Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
+            Vector2D n = n_(bd.face()) - n_(cell);
+
+            bx(i, 0) = n.x/sSqr; // contact line faces should already be computed
+            by(i, 0) = n.y/sSqr;
+
+            ++i;
+        }
+
+        bx = kappaMatrices_[cell.id()]*bx;
+        by = kappaMatrices_[cell.id()]*by;
+
+        kappa_(cell) = bx(0, 0) + by(1, 0);
     }
 
     applyCurvatureCutoff();

@@ -151,6 +151,9 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
+        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
+            continue;
+
         u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell));
     }
 
