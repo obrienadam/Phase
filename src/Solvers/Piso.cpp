@@ -24,6 +24,10 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
+
+    rho.savePreviousTimeStep(0, 1);
+    mu.savePreviousTimeStep(0, 1);
+
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
 
     nInnerIterations_ = input.caseInput().get<size_t>("Solver.numInnerIterations");
@@ -119,6 +123,7 @@ void Piso::rhieChowInterpolation()
 {   
     VectorFiniteVolumeField& uStar = u.prevIter();
     VectorFiniteVolumeField& uPrev = u.prev(0);
+    ScalarFiniteVolumeField& rhoPrev = rho.prev(0);
     const Scalar dt = u.prevTimeStep(0);
 
     d.fill(0.);
@@ -135,16 +140,17 @@ void Piso::rhieChowInterpolation()
         const Scalar dP = d(cellP);
         const Scalar dQ = d(cellQ);
         const Scalar df = d(face);
-        const Scalar rhoP = rho(cellP);
-        const Scalar rhoQ = rho(cellQ);
-        const Scalar rhof = rho(face);
+
+        const Scalar rhoP0 = rhoPrev(cellP);
+        const Scalar rhoQ0 = rhoPrev(cellQ);
+        const Scalar rhof0 = rhoPrev(face);
 
         const Scalar g = cellQ.volume()/(cellP.volume() + cellQ.volume());
 
 
         u(face) = g*u(cellP) + (1. - g)*u(cellQ)
                 + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
-                + (rhof*df*uPrev(face) - (g*rhoP*dP*uPrev(cellP) + (1. - g)*rhoQ*dQ*uPrev(cellQ)))/dt //- This term is very important!
+                + (rhof0*df*uPrev(face) - (g*rhoP0*dP*uPrev(cellP) + (1. - g)*rhoQ0*dQ*uPrev(cellQ)))/dt //- This term is very important!
                 - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
                 + df*sg(face) - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
     }
@@ -152,6 +158,8 @@ void Piso::rhieChowInterpolation()
     for(const Face& face: u.grid.boundaryFaces())
     {
         const Scalar df = d(face);
+        const Scalar rhoP0 = rhoPrev(face.lCell());
+        const Scalar rhof0 = rhoPrev(face);
 
         switch(u.boundaryType(face))
         {
@@ -160,6 +168,7 @@ void Piso::rhieChowInterpolation()
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) = u(face.lCell())
+                    + rhof0*df*uPrev(face) - rhoP0*d(face.lCell())*uPrev(face.lCell())
                     - df*gradP(face) + d(face.lCell())*gradP(face.lCell())
                     + df*sg(face) - d(face.lCell())*sg(face.lCell());
             break;

@@ -19,6 +19,10 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
+
+    rho.savePreviousTimeStep(0., 1);
+    mu.savePreviousTimeStep(0., 1);
+
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
@@ -77,7 +81,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     sg.savePreviousTimeStep(timeStep, 1);
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP - sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u) == fv::laplacian(mu, u) - fv::source(gradP - sg));
 
     Scalar error = uEqn_.solve();
 

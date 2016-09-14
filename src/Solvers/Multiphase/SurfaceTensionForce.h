@@ -12,6 +12,7 @@ public:
                         Solver &solver);
 
     virtual VectorFiniteVolumeField compute() = 0;
+    Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel, Scalar theta) const;
     Vector2D computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel) const;
 
     bool isContactLinePatch(const Patch& patch) const;
@@ -24,6 +25,7 @@ public:
     const VectorFiniteVolumeField& n() const { return n_; }
 
     Scalar theta() const { return thetaAdv_; }
+    Scalar ibTheta(const ImmersedBoundaryObject& ibObj) const;
     Scalar sigma() const { return sigma_; }
 
     const Solver& solver() const { return solver_; }
@@ -31,6 +33,7 @@ public:
 protected:
 
     Scalar sigma_, thetaAdv_, thetaRec_;
+    std::map<Label, Scalar> ibContactAngles_;
 
     ScalarFiniteVolumeField &gamma_;
     const VectorFiniteVolumeField &u_;

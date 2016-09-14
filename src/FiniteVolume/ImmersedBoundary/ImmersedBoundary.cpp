@@ -19,6 +19,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
         return;
     }
 
+    Label id = 0;
+
     for(const auto& ibObject: input.boundaryInput().get_child("ImmersedBoundaries"))
     {
         printf("Initializing immersed boundary object \"%s\".\n", ibObject.first.c_str());
@@ -33,7 +35,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
                         ImmersedBoundaryObject(ibObject.first,
                                                solver_.grid(),
                                                center,
-                                               ibObject.second.get<Scalar>("geometry.radius"))
+                                               ibObject.second.get<Scalar>("geometry.radius"),
+                                               id++)
                         );
         }
         else if(type == "box")
@@ -51,7 +54,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             ibObjs_.push_back(
                         ImmersedBoundaryObject(ibObject.first,
                                                solver_.grid(),
-                                               box)
+                                               box,
+                                               id++)
                         );
         }
         else if(type == "polygon")
@@ -87,7 +91,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             ibObjs_.push_back(
                         ImmersedBoundaryObject(ibObject.first,
                                                solver_.grid(),
-                                               verts)
+                                               verts,
+                                               id++)
                         );
         }
         else

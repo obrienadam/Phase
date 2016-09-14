@@ -50,10 +50,11 @@ Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar tim
     return eqn;
 }
 
-Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep)
+Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& rho, VectorFiniteVolumeField& field, Scalar timeStep)
 {
     const size_t nActiveCells = field.grid.nActiveCells();
     const FiniteVolumeField<Vector2D> &prevField = field.prev(0);
+    const ScalarFiniteVolumeField &rho0 = rho.prev(0);
 
     std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -62,14 +63,14 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFi
 
     for(const Cell& cell: field.grid.fluidCells())
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + nActiveCells;
+        const Index rowX = cell.globalIndex();
+        const Index rowY = rowX + nActiveCells;
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, a[cell.id()]*cell.volume()/timeStep));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, a[cell.id()]*cell.volume()/timeStep));
+        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, rho(cell)*cell.volume()/timeStep));
+        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, rho(cell)*cell.volume()/timeStep));
 
-        eqn.boundaries()(rowX) += a[cell.id()]*cell.volume()*prevField[cell.id()].x/timeStep;
-        eqn.boundaries()(rowY) += a[cell.id()]*cell.volume()*prevField[cell.id()].y/timeStep;
+        eqn.boundaries()(rowX) += rho0(cell)*cell.volume()*prevField[cell.id()].x/timeStep;
+        eqn.boundaries()(rowY) += rho0(cell)*cell.volume()*prevField[cell.id()].y/timeStep;
     }
 
     eqn.assemble(entries);

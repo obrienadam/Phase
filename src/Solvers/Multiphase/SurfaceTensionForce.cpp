@@ -29,8 +29,21 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
         else
             throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "invalid contact angle status \"" + status + "\".");
     }
+
+    for(const ImmersedBoundaryObject &ibObj: solver.ib().ibObjs())
+    {
+        ibContactAngles_.insert(
+                    std::make_pair(ibObj.id(),
+                                   input.boundaryInput().get<Scalar>("ImmersedBoundaries." + ibObj.name() + ".gamma.contactAngle", thetaAdv_)*M_PI/180.)
+                );
+    }
 }
 
+Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D &vel, Scalar theta) const
+{
+    const Vector2D nt = wallNormal.tangentVec();
+    return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI/2. - theta).unitVec() : nt.rotate(M_PI/2. + theta).unitVec();
+}
 
 Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D& gradGamma, const Vector2D& wallNormal, const Vector2D& vel) const
 {
@@ -48,4 +61,9 @@ bool SurfaceTensionForce::isContactLinePatch(const Patch &patch) const
     }
 
     return false;
+}
+
+Scalar SurfaceTensionForce::ibTheta(const ImmersedBoundaryObject& ibObj) const
+{
+    return ibContactAngles_.find(ibObj.id())->second;
 }

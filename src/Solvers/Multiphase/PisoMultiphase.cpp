@@ -72,6 +72,8 @@ void PisoMultiphase::computeRho()
 {
     const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
 
+    rho.savePreviousTimeStep(0, 1);
+
     for(const Cell& cell: rho.grid.activeCells())
         rho(cell) = (1. - gammaTilde(cell))*rho1_ + gammaTilde(cell)*rho2_;
 
@@ -81,6 +83,8 @@ void PisoMultiphase::computeRho()
 void PisoMultiphase::computeMu()
 {
     const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
+
+    mu.savePreviousTimeStep(0, 1);
 
     for(const Cell& cell: mu.grid.activeCells())
         mu(cell) = (1. - gammaTilde(cell))*mu1_ + gammaTilde(cell)*mu2_;
@@ -94,22 +98,21 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    const Scalar rhoBarA = (rho1_ + rho2_)/2.;
-    const Scalar rhoBarH = 2./(1./rho1_ + 1./rho2_);
+    const Scalar rhoBar = (rho1_ + rho2_)/2.;
 
     for(const Cell& cell: ft.grid.fluidCells())
-        ft(cell) *= rho(cell)/rhoBarA;
+        ft(cell) *= rho(cell)/rhoBar;
 
     for(const Face& face: ft.grid.faces())
-        ft(face) *= rho(face)/rhoBarH;
+        ft(face) *= rho(face)/rhoBar;
 
     sg = fv::gravity(rho, g_);
 
     for(const Cell& cell: gamma.grid.fluidCells())
         ft(cell) *= 2.*rho(cell)/(rho1_ + rho2_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u)
-             == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
+             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
 
     uEqn_.relax(momentumOmega_);
     Scalar error = uEqn_.solve();

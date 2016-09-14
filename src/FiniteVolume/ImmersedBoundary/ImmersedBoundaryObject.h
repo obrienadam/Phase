@@ -15,11 +15,13 @@ public:
     ImmersedBoundaryObject(const std::string& name,
                            const FiniteVolumeGrid2D& grid,
                            const Point2D& center,
-                           Scalar radius);
+                           Scalar radius,
+                           Label id);
 
     ImmersedBoundaryObject(const std::string& name,
                            const FiniteVolumeGrid2D& grid,
-                           const std::vector<Point2D>& vertices);
+                           const std::vector<Point2D>& vertices,
+                           Label id);
 
     //- The shape
     Shape2D& shape() { return *shapePtr_; }
@@ -53,12 +55,17 @@ public:
 
     const std::string& name() const { return name_; }
 
+    void assignId(Label id) { id_ = id; }
+    Label id() const { return id_; }
+
 protected:
 
     void flagIbCells();
     void constructStencils();
 
     std::string name_;
+    Label id_;
+
     const FiniteVolumeGrid2D &grid_;
     std::shared_ptr<Shape2D> shapePtr_;
 

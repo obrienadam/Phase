@@ -124,6 +124,8 @@ void FractionalStepMultiphase::computeRho()
 {
     const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
 
+    rho.savePreviousTimeStep(0, 1);
+
     for(const Cell &cell: grid_.activeCells())
         rho(cell) = (1. - w(cell))*rho1_ + w(cell)*rho2_;
 
@@ -134,6 +136,8 @@ void FractionalStepMultiphase::computeRho()
 void FractionalStepMultiphase::computeMu()
 {
     const ScalarFiniteVolumeField &w = surfaceTensionForce_.gammaTilde();
+
+    mu.savePreviousTimeStep(0, 1);
 
     for(const Cell &cell: grid_.activeCells())
         mu(cell) = (1. - w(cell))*mu1_ + w(cell)*mu2_;

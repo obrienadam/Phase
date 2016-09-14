@@ -227,7 +227,7 @@ void Celeste::computeCurvature()
                     Point2D xc = intersection(ls, ibObj.shape())[0];
 
                     sSqr = (xc - cell.centroid()).magSqr();
-                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell)) - n_(cell);
+                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
                     break;
                 }
             }
@@ -252,7 +252,7 @@ void Celeste::computeCurvature()
                     Point2D xc = intersection(ls, ibObj.shape())[0];
 
                     sSqr = (xc - cell.centroid()).magSqr();
-                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell)) - n_(cell);
+                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
                     break;
                 }
             }

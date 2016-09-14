@@ -3,20 +3,24 @@
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const FiniteVolumeGrid2D& grid,
                                                const Point2D& center,
-                                               Scalar radius)
+                                               Scalar radius,
+                                               Label id)
     :
       name_(name),
-      grid_(grid)
+      grid_(grid),
+      id_(id)
 {
     shapePtr_ = std::shared_ptr<Shape2D>(new Circle(center, radius));
 }
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const FiniteVolumeGrid2D& grid,
-                                               const std::vector<Point2D> &vertices)
+                                               const std::vector<Point2D> &vertices,
+                                               Label id)
     :
       name_(name),
-      grid_(grid)
+      grid_(grid),
+      id_(id)
 {
     shapePtr_ = std::shared_ptr<Shape2D>(new Polygon(vertices));
 }

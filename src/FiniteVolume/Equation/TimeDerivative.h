@@ -8,7 +8,7 @@ namespace fv
 
 Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep);
 Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar timeStep);
-Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& a, VectorFiniteVolumeField& field, Scalar timeStep);
+Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& rho, VectorFiniteVolumeField& field, Scalar timeStep);
 
 }
 
