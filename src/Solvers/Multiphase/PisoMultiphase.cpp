@@ -98,14 +98,6 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    const Scalar rhoBar = (rho1_ + rho2_)/2.;
-
-    for(const Cell& cell: ft.grid.fluidCells())
-        ft(cell) *= rho(cell)/rhoBar;
-
-    for(const Face& face: ft.grid.faces())
-        ft(face) *= rho(face)/rhoBar;
-
     sg = fv::gravity(rho, g_);
 
     for(const Cell& cell: gamma.grid.fluidCells())
