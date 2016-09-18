@@ -22,8 +22,9 @@ public:
 
     //- Tests
     bool isInside(const Point2D &testPoint) const;
-    bool isOnEdge(const Point2D &testPoint) const;
+    bool isOnEdge(const Point2D &point) const;
     bool isCovered(const Point2D &point) const;
+    bool isBoundedBy(const Point2D& point, Scalar toler) const;
 
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;

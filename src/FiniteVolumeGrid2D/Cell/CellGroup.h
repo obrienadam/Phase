@@ -36,6 +36,7 @@ public:
 
     //- Searching
     std::vector< Ref<const Cell> > rangeSearch(const Shape2D& shape) const;
+    std::vector< Ref<const Cell> > rangeSearch(const Shape2D &shape, Scalar toler) const;
     std::vector< Ref<const Cell> > kNearestNeighbourSearch(const Point2D& pt, size_t k) const;
 
     //- Iterators

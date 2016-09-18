@@ -3,7 +3,7 @@
 
 bool LineSegment2D::isBounded(const Point2D &pt) const
 {
-    return dot(pt - ptA_, ptB_ - ptA_) > 0 && (pt - ptA_).magSqr() <= magSqr();
+    return dot(pt - ptA_, ptB_ - ptA_) > 0 - Point2D::epsilon() && (pt - ptA_).magSqr() <= magSqr() + Point2D::epsilon();
 }
 
 //- External functions
@@ -22,4 +22,16 @@ std::vector<Point2D> intersection(const LineSegment2D& lineSeg, const Shape2D& s
     }
 
     return result;
+}
+
+Point2D nearest(const LineSegment2D& lineSeg, const Shape2D& shape)
+{
+    auto xc = intersection(lineSeg, shape);
+
+    if(xc.size() != 0)
+        return xc[0];
+
+    Point2D pt1 = shape.nearestIntersect(lineSeg.ptA()), pt2 = shape.nearestIntersect(lineSeg.ptB());
+
+    return (lineSeg.ptA() - pt1).magSqr() < (lineSeg.ptB() - pt2).magSqr() ? lineSeg.ptA() : lineSeg.ptB();
 }

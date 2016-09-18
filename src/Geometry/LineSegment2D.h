@@ -28,5 +28,6 @@ private:
 };
 
 std::vector<Point2D> intersection(const LineSegment2D& lineSeg, const Shape2D& shape);
+Point2D nearest(const LineSegment2D& lineSeg, const Shape2D& shape);
 
 #endif

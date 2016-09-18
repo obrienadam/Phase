@@ -18,15 +18,15 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
 
 VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 {
+    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
-    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
 
     for(const Cell &cell: gamma_.grid.fluidCells())
-        ft[cell.id()] = sigma_*kappa_[cell.id()]*gradGamma_[cell.id()];
+        ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
     return ft;
 }
@@ -46,7 +46,6 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     computeGradient(fv::FACE_TO_CELL, gammaTilde_, gradGammaTilde_);
-    interpolateFaces(fv::INVERSE_VOLUME, gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
@@ -148,17 +147,6 @@ void ContinuumSurfaceForce::computeCurvature()
     }
 
     interpolateFaces(fv::INVERSE_VOLUME, kappa_);
-}
-
-void ContinuumSurfaceForce::applyCurvatureCutoff()
-{
-    for(const Cell& cell: kappa_.grid.cells())
-    {
-        const Scalar gradGammaMagSqr = gradGamma_(cell).magSqr();
-
-        if(gradGammaMagSqr < curvatureCutoffTolerance_)
-            kappa_(cell) = 0.;
-    }
 }
 
 void ContinuumSurfaceForce::interpolateCurvatureFaces()

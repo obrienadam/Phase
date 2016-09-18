@@ -40,6 +40,11 @@ bool Polygon::isCovered(const Point2D &point) const
     return boost::geometry::covered_by(point, poly_);
 }
 
+bool Polygon::isBoundedBy(const Point2D &point, Scalar toler) const
+{
+    return isCovered(point);
+}
+
 bool Polygon::isValid() const
 {
     return boost::geometry::is_valid(poly_);

@@ -21,14 +21,19 @@ bool Circle::isInside(const Point2D &testPoint) const
     return (testPoint - center_).magSqr() < radius_*radius_;
 }
 
-bool Circle::isOnEdge(const Point2D &testPoint) const
+bool Circle::isOnEdge(const Point2D &point) const
 {
-    return (testPoint - center_).magSqr() - radius_*radius_ <= Point2D::epsilon();
+    return fabs((point - center_).magSqr() - radius_*radius_) <= Point2D::epsilon();
 }
 
 bool Circle::isCovered(const Point2D &point) const
 {
-    return (point - center_).magSqr() <= radius_*radius_;
+    return (point - center_).magSqr() - radius_*radius_ <= 0.;
+}
+
+bool Circle::isBoundedBy(const Point2D &point, Scalar toler) const
+{
+    return (point - center_).magSqr() - radius_*radius_ <= -toler;
 }
 
 //- Intersections

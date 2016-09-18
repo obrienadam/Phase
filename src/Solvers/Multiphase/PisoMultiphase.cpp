@@ -70,24 +70,24 @@ Scalar PisoMultiphase::solve(Scalar timeStep)
 
 void PisoMultiphase::computeRho()
 {
-    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
 
     rho.savePreviousTimeStep(0, 1);
 
     for(const Cell& cell: rho.grid.activeCells())
-        rho(cell) = (1. - gammaTilde(cell))*rho1_ + gammaTilde(cell)*rho2_;
+        rho(cell) = (1. - alpha(cell))*rho1_ + alpha(cell)*rho2_;
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
 }
 
 void PisoMultiphase::computeMu()
 {
-    const ScalarFiniteVolumeField &gammaTilde = surfaceTensionForce_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
 
     mu.savePreviousTimeStep(0, 1);
 
     for(const Cell& cell: mu.grid.activeCells())
-        mu(cell) = (1. - gammaTilde(cell))*mu1_ + gammaTilde(cell)*mu2_;
+        mu(cell) = (1. - alpha(cell))*mu1_ + alpha(cell)*mu2_;
 
     interpolateFaces(fv::INVERSE_VOLUME, mu);
 }

@@ -82,7 +82,7 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar
 
 void ImmersedBoundaryObject::flagIbCells()
 {
-    auto internalCells = grid_.activeCells().rangeSearch(shape());
+    auto internalCells = grid_.activeCells().rangeSearch(shape(), 1e-15);
     std::vector<Label> internalCellIds;
 
     for(const Cell &cell: internalCells)

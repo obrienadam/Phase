@@ -25,6 +25,7 @@ public:
     virtual bool isInside(const Point2D& testPoint) const;
     virtual bool isOnEdge(const Point2D& testPoint) const;
     virtual bool isCovered(const Point2D &point) const;
+    virtual bool isBoundedBy(const Point2D &point, Scalar toler) const;
 
     bool isValid() const;
     bool isEmpty() const;

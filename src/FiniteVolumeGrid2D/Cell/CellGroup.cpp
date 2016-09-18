@@ -33,7 +33,30 @@ void CellGroup::remove(const Cell &cell)
 //- Searching
 std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Shape2D& shape) const
 {
-    auto insideShape = [&shape](const Value &val) { return shape.isCovered(val.first); };
+    auto insideShape = [&shape](const Value &val)
+    {
+        return shape.isCovered(val.first);
+    };
+
+
+    std::vector<Value> result;
+
+    boost::geometry::model::box<Point2D> box = shape.boundingBox();
+
+    rTree_.query(boost::geometry::index::within(box)
+                 && boost::geometry::index::satisfies(insideShape),
+                 std::back_inserter(result));
+
+    return getRefs(result);
+}
+
+std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Shape2D &shape, Scalar toler) const
+{
+    auto insideShape = [&shape, toler](const Value &val)
+    {
+        return shape.isBoundedBy(val.first, toler);
+    };
+
     std::vector<Value> result;
 
     boost::geometry::model::box<Point2D> box = shape.boundingBox();

@@ -23,7 +23,6 @@ protected:
     virtual void computeGradGammaTilde();
     virtual void computeInterfaceNormals();
     virtual void computeCurvature();
-    virtual void applyCurvatureCutoff();
     virtual void interpolateCurvatureFaces();
 
     std::vector< std::vector< Ref<const Cell> > > cellRangeSearch_;
