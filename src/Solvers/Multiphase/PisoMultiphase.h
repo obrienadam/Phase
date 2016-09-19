@@ -14,6 +14,7 @@ public:
     PisoMultiphase(const FiniteVolumeGrid2D& grid, const Input& input);
 
     virtual Scalar solve(Scalar timeStep);
+    virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     ScalarFiniteVolumeField &gamma;
     VectorFiniteVolumeField &gradGamma, &ft;
@@ -29,6 +30,8 @@ protected:
     virtual void rhieChowInterpolation();
 
     Scalar rho1_, rho2_, mu1_, mu2_;
+    Scalar capillaryTimeStep_;
+
     std::shared_ptr<SurfaceTensionForce> surfaceTensionForce_;
 
     Equation<ScalarFiniteVolumeField> gammaEqn_;

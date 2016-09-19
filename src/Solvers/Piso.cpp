@@ -61,25 +61,35 @@ Scalar Piso::solve(Scalar timeStep)
         }
     }
 
-    printf("Max Co = %lf\n", courantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.;
 }
 
-Scalar Piso::computeMaxTimeStep(Scalar maxCo) const
+Scalar Piso::maxCourantNumber(Scalar timeStep) const
 {
-    Scalar maxTimeStepSqr = std::numeric_limits<Scalar>::infinity(), maxCoSqr = maxCo*maxCo;
+    Scalar maxCo = 0;
 
-    for(const Cell &cell: u.grid.fluidCells())
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar deltaXSqr = nb.rCellVec().magSqr();
-            Scalar magUSqr = u.faces()[nb.face().id()].magSqr();
+    for(const Face &face: grid_.interiorFaces())
+    {
+        Vector2D sf = face.outwardNorm(face.lCell().centroid());
+        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
 
-            maxTimeStepSqr = std::min(maxTimeStepSqr, maxCoSqr*deltaXSqr/magUSqr);
-        }
+        maxCo = std::max(maxCo, fabs(dot(u(face), sf)/dot(rc, sf)));
+    }
 
-    return sqrt(maxTimeStepSqr);
+    return maxCo*timeStep;
+}
+
+Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
+{
+    Scalar co = maxCourantNumber(prevTimeStep);
+    Scalar lambda1 = 0.1, lambda2 = 1.2;
+
+    return std::min(
+                std::min(maxCo/co*prevTimeStep, (1 + lambda1*maxCo/co)*prevTimeStep),
+                std::min(lambda2*prevTimeStep, maxTimeStep_)
+                );
 }
 
 //- Protected methods
@@ -256,20 +266,4 @@ void Piso::computeStaticPressure()
                     p(nb.face()) = p(nb.cell()) + rho(nb.cell())*dot(g_, nb.face().centroid() - nb.cell().centroid());
                 }
             }
-}
-
-Scalar Piso::courantNumber(Scalar timeStep)
-{
-    Scalar maxCoSqr = 0., timeStepSqr = timeStep*timeStep;
-
-    for(const Cell &cell: u.grid.fluidCells())
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar deltaXSqr = nb.rCellVec().magSqr();
-            Scalar magUSqr = u.faces()[nb.face().id()].magSqr();
-
-            maxCoSqr = std::max(maxCoSqr, magUSqr*timeStepSqr/deltaXSqr);
-        }
-
-    return sqrt(maxCoSqr);
 }

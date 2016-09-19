@@ -20,11 +20,20 @@ FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &gri
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
-    setInitialConditions(input);
-
     surfaceTensionForce_.compute();
     computeRho();
     computeMu();
+
+    Scalar sigma = surfaceTensionForce_.sigma();
+    capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
+
+    for(const Face& face: grid_.interiorFaces())
+    {
+        Scalar delta = (face.rCell().centroid() - face.lCell().centroid()).mag();
+        capillaryTimeStep_ = std::min(capillaryTimeStep_, sqrt(((rho1_ + rho2_)*delta*delta*delta)/(4*M_PI*sigma)));
+    }
+
+    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 Scalar FractionalStepMultiphase::solve(Scalar timeStep)
@@ -34,9 +43,17 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     correctVelocity(timeStep);
     solveGammaEqn(timeStep);
 
-    printf("Max Co = %lf\n", courantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.;
+}
+
+Scalar FractionalStepMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
+{
+    return std::min(
+                FractionalStep::computeMaxTimeStep(maxCo, prevTimeStep),
+                capillaryTimeStep_
+                );
 }
 
 //- Protected methods

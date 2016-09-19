@@ -20,7 +20,7 @@ Scalar Coupled::solve(Scalar timeStep)
     return eqn_.solve(timeStep);
 }
 
-Scalar Coupled::computeMaxTimeStep(Scalar maxCo) const
+Scalar Coupled::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 {
     Scalar maxTimeStep = std::numeric_limits<Scalar>::infinity();
 

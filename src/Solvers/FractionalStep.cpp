@@ -51,25 +51,35 @@ Scalar FractionalStep::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    printf("Max Co = %lf\n", courantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.;
 }
 
-Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo) const
+Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
 {
-    Scalar maxTimeStepSqr = std::numeric_limits<Scalar>::infinity(), maxCoSqr = maxCo*maxCo;
+    Scalar maxCo = 0;
 
-    for(const Cell &cell: u.grid.fluidCells())
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar deltaXSqr = nb.rCellVec().magSqr();
-            Scalar magUSqr = u(nb.face()).magSqr();
+    for(const Face &face: grid_.interiorFaces())
+    {
+        Vector2D sf = face.outwardNorm(face.lCell().centroid());
+        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
 
-            maxTimeStepSqr = std::min(maxTimeStepSqr, maxCoSqr*deltaXSqr/magUSqr);
-        }
+        maxCo = std::max(maxCo, fabs(dot(u(face), sf)/dot(rc, sf)));
+    }
 
-    return sqrt(maxTimeStepSqr);
+    return maxCo*timeStep;
+}
+
+Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
+{
+    Scalar co = maxCourantNumber(prevTimeStep);
+    Scalar lambda1 = 0.1, lambda2 = 1.2;
+
+    return std::min(
+                std::min(maxCo/co*prevTimeStep, (1 + lambda1*maxCo/co)*prevTimeStep),
+                std::min(lambda2*prevTimeStep, maxTimeStep_)
+                );
 }
 
 //- Protected methods
@@ -194,21 +204,5 @@ void FractionalStep::computeMassSource(Scalar timeStep)
         for(const BoundaryLink &bd: cell.boundaries())
             divUStar(cell) += rho(bd.face())/timeStep*dot(u(bd.face()), bd.outwardNorm()) + dot(gradP(bd.face()) - sg(bd.face()), bd.outwardNorm());
     }
-}
-
-Scalar FractionalStep::courantNumber(Scalar timeStep)
-{
-    Scalar maxCoSqr = 0., timeStepSqr = timeStep*timeStep;
-
-    for(const Cell &cell: u.grid.fluidCells())
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar deltaXSqr = nb.rCellVec().magSqr();
-            Scalar magUSqr = u(nb.face()).magSqr();
-
-            maxCoSqr = std::max(maxCoSqr, magUSqr*timeStepSqr/deltaXSqr);
-        }
-
-    return sqrt(maxCoSqr);
 }
 

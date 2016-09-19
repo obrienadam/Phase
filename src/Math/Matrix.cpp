@@ -149,8 +149,11 @@ Matrix& Matrix::invert()
     if(nRows_ != nCols_)
         operator=(Matrix(*this).transpose()*(*this));
 
-    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
-    LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
+    lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
+    lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
+
+    if(info1 != 0 || info2 != 0)
+        throw Exception("Matrix", "invert", "inversion failed, matrix is singular to working precision.");
 
     return *this;
 }

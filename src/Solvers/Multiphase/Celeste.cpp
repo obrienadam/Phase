@@ -75,25 +75,13 @@ void Celeste::constructMatrices()
         {
             Scalar dx = nb.cell().centroid().x - cell.centroid().x;
             Scalar dy = nb.cell().centroid().y - cell.centroid().y;
+            Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-            {
-                if(ibObj.cells().isInGroup(nb.cell()))
-                {
-                    const LineSegment2D ls(cell.centroid(), nb.cell().centroid());
-                    const Point2D xc = intersection(ls, ibObj.shape())[0];
-
-                    dx = (xc - cell.centroid()).x;
-                    dy = (xc - cell.centroid()).y;
-                    break;
-                }
-            }
-
-            A(i, 0) = dx;
-            A(i, 1) = dy;
-            A(i, 2) = dx*dx/2.;
-            A(i, 3) = dy*dy/2.;
-            A(i, 4) = dx*dy;
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
 
             ++i;
         }
@@ -102,39 +90,28 @@ void Celeste::constructMatrices()
         {
             Scalar dx = dg.cell().centroid().x - cell.centroid().x;
             Scalar dy = dg.cell().centroid().y - cell.centroid().y;
+            Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-            {
-                if(ibObj.cells().isInGroup(dg.cell()))
-                {
-                    const LineSegment2D ls(cell.centroid(), dg.cell().centroid());
-                    const Point2D xc = intersection(ls, ibObj.shape())[0];
-
-                    dx = (xc - cell.centroid()).x;
-                    dy = (xc - cell.centroid()).y;
-                    break;
-                }
-            }
-
-            A(i, 0) = dx;
-            A(i, 1) = dy;
-            A(i, 2) = dx*dx/2.;
-            A(i, 3) = dy*dy/2.;
-            A(i, 4) = dx*dy;
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
 
             ++i;
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
         {
-            const Scalar dx = bd.face().centroid().x - cell.centroid().x;
-            const Scalar dy = bd.face().centroid().y - cell.centroid().y;
+            Scalar dx = bd.face().centroid().x - cell.centroid().x;
+            Scalar dy = bd.face().centroid().y - cell.centroid().y;
+            Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
 
-            A(i, 0) = dx;
-            A(i, 1) = dy;
-            A(i, 2) = dx*dx/2.;
-            A(i, 3) = dy*dy/2.;
-            A(i, 4) = dx*dy;
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
 
             ++i;
         }
@@ -214,6 +191,7 @@ void Celeste::computeCurvature()
         for(const InteriorLink &nb: cell.neighbours())
         {
             Vector2D n = n_(nb.cell()) - n_(cell);
+            Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
@@ -225,8 +203,8 @@ void Celeste::computeCurvature()
                 }
             }
 
-            bx(i, 0) = n.x;
-            by(i, 0) = n.y;
+            bx(i, 0) = n.x/sSqr;
+            by(i, 0) = n.y/sSqr;
 
             ++i;
         }
@@ -234,6 +212,7 @@ void Celeste::computeCurvature()
         for(const DiagonalCellLink &dg: cell.diagonals())
         {
             Vector2D n = n_(dg.cell()) - n_(cell);
+            Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
@@ -245,8 +224,8 @@ void Celeste::computeCurvature()
                 }
             }
 
-            bx(i, 0) = n.x;
-            by(i, 0) = n.y;
+            bx(i, 0) = n.x/sSqr;
+            by(i, 0) = n.y/sSqr;
 
             ++i;
         }
@@ -254,9 +233,10 @@ void Celeste::computeCurvature()
         for(const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D n = n_(bd.face()) - n_(cell);
+            Scalar sSqr = (bd.face().centroid() - cell.centroid()).magSqr();
 
-            bx(i, 0) = n.x; // contact line faces should already be computed
-            by(i, 0) = n.y;
+            bx(i, 0) = n.x/sSqr; // contact line faces should already be computed
+            by(i, 0) = n.y/sSqr;
 
             ++i;
         }

@@ -43,7 +43,8 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
             const Scalar gammaA = gamma(acceptor);
             const Scalar gammaU = std::max(std::min(gammaA + 2*dot(donor.centroid() - acceptor.centroid(), gradGamma(donor)), 1.), 0.);
 
-            const Scalar coD = sqrt(u(nb.face()).magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
+            //const Scalar coD = sqrt(u(nb.face()).magSqr()*timeStep*timeStep/nb.rCellVec().magSqr());
+            const Scalar coD = fabs(dot(u(nb.face()), nb.outwardNorm())/dot(nb.rCellVec(), nb.outwardNorm())*timeStep);
 
             const Scalar gammaTilde = (gammaD - gammaU)/(gammaA - gammaU);
 
@@ -54,7 +55,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
 
             Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
 
-            if(isnan(betaFace)) // Upwind if a valid value is not found
+            if(isnan(betaFace)) // Central difference if non-valid beta value
                 betaFace = &cell == &donor ? 0. : 1.;
 
             betaFace = std::max(std::min(betaFace, 1.), 0.);

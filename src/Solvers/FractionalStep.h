@@ -14,7 +14,8 @@ public:
     virtual std::string info() const;
 
     virtual Scalar solve(Scalar timeStep);
-    virtual Scalar computeMaxTimeStep(Scalar maxCo) const;
+    Scalar maxCourantNumber(Scalar timeStep) const;
+    virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u, &sg, &gradP;
     ScalarFiniteVolumeField &p, &rho, &mu, &divUStar;
@@ -27,8 +28,6 @@ protected:
 
     virtual void computeFaceVelocities(Scalar timeStep);
     virtual void computeMassSource(Scalar timeStep);
-
-    Scalar courantNumber(Scalar timeStep);
 
     Vector2D g_;
 

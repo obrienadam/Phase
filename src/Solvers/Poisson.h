@@ -10,7 +10,7 @@ public:
 
     Poisson(const FiniteVolumeGrid2D& grid, const Input& input);
     virtual Scalar solve(Scalar timeStep);
-    virtual Scalar computeMaxTimeStep(Scalar maxCo) const { return INFINITY; }
+    virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const { return INFINITY; }
 
     ScalarFiniteVolumeField& phi, &gamma;
 

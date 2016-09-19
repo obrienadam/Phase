@@ -20,8 +20,6 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
-    setInitialConditions(input);
-
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
@@ -40,6 +38,17 @@ PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &inpu
     //surfaceTensionForce_->compute();
     computeRho();
     computeMu();
+
+    Scalar sigma = surfaceTensionForce_->sigma();
+    capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
+
+    for(const Face& face: grid_.interiorFaces())
+    {
+        Scalar delta = (face.rCell().centroid() - face.lCell().centroid()).mag();
+        capillaryTimeStep_ = std::min(capillaryTimeStep_, sqrt(((rho1_ + rho2_)*delta*delta*delta)/(4*M_PI*sigma)));
+    }
+
+    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 Scalar PisoMultiphase::solve(Scalar timeStep)
@@ -61,9 +70,17 @@ Scalar PisoMultiphase::solve(Scalar timeStep)
 
     solveGammaEqn(timeStep);
 
-    printf("Max Co = %lf\n", courantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.; // just to get rid of warning
+}
+
+Scalar PisoMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
+{
+    return std::min(
+                Piso::computeMaxTimeStep(maxCo, prevTimeStep),
+                capillaryTimeStep_
+                );
 }
 
 //- Protected methods

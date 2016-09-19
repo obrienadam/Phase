@@ -13,6 +13,7 @@ Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
 
     timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
     timeStepRelaxation_ = input.caseInput().get<Scalar>("Solver.timeStepRelaxation", 1.);
+    maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 }
@@ -21,11 +22,6 @@ std::string Solver::info() const
 {
     return "SOLVER INFO\n"
                "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n";
-}
-
-Scalar Solver::computeSmartTimeStep(Scalar maxCo, Scalar lastTimeStep)
-{
-    return lastTimeStep + timeStepRelaxation_*(computeMaxTimeStep(maxCo) - lastTimeStep);
 }
 
 ScalarFiniteVolumeField& Solver::addScalarField(const Input& input, const std::string& name)

@@ -8,8 +8,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 
     //- Time
     Scalar time = 0.;
-    Scalar maxTimeStep = input.caseInput().get<Scalar>("Solver.timeStep");
-    Scalar timeStep = maxTimeStep;
+    Scalar timeStep = solver.maxTimeStep();
 
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
@@ -25,7 +24,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     for(
         time = 0., iterNo = 0;
         time < maxTime;
-        time += timeStep, timeStep = std::min(solver.computeMaxTimeStep(maxCo), maxTimeStep), ++iterNo
+        time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
         )
     {
         if(iterNo%fileWriteFrequency == 0)

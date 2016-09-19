@@ -11,7 +11,7 @@ public:
     Coupled(const FiniteVolumeGrid2D& grid, const Input& input);
 
     virtual Scalar solve(Scalar timeStep);
-    virtual Scalar computeMaxTimeStep(Scalar maxCo) const;
+    virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u;
     ScalarFiniteVolumeField &p, &rho, &mu;
