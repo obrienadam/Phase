@@ -17,7 +17,7 @@ public:
     Scalar maxCourantNumber(Scalar timeStep) const;
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &h, &sg, &gradP, &gradPCorr;
+    VectorFiniteVolumeField &u, &sg, &gradP, &gradPCorr;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:

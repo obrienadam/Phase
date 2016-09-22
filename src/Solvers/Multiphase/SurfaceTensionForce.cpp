@@ -5,6 +5,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     :
       gamma_(solver.scalarFields().find("gamma")->second),
       u_(solver.vectorFields().find("u")->second),
+      rho_(solver.scalarFields().find("rho")->second),
       n_(solver.addVectorField("n")),
       kappa_(solver.addScalarField("kappa")),
       gradGamma_(solver.vectorFields().find("gradGamma")->second),

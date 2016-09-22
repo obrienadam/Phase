@@ -17,9 +17,13 @@ public:
 
 protected:
 
+    void constructGammaTildeMatrices();
+    void constructKappaMatrices();
+
     virtual void computeGradGammaTilde();
     virtual void computeInterfaceNormals();
     virtual void computeCurvature();
+    void weightCurvatures();
 
     std::vector< std::vector< Ref<const Cell> > > gradGammaTildeStencils_;
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;

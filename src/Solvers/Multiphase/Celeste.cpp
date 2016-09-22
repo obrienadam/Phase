@@ -21,16 +21,49 @@ VectorFiniteVolumeField Celeste::compute()
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
-    for(const Cell &cell: gamma_.grid.fluidCells())
-        ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
-
     for(const Face &face: gamma_.grid.faces())
         ft(face) = sigma_*kappa_(face)*gradGamma_(face);
+
+    for(const Cell& cell: gamma_.grid.fluidCells())
+    {
+        Scalar sumSfx = 0., sumSfy = 0.;
+        ft(cell) = Vector2D(0., 0.);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            const Vector2D& sf = nb.outwardNorm();
+
+            ft(cell) += Vector2D(ft(nb.face()).x*fabs(sf.x), ft(nb.face()).y*fabs(sf.y))/rho_(nb.face());
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            const Vector2D& sf = bd.outwardNorm();
+
+            ft(cell) += Vector2D(ft(bd.face()).x*fabs(sf.x), ft(bd.face()).y*fabs(sf.y))/rho_(bd.face());
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
+
+        ft(cell) = rho_(cell)*Vector2D(ft(cell).x/sumSfx, ft(cell).y/sumSfy);
+    }
 
     return ft;
 }
 
 void Celeste::constructMatrices()
+{
+    constructGammaTildeMatrices();
+    constructKappaMatrices();
+}
+
+//- Protected methods
+
+void Celeste::constructGammaTildeMatrices()
 {
     Matrix A(8, 5);
 
@@ -38,7 +71,7 @@ void Celeste::constructMatrices()
     gradGammaTildeStencils_.resize(gradGammaTilde_.size());
     for(const Cell &cell: gammaTilde_.grid.fluidCells())
     {
-        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.fluidCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         A.resize(8, 5);
         int i = 0;
@@ -62,6 +95,11 @@ void Celeste::constructMatrices()
 
         gradGammaTildeMatrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
     }
+}
+
+void Celeste::constructKappaMatrices()
+{
+    Matrix A(8, 5);
 
     kappaMatrices_.resize(gamma_.size());
     for(const Cell &cell: gamma_.grid.fluidCells())
@@ -77,6 +115,22 @@ void Celeste::constructMatrices()
             Scalar dy = nb.cell().centroid().y - cell.centroid().y;
             Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(nb.cell()))
+                {
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+
+                    Vector2D r = stencil.first - cell.centroid();
+
+                    sSqr = r.magSqr();
+                    dx = r.x;
+                    dy = r.y;
+
+                    break;
+                }
+            }
+
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
             A(i, 2) = dx*dx/(2.*sSqr);
@@ -91,6 +145,22 @@ void Celeste::constructMatrices()
             Scalar dx = dg.cell().centroid().x - cell.centroid().x;
             Scalar dy = dg.cell().centroid().y - cell.centroid().y;
             Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
+
+            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            {
+                if(ibObj.cells().isInGroup(dg.cell()))
+                {
+                    auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+
+                    Vector2D r = stencil.first - cell.centroid();
+
+                    sSqr = r.magSqr();
+                    dx = r.x;
+                    dy = r.y;
+
+                    break;
+                }
+            }
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -119,8 +189,6 @@ void Celeste::constructMatrices()
         kappaMatrices_[cell.id()] = inverse(transpose(A)*A)*transpose(A);
     }
 }
-
-//- Protected methods
 
 void Celeste::computeGradGammaTilde()
 {
@@ -198,7 +266,11 @@ void Celeste::computeCurvature()
                 if(ibObj.cells().isInGroup(nb.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
+
+                    Vector2D r = stencil.first - cell.centroid();
+                    sSqr = r.magSqr();
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+
                     break;
                 }
             }
@@ -219,6 +291,10 @@ void Celeste::computeCurvature()
                 if(ibObj.cells().isInGroup(dg.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
+
+                    Vector2D r = stencil.first - cell.centroid();
+                    sSqr = r.magSqr();
+
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
                     break;
                 }
@@ -247,5 +323,108 @@ void Celeste::computeCurvature()
         kappa_(cell) = bx(0, 0) + by(1, 0);
     }
 
+    weightCurvatures();
     interpolateCurvatureFaces();
 }
+
+
+void Celeste::weightCurvatures()
+{
+    const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
+    const Scalar cutoff = 1e-12;
+
+    for(const Cell &cell: wGamma_.grid.fluidCells())
+        wGamma_(cell) = pow8(1. - 2*fabs(0.5 - gammaTilde_(cell)));
+
+    for(const Cell &cell: kappa_.grid.fluidCells())
+    {
+        Scalar sumW1 = wGamma_(cell), sumW2 = wGamma_(cell);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            if(!nb.cell().isFluidCell())
+                continue;
+
+            sumW1 += wGamma_(nb.cell());
+            sumW2 += wGamma_(nb.cell())*pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
+        }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            if(!dg.cell().isFluidCell())
+                continue;
+
+            sumW1 += wGamma_(dg.cell());
+            sumW2 += wGamma_(dg.cell())*pow8(dot(n_(dg.cell()), dg.rCellVec().unitVec()));
+        }
+
+        if(fabs(sumW1) < cutoff || fabs(sumW2) < cutoff)
+            kappa_(cell) = 0.;
+    }
+
+    kappa_.savePreviousIteration();
+
+    for(const Cell &cell: kappa_.grid.fluidCells())
+    {
+        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            if(!nb.cell().isFluidCell())
+                continue;
+
+            sumW += wGamma_(nb.cell());
+            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell());
+        }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            if(!dg.cell().isFluidCell())
+                continue;
+
+            sumW += wGamma_(dg.cell());
+            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell());
+        }
+
+        if(fabs(sumW) < cutoff)
+        {
+            kappa_(cell) = 0.;
+            continue;
+        }
+    }
+
+    kappa_.savePreviousIteration();
+
+    for(const Cell &cell: kappa_.grid.fluidCells())
+    {
+        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            if(!nb.cell().isFluidCell())
+                continue;
+
+            const Scalar mQ = pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
+
+            sumW += wGamma_(nb.cell())*mQ;
+            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell())*mQ;
+        }
+
+        for(const DiagonalCellLink &dg: cell.diagonals())
+        {
+            if(!dg.cell().isFluidCell())
+                continue;
+
+            const Scalar mQ = pow8(dot(n_(cell), dg.rCellVec().unitVec()));
+
+            sumW += wGamma_(dg.cell())*mQ;
+            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell())*mQ;
+        }
+
+        if(fabs(sumW) < cutoff)
+        {
+            kappa_(cell) = 0.;
+            continue;
+        }
+    }
+ }

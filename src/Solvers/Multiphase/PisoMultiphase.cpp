@@ -4,6 +4,7 @@
 #include "Celeste.h"
 #include "CrankNicolson.h"
 #include "FaceInterpolation.h"
+#include "SourceEvaluation.h"
 
 PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -111,14 +112,11 @@ void PisoMultiphase::computeMu()
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_->compute(); // surface tension force. The order matters here since the smoothed gamma field is used for rho and mu
+    ft = surfaceTensionForce_->compute();
     computeRho();
     computeMu();
 
     sg = fv::gravity(rho, g_);
-
-    for(const Cell& cell: gamma.grid.fluidCells())
-        ft(cell) *= 2.*rho(cell)/(rho1_ + rho2_);
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
              == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));

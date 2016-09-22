@@ -3,6 +3,7 @@
 #include "CrankNicolson.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
+#include "SourceEvaluation.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
     :

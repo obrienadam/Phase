@@ -3,6 +3,7 @@
 #include "CrankNicolson.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
+#include "SourceEvaluation.h"
 
 FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &input)
     :
@@ -27,13 +28,6 @@ FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &inpu
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
-
-    p.initNodes();
-
-    interpolateFaces(fv::INVERSE_VOLUME, u);
-
-    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == 0.);
-    pEqn_.computeSolver();
 }
 
 std::string FractionalStep::info() const
@@ -86,15 +80,14 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
-    u.savePreviousTimeStep(timeStep, 1);
-
     sg.savePreviousTimeStep(timeStep, 1);
     sg = fv::gravity(rho, g_);
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u) == fv::laplacian(mu, u) - fv::source(gradP - sg));
 
-    Scalar error = uEqn_.solve();
+    u.savePreviousTimeStep(timeStep, 1);
 
+    Scalar error = uEqn_.solve();
     computeFaceVelocities(timeStep);
 
     return error;
@@ -104,18 +97,11 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
     computeMassSource(timeStep);
 
-    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar + fv::hydroStaticPressureBoundaries(p, rho, g_));
-
-    Scalar error = pEqn_.solve(p.sparseVector(), false);
-
-    for(const Face& face: p.grid.boundaryFaces())
-    {
-        if(p.boundaryType(face) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
-            p(face) = p(face.lCell()) + rho(face.lCell())*dot(g_, face.centroid() - face.lCell().centroid());
-    }
+    pEqn_ = (fv::laplacian(p) + ib_.eqns(p) == divUStar);
+    Scalar error = pEqn_.solve();
 
     gradP.savePreviousTimeStep(timeStep, 1);
-    computeGradient(fv::FACE_TO_CELL, p, gradP, true);
+    computeGradient(fv::FACE_TO_CELL, p, gradP);
 
     return error;
 }

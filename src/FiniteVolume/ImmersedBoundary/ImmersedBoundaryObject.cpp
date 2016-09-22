@@ -1,4 +1,5 @@
 #include "ImmersedBoundaryObject.h"
+#include "LineSegment2D.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const FiniteVolumeGrid2D& grid,
@@ -53,8 +54,9 @@ Vector2D ImmersedBoundaryObject::imagePointVal(const Cell &cell, const VectorFin
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D& ptA, const Point2D& ptB) const
 {
-    const Line2D line(ptA, (ptB - ptA).normalVec());
-    const Point2D xc = nearestPoint(ptA, shapePtr_->intersections(line));
+    const LineSegment2D line(ptA, ptB);
+    const Point2D xc = intersection(line, shape())[0];
+
     const std::pair<Point2D, Point2D> edge = shapePtr_->nearestEdge(xc);
 
     return std::make_pair(

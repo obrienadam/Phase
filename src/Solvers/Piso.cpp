@@ -4,12 +4,12 @@
 #include "CrankNicolson.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
+#include "SourceEvaluation.h"
 
 Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     :
       Solver(grid, input),
       u(addVectorField(input, "u")),
-      h(addVectorField("h")),
       sg(addVectorField("sg")),
       gradP(addVectorField("gradP")),
       gradPCorr(addVectorField("gradPCorr")),
@@ -39,9 +39,6 @@ Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 
     pCorr.copyBoundaryTypes(p);
-
-    //- Perform a pseudo initialization
-    u.savePreviousTimeStep(0., 1);
 }
 
 Scalar Piso::solve(Scalar timeStep)
@@ -84,7 +81,7 @@ Scalar Piso::maxCourantNumber(Scalar timeStep) const
 Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 {
     Scalar co = maxCourantNumber(prevTimeStep);
-    Scalar lambda1 = 0.1, lambda2 = 1.2;
+    Scalar lambda1 = 0.05, lambda2 = 1.1;
 
     return std::min(
                 std::min(maxCo/co*prevTimeStep, (1 + lambda1*maxCo/co)*prevTimeStep),
@@ -124,7 +121,7 @@ Scalar Piso::solvePCorrEqn()
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
     Scalar error = pCorrEqn_.solve();
 
-    computeGradient(fv::FACE_TO_CELL, pCorr, gradPCorr);
+    fv::computeInverseWeightedGradient(rho, pCorr, gradPCorr);
 
     return error;
 }
@@ -204,7 +201,7 @@ void Piso::correctPressure()
 
     interpolateFaces(fv::INVERSE_VOLUME, p);
     computeStaticPressure();
-    computeGradient(fv::FACE_TO_CELL, p, gradP, true);
+    fv::computeInverseWeightedGradient(rho, p, gradP);
 }
 
 void Piso::correctVelocity()

@@ -1,4 +1,5 @@
-#include "Source.h"
+#include "SourceEvaluation.h"
+
 #include "FaceInterpolation.h"
 
 namespace fv
@@ -7,29 +8,50 @@ namespace fv
 VectorFiniteVolumeField source(VectorFiniteVolumeField field)
 {
     for(const Cell &cell: field.grid.fluidCells())
-        field[cell.id()] *= cell.volume();
+        field(cell) *= cell.volume();
 
     return field;
+}
+
+VectorFiniteVolumeField inverseWeightedSource(const ScalarFiniteVolumeField& w, const VectorFiniteVolumeField& field)
+{
+    VectorFiniteVolumeField fb(field.grid, "fb");
+
+    for(const Cell& cell: fb.grid.fluidCells())
+    {
+        Scalar sumSfx = 0., sumSfy = 0.;
+        fb(cell) = Vector2D(0., 0.);
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            const Vector2D& sf = nb.outwardNorm();
+
+            fb(cell) += Vector2D(field(nb.face()).x*fabs(sf.x), field(nb.face()).y*fabs(sf.y))/w(nb.face());
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            const Vector2D& sf = bd.outwardNorm();
+
+            fb(cell) += Vector2D(field(bd.face()).x*fabs(sf.x), field(bd.face()).y*fabs(sf.y))/w(bd.face());
+
+            sumSfx += fabs(sf.x);
+            sumSfy += fabs(sf.y);
+        }
+
+        fb(cell) = w(cell)*Vector2D(fb(cell).x/sumSfx, fb(cell).y/sumSfy);
+    }
+
+    return fb;
 }
 
 VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector2D& g)
 {
     VectorFiniteVolumeField gravity(rho.grid, "g");
     gravity.fill(Vector2D(0., 0.));
-
-    //    case POTENTIAL:
-    //        for(const Cell& cell: rho.grid.fluidCells())
-    //        {
-    //            for(const InteriorLink &nb: cell.neighbours())
-    //                gravity(cell) += dot(g, nb.rFaceVec())*rho(nb.face())*nb.outwardNorm();
-
-    //            for(const BoundaryLink &bd: cell.boundaries())
-    //                gravity(cell) += dot(g, bd.rFaceVec())*rho(bd.face())*bd.outwardNorm();
-
-    //            gravity(cell) /= cell.volume();
-    //        }
-
-    //        interpolateFaces(fv::INVERSE_VOLUME, gravity);
 
     for(const Cell& cell: rho.grid.fluidCells())
     {

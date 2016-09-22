@@ -36,6 +36,7 @@ protected:
     std::map<Label, Scalar> ibContactAngles_;
 
     ScalarFiniteVolumeField &gamma_;
+    const ScalarFiniteVolumeField &rho_;
     const VectorFiniteVolumeField &u_;
     ScalarFiniteVolumeField &kappa_;
     VectorFiniteVolumeField &gradGamma_, &n_;
