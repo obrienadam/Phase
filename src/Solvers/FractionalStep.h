@@ -9,7 +9,7 @@ class FractionalStep: public Solver
 {
 public:
 
-    FractionalStep(const FiniteVolumeGrid2D& grid, const Input& input);
+    FractionalStep(const Input& input, FiniteVolumeGrid2D &grid);
 
     virtual std::string info() const;
 

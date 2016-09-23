@@ -8,6 +8,7 @@
 #include "Patch.h"
 
 class Cell;
+class FiniteVolumeGrid2D;
 
 class Face
 {
@@ -15,8 +16,9 @@ public:
 
    enum Type{INTERIOR, BOUNDARY};
 
-   Face(size_t lNodeId, size_t rNodeId, const std::vector<Node>& nodes, Type type = INTERIOR);
+   Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D& grid, Type type = INTERIOR);
 
+   void setType(Type type) { type_ = type; }
    Type type() const { return type_; }
 
    const Point2D& centroid() const { return centroid_; }
@@ -28,15 +30,16 @@ public:
    bool belongsToPatch() const { return patchPtr_ != nullptr; }
 
    Label id() const { return id_; }
+   void setId(Label id) { id_ = id; }
 
    bool isInterior() const { return type_ == INTERIOR; }
    bool isBoundary() const { return type_ == BOUNDARY; }
 
-   const Node& lNode() const { return nodes_[0]; }
-   const Node& rNode() const { return nodes_[1]; }
+   const Node& lNode() const { return nodes_[nodeIds_.first]; }
+   const Node& rNode() const { return nodes_[nodeIds_.second]; }
 
-   const Cell& lCell() const { return cells_[0]; }
-   const Cell& rCell() const { return cells_[1]; }
+   const Cell& lCell() const { return cells_[cellIds_[0]]; }
+   const Cell& rCell() const { return cells_[cellIds_[1]]; }
 
    void addCell(const Cell& cell);
 
@@ -56,10 +59,12 @@ private:
 
     Label id_;
 
-    std::vector< Ref<const Cell> > cells_;
-    std::vector< Ref<const Node> > nodes_;
+    std::pair<Label, Label> nodeIds_;
+    std::vector<Label> cellIds_;
 
-    friend class FiniteVolumeGrid2D;
+    const std::vector<Node>& nodes_;
+    const std::vector<Cell>& cells_;
+
     friend class Patch;
 };
 

@@ -5,27 +5,27 @@
 
 class Cell;
 class Face;
+class FiniteVolumeGrid2D;
 
 class Node : public Point2D
 {
 public:
 
-    Node(Scalar x, Scalar y, Label id) : Point2D(x, y), id_(id) { }
-    explicit Node(const Point2D& point, Label id) : Point2D(point), id_(id) {}
+    Node(Scalar x, Scalar y, const FiniteVolumeGrid2D& grid);
+    explicit Node(const Point2D& point, const FiniteVolumeGrid2D& grid);
 
     Label id() const { return id_; }
+    void setId(Label id) { id_ = id; }
 
-    const std::vector<Ref<const Cell>>& cells() const { return cells_; }
-    const std::vector<Ref<const Face>>& faces() const { return faces_; }
+    void addCell(const Cell& cell);
 
+    const std::vector<Ref<const Cell>> cells() const;
 protected:
 
     Label id_;
 
-    std::vector<Ref<const Cell>> cells_;
-    std::vector<Ref<const Face>> faces_;
-
-    friend class FiniteVolumeGrid2D;
+    std::vector<Label> cellIds_;
+    const std::vector<Cell>& cells_;
 };
 
 #endif

@@ -1,19 +1,20 @@
 #include "Cell.h"
 #include "Polygon.h"
 #include "Exception.h"
+#include "FiniteVolumeGrid2D.h"
 
-Cell::Cell(const std::vector<Label> &nodeIds, const std::vector<Node> &nodes)
+Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
+    :
+      nodes_(grid.nodes()),
+      nodeIds_(nodeIds)
 {   
     isActive_ = true;
     isFluidCell_ = true;
 
-    for (Label id: nodeIds)
-        nodes_.push_back(std::cref(nodes[id]));
-
     std::vector<Point2D> vertices;
 
-    for(const Node& node: nodes_)
-        vertices.push_back(node);
+    for(Label id: nodeIds_)
+        vertices.push_back(nodes_[id]);
 
     cellShape_ = Polygon(vertices);
 
@@ -22,19 +23,14 @@ Cell::Cell(const std::vector<Label> &nodeIds, const std::vector<Node> &nodes)
 
     if(volume_ < 0.)
         throw Exception("Cell", "Cell", "faces are not oriented in a counter-clockwise manner.");
+
+    id_ = grid.cells().size();
 }
 
 void Cell::addDiagonalLink(const Cell &cell)
 {
     diagonalLinks_.push_back(DiagonalCellLink(*this, cell));
 }
-
-bool Cell::isInCell(const Point2D &point) const
-{
-    return cellShape_.isInside(point);
-}
-
-//- Private methods
 
 void Cell::addBoundaryLink(const Face& face)
 {
@@ -51,6 +47,24 @@ void Cell::addInteriorLink(const Face& face, const Cell& cell)
 
     interiorLinks_.push_back(InteriorLink(*this, face, cell));
 }
+
+const std::vector< Ref<const Node> > Cell::nodes() const
+{
+    using namespace std;
+
+    vector< Ref<const Node> > nodes;
+    for(Label id: nodeIds_)
+        nodes.push_back(cref(nodes_[id]));
+
+    return nodes;
+}
+
+bool Cell::isInCell(const Point2D &point) const
+{
+    return cellShape_.isInside(point);
+}
+
+//- Private methods
 
 //- External functions
 bool cellsShareFace(const Cell& cellA, const Cell& cellB)

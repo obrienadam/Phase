@@ -5,9 +5,9 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 
-FractionalStep::FractionalStep(const FiniteVolumeGrid2D &grid, const Input &input)
+FractionalStep::FractionalStep(const Input &input, FiniteVolumeGrid2D& grid)
     :
-      Solver(grid, input),
+      Solver(input, grid),
       u(addVectorField(input, "u")),
       sg(addVectorField("sg")),
       gradP(addVectorField("gradP")),

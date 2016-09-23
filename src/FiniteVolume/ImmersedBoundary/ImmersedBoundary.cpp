@@ -33,10 +33,10 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
         {
             ibObjs_.push_back(
                         ImmersedBoundaryObject(ibObject.first,
-                                               solver_.grid(),
                                                center,
                                                ibObject.second.get<Scalar>("geometry.radius"),
-                                               id++)
+                                               id++,
+                                               solver.grid())
                         );
         }
         else if(type == "box")
@@ -53,9 +53,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
             ibObjs_.push_back(
                         ImmersedBoundaryObject(ibObject.first,
-                                               solver_.grid(),
                                                box,
-                                               id++)
+                                               id++,
+                                               solver.grid())
                         );
         }
         else if(type == "polygon")
@@ -90,9 +90,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
             ibObjs_.push_back(
                         ImmersedBoundaryObject(ibObject.first,
-                                               solver_.grid(),
                                                verts,
-                                               id++)
+                                               id++,
+                                               solver.grid())
                         );
         }
         else

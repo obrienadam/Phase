@@ -6,9 +6,9 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 
-PisoMultiphase::PisoMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
+PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
     :
-      Piso(grid, input),
+      Piso(input, grid),
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),

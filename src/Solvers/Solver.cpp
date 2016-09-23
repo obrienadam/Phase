@@ -3,10 +3,10 @@
 #include "Solver.h"
 #include "FaceInterpolation.h"
 
-Solver::Solver(const FiniteVolumeGrid2D &grid, const Input &input)
+Solver::Solver(const Input &input, FiniteVolumeGrid2D &grid)
     :
-      grid_(grid),
-      ib_(input, *this)
+      ib_(input, *this),
+      grid_(grid)
 {
     std::string timeDependentOpt = input.caseInput().get<std::string>("Solver.timeDependent");
     boost::to_lower(timeDependentOpt);

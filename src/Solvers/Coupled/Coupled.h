@@ -8,7 +8,7 @@ class Coupled: public Solver
 {
 public:
 
-    Coupled(const FiniteVolumeGrid2D& grid, const Input& input);
+    Coupled(const Input& input, FiniteVolumeGrid2D &grid);
 
     virtual Scalar solve(Scalar timeStep);
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;

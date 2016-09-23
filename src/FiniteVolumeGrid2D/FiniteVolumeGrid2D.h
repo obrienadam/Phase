@@ -44,10 +44,10 @@ public:
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    UniqueCellGroup& moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const;
-    UniqueCellGroup& moveAllCellsToFluidCellGroup() const;
-    UniqueCellGroup& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids) const;
-    UniqueCellGroup& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids) const;
+    UniqueCellGroup& moveCellsToFluidCellGroup(const std::vector<size_t>& ids);
+    UniqueCellGroup& moveAllCellsToFluidCellGroup();
+    UniqueCellGroup& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids);
+    UniqueCellGroup& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids);
 
     CellGroup& cellGroup(const std::string &name);
     const CellGroup& cellGroup(const std::string &name) const;
@@ -81,7 +81,7 @@ protected:
     void initCells();
     void initConnectivity();
 
-    void constructActiveCellGroup() const;
+    void constructActiveCellGroup();
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
 

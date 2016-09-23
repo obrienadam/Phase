@@ -8,7 +8,7 @@ class Poisson : public Solver
 {
 public:
 
-    Poisson(const FiniteVolumeGrid2D& grid, const Input& input);
+    Poisson(const Input& input, FiniteVolumeGrid2D& grid);
     virtual Scalar solve(Scalar timeStep);
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const { return INFINITY; }
 

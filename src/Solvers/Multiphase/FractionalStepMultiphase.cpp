@@ -5,9 +5,9 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 
-FractionalStepMultiphase::FractionalStepMultiphase(const FiniteVolumeGrid2D &grid, const Input &input)
+FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
     :
-      FractionalStep(grid, input),
+      FractionalStep(input, grid),
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),

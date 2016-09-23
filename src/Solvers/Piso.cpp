@@ -6,9 +6,9 @@
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
-Piso::Piso(const FiniteVolumeGrid2D &grid, const Input &input)
+Piso::Piso(const Input &input, FiniteVolumeGrid2D& grid)
     :
-      Solver(grid, input),
+      Solver(input, grid),
       u(addVectorField(input, "u")),
       sg(addVectorField("sg")),
       gradP(addVectorField("gradP")),

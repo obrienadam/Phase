@@ -17,7 +17,7 @@ int main(int argc, const char* argv[])
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
 
-    Poisson solver(*gridPtr, input);
+    Poisson solver(input, *gridPtr);
     Viewer viewer(solver, input);
 
     solver.solve(0.);

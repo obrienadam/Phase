@@ -17,7 +17,7 @@ int main(int argc, const char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    FractionalStep solver(*gridPtr, input);
+    FractionalStep solver(input, *gridPtr);
     Viewer viewer(solver, input);
 
     RunControl runControl;

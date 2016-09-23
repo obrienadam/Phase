@@ -16,7 +16,7 @@ class Patch
     Patch(const std::string& name, Label id) : name(name), id_(id) {}
     Patch(const Patch& other);
 
-    size_t id() const { return id_; }
+    Label id() const { return id_; }
 
     void addFace(const Face& face);
     void addFaces(const std::vector< Ref<Face> >& faces);
@@ -27,7 +27,7 @@ class Patch
 
 private:
 
-    size_t id_;
+    Label id_;
 
     std::vector< Ref<const Face> > faces_;
 

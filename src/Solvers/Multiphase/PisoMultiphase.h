@@ -11,7 +11,7 @@ public:
     enum InterfaceAdvection{CICSAM, PLIC};
     enum CurvatureEvaluation{CSF, HF, CELESTE};
 
-    PisoMultiphase(const FiniteVolumeGrid2D& grid, const Input& input);
+    PisoMultiphase(const Input& input, FiniteVolumeGrid2D &grid);
 
     virtual Scalar solve(Scalar timeStep);
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;

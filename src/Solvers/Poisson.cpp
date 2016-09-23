@@ -1,9 +1,9 @@
 #include "Poisson.h"
 #include "Laplacian.h"
 
-Poisson::Poisson(const FiniteVolumeGrid2D &grid, const Input &input)
+Poisson::Poisson(const Input &input, FiniteVolumeGrid2D &grid)
     :
-      Solver(grid, input),
+      Solver(input, grid),
       phi(addScalarField(input, "phi")),
       gamma(addScalarField("gamma")),
       phiEqn_(phi, "phi")

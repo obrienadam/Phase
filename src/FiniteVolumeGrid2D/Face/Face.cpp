@@ -3,18 +3,21 @@
 #include "Face.h"
 #include "Cell.h"
 #include "Exception.h"
+#include "FiniteVolumeGrid2D.h"
 
-Face::Face(size_t lNodeId, size_t rNodeId, const std::vector<Node> &nodes, Type type)
+Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type type)
     :
       type_(type),
-      patchPtr_(nullptr)
+      patchPtr_(nullptr),
+      nodes_(grid.nodes()),
+      cells_(grid.cells()),
+      nodeIds_(lNodeId, rNodeId)
 {
-    nodes_.push_back(nodes[lNodeId]);
-    nodes_.push_back(nodes[rNodeId]);
-
-    centroid_ = 0.5*(nodes_[0] + nodes_[1]);
-    tangent_ = nodes_[1] - nodes_[0];
+    centroid_ = 0.5*(lNode() + rNode());
+    tangent_ = rNode() - lNode();
     normal_ = tangent_.normalVec();
+
+    id_ = grid.faces().size();
 }
 
 Vector2D Face::outwardNorm(const Point2D& point) const
@@ -26,16 +29,16 @@ void Face::addCell(const Cell &cell)
 {
     if(type_ == INTERIOR)
     {
-        if(cells_.size() == 2)
+        if(cellIds_.size() == 2)
             throw Exception("Face", "addCell", "an interior face cannot be shared between more than two cells. " + info());
     }
     else if(type_ == BOUNDARY)
     {
-            if(cells_.size() == 1)
+            if(cellIds_.size() == 1)
                 throw Exception("Face", "addCell", "a boundary face cannot be shared by more than one cell. " + info());
     }
 
-    cells_.push_back(cell);
+    cellIds_.push_back(cell.id());
 }
 
 std::string Face::info() const

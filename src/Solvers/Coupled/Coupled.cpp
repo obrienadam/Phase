@@ -1,8 +1,8 @@
 #include "Coupled.h"
 
-Coupled::Coupled(const FiniteVolumeGrid2D &grid, const Input &input)
+Coupled::Coupled(const Input &input, FiniteVolumeGrid2D& grid)
     :
-      Solver(grid, input),
+      Solver(input, grid),
       u(addVectorField(input, "u")),
       p(addScalarField(input, "p")),
       rho(addScalarField("rho")),

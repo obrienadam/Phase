@@ -2,10 +2,10 @@
 #include "LineSegment2D.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
-                                               const FiniteVolumeGrid2D& grid,
                                                const Point2D& center,
                                                Scalar radius,
-                                               Label id)
+                                               Label id,
+                                               FiniteVolumeGrid2D &grid)
     :
       name_(name),
       grid_(grid),
@@ -15,9 +15,9 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
 }
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
-                                               const FiniteVolumeGrid2D& grid,
                                                const std::vector<Point2D> &vertices,
-                                               Label id)
+                                               Label id,
+                                               FiniteVolumeGrid2D& grid)
     :
       name_(name),
       grid_(grid),

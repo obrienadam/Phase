@@ -33,13 +33,12 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
 {
     using namespace std;
 
-    cells_.push_back(Cell(nodeIds, nodes_));
+    cells_.push_back(Cell(nodeIds, *this));
 
     Cell &newCell = cells_.back();
-    newCell.id_ = cells_.size() - 1;
 
     for(Label id: nodeIds)
-        nodes_[id].cells_.push_back(std::cref(newCell));
+        nodes_[id].addCell(newCell);
 
     for(Label i = 0, end = nodeIds.size(); i < end; ++i)
     {
@@ -50,10 +49,9 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
 
         if(it == faceDirectory_.end()) // face doesn't exist, so create it
         {
-            faces_.push_back(Face(n1, n2, nodes_, Face::BOUNDARY));
+            faces_.push_back(Face(n1, n2, *this, Face::BOUNDARY));
 
             Face &face = faces_.back();
-            face.id_ = faces_.size() - 1;
 
             faceDirectory_[key] = face.id();
 
@@ -62,8 +60,7 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
         else // face already exists, but is now an interior face
         {
             Face &face = faces_[it->second];
-
-            face.type_ = Face::INTERIOR;
+            face.setType(Face::INTERIOR);
 
             face.addCell(newCell);
         }
@@ -84,21 +81,20 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
 
 Label FiniteVolumeGrid2D::addNode(const Point2D &point)
 {
-    Label id = nodes_.size();
-    nodes_.push_back(Node(point, id));
-    return id;
+    nodes_.push_back(Node(point, *this));
+    return nodes_.back().id();
 }
 
 void FiniteVolumeGrid2D::assignNodeIds()
 {
     Label id = 0;
     for(Node &node: nodes_)
-        node.id_ = id++;
+        node.setId(id++);
 }
 
 //- Cell related methods
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids) const
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids)
 {
     for(size_t id: ids)
     {
@@ -111,7 +107,7 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector
     return fluidCells_;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup() const
+UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup()
 {
     for(const Cell &cell: cells_)
     {
@@ -125,7 +121,7 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup() const
     return fluidCells_;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vector<size_t>& ids) const
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vector<size_t>& ids)
 {
     for(size_t id: ids)
     {
@@ -138,7 +134,7 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vec
     return inactiveCells_;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids) const
+UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids)
 {
     UniqueCellGroup &group = (cellGroups_.insert(std::make_pair(name, UniqueCellGroup(name)))).first->second;
 
@@ -177,7 +173,7 @@ void FiniteVolumeGrid2D::assignCellIds()
 {
     Label id = 0;
     for(Cell &cell: cells_)
-        cell.id_ = id++;
+        cell.setId(id++);
 }
 
 //- Face related methods
@@ -211,7 +207,7 @@ void FiniteVolumeGrid2D::assignFaceIds()
 {
     Label id = 0;
     for(Face &face: faces_)
-        face.id_ = id++;
+        face.setId(id++);
 }
 
 //- Patch related methods
@@ -244,7 +240,7 @@ void FiniteVolumeGrid2D::initCells()
 {  
     for(Cell &cell: cells_)
     {
-        cell.isActive_ = true;
+        cell.setActive();
         fluidCells_.push_back(cell);
     }
 
@@ -289,21 +285,21 @@ void FiniteVolumeGrid2D::initConnectivity()
     initCells();
 }
 
-void FiniteVolumeGrid2D::constructActiveCellGroup() const
+void FiniteVolumeGrid2D::constructActiveCellGroup()
 {
     Index idx = 0;
     activeCells_.clear();
     activeCells_.reserve(cells_.size());
 
-    for(const Cell &cell: cells_)
+    for(Cell &cell: cells_)
     {
         if(cell.isActive())
         {
             activeCells_.push_back(cell);
-            cell.globalIndex_ = idx++; // compute the global index
+            cell.setGlobalIndex(idx++);
         }
         else
-            cell.globalIndex_ = Cell::INACTIVE;
+            cell.setGlobalIndex(Cell::INACTIVE);
     }
 }
 

@@ -16,7 +16,7 @@ public:
 
     enum TimeDependent{ON, OFF};
 
-    Solver(const FiniteVolumeGrid2D& grid, const Input& input);
+    Solver(const Input& input, FiniteVolumeGrid2D &grid);
 
     virtual std::string info() const;
     virtual Scalar solve(Scalar timeStep) = 0;
@@ -32,7 +32,9 @@ public:
 
     std::vector<Polygon>& addGeometries(const std::string& name);
 
+    FiniteVolumeGrid2D& grid() { return grid_; }
     const FiniteVolumeGrid2D& grid() const { return grid_; }
+
     std::map<std::string, ScalarFiniteVolumeField >& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField >& vectorFields() const { return vectorFields_; }
     std::map<std::string, std::vector<Polygon> >& geometries() const { return geometries_; }
@@ -60,7 +62,7 @@ protected:
     void setRotating(const std::string& function, Scalar amplitude, const Vector2D& center, ScalarFiniteVolumeField& field);
     void setRotating(const std::string& xFunction, const std::string& yFunction, const Vector2D& amplitude, const Vector2D& center, VectorFiniteVolumeField& field);
 
-    const FiniteVolumeGrid2D& grid_;
+    FiniteVolumeGrid2D& grid_;
 
     mutable std::map<std::string, ScalarFiniteVolumeField > scalarFields_;
     mutable std::map<std::string, VectorFiniteVolumeField > vectorFields_;

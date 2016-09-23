@@ -13,6 +13,7 @@
 #include "DiagonalCellLink.h"
 
 class CellGroup;
+class FiniteVolumeGrid2D;
 
 class Cell
 {
@@ -20,7 +21,7 @@ public:
 
     enum {INACTIVE = -1};
 
-    Cell(const std::vector<Label>& nodeIds, const std::vector<Node>& nodes);
+    Cell(const std::vector<Label>& nodeIds, const FiniteVolumeGrid2D& grid);
 
     //- Status, note the use of mutable types
     void setActive() const { isActive_ = true; }
@@ -37,20 +38,25 @@ public:
 
     //- Id
     Label id() const { return id_; }
-    Index globalIndex() const { return globalIndex_; }
+    void setId(Label id) { id_ = id; }
 
-    //- Links
+    Index globalIndex() const { return globalIndex_; }
+    void setGlobalIndex(Index index) { globalIndex_ = index; }
+
+    //- Connectivity links, should really only be done by grid classes
     void addDiagonalLink(const Cell& cell);
+    void addBoundaryLink(const Face& face);
+    void addInteriorLink(const Face& face, const Cell& cell);
 
     const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
     const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
     const std::vector<DiagonalCellLink>& diagonals() const { return diagonalLinks_; }
 
     //- Nodes
-    const std::vector< Ref<const Node>>& nodes() const { return nodes_; }
+    const std::vector< Ref<const Node> > nodes() const;
     const Polygon& shape() const { return cellShape_; }
 
-    Size nFaces() const { return nodes_.size(); }
+    Size nFaces() const { return cellShape_.vertices().size() - 1; }
     Size nInteriorFaces() const { return interiorLinks_.size(); }
     Size nBoundaryFaces() const { return boundaryLinks_.size(); }
     Size nNeighbours() const { return interiorLinks_.size(); }
@@ -62,10 +68,6 @@ public:
 
 private:
 
-    //- Connectivity links, should really only be done by grid classes
-    void addBoundaryLink(const Face& face);
-    void addInteriorLink(const Face& face, const Cell& cell);
-
     mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
     mutable Index globalIndex_;
     Label id_;
@@ -75,15 +77,14 @@ private:
     Scalar volume_;
     Vector2D centroid_;
 
-    std::vector< Ref<const Node> > nodes_;
+    std::vector<Label> nodeIds_;
+    const std::vector<Node>& nodes_;
 
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
     std::vector<DiagonalCellLink> diagonalLinks_;
 
     const CellGroup* cellGroupPtr_;
-
-    friend class FiniteVolumeGrid2D;
 };
 
 bool cellsShareFace(const Cell& cellA, const Cell& cellB);

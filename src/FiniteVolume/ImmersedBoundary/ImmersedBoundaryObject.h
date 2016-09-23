@@ -13,15 +13,15 @@ public:
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string& name,
-                           const FiniteVolumeGrid2D& grid,
                            const Point2D& center,
                            Scalar radius,
-                           Label id);
+                           Label id,
+                           FiniteVolumeGrid2D& grid);
 
     ImmersedBoundaryObject(const std::string& name,
-                           const FiniteVolumeGrid2D& grid,
                            const std::vector<Point2D>& vertices,
-                           Label id);
+                           Label id,
+                           FiniteVolumeGrid2D &grid);
 
     //- The shape
     Shape2D& shape() { return *shapePtr_; }
@@ -66,7 +66,7 @@ protected:
     std::string name_;
     Label id_;
 
-    const FiniteVolumeGrid2D &grid_;
+    FiniteVolumeGrid2D &grid_;
     std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<Label, std::pair<Vector2D, Vector2D> > stencilPoints_;

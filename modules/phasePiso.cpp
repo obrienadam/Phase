@@ -17,7 +17,7 @@ int main(int argc, const char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    Piso solver(*gridPtr, input);
+    Piso solver(input, *gridPtr);
     Viewer viewer(solver, input);
 
     RunControl runControl;
