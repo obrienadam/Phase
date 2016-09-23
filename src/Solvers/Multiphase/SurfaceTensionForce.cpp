@@ -35,7 +35,9 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     {
         ibContactAngles_.insert(
                     std::make_pair(ibObj.id(),
-                                   input.boundaryInput().get<Scalar>("ImmersedBoundaries." + ibObj.name() + ".gamma.contactAngle", thetaAdv_)*M_PI/180.)
+                                   input.boundaryInput().get<Scalar>("ImmersedBoundaries." + ibObj.name() + ".gamma.contactAngle",
+                                                                     input.caseInput().get<Scalar>("Properties.advancingContactAngle")
+                                                                     )*M_PI/180.)
                 );
     }
 }
