@@ -104,14 +104,33 @@ Point2D Polygon::nearestIntersect(const Point2D& point) const
         const Scalar t = dot(xc - edge.first, tan.unitVec());
         const Scalar tmax = edgeVec.mag();
 
+        if (fabs(distSqr - minDistSqr) < Point2D::epsilon()) // Two similar distances, default to a vertex
+        {
+            Scalar distSqrV0 = (point - edge.first).magSqr();
+            Scalar distSqrV1 = (point - edge.second).magSqr();
+
+            if(distSqrV0 < distSqrV1)
+            {
+                minDistSqr = distSqrV0;
+                nearestPoint = edge.first;
+            }
+            else
+            {
+                minDistSqr = distSqrV1;
+                nearestPoint = edge.second;
+            }
+
+            continue;
+        }
+
         if(distSqr < minDistSqr && t >= 0 && t < tmax)
         {
             minDistSqr = distSqr;
             nearestPoint = edge.first + tan;
         }
 
+        //- Checke for a neares vertex
         distSqr = (edge.first - point).magSqr();
-
         if(distSqr < minDistSqr)
         {
             minDistSqr = distSqr;
