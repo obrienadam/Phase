@@ -8,7 +8,7 @@ Solver
 	maxIterations 100
 	timeStep 0.00025
 	maxTime 15
-	maxCo 0.5
+	maxCo 0.8
 
 	numInnerIterations 1
 	numPressureCorrections 2

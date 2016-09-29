@@ -17,8 +17,8 @@ public:
     Scalar maxCourantNumber(Scalar timeStep) const;
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &sg, &gradP;
-    ScalarFiniteVolumeField &p, &rho, &mu, &divUStar;
+    VectorFiniteVolumeField &u, &gradP, &gradDp;
+    ScalarFiniteVolumeField &p, &dp, &rho, &mu, &divUStar;
 
 protected:
 
@@ -28,8 +28,6 @@ protected:
 
     virtual void computeFaceVelocities(Scalar timeStep);
     virtual void computeMassSource(Scalar timeStep);
-
-    Vector2D g_;
 
     Equation<VectorFiniteVolumeField> uEqn_;
     Equation<ScalarFiniteVolumeField> pEqn_;

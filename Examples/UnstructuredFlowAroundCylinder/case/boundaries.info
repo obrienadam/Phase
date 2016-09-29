@@ -7,7 +7,7 @@ Boundaries
     Inlet
     {
       type fixed
-      value (5,0)
+      value (15,0)
     }
 
     Outlet

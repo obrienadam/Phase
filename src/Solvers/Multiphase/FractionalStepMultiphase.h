@@ -16,7 +16,7 @@ public:
 
 
     ScalarFiniteVolumeField &gamma;
-    VectorFiniteVolumeField &gradGamma, &ft;
+    VectorFiniteVolumeField &gradGamma, &ft, &sg, &gradRho;
 
 protected:
 
@@ -24,10 +24,12 @@ protected:
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
     virtual void computeFaceVelocities(Scalar timeStep);
-    virtual void computeMassSource(Scalar timeStep);
+    virtual void correctVelocity(Scalar timeStep);
 
     void computeRho();
     void computeMu();
+
+    Vector2D g_;
 
     Scalar rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;

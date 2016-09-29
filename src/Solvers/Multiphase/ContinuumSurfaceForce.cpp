@@ -11,7 +11,7 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
       gradGammaTilde_(solver.addVectorField("gradGammaTilde"))
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    curvatureCutoffTolerance_ = input.caseInput().get<Scalar>("Solver.curvatureCutoffTolerance", 1e-14);
+    curvatureCutoffTolerance_ = input.caseInput().get<Scalar>("Solver.curvatureCutoffTolerance", 1e-10);
 
     constructSmoothingKernels();
 }

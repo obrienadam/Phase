@@ -25,6 +25,10 @@ Properties
 	mu1 0.01
 	mu2 0.01
 	sigma 0.07
+
+	advancingContactAngle 90
+	recedingContactAngle 90
+
 	g (0,0)
 }
 

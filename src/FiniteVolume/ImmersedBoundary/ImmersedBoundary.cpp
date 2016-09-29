@@ -145,6 +145,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
             if(child.first == "p")
                 ibObjs_.back().addBoundaryType("pCorr", boundaryType);
+            else if(child.first == "dp")
+                ibObjs_.back().addBoundaryType("dp", boundaryType);
         }
 
         ibObjs_.back().setInternalCells();

@@ -28,7 +28,7 @@ protected:
     std::vector< std::vector< Ref<const Cell> > > gradGammaTildeStencils_;
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 
-    ScalarFiniteVolumeField &wGamma_;
+    ScalarFiniteVolumeField &w_;
 
 };
 

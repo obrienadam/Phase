@@ -22,6 +22,8 @@ PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1");
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2");
 
+    g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
+
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
     //- Configuration

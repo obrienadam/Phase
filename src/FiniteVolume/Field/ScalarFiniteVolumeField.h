@@ -7,5 +7,6 @@ typedef FiniteVolumeField<Scalar> ScalarFiniteVolumeField;
 
 ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, ScalarFiniteVolumeField rhs);
 ScalarFiniteVolumeField operator/(ScalarFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
+ScalarFiniteVolumeField operator/(Scalar lhs, ScalarFiniteVolumeField rhs);
 
 #endif

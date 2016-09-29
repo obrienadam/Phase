@@ -27,8 +27,6 @@ Piso::Piso(const Input &input, FiniteVolumeGrid2D& grid)
     rho.savePreviousTimeStep(0, 1);
     mu.savePreviousTimeStep(0, 1);
 
-    g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
-
     nInnerIterations_ = input.caseInput().get<size_t>("Solver.numInnerIterations");
     nPCorrections_ = input.caseInput().get<size_t>("Solver.numPressureCorrections");
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");

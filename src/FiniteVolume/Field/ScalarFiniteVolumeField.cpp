@@ -55,3 +55,14 @@ ScalarFiniteVolumeField operator/(ScalarFiniteVolumeField lhs, const ScalarFinit
     lhs /= rhs;
     return lhs;
 }
+
+ScalarFiniteVolumeField operator/(Scalar lhs, ScalarFiniteVolumeField rhs)
+{
+    for(const Cell& cell: rhs.grid.cells())
+        rhs(cell) = lhs/rhs(cell);
+
+    for(const Face& face: rhs.grid.faces())
+        rhs(face) = lhs/rhs(face);
+
+    return rhs;
+}

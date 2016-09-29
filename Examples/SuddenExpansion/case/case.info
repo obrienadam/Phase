@@ -13,13 +13,13 @@ Solver
 	numInnerIterations 1
 	numPressureCorrections 2
 	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
+	pressureCorrectionRelaxation 0.7
 }
 
 Properties
 {
-	rho 1.2
-	mu 1e-2
+	rho 1
+	mu 1.e-2
 	g (0,0)
 	gamma 0.001
 }
@@ -34,7 +34,7 @@ Viewer
 {
   type tecplot
   vectorFields u,gradP
-  scalarFields p,pCorr,m
+  scalarFields p,dp,pCorr,m
 }
 
 System

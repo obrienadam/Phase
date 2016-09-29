@@ -11,7 +11,7 @@ Solver
 	maxTime 1
 
 	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
+	pressureCorrectionRelaxation 1
 	numInnerIterations 1
 	numPressureCorrections 2
 
@@ -45,15 +45,15 @@ LinearAlgebra
 
 Properties
 {
-	rho1 900
+	rho1 750
 	rho2 998
  	mu1 9e-3
 	mu2 8.94e-4
 	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 150
-	recedingContactAngle 150
+	advancingContactAngle 45
+	recedingContactAngle 45
 }
 
 Grid
@@ -69,7 +69,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u,n,ft,gradRho
-	scalarFields p,pCorr,m,gamma,rho,mu,gammaTilde
+	scalarFields p,pCorr,m,gamma,rho,mu,kappa
 }
 
 Integrators

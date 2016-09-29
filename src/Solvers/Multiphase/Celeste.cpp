@@ -7,13 +7,14 @@ Celeste::Celeste(const Input &input,
                  Solver &solver)
     :
       ContinuumSurfaceForce(input, solver),
-      wGamma_(solver.addScalarField("wGamma"))
+      w_(solver.addScalarField("w"))
 {
     constructMatrices();
 }
 
 VectorFiniteVolumeField Celeste::compute()
 {
+    gamma_.setBoundaryFaces();
     computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
@@ -123,7 +124,7 @@ void Celeste::constructKappaMatrices()
 
                     Vector2D r = stencil.first - cell.centroid();
 
-                    sSqr = std::max(1e-10, r.magSqr());
+                    sSqr = std::max(1e-8, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -154,7 +155,7 @@ void Celeste::constructKappaMatrices()
 
                     Vector2D r = stencil.first - cell.centroid();
 
-                    sSqr = std::max(1e-10, r.magSqr());
+                    sSqr = std::max(1e-8, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -268,7 +269,7 @@ void Celeste::computeCurvature()
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
-                    sSqr = std::max(1e-10, r.magSqr());
+                    sSqr = std::max(1e-8, r.magSqr());
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
 
                     break;
@@ -293,7 +294,7 @@ void Celeste::computeCurvature()
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
-                    sSqr = std::max(1e-10, r.magSqr());
+                    sSqr = std::max(1e-8, r.magSqr());
 
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
                     break;
@@ -323,7 +324,7 @@ void Celeste::computeCurvature()
         kappa_(cell) = bx(0, 0) + by(1, 0);
     }
 
-    weightCurvatures();
+    //weightCurvatures();
     interpolateCurvatureFaces();
 }
 
@@ -333,98 +334,66 @@ void Celeste::weightCurvatures()
     const auto pow8 = [](Scalar x){ return x*x*x*x*x*x*x*x; };
     const Scalar cutoff = 1e-12;
 
-    for(const Cell &cell: wGamma_.grid.fluidCells())
-        wGamma_(cell) = pow8(1. - 2*fabs(0.5 - gammaTilde_(cell)));
+    for(const Cell &cell: w_.grid.fluidCells())
+        w_(cell) = pow8(1. - 2*fabs(0.5 - std::max(0., std::min(1., gammaTilde_(cell)))));
+
+    kappa_.savePreviousIteration();
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
-        Scalar sumW1 = wGamma_(cell), sumW2 = wGamma_(cell);
+        Scalar sumKappaW = kappa_.prevIter()(cell)*w_(cell), sumW = w_(cell);
 
-        for(const InteriorLink &nb: cell.neighbours())
+        for(const InteriorLink& nb: cell.neighbours())
         {
-            if(!nb.cell().isFluidCell())
-                continue;
-
-            sumW1 += wGamma_(nb.cell());
-            sumW2 += wGamma_(nb.cell())*pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
+            sumKappaW += kappa_.prevIter()(nb.cell())*w_(nb.cell());
+            sumW += w_(nb.cell());
         }
 
-        for(const DiagonalCellLink &dg: cell.diagonals())
+        for(const DiagonalCellLink& dg: cell.diagonals())
         {
-            if(!dg.cell().isFluidCell())
-                continue;
-
-            sumW1 += wGamma_(dg.cell());
-            sumW2 += wGamma_(dg.cell())*pow8(dot(n_(dg.cell()), dg.rCellVec().unitVec()));
+            sumKappaW += kappa_.prevIter()(dg.cell())*w_(dg.cell());
+            sumW += w_(dg.cell());
         }
 
-        if(fabs(sumW1) < cutoff || fabs(sumW2) < cutoff)
+        if(sumW < cutoff)
             kappa_(cell) = 0.;
+        else
+            kappa_(cell) = sumKappaW/sumW;
     }
 
     kappa_.savePreviousIteration();
 
     for(const Cell &cell: kappa_.grid.fluidCells())
     {
-        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
+        const ScalarFiniteVolumeField& kappaPrev = kappa_.prevIter();
 
-        for(const InteriorLink &nb: cell.neighbours())
+        Scalar num = kappaPrev(cell)*w_(cell), den = w_(cell);
+
+        for(const InteriorLink& nb: cell.neighbours())
         {
-            if(!nb.cell().isFluidCell())
+            if(gradGammaTilde()(nb.cell()).magSqr() < cutoff)
                 continue;
 
-            sumW += wGamma_(nb.cell());
-            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell());
+            Scalar w = w_(nb.cell())*pow8(dot(n_(cell), nb.rCellVec().unitVec()));
+
+            num += kappaPrev(nb.cell())*w;
+            den += w;
         }
 
-        for(const DiagonalCellLink &dg: cell.diagonals())
+        for(const DiagonalCellLink& dg: cell.diagonals())
         {
-            if(!dg.cell().isFluidCell())
+            if(gradGammaTilde()(dg.cell()).magSqr() < cutoff)
                 continue;
 
-            sumW += wGamma_(dg.cell());
-            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell());
+            Scalar w = w_(dg.cell())*pow8(dot(n_(cell), dg.rCellVec().unitVec()));
+
+            num += kappaPrev(dg.cell())*w;
+            den += w;
         }
 
-        if(fabs(sumW) < cutoff)
-        {
+        if(den < cutoff)
             kappa_(cell) = 0.;
-            continue;
-        }
-    }
-
-    kappa_.savePreviousIteration();
-
-    for(const Cell &cell: kappa_.grid.fluidCells())
-    {
-        Scalar sumW = wGamma_(cell), sumKappaW = wGamma_(cell)*kappa_.prevIter()(cell);
-
-        for(const InteriorLink &nb: cell.neighbours())
-        {
-            if(!nb.cell().isFluidCell())
-                continue;
-
-            const Scalar mQ = pow8(dot(n_(nb.cell()), nb.rCellVec().unitVec()));
-
-            sumW += wGamma_(nb.cell())*mQ;
-            sumKappaW += kappa_.prevIter()(nb.cell())*wGamma_(nb.cell())*mQ;
-        }
-
-        for(const DiagonalCellLink &dg: cell.diagonals())
-        {
-            if(!dg.cell().isFluidCell())
-                continue;
-
-            const Scalar mQ = pow8(dot(n_(cell), dg.rCellVec().unitVec()));
-
-            sumW += wGamma_(dg.cell())*mQ;
-            sumKappaW += kappa_.prevIter()(dg.cell())*wGamma_(dg.cell())*mQ;
-        }
-
-        if(fabs(sumW) < cutoff)
-        {
-            kappa_(cell) = 0.;
-            continue;
-        }
+        else
+            kappa_(cell) = num/den;
     }
  }

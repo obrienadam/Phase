@@ -29,6 +29,7 @@ protected:
 
     virtual void rhieChowInterpolation();
 
+    Vector2D g_;
     Scalar rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;
 

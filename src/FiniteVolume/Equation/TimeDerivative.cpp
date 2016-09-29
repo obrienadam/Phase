@@ -69,8 +69,8 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& rho, Vector
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, rho(cell)*cell.volume()/timeStep));
         entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, rho(cell)*cell.volume()/timeStep));
 
-        eqn.boundaries()(rowX) += rho0(cell)*cell.volume()*prevField[cell.id()].x/timeStep;
-        eqn.boundaries()(rowY) += rho0(cell)*cell.volume()*prevField[cell.id()].y/timeStep;
+        eqn.boundaries()(rowX) += rho0(cell)*cell.volume()*prevField(cell).x/timeStep;
+        eqn.boundaries()(rowY) += rho0(cell)*cell.volume()*prevField(cell).y/timeStep;
     }
 
     eqn.assemble(entries);
