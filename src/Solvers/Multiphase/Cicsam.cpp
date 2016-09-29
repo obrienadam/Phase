@@ -22,7 +22,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
 {
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(gamma);
-    const Scalar k = 1.5; //- 0 For a full UQ scheme, 2 for max HC
+    const Scalar k = 1; //- 0 For a full UQ scheme, 2 for max HC
 
     entries.reserve(5*gamma.grid.nActiveCells());
 

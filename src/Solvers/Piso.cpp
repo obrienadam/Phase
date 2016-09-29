@@ -95,7 +95,7 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 {
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho*u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(sg));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -121,7 +121,7 @@ Scalar Piso::solvePCorrEqn()
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
     Scalar error = pCorrEqn_.solve();
 
-    fv::computeInverseWeightedGradient(rho, pCorr, gradPCorr);
+    fv::computeGradient(fv::FACE_TO_CELL, pCorr, gradPCorr);
 
     return error;
 }
@@ -201,7 +201,7 @@ void Piso::correctPressure()
 
     interpolateFaces(fv::INVERSE_VOLUME, p);
     computeStaticPressure();
-    fv::computeInverseWeightedGradient(rho, p, gradP);
+    fv::computeGradient(fv::FACE_TO_CELL, p, gradP, true);
 }
 
 void Piso::correctVelocity()

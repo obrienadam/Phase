@@ -88,24 +88,34 @@ Scalar PisoMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 
 void PisoMultiphase::computeRho()
 {
+    using namespace std;
+
     const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
 
     rho.savePreviousTimeStep(0, 1);
 
     for(const Cell& cell: rho.grid.activeCells())
-        rho(cell) = (1. - alpha(cell))*rho1_ + alpha(cell)*rho2_;
+    {
+        Scalar w = max(0., min(1., alpha(cell)));
+        rho(cell) = (1 - w)*rho1_ + w*rho2_;
+    }
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
 }
 
 void PisoMultiphase::computeMu()
 {
+    using namespace std;
+
     const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
 
     mu.savePreviousTimeStep(0, 1);
 
     for(const Cell& cell: mu.grid.activeCells())
-        mu(cell) = (1. - alpha(cell))*mu1_ + alpha(cell)*mu2_;
+    {
+        Scalar w = max(0., min(1., alpha(cell)));
+        mu(cell) = (1 - w)*mu1_ + w*mu2_;
+    }
 
     interpolateFaces(fv::INVERSE_VOLUME, mu);
 }
@@ -118,10 +128,9 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 
     sg = fv::gravity(rho, g_);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(rho, u)
              == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
 
-    uEqn_.relax(momentumOmega_);
     Scalar error = uEqn_.solve();
 
     rhieChowInterpolation();
@@ -138,7 +147,6 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     {
     case CICSAM:
         gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
-        //gammaEqn_ = (fv::ddt(gamma, timeStep) + fv::div(u, gamma) + ib_.eqns(gamma) == 0.);
         break;
 
     case PLIC:
@@ -161,8 +169,8 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
-            continue;
+        //if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
+         //   continue;
 
         u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell));
     }

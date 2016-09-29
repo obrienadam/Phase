@@ -37,6 +37,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
 
     std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
+    TensorFiniteVolumeField gradField(field.grid, "gradField");
+    fv::computeGradient(fv::FACE_TO_CELL, field, gradField);
 
     entries.reserve(10*nActiveCells);
 
@@ -52,11 +54,25 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
             const Index colY = colX + nActiveCells;
             const Vector2D& rc = nb.rCellVec();
 
-            Tensor2D gradField = outer(field(nb.cell()) - field(cell), rc/rc.magSqr());
+            Vector2D r;
 
-            Vector2D r = dot(gradField, rc);
-            r.x /= field(nb.cell()).x - field(cell).x;
-            r.y /= field(nb.cell()).y - field(cell).y;
+            Scalar flux = dot(u(nb.face()), nb.outwardNorm());
+
+            if(flux > 0)
+            {
+                Vector2D tmp = 2*dot(gradField(nb.cell()), rc);
+                r.x = tmp.x/(field(cell).x - field(nb.cell()).x) - 1;
+                r.y = tmp.y/(field(cell).y - field(nb.cell()).y) - 1;
+            }
+            else
+            {
+                Vector2D tmp = 2*dot(gradField(cell), rc);
+                r.x = tmp.x/(field(nb.cell()).x - field(cell).x) - 1;
+                r.y = tmp.y/(field(nb.cell()).y - field(cell).y) - 1;
+            }
+
+            r.x = isnan(r.x) ? 0 : r.x;
+            r.y = isnan(r.y) ? 0 : r.y;
 
             Vector2D phi;
 
@@ -82,6 +98,9 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField &u, VectorFi
                 phi = Vector2D(charm(r.x), charm(r.y));
                 break;
             }
+
+            phi.x = isnan(phi.x) ? 0 : phi.x;
+            phi.y = isnan(phi.y) ? 0 : phi.y;
 
             const Scalar faceFlux = dot(u(nb.face()), nb.outwardNorm());
 

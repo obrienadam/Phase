@@ -14,7 +14,9 @@ public:
     ImmersedBoundary(const Input& input, Solver &solver);
 
     Equation<ScalarFiniteVolumeField> eqns(ScalarFiniteVolumeField& field);
+
     Equation<VectorFiniteVolumeField> eqns(VectorFiniteVolumeField& field);
+    Equation<VectorFiniteVolumeField> eqns(const ScalarFiniteVolumeField& rho, VectorFiniteVolumeField& field);
 
     const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
 

@@ -123,7 +123,7 @@ void Celeste::constructKappaMatrices()
 
                     Vector2D r = stencil.first - cell.centroid();
 
-                    sSqr = r.magSqr();
+                    sSqr = std::max(1e-10, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -154,7 +154,7 @@ void Celeste::constructKappaMatrices()
 
                     Vector2D r = stencil.first - cell.centroid();
 
-                    sSqr = r.magSqr();
+                    sSqr = std::max(1e-10, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -268,7 +268,7 @@ void Celeste::computeCurvature()
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
-                    sSqr = r.magSqr();
+                    sSqr = std::max(1e-10, r.magSqr());
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
 
                     break;
@@ -293,7 +293,7 @@ void Celeste::computeCurvature()
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
-                    sSqr = r.magSqr();
+                    sSqr = std::max(1e-10, r.magSqr());
 
                     n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
                     break;

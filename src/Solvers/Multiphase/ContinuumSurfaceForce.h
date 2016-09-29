@@ -11,7 +11,6 @@ public:
                           Solver &solver);
 
     virtual VectorFiniteVolumeField compute();
-    const VectorFiniteVolumeField& n() const { return n_; }
 
     virtual const ScalarFiniteVolumeField& gammaTilde() const { return gammaTilde_; }
     virtual const VectorFiniteVolumeField& gradGammaTilde() const { return gradGammaTilde_; }
