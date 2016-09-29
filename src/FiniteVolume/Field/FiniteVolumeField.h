@@ -29,6 +29,8 @@ public:
     T boundaryRefValue(const Face& face) const;
     std::pair<BoundaryType, T> boundaryInfo(const Face& face) const;
 
+    void setBoundaryFaces();
+
     //- Face-centered values
     const std::vector<T>& faces() const { return faces_; }
     std::vector<T>& faces() { return faces_; }

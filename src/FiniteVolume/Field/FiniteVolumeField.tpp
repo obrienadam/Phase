@@ -90,6 +90,22 @@ std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::
 }
 
 template<class T>
+void FiniteVolumeField<T>::setBoundaryFaces()
+{
+    for(const Face &face: grid.boundaryFaces())
+    {
+        switch(boundaryType(face))
+        {
+        case FIXED:
+            break;
+        case NORMAL_GRADIENT: case SYMMETRY:
+            faces_[face.id()] = std::vector<T>::operator [](face.lCell().id());
+            break;
+        }
+    }
+}
+
+template<class T>
 FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
     previousTimeSteps_.push_front(std::make_pair(timeStep, FiniteVolumeField<T>(*this)));

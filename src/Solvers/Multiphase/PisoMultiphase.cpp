@@ -4,6 +4,7 @@
 #include "Celeste.h"
 #include "CrankNicolson.h"
 #include "FaceInterpolation.h"
+#include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
@@ -12,6 +13,8 @@ PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
+      gradRho(addVectorField("gradRho")),
+      sg(addVectorField("sg")),
       gammaEqn_(input, gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
@@ -101,6 +104,13 @@ void PisoMultiphase::computeRho()
     }
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
+    fv::computeInverseWeightedGradient(rho, rho, gradRho);
+
+    for(const Cell& cell: sg.grid.fluidCells())
+        sg(cell) = dot(g_, cell.centroid())*gradRho(cell);
+
+    for(const Face& face: sg.grid.faces())
+        sg(face) = dot(g_, face.centroid())*gradRho(face);
 }
 
 void PisoMultiphase::computeMu()
@@ -126,10 +136,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    sg = fv::gravity(rho, g_);
-
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(rho, u)
-             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) + fv::source(sg));
+             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) - fv::source(sg));
 
     Scalar error = uEqn_.solve();
 
@@ -169,10 +177,11 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        //if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
-         //   continue;
+//        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
+//            continue;
 
-        u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell));
+        u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell))
+                + df*sg(face) - (g*d(lCell)*sg(lCell) + (1. - g)*d(rCell)*sg(rCell));
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -186,7 +195,8 @@ void PisoMultiphase::rhieChowInterpolation()
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u(face) += df*ft(face) - d(cellP)*ft(cellP);
+            u(face) += df*ft(face) - d(cellP)*ft(cellP)
+                    + df*sg(face) - d(cellP)*sg(cellP);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:

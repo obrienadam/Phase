@@ -68,7 +68,7 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,n,ft
+	vectorFields u,n,ft,gradRho
 	scalarFields p,pCorr,m,gamma,rho,mu,gammaTilde
 }
 

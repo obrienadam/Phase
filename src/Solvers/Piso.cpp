@@ -10,7 +10,6 @@ Piso::Piso(const Input &input, FiniteVolumeGrid2D& grid)
     :
       Solver(input, grid),
       u(addVectorField(input, "u")),
-      sg(addVectorField("sg")),
       gradP(addVectorField("gradP")),
       gradPCorr(addVectorField("gradPCorr")),
       p(addScalarField(input, "p")),
@@ -93,9 +92,7 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
-    sg = fv::gravity(rho, g_);
-
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -121,7 +118,8 @@ Scalar Piso::solvePCorrEqn()
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
     Scalar error = pCorrEqn_.solve();
 
-    fv::computeGradient(fv::FACE_TO_CELL, pCorr, gradPCorr);
+    pCorr.setBoundaryFaces();
+    fv::computeInverseWeightedGradient(rho, pCorr, gradPCorr);
 
     return error;
 }
@@ -158,8 +156,7 @@ void Piso::rhieChowInterpolation()
         u(face) = g*u(cellP) + (1. - g)*u(cellQ)
                 + (1. - momentumOmega_)*(uStar(face) - (g*uStar(cellP) + (1. - g)*uStar(cellQ)))
                 + (rhof0*df*uPrev(face) - (g*rhoP0*dP*uPrev(cellP) + (1. - g)*rhoQ0*dQ*uPrev(cellQ)))/dt //- This term is very important!
-                - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ))
-                + df*sg(face) - (g*dP*sg(cellP) + (1. - g)*dQ*sg(cellQ));
+                - df*gradP(face) + (g*dP*gradP(cellP) + (1. - g)*dQ*gradP(cellQ));
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -176,8 +173,7 @@ void Piso::rhieChowInterpolation()
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) = u(face.lCell())
                     + rhof0*df*uPrev(face) - rhoP0*d(face.lCell())*uPrev(face.lCell())
-                    - df*gradP(face) + d(face.lCell())*gradP(face.lCell())
-                    + df*sg(face) - d(face.lCell())*sg(face.lCell());
+                    - df*gradP(face) + d(face.lCell())*gradP(face.lCell());
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -199,9 +195,8 @@ void Piso::correctPressure()
     for(const Cell& cell: p.grid.activeCells())
         p(cell) += pCorrOmega_*pCorr(cell);
 
-    interpolateFaces(fv::INVERSE_VOLUME, p);
-    computeStaticPressure();
-    fv::computeGradient(fv::FACE_TO_CELL, p, gradP, true);
+    p.setBoundaryFaces();
+    fv::computeInverseWeightedGradient(rho, p, gradP);
 }
 
 void Piso::correctVelocity()
@@ -244,23 +239,4 @@ void Piso::correctVelocity()
         for(const BoundaryLink& bd: cell.boundaries())
             m(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
-}
-
-void Piso::computeStaticPressure()
-{
-    for(const Face& face: grid_.boundaryFaces())
-    {
-        if(p.boundaryType(face) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
-            p(face) = p(face.lCell()) + rho(face.lCell())*dot(g_, face.centroid() - face.lCell().centroid());
-    }
-
-    for(const ImmersedBoundaryObject& ibObj: ib_.ibObjs())
-        for(const Cell &cell: ibObj.cells())
-            for(const InteriorLink &nb: cell.neighbours())
-            {
-                if(grid_.fluidCells().isInGroup(nb.cell()) && ibObj.boundaryType(p.name()) == ImmersedBoundaryObject::NORMAL_GRADIENT)
-                {
-                    p(nb.face()) = p(nb.cell()) + rho(nb.cell())*dot(g_, nb.face().centroid() - nb.cell().centroid());
-                }
-            }
 }
