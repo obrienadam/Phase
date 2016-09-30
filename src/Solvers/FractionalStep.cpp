@@ -94,7 +94,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
     computeMassSource(timeStep);
 
-    pEqn_ = (fv::laplacian(1/rho, dp) + ib_.eqns(dp) == divUStar);
+    pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == divUStar);
     Scalar error = pEqn_.solve();
 
     for(const Cell& cell: p.grid.activeCells())
@@ -189,10 +189,10 @@ void FractionalStep::computeMassSource(Scalar timeStep)
     for(const Cell &cell: grid_.fluidCells())
     {
         for(const InteriorLink &nb: cell.neighbours())
-            divUStar(cell) += dot(u(nb.face()), nb.outwardNorm())/timeStep;
+            divUStar(cell) += dot(u(nb.face()), nb.outwardNorm());
 
         for(const BoundaryLink &bd: cell.boundaries())
-            divUStar(cell) += dot(u(bd.face()), bd.outwardNorm())/timeStep;
+            divUStar(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 }
 
