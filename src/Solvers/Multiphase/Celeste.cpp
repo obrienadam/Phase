@@ -14,8 +14,6 @@ Celeste::Celeste(const Input &input,
 
 VectorFiniteVolumeField Celeste::compute()
 {
-    gamma_.setBoundaryFaces();
-    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();

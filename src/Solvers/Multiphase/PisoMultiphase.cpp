@@ -164,7 +164,12 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
         break;
     }
 
-    return gammaEqn_.solve();
+    Scalar error = gammaEqn_.solve();
+
+    gamma.setBoundaryFaces();
+    fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
+
+    return error;
 }
 
 void PisoMultiphase::rhieChowInterpolation()

@@ -74,7 +74,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     computeMu();
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho.prev(0)*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP - ft.prev(0) - sg.prev(0)));
+             == fv::laplacian(mu, u) - fv::source(gradP - ft - sg.prev(0)));
 
     Scalar error = uEqn_.solve();
 
@@ -107,6 +107,10 @@ void FractionalStepMultiphase::computeFaceVelocities(Scalar timeStep)
     {
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
+
+        if(!(lCell.isFluidCell() && rCell.isFluidCell()))
+            continue;
+
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
         u(face) += timeStep*(ft(face)/rho(face) - g*ft0(lCell)/rho0(lCell) - (1. - g)*ft0(rCell)/rho0(rCell)
