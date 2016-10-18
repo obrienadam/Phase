@@ -11,9 +11,12 @@ class CommandLine
 public:
 
     CommandLine();
-    CommandLine(int argc, const char* argv[], Input& input);
+    CommandLine(int argc, const char* argv[]);
 
-    void parseArguments(int argc, const char* argv[], Input &input);
+    void setOptions(const std::map<std::string, std::string>& options);
+    void parseArguments(int argc, const char* argv[]);
+
+    std::string getOption(const std::string& option);
 
     int argc() const { return argc_; }
     const char** argv() const { return argv_; }

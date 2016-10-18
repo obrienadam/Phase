@@ -3,7 +3,16 @@
 #include "CgnsUnstructuredGrid.h"
 #include "Exception.h"
 
+CgnsUnstructuredGrid::CgnsUnstructuredGrid()
+    :
+      FiniteVolumeGrid2D()
+{
+    fileIsOpen_ = false;
+}
+
 CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
+    :
+      CgnsUnstructuredGrid()
 {
     const std::string filename = input.caseInput().get<std::string>("Grid.filename");
     const Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
@@ -49,6 +58,45 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
 
     initConnectivity();
     computeBoundingBox();
+}
+
+void CgnsUnstructuredGrid::openNewMesh(const std::string &filename, const std::string &baseName)
+{
+    cg_open(filename.c_str(), CG_MODE_WRITE, &fileId_);
+    cg_base_write(fileId_, baseName.c_str(), 2, 2, &baseId_);
+    fileIsOpen_ = true;
+}
+
+void CgnsUnstructuredGrid::closeMesh()
+{
+    cg_close(fileId_);
+    fileIsOpen_ = false;
+}
+
+int CgnsUnstructuredGrid::addZone(const std::string &zoneName, int nNodes, int nCells)
+{
+    cgsize_t sizes[] = {nNodes, nCells};
+    int zoneId;
+    cg_zone_write(fileId_, baseId_, zoneName.c_str(), sizes, Unstructured, &zoneId);
+
+    return zoneId;
+}
+
+void CgnsUnstructuredGrid::addZoneNodes(int zoneId, const std::vector<Point2D> &nodes)
+{
+    std::vector<double> coordsX, coordsY;
+    coordsX.reserve(nodes.size());
+    coordsY.reserve(nodes.size());
+
+    for(const Point2D& node: nodes)
+    {
+        coordsX.push_back(node.x);
+        coordsY.push_back(node.y);
+    }
+
+    int coordId;
+    cg_coord_write(fileId_, baseId_, zoneId, RealDouble, "CoordinateX", coordsX.data(), &coordId);
+    cg_coord_write(fileId_, baseId_, zoneId, RealDouble, "CoordinateY", coordsY.data(), &coordId);
 }
 
 //- Private helper methods

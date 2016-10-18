@@ -12,7 +12,7 @@ int main(int argc, const char* argv[])
     using namespace std;
 
     Input input;
-    CommandLine(argc, argv, input);
+    CommandLine(argc, argv);
 
     input.parseInputFile();
 

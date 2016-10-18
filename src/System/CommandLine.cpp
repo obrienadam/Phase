@@ -13,19 +13,24 @@ CommandLine::CommandLine()
     };
 }
 
-CommandLine::CommandLine(int argc, const char *argv[], Input &input)
+CommandLine::CommandLine(int argc, const char *argv[])
     :
       CommandLine()
 {
-    parseArguments(argc, argv, input);
+    parseArguments(argc, argv);
 }
 
-void CommandLine::parseArguments(int argc, const char *argv[], Input& input)
+void CommandLine::setOptions(const std::map<std::string, std::string> &options)
+{
+    options_ = options;
+}
+
+void CommandLine::parseArguments(int argc, const char *argv[])
 {
     argc_ = argc;
     argv_ = argv;
 
-    for(int argNo = 1; argNo < argc; ++argNo)
+    for(int argNo = 1; argNo < argc; argNo += 2)
     {
         auto it = options_.find(argv[argNo]);
 
@@ -35,7 +40,19 @@ void CommandLine::parseArguments(int argc, const char *argv[], Input& input)
             printHelpMessage(argv[0]);
         else if(it->first == "--version")
             printVersrionInfo(argv[0]);
+        else
+            parsedArgs_[argv[argNo]] = argv[argNo + 1];
     }
+}
+
+std::string CommandLine::getOption(const std::string &option)
+{
+    auto it = parsedArgs_.find(option);
+
+    if(it == parsedArgs_.end())
+        throw Exception("CommandLine", "getOption", "unrecognized option \"" + option + "\".");
+
+    return it->second;
 }
 
 //- Private

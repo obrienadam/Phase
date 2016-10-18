@@ -65,9 +65,6 @@ public:
     double min(double val) const;
     double max(double val) const;
 
-    //- Partitions the grid on the communicator
-    void partitionGrid(const FiniteVolumeGrid2D& grid);
-
     //- Perform field communications across processes
     void sendMessages(ScalarFiniteVolumeField& field) const;
     void sendMessages(VectorFiniteVolumeField& field) const;
