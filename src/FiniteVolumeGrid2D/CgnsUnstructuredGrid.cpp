@@ -1,5 +1,3 @@
-#include <cgnslib.h>
-
 #include "CgnsUnstructuredGrid.h"
 #include "Exception.h"
 
@@ -60,14 +58,34 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
     computeBoundingBox();
 }
 
-void CgnsUnstructuredGrid::openNewMesh(const std::string &filename, const std::string &baseName)
+void CgnsUnstructuredGrid::newFile(const std::string &filename, const std::string &baseName)
 {
+    if(fileIsOpen_)
+        closeFile();
+
     cg_open(filename.c_str(), CG_MODE_WRITE, &fileId_);
     cg_base_write(fileId_, baseName.c_str(), 2, 2, &baseId_);
     fileIsOpen_ = true;
 }
 
-void CgnsUnstructuredGrid::closeMesh()
+void CgnsUnstructuredGrid::openFile(const std::string &filename)
+{
+    if(fileIsOpen_)
+        closeFile();
+
+    cg_open(filename.c_str(), CG_MODE_MODIFY, &fileId_);
+
+    int nBases;
+    cg_nbases(fileId_, &nBases);
+
+    if(nBases != 1)
+        throw Exception("CgnsUnstructuredGrid", "openFile", "only one base is allowed.");
+
+    baseId_ = 1;
+    fileIsOpen_ = true;
+}
+
+void CgnsUnstructuredGrid::closeFile()
 {
     cg_close(fileId_);
     fileIsOpen_ = false;
@@ -75,15 +93,21 @@ void CgnsUnstructuredGrid::closeMesh()
 
 int CgnsUnstructuredGrid::addZone(const std::string &zoneName, int nNodes, int nCells)
 {
-    cgsize_t sizes[] = {nNodes, nCells};
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "addZone", "no cgns file is currently open.");
+
+    cgsize_t sizes[] = {nNodes, nCells, 0};
     int zoneId;
     cg_zone_write(fileId_, baseId_, zoneName.c_str(), sizes, Unstructured, &zoneId);
 
     return zoneId;
 }
 
-void CgnsUnstructuredGrid::addZoneNodes(int zoneId, const std::vector<Point2D> &nodes)
+void CgnsUnstructuredGrid::addNodes(int zoneId, const std::vector<Point2D> &nodes)
 {
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "addNodes", "no cgns file is currently open.");
+
     std::vector<double> coordsX, coordsY;
     coordsX.reserve(nodes.size());
     coordsY.reserve(nodes.size());
@@ -97,6 +121,83 @@ void CgnsUnstructuredGrid::addZoneNodes(int zoneId, const std::vector<Point2D> &
     int coordId;
     cg_coord_write(fileId_, baseId_, zoneId, RealDouble, "CoordinateX", coordsX.data(), &coordId);
     cg_coord_write(fileId_, baseId_, zoneId, RealDouble, "CoordinateY", coordsY.data(), &coordId);
+}
+
+int CgnsUnstructuredGrid::addTriCells(int zoneId, const std::vector<cgsize_t> &cells)
+{
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "addTriCells", "no cgns file currently open.");
+
+    int secId;
+    cg_section_write(fileId_, baseId_, zoneId, "GridElements", TRI_3, 1, cells.size()/3, 0, cells.data(), &secId);
+    return secId;
+}
+
+int CgnsUnstructuredGrid::addMixedCells(int zoneId, int nCells, const std::vector<cgsize_t> &cells)
+{
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "addMixedCells", "no cgns file is currently open.");
+
+    int secId;
+
+    cg_section_write(fileId_, baseId_, zoneId, "GridElements", MIXED, 1, nCells, 0, cells.data(), &secId);
+    return secId;
+}
+
+int CgnsUnstructuredGrid::addBc(int zoneId, const std::string &name, const std::vector<cgsize_t> &faces)
+{
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "addBc", "no cgns file is currently open.");
+
+    int secId;
+
+    int nSecs;
+    cg_nsections(fileId_, baseId_, zoneId, &nSecs);
+
+    cgsize_t maxElement = 0, start, end;
+    for(int secNo = 1; secNo <= nSecs; ++secNo)
+    {
+        char secName[256];
+        ElementType_t type;
+        int nBoundary;
+
+        cg_section_read(fileId_, baseId_, zoneId, secNo, secName, &type, &start, &end, &nBoundary, NULL);
+        maxElement = std::max(maxElement, end);
+    }
+
+    start = maxElement + 1;
+    end = start + faces.size()/2 - 1;
+
+    cg_section_write(fileId_, baseId_, zoneId, (name + "Faces").c_str(), BAR_2, start, end, 0, faces.data(), &secId);
+
+    int bcId;
+    cgsize_t pointRange[] = {start, end};
+
+    cg_boco_write(fileId_, baseId_, zoneId, name.c_str(), BCGeneral, PointRange, end - start + 1, pointRange, &bcId);
+
+    return bcId;
+}
+
+int CgnsUnstructuredGrid::connectZones(int zoneId, const std::vector<cgsize_t> &faces, int donorZoneId, const std::vector<cgsize_t>& donorCells)
+{
+    using namespace std;
+
+    if(!fileIsOpen_)
+        throw Exception("CgnsUnstructuredGrid", "connectZones", "no cgns file is currently open.");
+
+    int interfaceId;
+    cgsize_t sizes[3];
+    char donorName[256];
+
+    cg_zone_read(fileId_, baseId_, donorZoneId, donorName, sizes);
+
+    cg_conn_write(fileId_, baseId_, zoneId,
+                  (string(donorName) + "_interface").c_str(), EdgeCenter, Abutting1to1,
+                  PointList, faces.size(), faces.data(),
+                  donorName, Unstructured, CellListDonor,
+                  LongInteger, donorCells.size(), donorCells.data(), &interfaceId);
+
+    return interfaceId;
 }
 
 //- Private helper methods

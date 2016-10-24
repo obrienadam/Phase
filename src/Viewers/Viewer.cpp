@@ -67,7 +67,7 @@ Viewer::Viewer(const Solver &solver, const Input &input, const std::string &cust
 
     //- Write connectivity
     std::vector<cgsize_t> connectivity;
-    connectivity.reserve(5*solver.grid().nNodes());
+    connectivity.reserve(5*solver.grid().nCells());
 
     for(const Cell& cell: solver.grid().cells())
     {

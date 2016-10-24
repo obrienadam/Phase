@@ -169,6 +169,17 @@ const CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name) const
         return cellGroups_.find(name)->second;
 }
 
+const std::vector<Ref<const Cell> > FiniteVolumeGrid2D::getCells(const std::vector<Label> &ids) const
+{
+    std::vector<Ref<const Cell> > cells;
+    cells.reserve(ids.size());
+
+    for(Label id: ids)
+        cells.push_back(std::cref(cells_[id]));
+
+    return cells;
+}
+
 void FiniteVolumeGrid2D::assignCellIds()
 {
     Label id = 0;

@@ -52,6 +52,8 @@ public:
     CellGroup& cellGroup(const std::string &name);
     const CellGroup& cellGroup(const std::string &name) const;
 
+    const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
+
     void assignCellIds();
 
     //- Face related methods

@@ -1,7 +1,6 @@
 #include <cstdarg>
 
 #include <mpi.h>
-#include <metis.h>
 
 #include "Communicator.h"
 #include "Exception.h"

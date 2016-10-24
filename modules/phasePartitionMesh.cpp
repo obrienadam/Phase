@@ -22,7 +22,6 @@ int main(int argc, const char *argv[])
     input.parseInputFile();
 
     CgnsUnstructuredGrid grid(input);
-    CgnsUnstructuredGrid partitionedGrid();
 
     int nElems = grid.nCells();
     int nNodes = grid.nNodes();
@@ -47,8 +46,8 @@ int main(int argc, const char *argv[])
     idx_t nPartitions = std::stoi(cl.getOption("--np"));
     idx_t objVal;
 
-    vector<idx_t> elemPart(grid.nCells());
-    vector<idx_t> nodePart(grid.nNodes());
+    vector<idx_t> cellPartition(grid.nCells());
+    vector<idx_t> nodePartition(grid.nNodes());
 
     printf("Partitioning mesh into %d subdomains...\n", nPartitions);
     int status = METIS_PartMeshDual(&nElems, &nNodes,
@@ -56,11 +55,57 @@ int main(int argc, const char *argv[])
                                     NULL, NULL,
                                     &nCommon, &nPartitions,
                                     NULL, NULL, &objVal,
-                                    elemPart.data(), nodePart.data());
+                                    cellPartition.data(), nodePartition.data());
     if(status == METIS_OK)
         printf("Sucessfully partitioned mesh.\n");
     else
         throw Exception("phasePartitionMesh", "phasePartitionMesh", "an error occurred during partitioning.");
+
+    //- Construct a cell list for each partition
+    vector< vector<Label> > partitionCellLists(nPartitions);
+
+    for(const Cell& cell: grid.cells())
+        partitionCellLists[cellPartition[cell.id()]].push_back(cell.id());
+
+    //- Create the new file for the partitioned grid
+    CgnsUnstructuredGrid partitionedGrid;
+    partitionedGrid.newFile("partitionedMesh.cgns", input.caseInput().get<string>("CaseName"));
+
+    //- Loop over all cell lists. Construct the nodes and cells for each partition
+    for(int partitionNo = 0; partitionNo < nPartitions; ++partitionNo)
+    {
+        const vector<Ref<const Cell>> cellList = grid.getCells(partitionCellLists[partitionNo]);
+        map<Label, Label> nodeIdMap;
+        vector<Point2D> nodes;
+        vector<cgsize_t> cells;
+        cells.reserve(5*cellList.size());
+
+        //- Construct node list and node map, as well as cells
+        Label locId = 0;
+        for(const Cell& cell: cellList)
+        {
+            cells.push_back(cell.nodes().size() == 3 ? TRI_3 : QUAD_4);
+
+            for(const Node& node: cell.nodes())
+            {
+                auto it = nodeIdMap.find(node.id());
+
+                if(it == nodeIdMap.end())
+                {
+                    nodeIdMap[node.id()] = locId++;
+                    nodes.push_back(node);
+                }
+
+                cells.push_back(nodeIdMap[node.id()] + 1);
+            }
+        }
+
+        int zoneNo = partitionedGrid.addZone("partition_" + to_string(partitionNo), nodes.size(), cellList.size());
+        partitionedGrid.addNodes(zoneNo, nodes);
+        partitionedGrid.addMixedCells(zoneNo, cellList.size(), cells);
+    }
+
+    partitionedGrid.closeFile();
 
     return 0;
 }
