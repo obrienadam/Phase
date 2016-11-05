@@ -11,6 +11,27 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
     fluidCells_.rename("FluidCells");
 }
 
+void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &elemInds, const std::vector<Label> &elems)
+{
+    for(const Point2D& node: nodes)
+        addNode(node);
+
+    for(int i = 0; i < elemInds.size() - 1; ++i)
+    {
+        int start = elemInds[i];
+        int end = elemInds[i + 1];
+        std::vector<Label> ids;
+
+        for(int j = start; j < end; ++j)
+            ids.push_back(elems[j]);
+
+        createCell(ids);
+    }
+
+    initConnectivity();
+    computeBoundingBox();
+}
+
 //- size info
 std::string FiniteVolumeGrid2D::gridInfo() const
 {
@@ -222,7 +243,7 @@ void FiniteVolumeGrid2D::assignFaceIds()
 }
 
 //- Patch related methods
-void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Ref<Face> > &faces)
+void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vector<Label> &faces)
 {
     auto insert = patches_.insert(std::make_pair(patchName, Patch(patchName, patches_.size())));
 
@@ -231,8 +252,8 @@ void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vec
 
     Patch &patch = (insert.first)->second;
 
-    for(Face &face: faces)
-        patch.addFace(face);
+    for(Label id: faces)
+        patch.addFace(faces_[id]);
 }
 
 const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const

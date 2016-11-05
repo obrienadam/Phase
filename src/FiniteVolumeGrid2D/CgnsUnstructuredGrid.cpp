@@ -326,7 +326,7 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
         vector<cgsize_t> elemIds(nElems);
         cg_boco_read(fileId, baseId, zoneId, bcId, elemIds.data(), NULL);
 
-        vector< Ref<Face> > faces;
+        vector<Label> faces;
         for(cgsize_t elemId: elemIds)
         {
             Label n1, n2;
@@ -346,7 +346,7 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
                 }
             }
 
-            faces.push_back(ref(faces_[findFace(n1, n2)]));
+            faces.push_back(findFace(n1, n2));
         }
 
         applyPatch(name, faces);

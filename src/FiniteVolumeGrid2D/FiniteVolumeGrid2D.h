@@ -18,6 +18,9 @@ public:
 
     FiniteVolumeGrid2D(Size nNodes = 0, Size nCells = 0, Size nFaces = 0);
 
+    //- Initialization
+    void init(const std::vector<Point2D>& nodes, const std::vector<Label>& elemInds, const std::vector<Label>& elems);
+
     //- Size info
     Size nNodes() const { return nodes_.size(); }
     Size nCells() const { return cells_.size(); }
@@ -85,7 +88,7 @@ protected:
 
     void constructActiveCellGroup();
     void computeBoundingBox();
-    void applyPatch(const std::string& patchName, const std::vector< Ref<Face> >& faces);
+    void applyPatch(const std::string& patchName, const std::vector<Label> &faces);
 
     //- Node related data
     std::vector<Node> nodes_;

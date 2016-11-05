@@ -21,65 +21,55 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     Scalar hy = height/nCellsY_;
 
     //- Create nodes
+    std::vector<Point2D> nodes;
+
     for(Label j = 0; j < nNodesY; ++j)
         for(Label i = 0; i < nNodesX; ++i)
-            addNode(Point2D(i*hx, j*hy));
+            nodes.push_back(Point2D(i*hx, j*hy));
 
     //- Create cells
-    for(Label j = 0; j < nCellsY_; ++j)
-        for(Label i = 0; i < nCellsX_; ++i)
-        {
-            std::vector<Label> nids = {
-                node(i, j).id(),
-                node(i + 1, j).id(),
-                node(i + 1, j + 1).id(),
-                node(i, j + 1).id(),
-            };
+    std::vector<Label> elemInds(1, 0), elems;
 
-            createCell(nids);
+    for(Label j = 0; j < nNodesY - 1; ++j)
+        for(Label i = 0; i < nNodesX - 1; ++i)
+        {
+            elemInds.push_back(elemInds.back() + 4);
+            elems.push_back(j*nNodesX + i);
+            elems.push_back(j*nNodesX + i + 1);
+            elems.push_back((j + 1)*nNodesX + i + 1);
+            elems.push_back((j + 1)*nNodesX + i);
         }
 
-    //- Construct default patches
-    std::vector< Ref<Face> > xm, xp, ym, yp;
+    init(nodes, elemInds, elems);
 
-    // x- patch
+    //- Construct default patches
+    std::vector<Label> xm, xp, ym, yp;
+
+    //- x patches
     for(Label j = 0; j < nCellsY_; ++j)
     {
         xm.push_back(
-                    std::ref(faces_[findFace(node(0, j).id(), node(0, j + 1).id())])
+                    findFace(node(0, j).id(), node(0, j + 1).id())
+                    );
+        xp.push_back(
+                    findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())
                     );
     }
     applyPatch("x-", xm);
-
-    // x+ patch
-    for(Label j = 0; j < nCellsY_; ++j)
-    {
-        xp.push_back(
-                    std::ref(faces_[findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())])
-                    );
-    }
     applyPatch("x+", xp);
 
-    // y- patch
+    //- y patches
     for(Label i = 0; i < nCellsX_; ++i)
     {
         ym.push_back(
-                    std::ref(faces_[findFace(node(i, 0).id(), node(i + 1, 0).id())])
+                    findFace(node(i, 0).id(), node(i + 1, 0).id())
+                    );
+        yp.push_back(
+                    findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())
                     );
     }
     applyPatch("y-", ym);
-
-    // y+ patch
-    for(Label i = 0; i < nCellsX_; ++i)
-    {
-        yp.push_back(
-                    std::ref(faces_[findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())])
-                    );
-    }
     applyPatch("y+", yp);
-
-    initConnectivity();
-    computeBoundingBox();
 }
 
 Cell& StructuredRectilinearGrid::operator()(Label i, Label j)
