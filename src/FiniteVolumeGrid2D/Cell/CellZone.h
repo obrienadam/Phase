@@ -1,13 +1,14 @@
-#ifndef UNIQUE_CELL_GROUP_H
-#define UNIQUE_CELL_GROUP_H
+#ifndef CELL_ZONE_H
+#define CELL_ZONE_H
 
 #include "CellGroup.h"
 
-class UniqueCellGroup : public CellGroup
+class CellZone : public CellGroup
 {
 public:
 
-    UniqueCellGroup(const std::string& name = "N/A") : CellGroup(name) {}
+    CellZone(const std::string& name = "N/A") : CellGroup(name) {}
+    ~CellZone();
 
     virtual void push_back(const Cell &cell); // does not insert if the cell is found in the registry
     virtual void moveToGroup(const Cell &cell); // inserts or moves the cell to this group
@@ -18,7 +19,7 @@ public:
 
 private:
 
-    static std::map< const Cell*, Ref<UniqueCellGroup> > registry_;
+    static std::map< const Cell*, Ref<CellZone> > registry_;
 };
 
 #endif

@@ -1,17 +1,22 @@
-#include "UniqueCellGroup.h"
+#include "CellZone.h"
 
 // Initialize the registry
-std::map< const Cell*, Ref<UniqueCellGroup> > UniqueCellGroup::registry_;
+std::map< const Cell*, Ref<CellZone> > CellZone::registry_;
 
 //- public static methods
 
-void UniqueCellGroup::push_back(const Cell &cell)
+CellZone::~CellZone()
+{
+    clear();
+}
+
+void CellZone::push_back(const Cell &cell)
 {
     if(registry_.insert(std::make_pair(&cell, std::ref(*this))).second)
         CellGroup::push_back(cell);
 }
 
-void UniqueCellGroup::moveToGroup(const Cell &cell)
+void CellZone::moveToGroup(const Cell &cell)
 {
     auto insertion = registry_.insert(std::make_pair(&cell, std::ref(*this)));
 
@@ -19,18 +24,18 @@ void UniqueCellGroup::moveToGroup(const Cell &cell)
         CellGroup::push_back(cell);
     else
     {
-        UniqueCellGroup &group = (insertion.first)->second; // get the cell group that currently contains the cell
+        CellZone &group = (insertion.first)->second; // get the cell group that currently contains the cell
         group.CellGroup::remove(cell);
         CellGroup::push_back(cell);
         (insertion.first)->second = std::ref(*this);
     }
 }
 
-void UniqueCellGroup::moveAllCellsToThisGroup()
+void CellZone::moveAllCellsToThisGroup()
 {
     for(auto &entry: registry_) // careful with this iterator
     {
-        UniqueCellGroup &group = entry.second;
+        CellZone &group = entry.second;
 
         if(&group == this)
             continue;
@@ -41,13 +46,13 @@ void UniqueCellGroup::moveAllCellsToThisGroup()
     }
 }
 
-void UniqueCellGroup::remove(const Cell &cell)
+void CellZone::remove(const Cell &cell)
 {
     registry_.erase(&cell);
     CellGroup::remove(cell);
 }
 
-void UniqueCellGroup::clear()
+void CellZone::clear()
 {
     for(const Cell &cell: cells_)
         registry_.erase(&cell);

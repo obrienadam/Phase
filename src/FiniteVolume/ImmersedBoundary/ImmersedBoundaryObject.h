@@ -48,7 +48,7 @@ public:
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
-    const CellGroup& cells() const { return grid_.cellGroup(name_ + "_cells"); }
+    const CellGroup& cells() const { return grid_.cellZone(name_ + "_cells"); }
 
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }

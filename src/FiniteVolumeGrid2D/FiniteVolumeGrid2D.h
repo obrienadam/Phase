@@ -9,7 +9,7 @@
 #include "Face.h"
 #include "Patch.h"
 #include "BoundingBox.h"
-#include "UniqueCellGroup.h"
+#include "CellZone.h"
 #include "Search.h"
 
 class FiniteVolumeGrid2D
@@ -25,7 +25,7 @@ public:
     Size nNodes() const { return nodes_.size(); }
     Size nCells() const { return cells_.size(); }
     Size nFaces() const { return faces_.size(); }
-    Size nActiveCells() const { return activeCells_.size(); }
+    Size nActiveCells() const { return activeCells().size(); }
     std::string gridInfo() const;
 
     //- Create grid entities
@@ -41,19 +41,20 @@ public:
     const std::vector< Ref<const Cell> >& quadCells() const { return quadCells_; }
     const std::vector< Ref<const Cell> >& triCells() const { return triCells_; }
 
-    const CellGroup& activeCells() const { return activeCells_; }
-    const CellGroup& inactiveCells() const { return inactiveCells_; }
-    const UniqueCellGroup& fluidCells() const { return fluidCells_; }
+    //- Cell groups and zones
+    CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
+    CellZone &cellZone(const std::string& name) const { return cellZones_.find(name)->second; }
+
+    const CellGroup& activeCells() const { return cellGroup("active"); }
+    const CellZone& inactiveCells() const { return cellZone("inactive"); }
+    const CellZone& fluidCells() const { return cellZone("fluid"); }
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    UniqueCellGroup& moveCellsToFluidCellGroup(const std::vector<size_t>& ids);
-    UniqueCellGroup& moveAllCellsToFluidCellGroup();
-    UniqueCellGroup& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids);
-    UniqueCellGroup& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids);
-
-    CellGroup& cellGroup(const std::string &name);
-    const CellGroup& cellGroup(const std::string &name) const;
+    CellZone& moveCellsToFluidCellGroup(const std::vector<size_t>& ids);
+    CellZone& moveAllCellsToFluidCellGroup();
+    CellZone& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids);
+    CellZone& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids);
 
     const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
 
@@ -99,11 +100,8 @@ protected:
     std::vector< Ref<const Cell> > quadCells_;
     std::vector< Ref<const Cell> > triCells_;
 
-    mutable CellGroup activeCells_; // Stores all currently active cells for which a solution should be computed
-
-    mutable UniqueCellGroup fluidCells_; // Contains all fluid cells for which the standard fv operators will be applied
-    mutable UniqueCellGroup inactiveCells_;
-    mutable std::map<std::string, UniqueCellGroup> cellGroups_; // Unique cell groups specified by the solver
+    mutable std::map<std::string, CellGroup> cellGroups_;
+    mutable std::map<std::string, CellZone> cellZones_;
 
     //- Face related data
     std::vector<Face> faces_;

@@ -8,7 +8,10 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
     nodes_.reserve(nNodes);
     cells_.reserve(nCells);
     faces_.reserve(nFaces);
-    fluidCells_.rename("FluidCells");
+
+    cellGroups_["active"] = CellGroup("active");
+    cellZones_["fluid"] = CellZone("fluid");
+    cellZones_["inactive"] = CellZone("inactive");
 }
 
 void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &elemInds, const std::vector<Label> &elems)
@@ -115,20 +118,22 @@ void FiniteVolumeGrid2D::assignNodeIds()
 
 //- Cell related methods
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids)
+CellZone& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids)
 {
+    CellZone& fluidCells = cellZones_.find("fluid")->second;
+
     for(size_t id: ids)
     {
         cells_[id].setActive();
         cells_[id].setFluidCell();
-        fluidCells_.moveToGroup(cells_[id]);
+        fluidCells.moveToGroup(cells_[id]);
     }
 
     constructActiveCellGroup();
-    return fluidCells_;
+    return fluidCells;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup()
+CellZone& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup()
 {
     for(const Cell &cell: cells_)
     {
@@ -136,28 +141,30 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveAllCellsToFluidCellGroup()
         cell.setFluidCell();
     }
 
-    fluidCells_.moveAllCellsToThisGroup();
+    cellZones_.find("fluid")->second.moveAllCellsToThisGroup();
 
     constructActiveCellGroup();
-    return fluidCells_;
+    return cellZones_.find("fluid")->second;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vector<size_t>& ids)
+CellZone& FiniteVolumeGrid2D::moveCellsToInactiveCellGroup(const std::vector<size_t>& ids)
 {
+    CellZone& inactiveCells = cellZones_.find("inactive")->second;
+
     for(size_t id: ids)
     {
         cells_[id].setInactive();
         cells_[id].setNonFluidCell();
-        inactiveCells_.moveToGroup(cells_[id]);
+        inactiveCells.moveToGroup(cells_[id]);
     }
 
     constructActiveCellGroup();
-    return inactiveCells_;
+    return inactiveCells;
 }
 
-UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids)
+CellZone& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids)
 {
-    UniqueCellGroup &group = (cellGroups_.insert(std::make_pair(name, UniqueCellGroup(name)))).first->second;
+    CellZone &group = (cellZones_.insert(std::make_pair(name, CellZone(name)))).first->second;
 
     for(size_t id: ids)
     {
@@ -168,26 +175,6 @@ UniqueCellGroup& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& nam
 
     constructActiveCellGroup();
     return group;
-}
-
-CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name)
-{
-    if(name == "fluidCells")
-        return fluidCells_;
-    else if(name == "activeCells")
-        return activeCells_;
-    else
-        return cellGroups_[name];
-}
-
-const CellGroup& FiniteVolumeGrid2D::cellGroup(const std::string &name) const
-{
-    if(name == "fluidCells")
-        return fluidCells_;
-    else if(name == "activeCells")
-        return activeCells_;
-    else
-        return cellGroups_.find(name)->second;
 }
 
 const std::vector<Ref<const Cell> > FiniteVolumeGrid2D::getCells(const std::vector<Label> &ids) const
@@ -269,11 +256,13 @@ void FiniteVolumeGrid2D::initNodes()
 }
 
 void FiniteVolumeGrid2D::initCells()
-{  
+{
+    CellZone& fluidCells = cellZones_["fluid"];
+
     for(Cell &cell: cells_)
     {
         cell.setActive();
-        fluidCells_.push_back(cell);
+        fluidCells.push_back(cell);
     }
 
     for(const Face& face: faces_)
@@ -320,18 +309,24 @@ void FiniteVolumeGrid2D::initConnectivity()
 void FiniteVolumeGrid2D::constructActiveCellGroup()
 {
     Index idx = 0;
-    activeCells_.clear();
-    activeCells_.reserve(cells_.size());
+    CellGroup& activeGroup = cellGroups_["active"];
+    CellZone& inactiveZone = cellZones_["inactive"];
+
+    activeGroup.clear();
+    inactiveZone.clear();
 
     for(Cell &cell: cells_)
     {
         if(cell.isActive())
         {
-            activeCells_.push_back(cell);
+            activeGroup.push_back(cell);
             cell.setGlobalIndex(idx++);
         }
         else
+        {
+            inactiveZone.push_back(cell);
             cell.setGlobalIndex(Cell::INACTIVE);
+        }
     }
 }
 
