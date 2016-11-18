@@ -1,4 +1,6 @@
 #include "FiniteVolumeGrid2D.h"
+#include "Communicator.h"
+#include "metis.h"
 #include "Exception.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
@@ -16,6 +18,8 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
 
 void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &elemInds, const std::vector<Label> &elems)
 {
+    reset();
+
     for(const Point2D& node: nodes)
         addNode(node);
 
@@ -35,21 +39,36 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vect
     computeBoundingBox();
 }
 
+void FiniteVolumeGrid2D::reset()
+{
+    nodes_.clear();
+    cells_.clear();
+    faces_.clear();;
+    quadCells_.clear();
+    triCells_.clear();
+    cellGroups_.clear();
+    cellZones_.clear();
+    faceDirectory_.clear();
+    interiorFaces_.clear();
+    boundaryFaces_.clear();
+    patches_.clear();
+}
+
 //- size info
 std::string FiniteVolumeGrid2D::gridInfo() const
 {
     using namespace std;
 
     return "Finite volume grid info:\n"
-            "------------------------\n"
-            "Number of nodes: " + to_string(nodes_.size()) + "\n"
-            "Number of quad cells: " + to_string(quadCells_.size()) + "\n"
-            "Number of tri cells: " + to_string(triCells_.size()) + "\n"
-            "Number of cells total: " + to_string(cells_.size()) + "\n"
-            "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n"
-            "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n"
-            "Number of faces total: " + to_string(faces_.size()) + "\n"
-            "Bounding box: " + bBox_.toString() + "\n";
+           "------------------------\n"
+           "Number of nodes: " + to_string(nodes_.size()) + "\n"
+                                                            "Number of quad cells: " + to_string(quadCells_.size()) + "\n"
+                                                                                                                      "Number of tri cells: " + to_string(triCells_.size()) + "\n"
+                                                                                                                                                                              "Number of cells total: " + to_string(cells_.size()) + "\n"
+                                                                                                                                                                                                                                     "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n"
+                                                                                                                                                                                                                                                                                                       "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n"
+                                                                                                                                                                                                                                                                                                                                                                         "Number of faces total: " + to_string(faces_.size()) + "\n"
+                                                                                                                                                                                                                                                                                                                                                                                                                                "Bounding box: " + bBox_.toString() + "\n";
 }
 
 //- Create grid entities
@@ -246,6 +265,169 @@ void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vec
 const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
 {
     return nodeSearch_.kNearestNeighbourSearch(pt, 1)[0];
+}
+
+std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementConnectivity() const
+{
+    using namespace std;
+    pair<vector<int>, vector<int>> connectivity;
+    connectivity.first.push_back(0);
+
+    for(const Cell& cell: cells_)
+    {
+        connectivity.first.push_back(connectivity.first.back() + cell.nodes().size());
+
+        for(const Node& node: cell.nodes())
+            connectivity.second.push_back(node.id());
+    }
+
+    return connectivity;
+}
+
+void FiniteVolumeGrid2D::partition(const Communicator &comm)
+{
+    using namespace std;
+
+    if(comm.mainProc())
+    {
+        idx_t nPartitions = comm.nProcs();
+        idx_t nElems = nCells();
+        idx_t nNodes = this->nNodes();
+        pair<vector<idx_t>, vector<idx_t>> mesh = nodeElementConnectivity();
+        idx_t nCommon = 2;
+        idx_t objVal;
+        vector<idx_t> cellPartition(nCells());
+        vector<idx_t> nodePartition(this->nNodes());
+
+        printf("Partitioning mesh into %d subdomains...\n", nPartitions);
+        int status = METIS_PartMeshDual(&nElems, &nNodes,
+                                        mesh.first.data(), mesh.second.data(),
+                                        NULL, NULL,
+                                        &nCommon, &nPartitions,
+                                        NULL, NULL, &objVal,
+                                        cellPartition.data(), nodePartition.data());
+        if(status == METIS_OK)
+            printf("Sucessfully partitioned mesh.\n");
+        else
+            throw Exception("finiteVolumeGrid2D", "partition", "an error occurred during partitioning.");
+
+        //- Main partitioning
+        vector<vector<Label>> cellLists(comm.nProcs());
+        for(Label id = 0; id < cellPartition.size(); ++id)
+            cellLists[cellPartition[id]].push_back(id);
+
+        vector<vector<vector<Label>>> sendOrdering(comm.nProcs()), buffers(comm.nProcs());
+
+        //- Buffer regions
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            sendOrdering[proc].resize(comm.nProcs());
+            buffers[proc].resize(comm.nProcs());
+
+            vector<bool> cellIsInBuffer(nCells(), false);
+
+            for(const Cell& cell: getCells(cellLists[proc]))
+            {
+                for(const InteriorLink& nb: cell.neighbours())
+                {
+                    int nbProc = cellPartition[nb.cell().id()];
+
+                    if(nbProc != proc)
+                    {
+                        cellLists[proc].push_back(nb.cell().id());
+                        sendOrdering[proc][nbProc].push_back(cell.id());
+                        buffers[nbProc][proc].push_back(cell.id());
+                        cellIsInBuffer[nb.cell().id()] = true;
+                    }
+                }
+            }
+        } // end buffer regions
+
+        //- construct local node element lists
+        vector<vector<Label>> localCellInds(comm.nProcs()), localCells(comm.nProcs());
+        vector<vector<Point2D>> localNodes(comm.nProcs());
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            vector<Label>& cellInds = localCellInds[proc];
+            vector<Label>& cells = localCells[proc];
+            vector<Point2D>& nodes = localNodes[proc];
+
+            vector<Label> nodeIdMap(nNodes, -1);
+
+            cellInds.push_back(0);
+
+            Label nextLocalNodeId = 0;
+            for(const Cell& cell: getCells(cellLists[proc]))
+            {
+                cellInds.push_back(cellInds.back() + cell.nodes().size());
+
+                for(const Node& node: cell.nodes())
+                {
+                    if(nodeIdMap[node.id()] == -1)
+                    {
+                        nodeIdMap[node.id()] = nextLocalNodeId++;
+                        nodes.push_back(nodes_[node.id()]);
+                    }
+                    cells.push_back(nodeIdMap[node.id()]);
+                }
+            }
+        } // end construct local node element lists
+
+        //- Communicate local elements to other processes
+        vector<int> nCellsPerProc, procElementListSizes, nNodesPerProc;
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            nCellsPerProc.push_back(cellLists[proc].size());
+            procElementListSizes.push_back(localCellInds[proc].size());
+            nNodesPerProc.push_back(localNodes[proc].size());
+        }
+
+        int nCellsThisProc = comm.scatter(comm.mainProcNo(), nCellsPerProc);
+        int elementListSize = comm.scatter(comm.mainProcNo(), procElementListSizes);
+        int nNodesThisProc = comm.scatter(comm.mainProcNo(), nNodesPerProc);
+
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            if(proc == comm.rank())
+                continue;
+
+            comm.ibsend(proc, cellLists[proc]);
+            comm.ibsend(proc, localCellInds[proc]);
+            comm.ibsend(proc, localCells[proc]);
+            comm.ibsend(proc, localNodes[proc]);
+        }
+
+        comm.waitAll();
+
+        const vector<Point2D>& nodes = localNodes[comm.rank()];
+        const vector<Label>& cellInds = localCellInds[comm.rank()];
+        const vector<Label>& cells = localCells[comm.rank()];
+
+        init(nodes, cellInds, cells);
+    }
+    else
+    {
+        //- General cell/mesh info
+        int nCellsThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
+        int elementListSize = comm.scatter(comm.mainProcNo(), vector<int>(1));
+        int nNodesThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
+
+        vector<Label> globalCellIds(nCellsThisProc);
+        vector<Label> cellInds(nCellsThisProc + 1);
+        vector<Label> cells(elementListSize);
+        vector<Point2D> nodes(nNodesThisProc);
+
+        comm.irecv(comm.mainProcNo(), globalCellIds);
+        comm.irecv(comm.mainProcNo(), cellInds);
+        comm.irecv(comm.mainProcNo(), cells);
+        comm.irecv(comm.mainProcNo(), nodes);
+
+        //- Identify buffer cells and receive send order
+        //- Receive patch info
+
+        comm.waitAll();
+        init(nodes, cellInds, cells);
+    }
 }
 
 //- Protected methods

@@ -39,6 +39,11 @@ public:
     void broadcast(int root, std::vector<double>& doubles) const;
     void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
 
+    //- Collectives
+    void scatter(int root, const std::vector<int>& send, std::vector<int>& recv);
+    int scatter(int root, const std::vector<int> &send) const;
+    void scatterv(int root, const std::vector<int>& sendBuff, const std::vector<int> &counts, std::vector<int> &recvBuff);
+
     //- Blocking point-to-point communication
     void send(int dest, const std::vector<double>& vals) const;
     void send(int dest, const std::vector<Vector2D> &vals) const;

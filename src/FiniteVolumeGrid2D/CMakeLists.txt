@@ -14,4 +14,4 @@ add_subdirectory(Face)
 add_subdirectory(Link)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
-target_link_libraries(FiniteVolumeGrid2D System Geometry Cell Face Link Node)
+target_link_libraries(FiniteVolumeGrid2D System Communicator metis Geometry Cell Face Link Node)

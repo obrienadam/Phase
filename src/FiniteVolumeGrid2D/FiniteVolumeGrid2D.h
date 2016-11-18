@@ -12,6 +12,8 @@
 #include "CellZone.h"
 #include "Search.h"
 
+class Communicator;
+
 class FiniteVolumeGrid2D
 {
 public:
@@ -20,6 +22,7 @@ public:
 
     //- Initialization
     void init(const std::vector<Point2D>& nodes, const std::vector<Label>& elemInds, const std::vector<Label>& elems);
+    void reset();
 
     //- Size info
     Size nNodes() const { return nodes_.size(); }
@@ -77,6 +80,10 @@ public:
 
     //- Entity searches
     const Node& findNearestNode(const Point2D& pt) const;
+
+    //- Parallel/paritioning
+    std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
+    void partition(const Communicator& comm);
 
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }

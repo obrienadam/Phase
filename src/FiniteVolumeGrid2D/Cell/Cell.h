@@ -70,7 +70,7 @@ private:
 
     mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
     mutable Index globalIndex_;
-    Label id_;
+    Label id_, globalId_;
 
     Polygon cellShape_;
 

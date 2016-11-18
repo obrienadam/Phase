@@ -73,6 +73,29 @@ void Communicator::broadcast(int root, std::vector<Vector2D> &vector2Ds) const
     MPI_Bcast(vector2Ds.data(), vector2Ds.size(), MPI_VECTOR2D_, root, comm_);
 }
 
+void Communicator::scatter(int root, const std::vector<int> &send, std::vector<int> &recv)
+{
+    MPI_Scatter(send.data(), send.size()/nProcs(), MPI_INT, recv.data(), recv.size(), MPI_INT, root, comm_);
+}
+
+int Communicator::scatter(int root, const std::vector<int> &send) const
+{
+    int num[1];
+    MPI_Scatter(send.data(), 1, MPI_INT, num, 1, MPI_INT, root, comm_);
+    return num[0];
+}
+
+void Communicator::scatterv(int root, const std::vector<int>& sendBuff, const std::vector<int>& counts, std::vector<int>& recvBuff)
+{
+    std::vector<int> displ(nProcs(), 0);
+
+    for(int i = 1; i < nProcs(); ++i)
+        displ[i] = counts[i - 1];
+
+    recvBuff.resize(counts[rank()]);
+    MPI_Scatterv(sendBuff.data(), counts.data(), displ.data(), MPI_INT, recvBuff.data(), counts[rank()], MPI_INT, root, comm_);
+}
+
 //- Blocking point-to-point communication
 void Communicator::send(int dest, const std::vector<double> &vals) const
 {
