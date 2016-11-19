@@ -18,7 +18,7 @@ class Communicator
 {
 public:
 
-    static void init() { MPI_Init(NULL, NULL); }
+    static void init(int argc, char* argv[]);
     static void finalize() { MPI_Finalize(); }
 
     Communicator(MPI_Comm comm);
@@ -34,34 +34,32 @@ public:
     int mainProcNo() const { return 0; }
     bool mainProc() const { return rank() == mainProcNo(); }
 
+    //- Sync
+    void barrier() const;
+
     //- Communication
+    int broadcast(int root, int integer) const;
     void broadcast(int root, std::vector<int>& ints) const;
     void broadcast(int root, std::vector<double>& doubles) const;
+    void broadcast(int root, std::string& str) const;
     void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
 
     //- Collectives
-    void scatter(int root, const std::vector<int>& send, std::vector<int>& recv);
     int scatter(int root, const std::vector<int> &send) const;
-    void scatterv(int root, const std::vector<int>& sendBuff, const std::vector<int> &counts, std::vector<int> &recvBuff);
+    std::vector<unsigned long> allGather(unsigned long val) const;
 
     //- Blocking point-to-point communication
-    void send(int dest, const std::vector<double>& vals) const;
-    void send(int dest, const std::vector<Vector2D> &vals) const;
+    void send(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
+    void send(int dest, const std::vector<Vector2D>& vals, int tag = 0) const;
 
     void recv(int source, std::vector<double>& vals) const;
     void recv(int source, std::vector<Vector2D> &vals) const;
 
     //- Non-blocking point-to-point communication
-    void isend(int dest, const::std::vector<double>& vals) const;
-    void isend(int dest, const::std::vector<Vector2D>& vals) const;
+    void ibsend(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
 
-    void ibsend(int dest, const std::vector<unsigned long>& vals) const;
-    void ibsend(int dest, const std::vector<double>& vals) const; // buffered sends
-    void ibsend(int dest, const std::vector<Vector2D>& vals) const;
-
-    void irecv(int source, std::vector<unsigned long>& vals) const;
-    void irecv(int source, std::vector<double>& vals) const;
-    void irecv(int source, std::vector<Vector2D>& vals) const;
+    void irecv(int source, std::vector<unsigned long>& vals, int tag = 0) const;
+    void irecv(int source, std::vector<Vector2D>& vals, int tag = 0) const;
 
     void waitAll() const;
 
@@ -70,14 +68,9 @@ public:
     double min(double val) const;
     double max(double val) const;
 
-    //- Perform field communications across processes
-    void sendMessages(ScalarFiniteVolumeField& field) const;
-    void sendMessages(VectorFiniteVolumeField& field) const;
-
 private:
 
     static MPI_Datatype MPI_VECTOR2D_;
-    static MPI_Datatype initVector2DDataType();
 
     MPI_Comm comm_;
 

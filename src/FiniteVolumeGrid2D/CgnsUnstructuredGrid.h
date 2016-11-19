@@ -13,10 +13,9 @@ public:
     CgnsUnstructuredGrid();
     CgnsUnstructuredGrid(const Input& input);
 
-    //- Methods for manipulating cgns files, but not for initializing a usable mesh
-    void newFile(const std::string& filename, const std::string& baseName);
-    void openFile(const std::string& filename);
-    void closeFile();
+    //- Save the current mesh to a file
+    void save(const std::string& filename) const;
+    void save(const std::string& filename, const Communicator &comm) const;
 
     int addZone(const std::string& zoneName, int nNodes, int nCells);
     void addNodes(int zoneId, const std::vector<Point2D>& nodes);

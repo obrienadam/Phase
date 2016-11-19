@@ -47,9 +47,10 @@ std::string Face::info() const
 
     return "Face info: "
             "Id: " + to_string(id_) + " "
-            "Centroid: " + centroid_.toString() + " "
-            "Normal: " + normal_.toString() + " "
-            "Tangent: " + normal_.toString() + " ";
+            "Node 1: " + to_string(lNode().id()) + ", "
+            "Node 2: " + to_string(rNode().id()) + ", "
+            "Centroid: " + centroid_.toString() + ", "
+            "Normal: " + normal_.toString();
 }
 
 //- Private methods

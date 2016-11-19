@@ -1,5 +1,6 @@
 #include "FiniteVolumeGrid2D.h"
 #include "Communicator.h"
+#include <cgnslib.h>
 #include "metis.h"
 #include "Exception.h"
 
@@ -16,21 +17,21 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
     cellZones_["inactive"] = CellZone("inactive");
 }
 
-void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &elemInds, const std::vector<Label> &elems)
+void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &cellInds, const std::vector<Label> &cells)
 {
     reset();
 
     for(const Point2D& node: nodes)
         addNode(node);
 
-    for(int i = 0; i < elemInds.size() - 1; ++i)
+    for(int i = 0; i < cellInds.size() - 1; ++i)
     {
-        int start = elemInds[i];
-        int end = elemInds[i + 1];
+        int start = cellInds[i];
+        int end = cellInds[i + 1];
         std::vector<Label> ids;
 
         for(int j = start; j < end; ++j)
-            ids.push_back(elems[j]);
+            ids.push_back(cells[j]);
 
         createCell(ids);
     }
@@ -44,8 +45,6 @@ void FiniteVolumeGrid2D::reset()
     nodes_.clear();
     cells_.clear();
     faces_.clear();;
-    quadCells_.clear();
-    triCells_.clear();
     cellGroups_.clear();
     cellZones_.clear();
     faceDirectory_.clear();
@@ -61,14 +60,12 @@ std::string FiniteVolumeGrid2D::gridInfo() const
 
     return "Finite volume grid info:\n"
            "------------------------\n"
-           "Number of nodes: " + to_string(nodes_.size()) + "\n"
-                                                            "Number of quad cells: " + to_string(quadCells_.size()) + "\n"
-                                                                                                                      "Number of tri cells: " + to_string(triCells_.size()) + "\n"
-                                                                                                                                                                              "Number of cells total: " + to_string(cells_.size()) + "\n"
-                                                                                                                                                                                                                                     "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n"
-                                                                                                                                                                                                                                                                                                       "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n"
-                                                                                                                                                                                                                                                                                                                                                                         "Number of faces total: " + to_string(faces_.size()) + "\n"
-                                                                                                                                                                                                                                                                                                                                                                                                                                "Bounding box: " + bBox_.toString() + "\n";
+           "Number of nodes: " + to_string(nodes_.size()) + "\n" +
+            "Number of cells total: " + to_string(cells_.size()) + "\n" +
+            "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n" +
+            "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n" +
+            "Number of faces total: " + to_string(faces_.size()) + "\n" +
+            "Bounding box: " + bBox_.toString() + "\n";
 }
 
 //- Create grid entities
@@ -109,16 +106,6 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label>& nodeIds)
         }
     }
 
-    switch(nodeIds.size())
-    {
-    case 3:
-        triCells_.push_back(std::cref(newCell));
-        break;
-    case 4:
-        quadCells_.push_back(std::cref(newCell));
-        break;
-    };
-
     return newCell.id();
 }
 
@@ -128,11 +115,49 @@ Label FiniteVolumeGrid2D::addNode(const Point2D &point)
     return nodes_.back().id();
 }
 
+std::vector<Scalar> FiniteVolumeGrid2D::xCoords() const
+{
+    std::vector<Scalar> xCoords;
+
+    std::transform(nodes_.begin(), nodes_.end(),
+                   std::back_inserter(xCoords),
+                   [](const Node& node){ return node.x; });
+
+    return xCoords;
+}
+
+std::vector<Scalar> FiniteVolumeGrid2D::yCoords() const
+{
+    std::vector<Scalar> yCoords;
+
+    std::transform(nodes_.begin(), nodes_.end(),
+                   std::back_inserter(yCoords),
+                   [](const Node& node){ return node.y; });
+
+    return yCoords;
+}
+
 void FiniteVolumeGrid2D::assignNodeIds()
 {
     Label id = 0;
     for(Node &node: nodes_)
         node.setId(id++);
+}
+
+std::vector<int> FiniteVolumeGrid2D::elementList() const
+{
+    std::vector<int> elems;
+    elems.reserve(5*cells_.size());
+
+    for(const Cell& cell: cells_)
+    {
+        elems.push_back(cell.nodes().size() == 3 ? TRI_3 : QUAD_4);
+
+        for(const Node& node: cell.nodes())
+            elems.push_back(node.id() + 1);
+    }
+
+    return elems;
 }
 
 //- Cell related methods
@@ -288,6 +313,9 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
 {
     using namespace std;
 
+    if(comm.nProcs() == 1)
+        return;
+
     if(comm.mainProc())
     {
         idx_t nPartitions = comm.nProcs();
@@ -316,15 +344,13 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         for(Label id = 0; id < cellPartition.size(); ++id)
             cellLists[cellPartition[id]].push_back(id);
 
-        vector<vector<vector<Label>>> sendOrdering(comm.nProcs()), buffers(comm.nProcs());
+        vector<vector<vector<Label>>> sendOrdering(comm.nProcs(), vector<vector<Label>>(comm.nProcs())),
+                recvOrdering(comm.nProcs(), vector<vector<Label>>(comm.nProcs()));
 
         //- Buffer regions
         for(int proc = 0; proc < comm.nProcs(); ++proc)
         {
-            sendOrdering[proc].resize(comm.nProcs());
-            buffers[proc].resize(comm.nProcs());
-
-            vector<bool> cellIsInBuffer(nCells(), false);
+            vector<bool> isInLocalGroup(nElems, false);
 
             for(const Cell& cell: getCells(cellLists[proc]))
             {
@@ -332,12 +358,25 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
                 {
                     int nbProc = cellPartition[nb.cell().id()];
 
-                    if(nbProc != proc)
+                    if(nbProc != proc && !isInLocalGroup[nb.cell().id()])
                     {
                         cellLists[proc].push_back(nb.cell().id());
-                        sendOrdering[proc][nbProc].push_back(cell.id());
-                        buffers[nbProc][proc].push_back(cell.id());
-                        cellIsInBuffer[nb.cell().id()] = true;
+                        sendOrdering[nbProc][proc].push_back(nb.cell().id());
+                        recvOrdering[proc][nbProc].push_back(nb.cell().id());
+                        isInLocalGroup[nb.cell().id()] = true;
+                    }
+                }
+
+                for(const DiagonalCellLink& dg: cell.diagonals())
+                {
+                    int nbProc = cellPartition[dg.cell().id()];
+
+                    if(nbProc != proc && !isInLocalGroup[dg.cell().id()])
+                    {
+                        cellLists[proc].push_back(dg.cell().id());
+                        sendOrdering[nbProc][proc].push_back(dg.cell().id());
+                        recvOrdering[proc][nbProc].push_back(dg.cell().id());
+                        isInLocalGroup[dg.cell().id()] = true;
                     }
                 }
             }
@@ -374,28 +413,32 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         } // end construct local node element lists
 
         //- Communicate local elements to other processes
-        vector<int> nCellsPerProc, procElementListSizes, nNodesPerProc;
+        vector<int> nCellsPerProc, cellNodeListSizes, nNodesPerProc;
         for(int proc = 0; proc < comm.nProcs(); ++proc)
         {
             nCellsPerProc.push_back(cellLists[proc].size());
-            procElementListSizes.push_back(localCellInds[proc].size());
+            cellNodeListSizes.push_back(localCells[proc].size());
             nNodesPerProc.push_back(localNodes[proc].size());
         }
 
-        int nCellsThisProc = comm.scatter(comm.mainProcNo(), nCellsPerProc);
-        int elementListSize = comm.scatter(comm.mainProcNo(), procElementListSizes);
-        int nNodesThisProc = comm.scatter(comm.mainProcNo(), nNodesPerProc);
+        printf("Sending local size info from main proc...\n");
+        comm.scatter(comm.mainProcNo(), nCellsPerProc);
+        comm.scatter(comm.mainProcNo(), cellNodeListSizes);
+        comm.scatter(comm.mainProcNo(), nNodesPerProc);
 
+        printf("Sending local mesh info from main proc...\n");
         for(int proc = 0; proc < comm.nProcs(); ++proc)
         {
             if(proc == comm.rank())
                 continue;
 
-            comm.ibsend(proc, cellLists[proc]);
-            comm.ibsend(proc, localCellInds[proc]);
-            comm.ibsend(proc, localCells[proc]);
-            comm.ibsend(proc, localNodes[proc]);
+            comm.send(proc, cellLists[proc], 0);
+            comm.send(proc, localCellInds[proc], 1);
+            comm.send(proc, localCells[proc], 2);
+            comm.send(proc, localNodes[proc], 3);
         }
+
+        //- Send sendOrder/buffer info
 
         comm.waitAll();
 
@@ -412,21 +455,35 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         int elementListSize = comm.scatter(comm.mainProcNo(), vector<int>(1));
         int nNodesThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
 
+        printf("proc %d has %d cells.\n", comm.rank(), nCellsThisProc);
+
         vector<Label> globalCellIds(nCellsThisProc);
         vector<Label> cellInds(nCellsThisProc + 1);
         vector<Label> cells(elementListSize);
         vector<Point2D> nodes(nNodesThisProc);
 
-        comm.irecv(comm.mainProcNo(), globalCellIds);
-        comm.irecv(comm.mainProcNo(), cellInds);
-        comm.irecv(comm.mainProcNo(), cells);
-        comm.irecv(comm.mainProcNo(), nodes);
+        comm.irecv(comm.mainProcNo(), globalCellIds, 0);
+        comm.irecv(comm.mainProcNo(), cellInds, 1);
+        comm.irecv(comm.mainProcNo(), cells, 2);
+        comm.irecv(comm.mainProcNo(), nodes, 3);
 
         //- Identify buffer cells and receive send order
+
         //- Receive patch info
 
         comm.waitAll();
         init(nodes, cellInds, cells);
+    }
+
+    auto localSizes = comm.allGather(cells_.size());
+    vector<int> globalInds(1, 0);
+    for(int upper: localSizes)
+        globalInds.push_back(globalInds.back() + upper);
+
+    if(comm.mainProc())
+    {
+        for(int ind: globalInds)
+            printf("%d\n", ind);
     }
 }
 

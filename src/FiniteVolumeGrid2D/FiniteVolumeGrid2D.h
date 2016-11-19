@@ -21,7 +21,7 @@ public:
     FiniteVolumeGrid2D(Size nNodes = 0, Size nCells = 0, Size nFaces = 0);
 
     //- Initialization
-    void init(const std::vector<Point2D>& nodes, const std::vector<Label>& elemInds, const std::vector<Label>& elems);
+    void init(const std::vector<Point2D>& nodes, const std::vector<Label>& cellInds, const std::vector<Label>& cells);
     void reset();
 
     //- Size info
@@ -37,12 +37,13 @@ public:
 
     //- Node related methods
     const std::vector<Node>& nodes() const { return nodes_; }
+    std::vector<Scalar> xCoords() const;
+    std::vector<Scalar> yCoords() const;
     void assignNodeIds();
 
     //- Cell related methods
     const std::vector<Cell>& cells() const { return cells_; }
-    const std::vector< Ref<const Cell> >& quadCells() const { return quadCells_; }
-    const std::vector< Ref<const Cell> >& triCells() const { return triCells_; }
+    std::vector<int> elementList() const;
 
     //- Cell groups and zones
     CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
@@ -103,9 +104,6 @@ protected:
 
     //- Cell related data
     std::vector<Cell> cells_;
-
-    std::vector< Ref<const Cell> > quadCells_;
-    std::vector< Ref<const Cell> > triCells_;
 
     mutable std::map<std::string, CellGroup> cellGroups_;
     mutable std::map<std::string, CellZone> cellZones_;

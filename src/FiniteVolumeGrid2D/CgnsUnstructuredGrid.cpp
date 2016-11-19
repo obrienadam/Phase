@@ -1,4 +1,5 @@
 #include "CgnsUnstructuredGrid.h"
+#include "Communicator.h"
 #include "Exception.h"
 
 CgnsUnstructuredGrid::CgnsUnstructuredGrid()
@@ -58,37 +59,89 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
     computeBoundingBox();
 }
 
-void CgnsUnstructuredGrid::newFile(const std::string &filename, const std::string &baseName)
+void CgnsUnstructuredGrid::save(const std::string &filename) const
 {
-    if(fileIsOpen_)
-        closeFile();
+    int fid;
+    cg_open(filename.c_str(), CG_MODE_WRITE, &fid);
 
-    cg_open(filename.c_str(), CG_MODE_WRITE, &fileId_);
-    cg_base_write(fileId_, baseName.c_str(), 2, 2, &baseId_);
-    fileIsOpen_ = true;
+    int bid;
+    cg_base_write(fid, "mesh", 2, 2, &bid);
+
+    int zid;
+    cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
+
+    cg_zone_write(fid, bid, "Zone", sizes, Unstructured, &zid);
+
+    auto xCoords = this->xCoords(), yCoords = this->yCoords();
+
+    int cid;
+    cg_coord_write(fid, bid, zid, RealDouble, "CoordinateX", xCoords.data(), &cid);
+    cg_coord_write(fid, bid, zid, RealDouble, "CoordinateY", yCoords.data(), &cid);
+
+    auto elems = this->elementList();
+    int sid;
+    cg_section_write(fid, bid, zid, "GridElements", MIXED, 1, cells_.size(), 0, elems.data(), &sid);
+
+    cg_close(fid);
 }
 
-void CgnsUnstructuredGrid::openFile(const std::string &filename)
+void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator &comm) const
 {
-    if(fileIsOpen_)
-        closeFile();
+    int bid;
+    if(comm.mainProc())
+    {
+        int fid;
+        cg_open(filename.c_str(), CG_MODE_WRITE, &fid);
 
-    cg_open(filename.c_str(), CG_MODE_MODIFY, &fileId_);
+        cg_base_write(fid, "mesh", 2, 2, &bid);
 
-    int nBases;
-    cg_nbases(fileId_, &nBases);
+        int zid;
+        cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
 
-    if(nBases != 1)
-        throw Exception("CgnsUnstructuredGrid", "openFile", "only one base is allowed.");
+        cg_zone_write(fid, bid, ("Zone" + std::to_string(comm.rank())).c_str(), sizes, Unstructured, &zid);
 
-    baseId_ = 1;
-    fileIsOpen_ = true;
-}
+        auto xCoords = this->xCoords(), yCoords = this->yCoords();
 
-void CgnsUnstructuredGrid::closeFile()
-{
-    cg_close(fileId_);
-    fileIsOpen_ = false;
+        int cid;
+        cg_coord_write(fid, bid, zid, RealDouble, "CoordinateX", xCoords.data(), &cid);
+        cg_coord_write(fid, bid, zid, RealDouble, "CoordinateY", yCoords.data(), &cid);
+
+        auto elems = this->elementList();
+        int sid;
+        cg_section_write(fid, bid, zid, "GridElements", MIXED, 1, cells_.size(), 0, elems.data(), &sid);
+
+        cg_close(fid);
+    }
+
+    bid = comm.broadcast(comm.mainProcNo(), bid);
+
+    for(int proc = 0; proc < comm.nProcs(); ++proc)
+    {
+        if(proc == comm.rank() && !comm.mainProc())
+        {
+            int fid;
+            cg_open(filename.c_str(), CG_MODE_MODIFY, &fid);
+
+            int zid;
+            cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
+
+            cg_zone_write(fid, bid, ("Zone" + std::to_string(comm.rank())).c_str(), sizes, Unstructured, &zid);
+
+            auto xCoords = this->xCoords(), yCoords = this->yCoords();
+
+            int cid;
+            cg_coord_write(fid, bid, zid, RealDouble, "CoordinateX", xCoords.data(), &cid);
+            cg_coord_write(fid, bid, zid, RealDouble, "CoordinateY", yCoords.data(), &cid);
+
+            auto elems = this->elementList();
+            int sid;
+            cg_section_write(fid, bid, zid, "GridElements", MIXED, 1, cells_.size(), 0, elems.data(), &sid);
+
+            cg_close(fid);
+        }
+
+        comm.barrier();
+    }
 }
 
 int CgnsUnstructuredGrid::addZone(const std::string &zoneName, int nNodes, int nCells)
