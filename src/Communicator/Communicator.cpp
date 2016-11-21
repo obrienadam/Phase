@@ -30,7 +30,7 @@ int Communicator::printf(const char *format, ...)
 {
     int n = 0;
 
-    if(mainProc())
+    if(isMainProc())
     {
         va_list argsPtr;
         va_start(argsPtr, format);
@@ -74,6 +74,11 @@ int Communicator::broadcast(int root, int integer) const
 void Communicator::broadcast(int root, std::vector<int> &ints) const
 {
     MPI_Bcast(ints.data(), ints.size(), MPI_INT, root, comm_);
+}
+
+void Communicator::broadcast(int root, std::vector<unsigned long> &vals) const
+{
+    MPI_Bcast(vals.data(), vals.size(), MPI_UNSIGNED_LONG, root, comm_);
 }
 
 void Communicator::broadcast(int root, std::vector<double> &doubles) const
@@ -145,11 +150,10 @@ void Communicator::recv(int source, std::vector<Vector2D> &vals) const
     MPI_Recv(vals.data(), vals.size(), MPI_VECTOR2D_, source, MPI_ANY_TAG, comm_, &status);
 }
 
-//- Non-blocking point-to-point communication
-void Communicator::ibsend(int dest, const std::vector<unsigned long> &vals, int tag) const
+void Communicator::irecv(int source, std::vector<int> &vals, int tag) const
 {
     MPI_Request request;
-    MPI_Ibsend(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_, &request);
+    MPI_Irecv(vals.data(), vals.size(), MPI_INT, source, tag, comm_, &request);
 
     currentRequests_.push_back(request);
 }

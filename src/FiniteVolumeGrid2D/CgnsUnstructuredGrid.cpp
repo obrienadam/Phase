@@ -88,7 +88,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename) const
 void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator &comm) const
 {
     int bid;
-    if(comm.mainProc())
+    if(comm.isMainProc())
     {
         int fid;
         cg_open(filename.c_str(), CG_MODE_WRITE, &fid);
@@ -117,7 +117,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator 
 
     for(int proc = 0; proc < comm.nProcs(); ++proc)
     {
-        if(proc == comm.rank() && !comm.mainProc())
+        if(proc == comm.rank() && !comm.isMainProc())
         {
             int fid;
             cg_open(filename.c_str(), CG_MODE_MODIFY, &fid);
@@ -125,7 +125,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator 
             int zid;
             cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
 
-            cg_zone_write(fid, bid, ("Zone" + std::to_string(comm.rank())).c_str(), sizes, Unstructured, &zid);
+            cg_zone_write(fid, bid, ("Zone_proc" + std::to_string(comm.rank())).c_str(), sizes, Unstructured, &zid);
 
             auto xCoords = this->xCoords(), yCoords = this->yCoords();
 

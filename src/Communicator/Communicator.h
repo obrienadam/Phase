@@ -31,7 +31,7 @@ public:
     int nProcs() const;
 
     int mainProcNo() const { return 0; }
-    bool mainProc() const { return rank() == mainProcNo(); }
+    bool isMainProc() const { return rank() == mainProcNo(); }
 
     //- Sync
     void barrier() const;
@@ -40,6 +40,7 @@ public:
     int broadcast(int root, int integer) const;
 
     void broadcast(int root, std::vector<int>& ints) const;
+    void broadcast(int root, std::vector<unsigned long>& vals) const;
     void broadcast(int root, std::vector<double>& doubles) const;
     void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
 
@@ -59,8 +60,8 @@ public:
     void recv(int source, std::vector<Vector2D> &vals) const;
 
     //- Non-blocking point-to-point communication
-    void ibsend(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
 
+    void irecv(int source, std::vector<int> &vals, int tag = 0) const;
     void irecv(int source, std::vector<unsigned long>& vals, int tag = 0) const;
     void irecv(int source, std::vector<double>& vals, int tag = 0) const;
     void irecv(int source, std::vector<Vector2D>& vals, int tag = 0) const;

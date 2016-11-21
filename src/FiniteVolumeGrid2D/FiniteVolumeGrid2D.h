@@ -36,6 +36,7 @@ public:
 
     //- Node related methods
     const std::vector<Node>& nodes() const { return nodes_; }
+    std::vector<Point2D> coords() const;
     std::vector<Scalar> xCoords() const;
     std::vector<Scalar> yCoords() const;
     void assignNodeIds();
@@ -89,7 +90,6 @@ public:
     void sendMessages(const Communicator& comm, std::vector<T>& data) const;
 
     void addNeighbouringProc(int procNo,
-                             const std::vector<Label>& bufferCells,
                              const std::vector<Label>& sendOrder,
                              const std::vector<Label>& recvOrder);
 
@@ -105,6 +105,7 @@ protected:
     void constructActiveCellGroup();
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector<Label> &faces);
+    void applyPatchByNodes(const std::string& patchName, const std::vector<Label>& nodes);
 
     //- Node related data
     std::vector<Node> nodes_;

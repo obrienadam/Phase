@@ -47,6 +47,9 @@ void FiniteVolumeGrid2D::reset()
     faces_.clear();;
     cellGroups_.clear();
     cellZones_.clear();
+    neighbouringProcs_.clear();
+    procSendOrder_.clear();
+    procRecvOrder_.clear();
     faceDirectory_.clear();
     interiorFaces_.clear();
     boundaryFaces_.clear();
@@ -113,6 +116,16 @@ Label FiniteVolumeGrid2D::addNode(const Point2D &point)
 {
     nodes_.push_back(Node(point, *this));
     return nodes_.back().id();
+}
+
+std::vector<Point2D> FiniteVolumeGrid2D::coords() const
+{
+    std::vector<Point2D> coords;
+    std::transform(nodes_.begin(), nodes_.end(),
+                   std::back_inserter(coords),
+                   [](const Node& node){ return Point2D(node); });
+
+    return coords;
 }
 
 std::vector<Scalar> FiniteVolumeGrid2D::xCoords() const
@@ -261,7 +274,7 @@ Label FiniteVolumeGrid2D::findFace(Label n1, Label n2) const
                           );
 
     if(it == faceDirectory_.end())
-        throw Exception("FiniteVolumeGrid2D", "findFace", "face was not found.");
+        throw Exception("FiniteVolumeGrid2D", "findFace", "no face found between n1 = " + to_string(n1) + ", n2 = " + to_string(n2) + ".");
 
     return it->second;
 }
@@ -285,6 +298,19 @@ void FiniteVolumeGrid2D::applyPatch(const std::string &patchName, const std::vec
 
     for(Label id: faces)
         patch.addFace(faces_[id]);
+}
+
+void FiniteVolumeGrid2D::applyPatchByNodes(const std::string &patchName, const std::vector<Label> &nodes)
+{
+    auto insert = patches_.insert(std::make_pair(patchName, Patch(patchName, patches_.size())));
+
+    if(!insert.second)
+        throw Exception("FiniteVolumeGrid2D", "applyPatchByNodes", "patch already exists.");
+
+    Patch &patch = (insert.first)->second;
+
+    for(Label lid = 0, rid = 1; rid < nodes.size(); lid += 2, rid += 2)
+        patch.addFace(faces_[findFace(nodes[lid], nodes[rid])]);
 }
 
 const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
@@ -316,15 +342,16 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     if(comm.nProcs() == 1)
         return;
 
-    if(comm.mainProc())
+    vector<idx_t> cellPartition(nCells());
+
+    if(comm.isMainProc())
     {
         idx_t nPartitions = comm.nProcs();
         idx_t nElems = nCells();
+        pair<vector<int>, vector<int>> mesh = nodeElementConnectivity();
         idx_t nNodes = this->nNodes();
-        pair<vector<idx_t>, vector<idx_t>> mesh = nodeElementConnectivity();
         idx_t nCommon = 2;
         idx_t objVal;
-        vector<idx_t> cellPartition(nCells());
         vector<idx_t> nodePartition(this->nNodes());
 
         printf("Partitioning mesh into %d subdomains...\n", nPartitions);
@@ -338,241 +365,143 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
             printf("Sucessfully partitioned mesh.\n");
         else
             throw Exception("finiteVolumeGrid2D", "partition", "an error occurred during partitioning.");
-
-        //- Main partitioning
-        vector<vector<Label>> cellLists(comm.nProcs());
-        for(Label id = 0; id < cellPartition.size(); ++id)
-            cellLists[cellPartition[id]].push_back(id);
-
-        vector<vector<vector<Label>>> sendOrdering(comm.nProcs(), vector<vector<Label>>(comm.nProcs())),
-                recvOrdering(comm.nProcs(), vector<vector<Label>>(comm.nProcs()));
-
-        //- Buffer regions
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            vector<bool> isInLocalGroup(nElems, false);
-
-            for(const Cell& cell: getCells(cellLists[proc]))
-            {
-                for(const InteriorLink& nb: cell.neighbours())
-                {
-                    int nbProc = cellPartition[nb.cell().id()];
-
-                    if(proc == nbProc)
-                        continue;
-
-                    if(!isInLocalGroup[nb.cell().id()])
-                    {
-                        cellLists[proc].push_back(nb.cell().id());
-                        sendOrdering[nbProc][proc].push_back(nb.cell().id());
-                        recvOrdering[proc][nbProc].push_back(nb.cell().id());
-                        isInLocalGroup[nb.cell().id()] = true;
-                    }
-                }
-
-                for(const DiagonalCellLink& dg: cell.diagonals())
-                {
-                    int nbProc = cellPartition[dg.cell().id()];
-
-                    if(proc == nbProc)
-                        continue;
-
-                    if(!isInLocalGroup[dg.cell().id()])
-                    {
-                        cellLists[proc].push_back(dg.cell().id());
-                        sendOrdering[nbProc][proc].push_back(dg.cell().id());
-                        recvOrdering[proc][nbProc].push_back(dg.cell().id());
-                        isInLocalGroup[dg.cell().id()] = true;
-                    }
-                }
-            }
-        } // end buffer regions
-
-        //- Figure out neighbouring proces
-        vector<vector<int>> neighbouringProcs(comm.nProcs());
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-            for(int nbProc = 0; nbProc < comm.nProcs(); ++nbProc)
-            {
-                if(sendOrdering[proc][nbProc].size() != 0 && recvOrdering[proc][nbProc].size() != 0)
-                    neighbouringProcs[proc].push_back(nbProc);
-            }
-
-        //- construct local node element lists
-        vector<vector<Label>> localCellInds(comm.nProcs()), localCells(comm.nProcs());
-        vector<vector<Point2D>> localNodes(comm.nProcs());
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            vector<Label>& cellInds = localCellInds[proc];
-            vector<Label>& cells = localCells[proc];
-            vector<Point2D>& nodes = localNodes[proc];
-
-            vector<Label> nodeIdMap(nNodes, -1);
-
-            cellInds.push_back(0);
-
-            Label nextLocalNodeId = 0;
-            for(const Cell& cell: getCells(cellLists[proc]))
-            {
-                cellInds.push_back(cellInds.back() + cell.nodes().size());
-
-                for(const Node& node: cell.nodes())
-                {
-                    if(nodeIdMap[node.id()] == -1)
-                    {
-                        nodeIdMap[node.id()] = nextLocalNodeId++;
-                        nodes.push_back(nodes_[node.id()]);
-                    }
-                    cells.push_back(nodeIdMap[node.id()]);
-                }
-            }
-        } // end construct local node element lists
-
-        //- Communicate local elements to other processes
-        vector<int> nCellsPerProc, cellNodeListSizes, nNodesPerProc;
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            nCellsPerProc.push_back(cellLists[proc].size());
-            cellNodeListSizes.push_back(localCells[proc].size());
-            nNodesPerProc.push_back(localNodes[proc].size());
-        }
-
-        printf("Sending local size info from main proc...\n");
-        comm.scatter(comm.mainProcNo(), nCellsPerProc);
-        comm.scatter(comm.mainProcNo(), cellNodeListSizes);
-        comm.scatter(comm.mainProcNo(), nNodesPerProc);
-
-        printf("Sending local mesh info from main proc...\n");
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            if(proc != comm.rank())
-            {
-                comm.send(proc, cellLists[proc], 0);
-                comm.send(proc, localCellInds[proc], 1);
-                comm.send(proc, localCells[proc], 2);
-                comm.send(proc, localNodes[proc], 3);
-            }
-        }
-
-        //- Send sendOrder/buffer info
-        vector<int> nNeighbouringProcsPerProc(comm.nProcs());
-        for(int i = 0; i < nNeighbouringProcsPerProc.size(); ++i)
-            nNeighbouringProcsPerProc[i] = neighbouringProcs[i].size();
-
-        //- Send neighbouring proc lists
-        comm.scatter(comm.rank(), nNeighbouringProcsPerProc);
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            if(proc != comm.rank())
-                comm.send(proc, neighbouringProcs[proc]);
-        }
-
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            if(proc != comm.rank())
-            {
-                vector<Size> sendBufferSizes(neighbouringProcs[proc].size());
-                vector<Size> recvBufferSizes(neighbouringProcs[proc].size());
-
-                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
-                {
-                    int nbProc = neighbouringProcs[proc][i];
-                    sendBufferSizes[i] = sendOrdering[proc][nbProc].size();
-                    recvBufferSizes[i] = recvOrdering[proc][nbProc].size();
-                }
-
-                comm.send(proc, sendBufferSizes);
-                comm.send(proc, recvBufferSizes);
-            }
-        }
-
-        for(int proc = 0; proc < comm.nProcs(); ++proc)
-        {
-            if(proc != comm.rank())
-            {
-                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
-                {
-                    comm.send(proc, sendOrdering[proc][neighbouringProcs[proc][i]]);
-                    comm.send(proc, recvOrdering[proc][neighbouringProcs[proc][i]]);
-                }
-            }
-            else
-            {
-                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
-                {
-                    addNeighbouringProc(neighbouringProcs[proc][i],
-                                        std::vector<Label>(),
-                                        sendOrdering[proc][neighbouringProcs[proc][i]],
-                            recvOrdering[proc][neighbouringProcs[proc][i]]);
-                }
-            }
-        }
-
-        comm.waitAll();
-        init(localNodes[comm.rank()], localCellInds[comm.rank()], localCells[comm.rank()]);
-    }
-    else
-    {
-        //- General cell/mesh info
-        int nCellsThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
-        int elementListSize = comm.scatter(comm.mainProcNo(), vector<int>(1));
-        int nNodesThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
-
-        vector<Label> globalCellIds(nCellsThisProc);
-        vector<Label> cellInds(nCellsThisProc + 1);
-        vector<Label> cells(elementListSize);
-        vector<Point2D> nodes(nNodesThisProc);
-
-        comm.irecv(comm.mainProcNo(), globalCellIds, 0);
-        comm.irecv(comm.mainProcNo(), cellInds, 1);
-        comm.irecv(comm.mainProcNo(), cells, 2);
-        comm.irecv(comm.mainProcNo(), nodes, 3);
-
-        //- Get the number of partition neighbours this proc has
-        int nNeighbouringProcs = comm.scatter(comm.mainProcNo(), vector<int>(1));
-
-        //- Get a list of the neighbouring procs
-        vector<int> neighbouringProcs(nNeighbouringProcs);
-        comm.recv(comm.mainProcNo(), neighbouringProcs);
-
-        //- Get the buffer size for each neighbouring proc
-        vector<Size> sendBufferSizes(nNeighbouringProcs), recvBufferSizes(nNeighbouringProcs);
-        comm.recv(comm.mainProcNo(), sendBufferSizes);
-        comm.recv(comm.mainProcNo(), recvBufferSizes);
-
-        for(int i = 0; i < nNeighbouringProcs; ++i)
-        {
-            vector<Label> sendOrder(sendBufferSizes[i]);
-            vector<Label> recvOrder(recvBufferSizes[i]);
-
-            comm.recv(comm.mainProc(), sendOrder);
-            comm.recv(comm.mainProc(), recvOrder);
-
-            addNeighbouringProc(neighbouringProcs[i], vector<Label>(), sendOrder, recvOrder);
-        }
-
-        comm.waitAll();
-        init(nodes, cellInds, cells);
     }
 
-    auto localSizes = comm.allGather(cells_.size());
-    vector<int> globalInds(1, 0);
-    for(int upper: localSizes)
-        globalInds.push_back(globalInds.back() + upper);
+    comm.broadcast(comm.mainProcNo(), cellPartition);
 
-    if(comm.mainProc())
+    vector<Point2D> localNodes;
+    vector<Label> localCellInds(1, 0), localCells, localCellList;
+    map<string, vector<Label>> localPatches;
+    vector<int> localNodeId(nodes_.size(), -1);
+    vector<int> localCellId(cells_.size(), -1);
+    Label nextLocalNodeId = 0, nextLocalCellId = 0;
+
+    auto addCellToPart = [&](const Cell& cell)->bool // helper lambda, returns whether or not a cell was added
     {
-        for(int ind: globalInds)
-            printf("%d\n", ind);
+        if(localCellId[cell.id()] != -1)
+            return false;
+
+        localCellList.push_back(cell.id());
+        localCellInds.push_back(localCellInds.back() + cell.nodes().size());
+
+        for(const Node& node: cell.nodes())
+        {
+            if(localNodeId[node.id()] == -1)
+            {
+                localNodes.push_back(nodes_[node.id()]);
+                localNodeId[node.id()] = nextLocalNodeId++;
+            }
+
+            localCells.push_back(localNodeId[node.id()]);
+        }
+
+        //- check for patches
+        for(const BoundaryLink& bd: cell.boundaries())
+        {
+            localPatches[bd.face().patch().name].push_back(bd.face().lNode().id());
+            localPatches[bd.face().patch().name].push_back(bd.face().rNode().id());
+        }
+
+        localCellId[cell.id()] = nextLocalCellId++;
+
+        return true;
+    };
+
+    for(const Cell& cell: cells_)
+    {
+        if(comm.rank() == cellPartition[cell.id()])
+            addCellToPart(cell);
+    }
+
+    vector<int> neighboursProc(comm.nProcs(), -1);
+    vector<int> nbProcs;
+    vector<vector<Label>> sendOrder, recvOrder;
+
+    for(const Cell& cell: getCells(localCellList))
+    {
+        for(const InteriorLink& nb: cell.neighbours())
+        {
+            int nbProc = cellPartition[nb.cell().id()];
+
+            if(comm.rank() == nbProc)
+                continue;
+            else if(neighboursProc[nbProc] == -1)
+            {
+                neighboursProc[nbProc] = nbProcs.size();
+                nbProcs.push_back(nbProc);
+                recvOrder.push_back(vector<Label>());
+            }
+
+            if(addCellToPart(nb.cell()))
+               recvOrder[neighboursProc[nbProc]].push_back(nb.cell().id());
+        }
+
+        for(const DiagonalCellLink& dg: cell.diagonals())
+        {
+            int nbProc = cellPartition[dg.cell().id()];
+
+            if(comm.rank() == nbProc)
+                continue;
+            else if(neighboursProc[nbProc] == -1)
+            {
+                neighboursProc[nbProc] = nbProcs.size();
+                nbProcs.push_back(nbProc);
+                recvOrder.push_back(vector<Label>());
+            }
+
+            if(addCellToPart(dg.cell()))
+                recvOrder[neighboursProc[nbProc]].push_back(dg.cell().id());
+        }
+    }
+
+    //- Send and receive the buffer orders
+    vector<vector<int>> sendSizes(nbProcs.size(), vector<int>(1));
+    for(int i = 0; i < nbProcs.size(); ++i)
+        comm.irecv(nbProcs[i], sendSizes[i]);
+
+    for(int i = 0; i < nbProcs.size(); ++i)
+        comm.send(nbProcs[i], vector<int>(1, recvOrder[i].size()));
+
+    sendOrder.resize(nbProcs.size());
+    comm.waitAll();
+
+    for(int i = 0; i < nbProcs.size(); ++i)
+    {
+        sendOrder[i].resize(sendSizes[i][0]);
+        comm.irecv(nbProcs[i], sendOrder[i]);
+        comm.send(nbProcs[i], recvOrder[i]);
+    }
+    comm.waitAll();
+
+    init(localNodes, localCellInds, localCells);
+
+    //- Map the buffer orders to local ids
+    for(int i = 0; i < nbProcs.size(); ++i)
+    {
+        for(Label &id: sendOrder[i])
+            id = localCellId[id];
+
+        for(Label &id: recvOrder[i])
+            id = localCellId[id];
+
+        addNeighbouringProc(nbProcs[i], sendOrder[i], recvOrder[i]);
+    }
+
+    //- Map boundary patches to local ids
+    for(auto& entry: localPatches)
+    {
+        for(Label& id: entry.second)
+            id = localNodeId[id];
+
+        applyPatchByNodes(entry.first, entry.second);
     }
 }
 
 void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
-                                             const std::vector<Label> &bufferCells,
                                              const std::vector<Label> &sendOrder,
                                              const std::vector<Label> &recvOrder)
 {
     neighbouringProcs_.push_back(procNo);
-    //- Create a cell zone
     procSendOrder_.push_back(sendOrder);
     procRecvOrder_.push_back(recvOrder);
 }
