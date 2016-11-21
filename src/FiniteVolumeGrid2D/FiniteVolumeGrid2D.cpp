@@ -1,6 +1,6 @@
-#include "FiniteVolumeGrid2D.h"
-#include "Communicator.h"
 #include <cgnslib.h>
+
+#include "FiniteVolumeGrid2D.h"
 #include "metis.h"
 #include "Exception.h"
 
@@ -358,7 +358,10 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
                 {
                     int nbProc = cellPartition[nb.cell().id()];
 
-                    if(nbProc != proc && !isInLocalGroup[nb.cell().id()])
+                    if(proc == nbProc)
+                        continue;
+
+                    if(!isInLocalGroup[nb.cell().id()])
                     {
                         cellLists[proc].push_back(nb.cell().id());
                         sendOrdering[nbProc][proc].push_back(nb.cell().id());
@@ -371,7 +374,10 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
                 {
                     int nbProc = cellPartition[dg.cell().id()];
 
-                    if(nbProc != proc && !isInLocalGroup[dg.cell().id()])
+                    if(proc == nbProc)
+                        continue;
+
+                    if(!isInLocalGroup[dg.cell().id()])
                     {
                         cellLists[proc].push_back(dg.cell().id());
                         sendOrdering[nbProc][proc].push_back(dg.cell().id());
@@ -381,6 +387,15 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
                 }
             }
         } // end buffer regions
+
+        //- Figure out neighbouring proces
+        vector<vector<int>> neighbouringProcs(comm.nProcs());
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+            for(int nbProc = 0; nbProc < comm.nProcs(); ++nbProc)
+            {
+                if(sendOrdering[proc][nbProc].size() != 0 && recvOrdering[proc][nbProc].size() != 0)
+                    neighbouringProcs[proc].push_back(nbProc);
+            }
 
         //- construct local node element lists
         vector<vector<Label>> localCellInds(comm.nProcs()), localCells(comm.nProcs());
@@ -429,24 +444,71 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         printf("Sending local mesh info from main proc...\n");
         for(int proc = 0; proc < comm.nProcs(); ++proc)
         {
-            if(proc == comm.rank())
-                continue;
-
-            comm.send(proc, cellLists[proc], 0);
-            comm.send(proc, localCellInds[proc], 1);
-            comm.send(proc, localCells[proc], 2);
-            comm.send(proc, localNodes[proc], 3);
+            if(proc != comm.rank())
+            {
+                comm.send(proc, cellLists[proc], 0);
+                comm.send(proc, localCellInds[proc], 1);
+                comm.send(proc, localCells[proc], 2);
+                comm.send(proc, localNodes[proc], 3);
+            }
         }
 
         //- Send sendOrder/buffer info
+        vector<int> nNeighbouringProcsPerProc(comm.nProcs());
+        for(int i = 0; i < nNeighbouringProcsPerProc.size(); ++i)
+            nNeighbouringProcsPerProc[i] = neighbouringProcs[i].size();
+
+        //- Send neighbouring proc lists
+        comm.scatter(comm.rank(), nNeighbouringProcsPerProc);
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            if(proc != comm.rank())
+                comm.send(proc, neighbouringProcs[proc]);
+        }
+
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            if(proc != comm.rank())
+            {
+                vector<Size> sendBufferSizes(neighbouringProcs[proc].size());
+                vector<Size> recvBufferSizes(neighbouringProcs[proc].size());
+
+                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
+                {
+                    int nbProc = neighbouringProcs[proc][i];
+                    sendBufferSizes[i] = sendOrdering[proc][nbProc].size();
+                    recvBufferSizes[i] = recvOrdering[proc][nbProc].size();
+                }
+
+                comm.send(proc, sendBufferSizes);
+                comm.send(proc, recvBufferSizes);
+            }
+        }
+
+        for(int proc = 0; proc < comm.nProcs(); ++proc)
+        {
+            if(proc != comm.rank())
+            {
+                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
+                {
+                    comm.send(proc, sendOrdering[proc][neighbouringProcs[proc][i]]);
+                    comm.send(proc, recvOrdering[proc][neighbouringProcs[proc][i]]);
+                }
+            }
+            else
+            {
+                for(int i = 0; i < neighbouringProcs[proc].size(); ++i)
+                {
+                    addNeighbouringProc(neighbouringProcs[proc][i],
+                                        std::vector<Label>(),
+                                        sendOrdering[proc][neighbouringProcs[proc][i]],
+                            recvOrdering[proc][neighbouringProcs[proc][i]]);
+                }
+            }
+        }
 
         comm.waitAll();
-
-        const vector<Point2D>& nodes = localNodes[comm.rank()];
-        const vector<Label>& cellInds = localCellInds[comm.rank()];
-        const vector<Label>& cells = localCells[comm.rank()];
-
-        init(nodes, cellInds, cells);
+        init(localNodes[comm.rank()], localCellInds[comm.rank()], localCells[comm.rank()]);
     }
     else
     {
@@ -454,8 +516,6 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         int nCellsThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
         int elementListSize = comm.scatter(comm.mainProcNo(), vector<int>(1));
         int nNodesThisProc = comm.scatter(comm.mainProcNo(), vector<int>(1));
-
-        printf("proc %d has %d cells.\n", comm.rank(), nCellsThisProc);
 
         vector<Label> globalCellIds(nCellsThisProc);
         vector<Label> cellInds(nCellsThisProc + 1);
@@ -467,9 +527,28 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         comm.irecv(comm.mainProcNo(), cells, 2);
         comm.irecv(comm.mainProcNo(), nodes, 3);
 
-        //- Identify buffer cells and receive send order
+        //- Get the number of partition neighbours this proc has
+        int nNeighbouringProcs = comm.scatter(comm.mainProcNo(), vector<int>(1));
 
-        //- Receive patch info
+        //- Get a list of the neighbouring procs
+        vector<int> neighbouringProcs(nNeighbouringProcs);
+        comm.recv(comm.mainProcNo(), neighbouringProcs);
+
+        //- Get the buffer size for each neighbouring proc
+        vector<Size> sendBufferSizes(nNeighbouringProcs), recvBufferSizes(nNeighbouringProcs);
+        comm.recv(comm.mainProcNo(), sendBufferSizes);
+        comm.recv(comm.mainProcNo(), recvBufferSizes);
+
+        for(int i = 0; i < nNeighbouringProcs; ++i)
+        {
+            vector<Label> sendOrder(sendBufferSizes[i]);
+            vector<Label> recvOrder(recvBufferSizes[i]);
+
+            comm.recv(comm.mainProc(), sendOrder);
+            comm.recv(comm.mainProc(), recvOrder);
+
+            addNeighbouringProc(neighbouringProcs[i], vector<Label>(), sendOrder, recvOrder);
+        }
 
         comm.waitAll();
         init(nodes, cellInds, cells);
@@ -485,6 +564,17 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         for(int ind: globalInds)
             printf("%d\n", ind);
     }
+}
+
+void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
+                                             const std::vector<Label> &bufferCells,
+                                             const std::vector<Label> &sendOrder,
+                                             const std::vector<Label> &recvOrder)
+{
+    neighbouringProcs_.push_back(procNo);
+    //- Create a cell zone
+    procSendOrder_.push_back(sendOrder);
+    procRecvOrder_.push_back(recvOrder);
 }
 
 //- Protected methods
@@ -535,6 +625,20 @@ void FiniteVolumeGrid2D::initCells()
                 else if(!cellsShareFace(cell, kCell))
                     cell.addDiagonalLink(kCell);
             }
+
+    for(Cell& cell: cells_)
+    {
+        for(const Node& node: cell.nodes())
+        {
+            for(const Cell& nbCell: node.cells())
+            {
+                if(cell.id() == nbCell.id())
+                    continue;
+                else if(!cellsShareFace(cell, nbCell))
+                    cell.addDiagonalLink(nbCell);
+            }
+        }
+    }
 
     constructActiveCellGroup();
 }

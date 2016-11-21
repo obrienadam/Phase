@@ -4,6 +4,7 @@ set(HEADERS FiniteVolumeGrid2D.h
             ConstructGrid.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
+            FiniteVolumeGrid2D.tpp
             StructuredRectilinearGrid.cpp
             CgnsUnstructuredGrid.cpp
             ConstructGrid.cpp)

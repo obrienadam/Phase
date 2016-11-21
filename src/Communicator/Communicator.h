@@ -9,10 +9,9 @@
 //-------------------------------------------------
 
 #include <mpi.h>
+#include <vector>
 
-#include "FiniteVolumeGrid2D.h"
-#include "ScalarFiniteVolumeField.h"
-#include "VectorFiniteVolumeField.h"
+#include "Vector2D.h"
 
 class Communicator
 {
@@ -39,9 +38,9 @@ public:
 
     //- Communication
     int broadcast(int root, int integer) const;
+
     void broadcast(int root, std::vector<int>& ints) const;
     void broadcast(int root, std::vector<double>& doubles) const;
-    void broadcast(int root, std::string& str) const;
     void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
 
     //- Collectives
@@ -49,9 +48,13 @@ public:
     std::vector<unsigned long> allGather(unsigned long val) const;
 
     //- Blocking point-to-point communication
+    void send(int dest, const std::vector<int>& vals, int tag = 0) const;
     void send(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
+    void send(int dest, const std::vector<double>& vals, int tag = 0) const;
     void send(int dest, const std::vector<Vector2D>& vals, int tag = 0) const;
 
+    void recv(int source, std::vector<int>& vals) const;
+    void recv(int source, std::vector<unsigned long> &vals) const;
     void recv(int source, std::vector<double>& vals) const;
     void recv(int source, std::vector<Vector2D> &vals) const;
 
@@ -59,6 +62,7 @@ public:
     void ibsend(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
 
     void irecv(int source, std::vector<unsigned long>& vals, int tag = 0) const;
+    void irecv(int source, std::vector<double>& vals, int tag = 0) const;
     void irecv(int source, std::vector<Vector2D>& vals, int tag = 0) const;
 
     void waitAll() const;
@@ -73,17 +77,6 @@ private:
     static MPI_Datatype MPI_VECTOR2D_;
 
     MPI_Comm comm_;
-
-    Field<Label> globalCellIds_;
-
-    mutable std::vector< std::vector<double> > scalarSendBuffers_, scalarRecvBuffers_;
-    mutable std::vector< std::vector<Vector2D> > vector2DSendBuffers_, vector2DRecvBuffers_;
-
-    std::vector<CellGroup> sendBufferCells_;
-    std::vector<CellGroup> recvBufferCells_;
-
-    std::vector< std::vector<Label> > recvIdOrdering_;
-
     mutable std::vector<MPI_Request> currentRequests_;
 };
 

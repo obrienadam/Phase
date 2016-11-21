@@ -71,7 +71,7 @@ bool cellsShareFace(const Cell& cellA, const Cell& cellB)
 {
     for(const InteriorLink& nb: cellA.neighbours())
     {
-        if(nb.cell().id() == cellB.id() || &nb.cell() == &cellB)
+        if(nb.cell().id() == cellB.id())
             return true;
     }
 

@@ -11,8 +11,7 @@
 #include "BoundingBox.h"
 #include "CellZone.h"
 #include "Search.h"
-
-class Communicator;
+#include "Communicator.h"
 
 class FiniteVolumeGrid2D
 {
@@ -86,6 +85,14 @@ public:
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
     void partition(const Communicator& comm);
 
+    template<typename T>
+    void sendMessages(const Communicator& comm, std::vector<T>& data) const;
+
+    void addNeighbouringProc(int procNo,
+                             const std::vector<Label>& bufferCells,
+                             const std::vector<Label>& sendOrder,
+                             const std::vector<Label>& recvOrder);
+
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }
 
@@ -107,6 +114,9 @@ protected:
 
     mutable std::map<std::string, CellGroup> cellGroups_;
     mutable std::map<std::string, CellZone> cellZones_;
+    std::vector<int> neighbouringProcs_;
+    std::vector<std::vector<Label>> procSendOrder_;
+    std::vector<std::vector<Label>> procRecvOrder_;
 
     //- Face related data
     std::vector<Face> faces_;
@@ -124,5 +134,7 @@ protected:
     //- For node searches
     Search<Node> nodeSearch_;
 };
+
+#include "FiniteVolumeGrid2D.tpp"
 
 #endif

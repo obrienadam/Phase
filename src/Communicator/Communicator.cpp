@@ -18,12 +18,7 @@ Communicator::Communicator(MPI_Comm comm)
     :
       comm_(comm)
 {
-    scalarSendBuffers_.resize(nProcs());
-    scalarRecvBuffers_.resize(nProcs());
-    vector2DSendBuffers_.resize(nProcs());
-    vector2DRecvBuffers_.resize(nProcs());
 
-    recvIdOrdering_.resize(nProcs());
 }
 
 Communicator::~Communicator()
@@ -86,16 +81,6 @@ void Communicator::broadcast(int root, std::vector<double> &doubles) const
     MPI_Bcast(doubles.data(), doubles.size(), MPI_DOUBLE, root, comm_);
 }
 
-void Communicator::broadcast(int root, std::string &str) const
-{
-    int size = broadcast(root, str.size());
-    char cstr[size];
-    strcpy(cstr, str.c_str());
-
-    MPI_Bcast(cstr, size, MPI_CHAR, root, comm_);
-    str = std::string(cstr);
-}
-
 void Communicator::broadcast(int root, std::vector<Vector2D> &vector2Ds) const
 {
     MPI_Bcast(vector2Ds.data(), vector2Ds.size(), MPI_VECTOR2D_, root, comm_);
@@ -116,14 +101,36 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
     return result;
 }
 
+void Communicator::send(int dest, const std::vector<int> &vals, int tag) const
+{
+    MPI_Send(vals.data(), vals.size(), MPI_INT, dest, tag, comm_);
+}
+
 void Communicator::send(int dest, const std::vector<unsigned long> &vals, int tag) const
 {
     MPI_Send(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_);
 }
 
+void Communicator::send(int dest, const std::vector<double> &vals, int tag) const
+{
+    MPI_Send(vals.data(), vals.size(), MPI_DOUBLE, dest, tag, comm_);
+}
+
 void Communicator::send(int dest, const std::vector<Vector2D> &vals, int tag) const
 {
     MPI_Send(vals.data(), vals.size(), MPI_VECTOR2D_, dest, tag, comm_);
+}
+
+void Communicator::recv(int source, std::vector<int> &vals) const
+{
+    MPI_Status status;
+    MPI_Recv(vals.data(), vals.size(), MPI_INT, source, MPI_ANY_TAG, comm_, &status);
+}
+
+void Communicator::recv(int source, std::vector<unsigned long> &vals) const
+{
+    MPI_Status status;
+    MPI_Recv(vals.data(), vals.size(), MPI_UNSIGNED_LONG, source, MPI_ANY_TAG, comm_, &status);
 }
 
 void Communicator::recv(int source, std::vector<double> &vals) const
@@ -143,7 +150,6 @@ void Communicator::ibsend(int dest, const std::vector<unsigned long> &vals, int 
 {
     MPI_Request request;
     MPI_Ibsend(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_, &request);
-    //MPI_Bs
 
     currentRequests_.push_back(request);
 }
@@ -152,6 +158,14 @@ void Communicator::irecv(int source, std::vector<unsigned long> &vals, int tag) 
 {
     MPI_Request request;
     MPI_Irecv(vals.data(), vals.size(), MPI_UNSIGNED_LONG, source, tag, comm_, &request);
+
+    currentRequests_.push_back(request);
+}
+
+void Communicator::irecv(int source, std::vector<double> &vals, int tag) const
+{
+    MPI_Request request;
+    MPI_Irecv(vals.data(), vals.size(), MPI_DOUBLE, source, tag, comm_, &request);
 
     currentRequests_.push_back(request);
 }
