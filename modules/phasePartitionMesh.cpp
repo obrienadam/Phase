@@ -5,6 +5,8 @@
 #include "Input.h"
 #include "CgnsUnstructuredGrid.h"
 #include "Communicator.h"
+#include "Poisson.h"
+#include "Viewer.h"
 #include "Exception.h"
 
 int main(int argc, char *argv[])
@@ -17,9 +19,21 @@ int main(int argc, char *argv[])
     Input input;
     input.parseInputFile();
     CgnsUnstructuredGrid grid(input);
-
     grid.partition(comm);
     grid.save("test.cgns", comm);
+
+    Poisson solver(input, grid);
+
+    for(Scalar &val: solver.phi)
+        val = comm.rank();
+
+    grid.sendMessages(comm, solver.phi);
+
+    if(comm.isMainProc())
+    {
+        Viewer viewer(solver, input);
+        viewer.write(0);
+    }
 
     Communicator::finalize();
     return 0;

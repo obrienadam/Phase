@@ -16,6 +16,10 @@ Solver::Solver(const Input &input, FiniteVolumeGrid2D &grid)
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+
+    ScalarFiniteVolumeField& group = addScalarField("cellGroup");
+    for(const Cell& cell: group.grid.activeCells())
+        group(cell) = 1.;
 }
 
 std::string Solver::info() const
@@ -27,6 +31,7 @@ std::string Solver::info() const
 ScalarFiniteVolumeField& Solver::addScalarField(const Input& input, const std::string& name)
 {
     typedef std::pair< std::string, ScalarFiniteVolumeField> Key;
+
     auto insert = scalarFields_.insert(Key(name, ScalarFiniteVolumeField(input, grid_, name)));
 
     if(!insert.second)

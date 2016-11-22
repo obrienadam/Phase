@@ -1,3 +1,5 @@
+#include "FiniteVolumeGrid2D.h"
+
 template<typename T>
 void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &data) const
 {

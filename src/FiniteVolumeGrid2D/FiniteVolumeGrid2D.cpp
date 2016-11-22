@@ -173,6 +173,13 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
     return elems;
 }
 
+CellZone &FiniteVolumeGrid2D::addCellZone(const std::string &name, const std::vector<Label> &ids)
+{
+    CellZone& newCellZone = cellZones_[name];
+    newCellZone.moveToGroup(getCells(ids));
+    return newCellZone;
+}
+
 //- Cell related methods
 
 CellZone& FiniteVolumeGrid2D::moveCellsToFluidCellGroup(const std::vector<size_t>& ids)
@@ -234,13 +241,23 @@ CellZone& FiniteVolumeGrid2D::moveCellsToCellGroup(const std::string& name, cons
     return group;
 }
 
+void FiniteVolumeGrid2D::removeFromActiveCellGroup(const std::vector<Label> &ids)
+{
+    CellGroup& group = cellGroups_["active"];
+
+    for(const Cell& cell: getCells(ids))
+        group.remove(cell);
+}
+
 const std::vector<Ref<const Cell> > FiniteVolumeGrid2D::getCells(const std::vector<Label> &ids) const
 {
     std::vector<Ref<const Cell> > cells;
     cells.reserve(ids.size());
 
-    for(Label id: ids)
-        cells.push_back(std::cref(cells_[id]));
+    std::transform(ids.begin(),
+                   ids.end(),
+                   std::back_inserter(cells),
+                   [this](Label id){ return std::cref(this->cells_[id]); });
 
     return cells;
 }
@@ -416,7 +433,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     vector<int> neighboursProc(comm.nProcs(), -1);
     vector<int> nbProcs;
     vector<vector<Label>> sendOrder, recvOrder;
-
+for(int i = 0; i < 2; ++i)
     for(const Cell& cell: getCells(localCellList))
     {
         for(const InteriorLink& nb: cell.neighbours())
@@ -495,6 +512,13 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
 
         applyPatchByNodes(entry.first, entry.second);
     }
+
+    vector<Label> partitionPatch;
+    for(const Face& face: boundaryFaces())
+        if(!face.belongsToPatch())
+            partitionPatch.push_back(face.id());
+
+    applyPatch("partition", partitionPatch);
 }
 
 void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
@@ -504,6 +528,8 @@ void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
     neighbouringProcs_.push_back(procNo);
     procSendOrder_.push_back(sendOrder);
     procRecvOrder_.push_back(recvOrder);
+    addCellZone("proc" + std::to_string(procNo), recvOrder);
+    removeFromActiveCellGroup(recvOrder);
 }
 
 //- Protected methods

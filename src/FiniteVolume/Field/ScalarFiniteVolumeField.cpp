@@ -37,7 +37,6 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
     }
 
     auto &self = *this;
-
     for(const Face &face: grid.boundaryFaces())
         self(face) = boundaryRefValue(face);
 }

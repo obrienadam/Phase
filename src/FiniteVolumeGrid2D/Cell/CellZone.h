@@ -12,6 +12,7 @@ public:
 
     virtual void push_back(const Cell &cell); // does not insert if the cell is found in the registry
     virtual void moveToGroup(const Cell &cell); // inserts or moves the cell to this group
+    virtual void moveToGroup(const std::vector<Ref<const Cell>>& cells);
     virtual void moveAllCellsToThisGroup();
 
     virtual void remove(const Cell &cell);

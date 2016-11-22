@@ -50,7 +50,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields p,m,rho,mu
+	scalarFields p,m,rho,mu,phi,cellGroup
 }
 
 Integrators

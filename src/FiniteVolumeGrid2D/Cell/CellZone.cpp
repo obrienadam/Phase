@@ -31,6 +31,12 @@ void CellZone::moveToGroup(const Cell &cell)
     }
 }
 
+void CellZone::moveToGroup(const std::vector<Ref<const Cell> > &cells)
+{
+    for(const Cell& cell: cells)
+        moveToGroup(cell);
+}
+
 void CellZone::moveAllCellsToThisGroup()
 {
     for(auto &entry: registry_) // careful with this iterator

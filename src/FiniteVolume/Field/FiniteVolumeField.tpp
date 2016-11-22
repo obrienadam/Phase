@@ -21,7 +21,6 @@ FiniteVolumeField<T>::FiniteVolumeField(const Input &input, const FiniteVolumeGr
       FiniteVolumeField(grid, name)
 {
     using namespace std;
-
     setBoundaryTypes(input);
     setBoundaryRefValues(input);
 }

@@ -48,8 +48,10 @@ public:
     //- Cell groups and zones
     CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
     CellZone &cellZone(const std::string& name) const { return cellZones_.find(name)->second; }
+    CellZone &addCellZone(const std::string& name, const std::vector<Label>& ids);
 
     const CellGroup& activeCells() const { return cellGroup("active"); }
+    const CellGroup& globallyActiveCells() const { return cellGroup("globallyActive"); }
     const CellZone& inactiveCells() const { return cellZone("inactive"); }
     const CellZone& fluidCells() const { return cellZone("fluid"); }
 
@@ -59,6 +61,7 @@ public:
     CellZone& moveAllCellsToFluidCellGroup();
     CellZone& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids);
     CellZone& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids);
+    void removeFromActiveCellGroup(const std::vector<Label>& ids);
 
     const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
 
@@ -76,7 +79,6 @@ public:
     void assignFaceIds();
 
     //- Patch related methods
-    void addPatch(const std::string& patchName);
     const std::map<std::string, Patch>& patches() const { return patches_; }
 
     //- Entity searches
