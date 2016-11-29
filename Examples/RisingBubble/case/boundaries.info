@@ -12,7 +12,7 @@ Boundaries
 
     y+
     {
-      type outflow
+      type normal_gradient
       value (0,0)
     }
   }

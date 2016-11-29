@@ -14,21 +14,17 @@ public:
     ImmersedBoundary(const Input& input, Solver &solver);
 
     Equation<ScalarFiniteVolumeField> eqns(ScalarFiniteVolumeField& field);
-
     Equation<VectorFiniteVolumeField> eqns(VectorFiniteVolumeField& field);
-    Equation<VectorFiniteVolumeField> eqns(const ScalarFiniteVolumeField& rho, VectorFiniteVolumeField& field);
 
     const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
-
     bool isIbCell(const Cell& cell) const;
-
-    ScalarFiniteVolumeField &cellStatus_;
 
 protected:
 
     void setCellStatus();
 
     const Solver &solver_;
+    ScalarFiniteVolumeField &cellStatus_;
     std::vector<ImmersedBoundaryObject> ibObjs_;
 
 };

@@ -27,8 +27,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 480
-	nCellsY 320
+	nCellsX 240
+	nCellsY 160
 
 	; Rectilinear parameters
 	width 3

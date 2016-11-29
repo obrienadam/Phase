@@ -5,12 +5,7 @@ namespace fv
 
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field)
 {
-    const Size nActiveCells = field.grid.nActiveCells();
-
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(5*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -26,7 +21,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
             Scalar coeff = std::min(faceFlux, 0.);
             centralCoeff += std::max(faceFlux, 0.);
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.add(row, col, coeff);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -51,10 +46,9 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
             }
         }
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.add(row, row, centralCoeff);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
@@ -62,10 +56,7 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 {
     const Size nActiveCells = field.grid.nActiveCells();
 
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
-
-    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -87,8 +78,8 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
             centralCoeffX += std::max(faceFlux, 0.);
             centralCoeffY += std::max(faceFlux, 0.);
 
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, coeffX));
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, colY, coeffY));
+            eqn.add(rowX, colX, coeffX);
+            eqn.add(rowY, colY, coeffY);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -115,11 +106,10 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
             }
         }
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, centralCoeffX));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeffY));
+        eqn.add(rowX, rowX, centralCoeffX);
+        eqn.add(rowY, rowY, centralCoeffY);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 

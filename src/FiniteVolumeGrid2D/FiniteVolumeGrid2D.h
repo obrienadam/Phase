@@ -83,6 +83,7 @@ public:
 
     //- Entity searches
     const Node& findNearestNode(const Point2D& pt) const;
+    std::vector<std::vector<Ref<const Cell> > > constructSmoothingKernels(Scalar width) const;
 
     //- Parallel/paritioning
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
@@ -133,6 +134,7 @@ protected:
     std::map<std::string, Patch> patches_;
 
     BoundingBox bBox_;
+    Polygon domain_;
 
     //- For node searches
     Search<Node> nodeSearch_;

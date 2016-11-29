@@ -335,6 +335,25 @@ const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
     return nodeSearch_.kNearestNeighbourSearch(pt, 1)[0];
 }
 
+std::vector<std::vector<Ref<const Cell>> > FiniteVolumeGrid2D::constructSmoothingKernels(Scalar width) const
+{
+    std::vector<std::vector<Ref<const Cell>>> kernels(nCells());
+    const CellGroup& group = activeCells();
+    BoundingBox gridgeom = boundingBox();
+
+    for(const Cell& cell: group)
+    {
+        Circle base = Circle(cell.centroid(), width);
+        std::vector<Ref<const Cell>> kernel = group.rangeSearch(base);
+
+        //- must  find intersecting boundary edges
+
+        kernels[cell.id()] = kernel;
+    }
+
+    return kernels;
+}
+
 std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementConnectivity() const
 {
     using namespace std;

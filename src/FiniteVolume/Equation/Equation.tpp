@@ -16,7 +16,7 @@ Equation<T>::Equation(const Input& input, T& field, const std::string& name)
 template<class T>
 Equation<T>::Equation(const Equation<T>& other)
     :
-      spMat_(other.spMat_),
+      coeffs_(other.coeffs_),
       boundaries_(other.boundaries_),
       sources_(other.sources_),
       field_(other.field_)
@@ -25,18 +25,77 @@ Equation<T>::Equation(const Equation<T>& other)
 }
 
 template<class T>
-Equation<T>& Equation<T>::assemble(const std::vector<Triplet>& triplets)
+void Equation<T>::set(int i, int j, Scalar val)
 {
-    spMat_.setFromTriplets(triplets.begin(), triplets.end());
-    return *this;
+    for(auto& coeff: coeffs_[i])
+    {
+        if(coeff.first == j)
+        {
+            coeff.second = val;
+            return;
+        }
+    }
+
+    coeffs_[i].push_back(std::make_pair(j, val));
+}
+
+template <class T>
+void Equation<T>::add(int i, int j, Scalar val)
+{
+    for(auto& coeff: coeffs_[i])
+    {
+        if(coeff.first == j)
+        {
+            coeff.second += val;
+            return;
+        }
+    }
+
+    coeffs_[i].push_back(std::make_pair(j, val));
 }
 
 template<class T>
-Scalar Equation<T>::solve(bool recomputePreconditioner)
+Scalar& Equation<T>::getRef(int i, int j)
 {
-    if(recomputePreconditioner)
-        solver_.compute(spMat_);
+    for(auto& coeff: coeffs_[i])
+    {
+        if(coeff.first == j)
+            return coeff.second;
+    }
 
+    throw Exception("Equation<T>", "getRef", "no such entry.");
+}
+
+template<class T>
+Scalar Equation<T>::get(int i, int j) const
+{
+    for(const auto& coeff: coeffs_[i])
+    {
+        if(coeff.first == j)
+            return coeff.second;
+    }
+
+    return 0.;
+}
+
+template<class T>
+void Equation<T>::clear()
+{
+    for(auto& coeff: coeffs_)
+        coeff.clear();
+}
+
+template<class T>
+Scalar Equation<T>::solve()
+{
+    std::vector<Triplet> triplets;
+    for(int i = 0; i < coeffs_.size(); ++i)
+        for(const auto& entry: coeffs_[i])
+            triplets.push_back(Triplet(i, entry.first, entry.second));
+
+    spMat_.setFromTriplets(triplets.begin(), triplets.end());
+
+    solver_.compute(spMat_);
     field_ = solver_.solve(boundaries_ + sources_);
 
     printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
@@ -44,11 +103,16 @@ Scalar Equation<T>::solve(bool recomputePreconditioner)
 }
 
 template<class T>
-Scalar Equation<T>::solve(const SparseVector &x0, bool recomputePreconditioner)
+Scalar Equation<T>::solve(const SparseVector &x0)
 {
-    if(recomputePreconditioner)
-        solver_.compute(spMat_);
+    std::vector<Triplet> triplets;
+    for(int i = 0; i < coeffs_.size(); ++i)
+        for(const auto& entry: coeffs_[i])
+            triplets.push_back(Triplet(i, entry.first, entry.second));
 
+    spMat_.setFromTriplets(triplets.begin(), triplets.end());
+
+    solver_.compute(spMat_);
     field_ = solver_.solveWithGuess(boundaries_ + sources_, x0);
 
     printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
@@ -58,7 +122,10 @@ Scalar Equation<T>::solve(const SparseVector &x0, bool recomputePreconditioner)
 template<class T>
 Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
-    spMat_ += rhs.spMat_;
+    for(int i = 0; i < rhs.coeffs_.size(); ++i)
+        for(const auto& entry: rhs.coeffs_[i])
+            add(i, entry.first, entry.second);
+
     boundaries_ += rhs.boundaries_;
     sources_ += rhs.sources_;
 
@@ -68,7 +135,10 @@ Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator -=(const Equation<T>& rhs)
 {
-    spMat_ -= rhs.spMat_;
+    for(int i = 0; i < rhs.coeffs_.size(); ++i)
+        for(const auto& entry: rhs.coeffs_[i])
+            add(i, entry.first, -entry.second);
+
     boundaries_ -= rhs.boundaries_;
     sources_ -= rhs.sources_;
 
@@ -80,7 +150,7 @@ Equation<T>& Equation<T>::operator =(const Equation<T>& rhs)
 {
     if(this != &rhs)
     {
-        spMat_ = rhs.spMat_;
+        coeffs_ = rhs.coeffs_;
         boundaries_ = rhs.boundaries_;
         sources_ = rhs.sources_;
     }
@@ -91,7 +161,10 @@ Equation<T>& Equation<T>::operator =(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator *=(Scalar rhs)
 {
-    spMat_ *= rhs;
+    for(int i = 0; i < coeffs_.size(); ++i)
+        for(const auto& entry: coeffs_[i])
+            set(i, entry.first, rhs*entry.second);
+
     boundaries_ *= rhs;
     sources_ *= rhs;
 
@@ -110,7 +183,10 @@ Equation<T>& Equation<T>::operator==(Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 {
-    spMat_ -= rhs.spMat_;
+    for(int i = 0; i < rhs.coeffs_.size(); ++i)
+        for(const auto& entry: rhs.coeffs_[i])
+            add(i, entry.first, -entry.second);
+
     boundaries_ -= rhs.boundaries_;
     sources_ = rhs.sources_ - sources_;
     return *this;

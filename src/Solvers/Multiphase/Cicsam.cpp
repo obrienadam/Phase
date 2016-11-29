@@ -20,11 +20,8 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
                                      ScalarFiniteVolumeField &gamma,
                                      Scalar timeStep)
 {
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(gamma);
     const Scalar k = 1; //- 0 For a full UQ scheme, 2 for max HC
-
-    entries.reserve(5*gamma.grid.nActiveCells());
 
     for(const Cell &cell: gamma.grid.fluidCells())
     {
@@ -73,7 +70,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
                 centralCoeff += betaFace*flux/2.;
             }
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.add(row, col, coeff);
             eqn.boundaries()(row) -= coeff*gamma.prev()(nb.cell());
         }
 
@@ -100,11 +97,10 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.add(row, row, centralCoeff);
         eqn.boundaries()(row) -= centralCoeff*gamma.prev()(cell);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 

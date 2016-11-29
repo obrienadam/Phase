@@ -1,6 +1,5 @@
 #include "Piso.h"
 #include "Exception.h"
-#include "TotalVariationDiminishing.h"
 #include "CrankNicolson.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"

@@ -7,13 +7,9 @@ namespace plic
 
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradField, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
 {
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
-
     for(int componentNo = 0; componentNo < 2; ++componentNo)
     {
         Equation<ScalarFiniteVolumeField> eqn(field);
-        entries.clear();
-        entries.reserve(4*field.grid.nActiveCells());
 
         for(const Cell &cell: field.grid.fluidCells())
         {
@@ -42,8 +38,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
                     }
                     else
                     {
-                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, fluxPgn.area()));
-                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(col, row, -fluxPgn.area()));
+                        eqn.add(row, row, fluxPgn.area());
+                        eqn.add(col, row, -fluxPgn.area());
                     }
                 }
             }
@@ -68,7 +64,7 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
                     if(!plicPgn.isEmpty())
                         massTransfer = intersectionPolygon(plicPgn, fluxPgn).area(); // Flux depends on the plic reconstruction in the boundary cell
                     else
-                        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, fluxPgn.area()));
+                        eqn.add(row, row, fluxPgn.area());
 
                     break;
 
@@ -88,10 +84,8 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             //eqn.boundaries()(row) += std::min(std::max(field[cell.id()], 0.), 1.)*cell.volume(); // A limiting operation to ensure valid masses
             eqn.boundaries()(row) += field[cell.id()]*cell.volume();
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+            eqn.add(row, row, centralCoeff);
         }
-
-        eqn.assemble(entries);
 
         if(componentNo == 0)
             eqn.solve(); // Solve and compute the next component

@@ -11,12 +11,18 @@ class Equation
 {
 public:
 
-    typedef Eigen::Triplet<Scalar> Triplet;
-
     Equation(T& field, const std::string& name = "Unknown");
     Equation(const Input& input, T& field, const std::string& name = "Unknown");
 
     Equation(const Equation<T>& other);
+
+    void set(int i, int j, Scalar val);
+    void add(int i, int j, Scalar val);
+
+    Scalar& getRef(int i, int j);
+    Scalar get(int i, int j) const;
+
+    void clear();
 
     SparseMatrix& matrix(){ return spMat_; }
     SparseVector& boundaries(){ return boundaries_; }
@@ -36,11 +42,10 @@ public:
     Equation<T>& operator==(const Equation<T>& rhs);
     Equation<T>& operator==(const T& rhs);
 
-    Equation<T>& assemble(const std::vector<Triplet> &triplets);
     void computeSolver() const { solver_.compute(spMat_); }
 
-    Scalar solve(bool recomputePreconditioner = true);
-    Scalar solve(const SparseVector& x0, bool recomputePreconditioner = true);
+    Scalar solve();
+    Scalar solve(const SparseVector& x0);
 
     Scalar error() const { return solver_.error(); }
     int iterations() const { return solver_.iterations(); }
@@ -53,7 +58,10 @@ public:
 
 private:
     SparseMatrix spMat_;
+
     mutable BiCGSTABIncompleteLUT solver_;
+    std::vector<std::vector<std::pair<Index, Scalar>>> coeffs_;
+
     SparseVector boundaries_, sources_;
 
     T& field_;

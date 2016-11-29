@@ -5,12 +5,7 @@ namespace fv
 
 Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 {
-    const Size nCells = field.grid.nActiveCells();
-
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(5*nCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -23,7 +18,7 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
             const Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.add(row, col, coeff);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -45,21 +40,15 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.add(row, row, centralCoeff);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
 Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma, ScalarFiniteVolumeField& field)
 {
-    const Size nCells = field.grid.nActiveCells();
-
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(5*nCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -72,7 +61,7 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             const Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
-            entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, col, coeff));
+            eqn.add(row, col, coeff);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -94,10 +83,9 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             }
         }
 
-        entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(row, row, centralCoeff));
+        eqn.add(row, row, centralCoeff);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
@@ -105,10 +93,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 {
     const Size nActiveCells = field.grid.nActiveCells();
 
-    std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
-
-    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -129,8 +114,8 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             centralCoeffX -= coeffX;
             centralCoeffY -= coeffY;
 
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, coeffX));
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, colY, coeffY));
+            eqn.add(rowX, colX, coeffX);
+            eqn.add(rowY, colY, coeffY);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -154,11 +139,11 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             {
                 const Vector2D tWall = bd.outwardNorm().unitVec().tangentVec();
 
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, coeff*tWall.x*tWall.x));
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, coeff*tWall.y*tWall.x));
+                eqn.add(rowX, rowX, coeff*tWall.x*tWall.x);
+                eqn.add(rowY, rowY, coeff*tWall.y*tWall.x);
 
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, coeff*tWall.y*tWall.y));
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, coeff*tWall.x*tWall.y));
+                eqn.add(rowY, rowY, coeff*tWall.y*tWall.y);
+                eqn.add(rowX, rowX, coeff*tWall.x*tWall.y);
             }
                 break;
 
@@ -167,11 +152,10 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             }
         }
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, centralCoeffX));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, centralCoeffY));
+        eqn.add(rowX, rowX, centralCoeffX);
+        eqn.add(rowY, rowY, centralCoeffY);
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 

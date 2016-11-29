@@ -166,11 +166,6 @@ Equation<VectorFiniteVolumeField> ImmersedBoundary::eqns(VectorFiniteVolumeField
     return gc::ib(ibObjs_, field);
 }
 
-Equation<VectorFiniteVolumeField> ImmersedBoundary::eqns(const ScalarFiniteVolumeField& rho, VectorFiniteVolumeField &field)
-{
-    return gc::ib(ibObjs_, rho, field);
-}
-
 bool ImmersedBoundary::isIbCell(const Cell &cell) const
 {
     for(const ImmersedBoundaryObject& ibObj: ibObjs_)

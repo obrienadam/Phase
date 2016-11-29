@@ -31,13 +31,9 @@ PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     if(tmp == "CSF")
-    {
         surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, *this));
-    }
     else if(tmp == "CELESTE")
-    {
         surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new Celeste(input, *this));
-    }
     else
         throw Exception("PisoMultiphase", "PisoMultiphase", "unrecognized surface tension model \"" + tmp + "\".");
 
@@ -138,7 +134,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(rho, u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
              == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) - fv::source(sg));
 
     Scalar error = uEqn_.solve();

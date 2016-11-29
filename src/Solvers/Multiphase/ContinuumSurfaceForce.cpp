@@ -36,11 +36,7 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 
 void ContinuumSurfaceForce::constructSmoothingKernels()
 {
-    cellRangeSearch_.clear();
-    cellRangeSearch_.resize(gamma_.grid.cells().size());
-
-    for(const Cell &cell: gamma_.grid.activeCells())
-        cellRangeSearch_[cell.id()] = gamma_.grid.activeCells().rangeSearch(Circle(cell.centroid(), kernelWidth_));
+    cellRangeSearch_ = gamma_.grid.constructSmoothingKernels(kernelWidth_);
 }
 
 //- Private methods

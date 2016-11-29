@@ -7,13 +7,10 @@ Equation<VectorFiniteVolumeField> div(const ScalarFiniteVolumeField& rho, const 
 {
     const Size nActiveCells = field.grid.nActiveCells();
 
-    std::vector<Equation<ScalarFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
     const VectorFiniteVolumeField &field0 = field.prev(0);
     const ScalarFiniteVolumeField &rho0 = rho.prev(0);
     const VectorFiniteVolumeField &u0 = u.prev(0);
-
-    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -36,8 +33,8 @@ Equation<VectorFiniteVolumeField> div(const ScalarFiniteVolumeField& rho, const 
             centralCoeff0 += std::max(faceFlux0, 0.);
             centralCoeff += std::max(faceFlux, 0.);
 
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, theta*coeff));
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, colY, theta*coeff));
+            eqn.add(rowX, colX, theta*coeff);
+            eqn.add(rowY, colY, theta*coeff);
 
             eqn.boundaries()(rowX) -= (1. - theta)*coeff0*field0(nb.cell()).x;
             eqn.boundaries()(rowY) -= (1. - theta)*coeff0*field0(nb.cell()).y;
@@ -75,13 +72,12 @@ Equation<VectorFiniteVolumeField> div(const ScalarFiniteVolumeField& rho, const 
             }
         }
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, theta*centralCoeff));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, theta*centralCoeff));
+        eqn.add(rowX, rowX, theta*centralCoeff);
+        eqn.add(rowY, rowY, theta*centralCoeff);
         eqn.boundaries()(rowX) -= (1. - theta)*centralCoeff0*field0(cell).x;
         eqn.boundaries()(rowY) -= (1. - theta)*centralCoeff0*field0(cell).y;
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
@@ -89,12 +85,9 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 {
     const Size nActiveCells = field.grid.nActiveCells();
 
-    std::vector<Equation<VectorFiniteVolumeField>::Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
     const VectorFiniteVolumeField &field0 = field.prev(0);
     const ScalarFiniteVolumeField &gamma0 = gamma.prev(0);
-
-    entries.reserve(10*nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {
@@ -118,8 +111,8 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             centralCoeff0 -= coeff0;
             centralCoeff -= coeff;
 
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, colX, theta*coeff));
-            entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, colY, theta*coeff));
+            eqn.add(rowX, colX, theta*coeff);
+            eqn.add(rowY, colY, theta*coeff);
             eqn.boundaries()(rowX) -= (1. - theta)*coeff0*field0(nb.cell()).x;
             eqn.boundaries()(rowY) -= (1. - theta)*coeff0*field0(nb.cell()).y;
         }
@@ -150,11 +143,11 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             {
                 const Vector2D nWall = bd.outwardNorm().unitVec();
 
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, -coeff*nWall.x*nWall.x));
-                entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(rowX, rowY, -coeff*nWall.y*nWall.x));
+                eqn.add(rowX, rowX, -coeff*nWall.x*nWall.x);
+                eqn.add(rowX, rowY, -coeff*nWall.y*nWall.x);
 
-                entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, -coeff*nWall.y*nWall.y));
-                entries.push_back(Equation<ScalarFiniteVolumeField>::Triplet(rowY, rowX, -coeff*nWall.x*nWall.y));
+                eqn.add(rowY, rowY, -coeff*nWall.y*nWall.y);
+                eqn.add(rowY, rowX, -coeff*nWall.x*nWall.y);
             }
                 break;
 
@@ -163,13 +156,12 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
             }
         }
 
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowX, rowX, theta*centralCoeff));
-        entries.push_back(Equation<VectorFiniteVolumeField>::Triplet(rowY, rowY, theta*centralCoeff));
+        eqn.add(rowX, rowX, theta*centralCoeff);
+        eqn.add(rowY, rowY, theta*centralCoeff);
         eqn.boundaries()(rowX) -= (1. - theta)*centralCoeff0*field0(cell).x;
         eqn.boundaries()(rowY) -= (1. - theta)*centralCoeff0*field0(cell).y;
     }
 
-    eqn.assemble(entries);
     return eqn;
 }
 

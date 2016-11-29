@@ -5,12 +5,7 @@ namespace gc {
 
 Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, ScalarFiniteVolumeField& field)
 {
-    typedef Equation<ScalarFiniteVolumeField>::Triplet Triplet;
-
-    std::vector<Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(5*field.grid.nActiveCells());
 
     for(const ImmersedBoundaryObject& ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
@@ -59,24 +54,19 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
                 throw Exception("gc", "ib", "invalid boundary type.");
             }
 
-            entries.push_back(Triplet(row, row, centralCoeff));
+            eqn.add(row, row, centralCoeff);
+
             for(int i = 0; i < coeffs.size(); ++i)
-                entries.push_back(Triplet(row, cols[i], coeffs[i]));
+                eqn.add(row, cols[i], coeffs[i]);
         }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
 Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &ibObjs, VectorFiniteVolumeField &field)
 {
-    typedef Equation<VectorFiniteVolumeField>::Triplet Triplet;
-
-    std::vector<Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
     const Size nActiveCells = field.grid.nActiveCells();
-
-    entries.reserve(10*field.grid.nActiveCells());
 
     for(const ImmersedBoundaryObject &ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
@@ -167,24 +157,23 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
                 throw Exception("gc", "ib", "invalid boundary type.");
             }
 
-            entries.push_back(Triplet(rowX, rowX, centralCoeffX));
-            entries.push_back(Triplet(rowY, rowY, centralCoeffY));
+            eqn.add(rowX, rowX, centralCoeffX);
+            eqn.add(rowY, rowY, centralCoeffY);
 
             for(int i = 0; i < coeffsX.size(); ++i)
             {
-                entries.push_back(Triplet(rowX, colsX[i], coeffsX[i]));
-                entries.push_back(Triplet(rowY, colsY[i], coeffsY[i]));
+                eqn.add(rowX, colsX[i], coeffsX[i]);
+                eqn.add(rowY, colsY[i], coeffsY[i]);
             }
         }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
 
 Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &ibObjs, const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &field)
 {
-    typedef Equation<VectorFiniteVolumeField>::Triplet Triplet;
+    typedef Triplet Triplet;
 
     std::vector<Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
@@ -215,10 +204,10 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             };
 
             std::vector<Scalar> rhoVals = {
-              rho(kNN[0]),
-              rho(kNN[1]),
-              rho(kNN[2]),
-              rho(kNN[3])
+                rho(kNN[0]),
+                rho(kNN[1]),
+                rho(kNN[2]),
+                rho(kNN[3])
             };
 
             rhoIp = bi(rhoVals, imagePoint);
@@ -301,7 +290,6 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             }
         }
 
-    eqn.assemble(entries);
     return eqn;
 }
 
