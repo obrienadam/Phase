@@ -6,7 +6,7 @@ Poisson::Poisson(const Input &input, FiniteVolumeGrid2D &grid)
       Solver(input, grid),
       phi(addScalarField(input, "phi")),
       gamma(addScalarField("gamma")),
-      phiEqn_(phi, "phi")
+      phiEqn_(input, phi, "phiEqn")
 {
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);

@@ -14,11 +14,14 @@ public:
     typedef SparseMatrixSolver::CoefficientList CoefficientList;
 
     //- Constructors
-    Equation(T& field, const std::string& name = "N/A");
-    Equation(const Input& input, T& field,
+    Equation(T& field,
+             const std::string& name = "N/A");
+    Equation(const Input& input,
+             T& field,
              const std::string& name,
-             std::shared_ptr<SparseMatrixSolver>&& spSolver = std::make_shared<EigenSparseMatrixSolver>());
-    Equation(const Equation<T>& other);
+             const std::shared_ptr<SparseMatrixSolver>& spSolver = std::make_shared<EigenSparseMatrixSolver>());
+    Equation(const Equation<T>& rhs) = default;
+    Equation(Equation<T>&& rhs) = default;
 
     //- Add/set/get coefficients
     void set(int i, int j, Scalar val);
@@ -40,13 +43,15 @@ public:
     void clear();
 
     //- Operators
+    Equation<T>& operator=(const Equation<T>& rhs);
+    Equation<T>& operator=(Equation<T>&& rhs);
     Equation<T>& operator+=(const Equation<T>& rhs);
     Equation<T>& operator-=(const Equation<T>& rhs);
     Equation<T>& operator+=(const T& rhs);
     Equation<T>& operator-=(const T& rhs);
-    Equation<T>& operator=(const Equation<T>& rhs);
     Equation<T>& operator*=(Scalar rhs);
     Equation<T>& operator*=(const ScalarFiniteVolumeField& rhs);
+
     Equation<T>& operator==(Scalar rhs);
     Equation<T>& operator==(const Equation<T>& rhs);
     Equation<T>& operator==(const T& rhs);

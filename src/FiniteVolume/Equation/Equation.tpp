@@ -4,23 +4,12 @@
 #include "Exception.h"
 
 template<class T>
-Equation<T>::Equation(const Input& input, T& field, const std::string& name, std::shared_ptr<SparseMatrixSolver> &&spSolver)
+Equation<T>::Equation(const Input& input, T& field, const std::string& name, const std::shared_ptr<SparseMatrixSolver> &spSolver)
     :
       Equation<T>::Equation(field, name)
 {
     spSolver_ = spSolver;
     configureSparseSolver(input);
-}
-
-template<class T>
-Equation<T>::Equation(const Equation<T>& other)
-    :
-      coeffs_(other.coeffs_),
-      boundaries_(other.boundaries_),
-      sources_(other.sources_),
-      field_(other.field_)
-{
-
 }
 
 template<class T>
@@ -85,6 +74,40 @@ void Equation<T>::clear()
 }
 
 template<class T>
+Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
+{
+    if(this == &rhs)
+        return *this;
+    else if(&field_ != &rhs.field_)
+        throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
+
+    coeffs_ = rhs.coeffs_;
+    boundaries_ = rhs.boundaries_;
+    sources_ = rhs.sources_;
+
+    if(rhs.spSolver_) // Prevent a sparse solver from being accidently destroyed if the rhs solver doesn't exist
+        spSolver_ = rhs.spSolver_;
+
+    return *this;
+}
+
+template<class T>
+Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
+{
+    if(&field_ != &rhs.field_)
+        throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
+
+    coeffs_ = std::move(rhs.coeffs_);
+    boundaries_ = std::move(rhs.boundaries_);
+    sources_ = std::move(sources_);
+
+    if(rhs.spSolver_)
+        spSolver_ = rhs.spSolver_;
+
+    return *this;
+}
+
+template<class T>
 Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
     for(int i = 0; i < rhs.coeffs_.size(); ++i)
@@ -106,19 +129,6 @@ Equation<T>& Equation<T>::operator -=(const Equation<T>& rhs)
 
     boundaries_ -= rhs.boundaries_;
     sources_ -= rhs.sources_;
-
-    return *this;
-}
-
-template<class T>
-Equation<T>& Equation<T>::operator =(const Equation<T>& rhs)
-{
-    if(this != &rhs)
-    {
-        coeffs_ = rhs.coeffs_;
-        boundaries_ = rhs.boundaries_;
-        sources_ = rhs.sources_;
-    }
 
     return *this;
 }
