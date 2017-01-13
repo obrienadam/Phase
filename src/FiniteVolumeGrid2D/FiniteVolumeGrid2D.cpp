@@ -1,7 +1,7 @@
 #include <cgnslib.h>
+#include <metis.h>
 
 #include "FiniteVolumeGrid2D.h"
-#include "metis.h"
 #include "Exception.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
@@ -551,6 +551,11 @@ void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
     removeFromActiveCellGroup(recvOrder);
 }
 
+std::pair<int, int> FiniteVolumeGrid2D::globalCellRange() const
+{
+    return std::make_pair(cells_.front().globalId(), cells_.back().globalId() + 1);
+}
+
 //- Protected methods
 
 void FiniteVolumeGrid2D::initNodes()
@@ -621,6 +626,18 @@ void FiniteVolumeGrid2D::initConnectivity()
 {
     initNodes();
     initCells();
+}
+
+void FiniteVolumeGrid2D::initGlobalIds(const Communicator &comm)
+{
+    std::vector<unsigned long> nCellsPerProc = comm.allGather(cells_.size());
+    int lowerId = 0;
+
+    for(int procNo = 0; procNo < comm.rank(); ++procNo)
+        lowerId += nCellsPerProc[procNo];
+
+    for(Cell& cell: cells_)
+        cell.setGlobalId(lowerId++);
 }
 
 void FiniteVolumeGrid2D::constructActiveCellGroup()

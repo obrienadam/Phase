@@ -4,13 +4,12 @@
 #include "Exception.h"
 
 template<class T>
-Equation<T>::Equation(const Input& input, T& field, const std::string& name)
+Equation<T>::Equation(const Input& input, T& field, const std::string& name, std::shared_ptr<SparseMatrixSolver> &&spSolver)
     :
       Equation<T>::Equation(field, name)
 {
-    solver_.setMaxIterations(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
-    solver_.setTolerance(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));
-    solver_.preconditioner().setFillfactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 3));
+    spSolver_ = spSolver;
+    configureSparseSolver(input);
 }
 
 template<class T>
@@ -86,40 +85,6 @@ void Equation<T>::clear()
 }
 
 template<class T>
-Scalar Equation<T>::solve()
-{
-    std::vector<Triplet> triplets;
-    for(int i = 0; i < coeffs_.size(); ++i)
-        for(const auto& entry: coeffs_[i])
-            triplets.push_back(Triplet(i, entry.first, entry.second));
-
-    spMat_.setFromTriplets(triplets.begin(), triplets.end());
-
-    solver_.compute(spMat_);
-    field_ = solver_.solve(boundaries_ + sources_);
-
-    printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
-    return error();
-}
-
-template<class T>
-Scalar Equation<T>::solve(const SparseVector &x0)
-{
-    std::vector<Triplet> triplets;
-    for(int i = 0; i < coeffs_.size(); ++i)
-        for(const auto& entry: coeffs_[i])
-            triplets.push_back(Triplet(i, entry.first, entry.second));
-
-    spMat_.setFromTriplets(triplets.begin(), triplets.end());
-
-    solver_.compute(spMat_);
-    field_ = solver_.solveWithGuess(boundaries_ + sources_, x0);
-
-    printf("Solved %s equation, error = %lf, number of iterations = %d\n", name.c_str(), error(), iterations());
-    return error();
-}
-
-template<class T>
 Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
     for(int i = 0; i < rhs.coeffs_.size(); ++i)
@@ -174,7 +139,7 @@ Equation<T>& Equation<T>::operator *=(Scalar rhs)
 template<class T>
 Equation<T>& Equation<T>::operator==(Scalar rhs)
 {
-    for(int i = 0, end = boundaries_.rows(); i < end; ++i)
+    for(int i = 0, end = boundaries_.size(); i < end; ++i)
         sources_(i) += rhs;
 
     return *this;
@@ -199,6 +164,39 @@ Equation<T>& Equation<T>::operator ==(const T& rhs)
         sources_(cell.globalIndex()) += rhs[cell.id()];
 
     return *this;
+}
+
+template<class T>
+void Equation<T>::setSparseSolver(std::shared_ptr<SparseMatrixSolver> &spSolver)
+{
+    spSolver_ = spSolver;
+}
+
+template<class T>
+void Equation<T>::configureSparseSolver(const Input &input)
+{
+    if(!spSolver_)
+        throw Exception("Equation<T>", "configureSparseSolver", "must allocate a SparseMatrixSolver object before attempting to configure.");
+
+    spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
+    spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));
+    spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 3));
+}
+
+template<class T>
+Scalar Equation<T>::solve()
+{
+    if(!spSolver_)
+        throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
+
+    spSolver_->setRank(field_.dimension()*field_.grid.nActiveCells());
+    spSolver_->set(coeffs_);
+    spSolver_->setRhs(boundaries_ + sources_);
+    spSolver_->solve();
+    spSolver_->mapSolution(field_);
+
+    printf("Solved equation \"%s\" in %d iterations, error = %lf\n", name.c_str(), spSolver_->nIters(), spSolver_->error());
+    return spSolver_->error();
 }
 
 //- External functions

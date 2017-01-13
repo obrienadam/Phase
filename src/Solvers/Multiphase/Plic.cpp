@@ -4,7 +4,7 @@
 
 namespace plic
 {
-
+/*
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradField, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
 {
     for(int componentNo = 0; componentNo < 2; ++componentNo)
@@ -87,8 +87,10 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const Ve
             eqn.add(row, row, centralCoeff);
         }
 
+        EigenSparseMatrixSolver matSolver;
+
         if(componentNo == 0)
-            eqn.solve(); // Solve and compute the next component
+            eqn.solve(matSolver); // Solve and compute the next component
         else
             return eqn;
     }
@@ -184,4 +186,5 @@ Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar 
 
     return fluxPgn;
 }
+*/
 }

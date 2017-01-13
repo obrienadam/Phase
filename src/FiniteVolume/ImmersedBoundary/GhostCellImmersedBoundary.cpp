@@ -173,14 +173,9 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
 
 Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &ibObjs, const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &field)
 {
-    typedef Triplet Triplet;
-
-    std::vector<Triplet> entries;
     Equation<VectorFiniteVolumeField> eqn(field);
     const Size nActiveCells = field.grid.nActiveCells();
     Scalar rhoIp;
-
-    entries.reserve(10*field.grid.nActiveCells());
 
     for(const ImmersedBoundaryObject &ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
@@ -280,13 +275,13 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
                 throw Exception("gc", "ib", "invalid boundary type.");
             }
 
-            entries.push_back(Triplet(rowX, rowX, centralCoeffX*rhoIp/(rho(cell) + rhoIp)));
-            entries.push_back(Triplet(rowY, rowY, centralCoeffY*rhoIp/(rho(cell) + rhoIp)));
+            eqn.add(rowX, rowX,  centralCoeffX*rhoIp/(rho(cell) + rhoIp));
+            eqn.add(rowY, rowY, centralCoeffY*rhoIp/(rho(cell) + rhoIp));
 
             for(int i = 0; i < coeffsX.size(); ++i)
             {
-                entries.push_back(Triplet(rowX, colsX[i], coeffsX[i]*rho(cell)/(rho(cell) + rhoIp)));
-                entries.push_back(Triplet(rowY, colsY[i], coeffsY[i]*rho(cell)/(rho(cell) + rhoIp)));
+                eqn.add(rowX, colsX[i], coeffsX[i]*rho(cell)/(rho(cell) + rhoIp));
+                eqn.add(rowY, colsY[i], coeffsY[i]*rho(cell)/(rho(cell) + rhoIp));
             }
         }
 

@@ -2,6 +2,7 @@
 #include "BilinearInterpolation.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
+#include "EigenSparseMatrixSolver.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              Solver &solver)
@@ -52,13 +53,15 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     VectorEquation eqn(n_, "IB contact line normal");
     const Scalar centralCoeff = 1.;
 
+    throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
+
     for(const Cell &cell: n_.grid.fluidCells())
     {
         size_t rowX = cell.globalIndex();
         size_t rowY = rowX + n_.grid.nActiveCells();
 
-        eqn.matrix().insert(rowX, rowX) = 1.;
-        eqn.matrix().insert(rowY, rowY) = 1.;
+        eqn.set(rowX, rowX, 1.);
+        eqn.set(rowY, rowY, 1.);
 
         Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
 
@@ -99,20 +102,21 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
             Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
 
-            eqn.matrix().insert(rowX, rowX) = centralCoeff/2.;
-            eqn.matrix().insert(rowY, rowY) = centralCoeff/2.;
+            eqn.set(rowX, rowX, centralCoeff/2.);
+            eqn.set(rowY, rowY, centralCoeff/2.);
 
             for(int i = 0; i < coeffs.size(); ++i)
-            {
-                eqn.matrix().coeffRef(rowX, cols[i]) = coeffs[i]/2.;
-                eqn.matrix().coeffRef(rowY, cols[i] + n_.grid.nActiveCells()) = coeffs[i]/2.;
+            {   
+                eqn.set(rowX, cols[i], coeffs[i]/2.);
+                eqn.set(rowY, cols[i] + n_.grid.nActiveCells(), coeffs[i]/2.);
             }
 
             eqn.sources()(rowX) = bpNormal.x;
             eqn.sources()(rowY) = bpNormal.y;
         }
 
-    Scalar error = eqn.solve();
+    //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());
+    Scalar error = 0;
 
     if(isnan(error))
     {

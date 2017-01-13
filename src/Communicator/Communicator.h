@@ -33,6 +33,8 @@ public:
     int mainProcNo() const { return 0; }
     bool isMainProc() const { return rank() == mainProcNo(); }
 
+    MPI_Comm communicator() const { return comm_; }
+
     //- Sync
     void barrier() const;
 

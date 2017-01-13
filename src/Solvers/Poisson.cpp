@@ -15,6 +15,5 @@ Poisson::Poisson(const Input &input, FiniteVolumeGrid2D &grid)
 Scalar Poisson::solve(Scalar timeStep)
 {
     phiEqn_ = (fv::laplacian(gamma, phi) + ib_.eqns(phi) == 0.);
-    phiEqn_.solve();
-    return phiEqn_.error();
+    return phiEqn_.solve();
 }

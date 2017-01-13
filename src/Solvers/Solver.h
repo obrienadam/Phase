@@ -5,6 +5,7 @@
 #include "Input.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "SparseMatrixSolver.h"
 #include "Circle.h"
 #include "ImmersedBoundary.h"
 #include "VolumeIntegrator.h"
@@ -16,14 +17,20 @@ public:
 
     enum TimeDependent{ON, OFF};
 
+    //- Constructors
     Solver(const Input& input, FiniteVolumeGrid2D &grid);
 
+    //- Info
     virtual std::string info() const;
+
+    //- Solve
     virtual Scalar solve(Scalar timeStep) = 0;
 
+    //- Time step methods
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const = 0;
     Scalar maxTimeStep() const { return maxTimeStep_; }
 
+    //- Field management
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& name);
     ScalarFiniteVolumeField& addScalarField(const std::string& name);
 
@@ -32,17 +39,19 @@ public:
 
     std::vector<Polygon>& addGeometries(const std::string& name);
 
-    FiniteVolumeGrid2D& grid() { return grid_; }
-    const FiniteVolumeGrid2D& grid() const { return grid_; }
-
     std::map<std::string, ScalarFiniteVolumeField >& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField >& vectorFields() const { return vectorFields_; }
     std::map<std::string, std::vector<Polygon> >& geometries() const { return geometries_; }
 
-    void setInitialConditions(const Input& input);
+    //- Grid
+    FiniteVolumeGrid2D& grid() { return grid_; }
+    const FiniteVolumeGrid2D& grid() const { return grid_; }
 
+    //- ICs/IBs
+    void setInitialConditions(const Input& input);
     const ImmersedBoundary& ib() const { return ib_; }
 
+    //- Integrators
     const std::vector<VolumeIntegrator>& volumeIntegrators() const { return volumeIntegrators_; }
     std::vector<VolumeIntegrator>& volumeIntegrators() { return volumeIntegrators_; }
 
@@ -64,6 +73,7 @@ protected:
 
     FiniteVolumeGrid2D& grid_;
 
+    //- Fields and geometries
     mutable std::map<std::string, ScalarFiniteVolumeField > scalarFields_;
     mutable std::map<std::string, VectorFiniteVolumeField > vectorFields_;
     mutable std::map<std::string, std::vector<Polygon> > geometries_;

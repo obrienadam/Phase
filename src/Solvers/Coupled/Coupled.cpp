@@ -1,5 +1,5 @@
 #include "Coupled.h"
-
+/*
 Coupled::Coupled(const Input &input, FiniteVolumeGrid2D& grid)
     :
       Solver(input, grid),
@@ -35,3 +35,4 @@ Scalar Coupled::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 
     return maxTimeStep;
 }
+*/

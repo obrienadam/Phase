@@ -130,7 +130,7 @@ void Piso::rhieChowInterpolation()
 
     d.fill(0.);
     for(const Cell& cell: d.grid.fluidCells())
-        d(cell) = cell.volume()/uEqn_.matrix().coeff(cell.globalIndex(), cell.globalIndex());
+        d(cell) = cell.volume()/uEqn_.get(cell.globalIndex(), cell.globalIndex());
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 

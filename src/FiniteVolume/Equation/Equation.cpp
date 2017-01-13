@@ -6,14 +6,11 @@ template<>
 Equation<ScalarFiniteVolumeField>::Equation(ScalarFiniteVolumeField& field, const std::string& name)
     :
       name(name),
-      spMat_(field.grid.nActiveCells(), field.grid.nActiveCells()),
       field_(field),
-      coeffs_(field.grid.nActiveCells())
+      coeffs_(field.grid.nActiveCells()),
+      boundaries_(field.grid.nActiveCells()),
+      sources_(field.grid.nActiveCells())
 {
-    boundaries_ = SparseVector::Zero(field.grid.nActiveCells());
-    sources_ = SparseVector::Zero(field.grid.nActiveCells());
-    spMat_.reserve(5*field.grid.nActiveCells());
-
     for(auto& coeff: coeffs_)
         coeff.reserve(5);
 }
@@ -22,14 +19,11 @@ template<>
 Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, const std::string& name)
     :
       name(name),
-      spMat_(2*field.grid.nActiveCells(), 2*field.grid.nActiveCells()),
       field_(field),
-      coeffs_(2*field.grid.nActiveCells())
+      coeffs_(2*field.grid.nActiveCells()),
+      boundaries_(2*field.grid.nActiveCells()),
+      sources_(2*field.grid.nActiveCells())
 {
-    boundaries_ = SparseVector::Zero(2*field.grid.nActiveCells());
-    sources_ = SparseVector::Zero(2*field.grid.nActiveCells());
-    spMat_.reserve(10*field.grid.nActiveCells());
-
     for(auto& coeff: coeffs_)
         coeff.reserve(10);
 }
@@ -92,9 +86,10 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
     for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
     {
         const Index row = cell.globalIndex();
+        Scalar &coeff = getRef(row, row);
 
-        getRef(row, row) /= relaxationFactor;
-        boundaries_(row) += (1. - relaxationFactor)*spMat_.coeff(row, row)*field_(cell);
+        boundaries_(row) += (1. - relaxationFactor)*coeff*field_(cell);
+        coeff /= relaxationFactor;
     }
 }
 
@@ -108,11 +103,14 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
         const Index rowX = cell.globalIndex();
         const Index rowY = rowX + nActiveCells;
 
-        getRef(rowX, rowX) /= relaxationFactor;
-        boundaries_(rowX) += (1. - relaxationFactor)*spMat_.coeff(rowX, rowX)*field_(cell).x;
+        Scalar &coeffX = getRef(rowX, rowX);
+        Scalar &coeffY = getRef(rowY, rowY);
 
-        getRef(rowY, rowY) /= relaxationFactor;
-        boundaries_(rowY) += (1. - relaxationFactor)*spMat_.coeff(rowY, rowY)*field_(cell).y;
+        boundaries_(rowX) += (1. - relaxationFactor)*coeffX*field_(cell).x;
+        boundaries_(rowY) += (1. - relaxationFactor)*coeffY*field_(cell).y;
+
+        coeffX /= relaxationFactor;
+        coeffY /= relaxationFactor;
     }
 }
 

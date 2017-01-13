@@ -96,6 +96,8 @@ public:
                              const std::vector<Label>& sendOrder,
                              const std::vector<Label>& recvOrder);
 
+    std::pair<int, int> globalCellRange() const;
+
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }
 
@@ -104,6 +106,7 @@ protected:
     void initNodes();
     void initCells();
     void initConnectivity();
+    void initGlobalIds(const Communicator& comm);
 
     void constructActiveCellGroup();
     void computeBoundingBox();

@@ -54,8 +54,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 100
-	nCellsY 100
+	nCellsX 20
+	nCellsY 20
 	width 1
 	height 1
 }

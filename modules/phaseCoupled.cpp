@@ -17,9 +17,12 @@ int main(int argc, const char* argv[])
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
     Coupled solver(input, *gridPtr);
-    Viewer viewer(solver, input);
 
+    solver.setSparseMatrixSolver(new EigenSparseMatrixSolver());
+
+    Viewer viewer(solver, input);
     RunControl runControl;
+
     runControl.run(input, solver, viewer);
 }
 

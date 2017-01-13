@@ -6,7 +6,7 @@
 #include "Field.h"
 #include "FiniteVolumeGrid2D.h"
 #include "Input.h"
-#include "SparseVector.h"
+#include "Vector.h"
 
 template<class T>
 class FiniteVolumeField : public Field<T>
@@ -63,11 +63,12 @@ public:
     const FiniteVolumeField& prev() const { return previousIteration_.front(); }
 
     //- Vectorization
-    SparseVector sparseVector() const;
+    Size dimension() const;
+    Vector vectorize() const;
 
     //- Operators
     FiniteVolumeField& operator=(const FiniteVolumeField& rhs);
-    FiniteVolumeField& operator=(const SparseVector& rhs);
+    FiniteVolumeField& operator=(const Vector& rhs);
     FiniteVolumeField& operator+=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator-=(const FiniteVolumeField& rhs);
     FiniteVolumeField& operator*=(const FiniteVolumeField<Scalar>& rhs);

@@ -1,7 +1,7 @@
 #include "CoupledEquation.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
-
+/*
 CoupledEquation::CoupledEquation(const Input &input, const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)
     :
       rho_(rho),
@@ -22,7 +22,7 @@ CoupledEquation::CoupledEquation(const Input &input, const ScalarFiniteVolumeFie
 
     solver_.setMaxIterations(input.caseInput().get<int>("LinearAlgebra.CoupledEqn.maxIterations", 1000));
     solver_.setTolerance(input.caseInput().get<Scalar>("LinearAlgebra.CoupledEqn.tolerance", 1e-10));
-    //solver_.preconditioner().setFillfactor(input.caseInput().get<int>("LinearAlgebra.CoupledEqn.iluFill", 2));
+    //solver_.preconditioner().setFillfactor(input.caseInput().get<int>("LinearAlgebra.CoupledEqn.iluFill", 2));z
 }
 
 Scalar CoupledEquation::solve(Scalar timeStep)
@@ -314,3 +314,4 @@ void CoupledEquation::rhieChowInterpolation()
         }
     }
 }
+*/

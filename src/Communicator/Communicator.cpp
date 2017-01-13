@@ -102,7 +102,6 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
 {
     std::vector<unsigned long> result(nProcs());
     MPI_Allgather(&val, 1, MPI_UNSIGNED_LONG, result.data(), 1, MPI_UNSIGNED_LONG, comm_);
-
     return result;
 }
 

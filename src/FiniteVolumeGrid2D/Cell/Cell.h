@@ -36,9 +36,12 @@ public:
     Scalar volume() const { return volume_; }
     const Point2D& centroid() const { return centroid_; }
 
-    //- Id
+    //- Ids
     Label id() const { return id_; }
     void setId(Label id) { id_ = id; }
+
+    Label globalId() const { return globalId_; }
+    void setGlobalId(Label id) { globalId_ = id; }
 
     Index globalIndex() const { return globalIndex_; }
     void setGlobalIndex(Index index) { globalIndex_ = index; }
@@ -70,7 +73,7 @@ private:
 
     mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
     mutable Index globalIndex_;
-    Label id_;
+    Label id_, globalId_;
 
     Polygon cellShape_;
 

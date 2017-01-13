@@ -1,7 +1,7 @@
 #include "ScalarFiniteVolumeField.h"
 
 template<>
-ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const SparseVector& rhs)
+ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const Vector& rhs)
 {
     auto &self = *this;
 

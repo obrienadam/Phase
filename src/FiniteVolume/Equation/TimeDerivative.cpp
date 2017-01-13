@@ -4,13 +4,9 @@ namespace fv
 {
 Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar timeStep)
 {
-    const size_t nActiveCells = field.grid.nActiveCells();
     const Field<Scalar> &prevField = field.prev(0);
 
-    std::vector<Triplet> entries;
     Equation<ScalarFiniteVolumeField> eqn(field);
-
-    entries.reserve(nActiveCells);
 
     for(const Cell& cell: field.grid.fluidCells())
     {

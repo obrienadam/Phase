@@ -1,68 +1,75 @@
 #ifndef EQUATION_H
 #define EQUATION_H
 
-#include "SparseMatrix.h"
 #include "FiniteVolumeGrid2D.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "EigenSparseMatrixSolver.h"
 
 template<class T>
 class Equation
 {
 public:
 
-    Equation(T& field, const std::string& name = "Unknown");
-    Equation(const Input& input, T& field, const std::string& name = "Unknown");
+    typedef SparseMatrixSolver::CoefficientList CoefficientList;
 
+    //- Constructors
+    Equation(T& field, const std::string& name = "N/A");
+    Equation(const Input& input, T& field,
+             const std::string& name,
+             std::shared_ptr<SparseMatrixSolver>&& spSolver = std::make_shared<EigenSparseMatrixSolver>());
     Equation(const Equation<T>& other);
 
+    //- Add/set/get coefficients
     void set(int i, int j, Scalar val);
     void add(int i, int j, Scalar val);
 
     Scalar& getRef(int i, int j);
     Scalar get(int i, int j) const;
 
+    CoefficientList& coeffs() { return coeffs_; }
+    const CoefficientList& coeffs() const { return coeffs_; }
+
+    Vector& boundaries() { return boundaries_; }
+    const Vector& boundaries() const { return boundaries_; }
+
+    Vector& sources() { return sources_; }
+    const Vector& sources() const { return sources_; }
+
+    //- Clear equations
     void clear();
 
-    SparseMatrix& matrix(){ return spMat_; }
-    SparseVector& boundaries(){ return boundaries_; }
-    SparseVector& sources(){ return sources_; }
-
+    //- Operators
     Equation<T>& operator+=(const Equation<T>& rhs);
     Equation<T>& operator-=(const Equation<T>& rhs);
     Equation<T>& operator+=(const T& rhs);
     Equation<T>& operator-=(const T& rhs);
-
     Equation<T>& operator=(const Equation<T>& rhs);
-
     Equation<T>& operator*=(Scalar rhs);
     Equation<T>& operator*=(const ScalarFiniteVolumeField& rhs);
-
     Equation<T>& operator==(Scalar rhs);
     Equation<T>& operator==(const Equation<T>& rhs);
     Equation<T>& operator==(const T& rhs);
 
-    void computeSolver() const { solver_.compute(spMat_); }
+    void setSparseSolver(std::shared_ptr<SparseMatrixSolver>& spSolver);
+    std::shared_ptr<SparseMatrixSolver> & sparseSolver() { return spSolver_; }
 
+    void configureSparseSolver(const Input& input);
+
+    //- Solve the system
     Scalar solve();
-    Scalar solve(const SparseVector& x0);
 
-    Scalar error() const { return solver_.error(); }
-    int iterations() const { return solver_.iterations(); }
-
-    const SparseMatrix& matrix() const { return spMat_; }
-
+    //- Relax the central coefficients (will fail if a central coefficient is not specified)
     void relax(Scalar relaxationFactor);
 
     std::string name;
 
 private:
-    SparseMatrix spMat_;
 
-    mutable BiCGSTABIncompleteLUT solver_;
-    std::vector<std::vector<std::pair<Index, Scalar>>> coeffs_;
+    CoefficientList coeffs_;
+    Vector boundaries_, sources_;
 
-    SparseVector boundaries_, sources_;
+    std::shared_ptr<SparseMatrixSolver> spSolver_;
 
     T& field_;
 };
@@ -70,6 +77,7 @@ private:
 typedef Equation<ScalarFiniteVolumeField> ScalarEquation;
 typedef Equation<VectorFiniteVolumeField> VectorEquation;
 
+//- External functions
 template<class T>
 Equation<T> operator+(Equation<T> lhs, const Equation<T>& rhs);
 

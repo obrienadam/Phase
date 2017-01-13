@@ -2,12 +2,14 @@
 
 #include "Solver.h"
 #include "FaceInterpolation.h"
+#include "EigenSparseMatrixSolver.h"
 
 Solver::Solver(const Input &input, FiniteVolumeGrid2D &grid)
     :
       ib_(input, *this),
       grid_(grid)
 {
+    //- Set simulation time options
     std::string timeDependentOpt = input.caseInput().get<std::string>("Solver.timeDependent");
     boost::to_lower(timeDependentOpt);
 
@@ -15,8 +17,10 @@ Solver::Solver(const Input &input, FiniteVolumeGrid2D &grid)
     timeStepRelaxation_ = input.caseInput().get<Scalar>("Solver.timeStepRelaxation", 1.);
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 
+    //- Set voluem integrators
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
+    //- Add default active cell group as a field (for debugging purposes)
     ScalarFiniteVolumeField& group = addScalarField("cellGroup");
     for(const Cell& cell: group.grid.activeCells())
         group(cell) = 1.;

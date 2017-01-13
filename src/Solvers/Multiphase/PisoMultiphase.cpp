@@ -154,10 +154,11 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     case CICSAM:
         gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
         break;
-
+        /*** PLIC is currently deprecated
     case PLIC:
         gammaEqn_ = (plic::div(u, gradGamma, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
+        */
     }
 
     Scalar error = gammaEqn_.solve();
@@ -180,8 +181,8 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-//        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
-//            continue;
+        //        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
+        //            continue;
 
         u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell))
                 + df*sg(face) - (g*d(lCell)*sg(lCell) + (1. - g)*d(rCell)*sg(rCell));

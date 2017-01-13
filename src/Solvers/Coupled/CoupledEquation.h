@@ -1,11 +1,20 @@
 #ifndef COUPLED_EQUATION_H
 #define COUPLED_EQUATION_H
 
-#include "SparseMatrix.h"
-#include "SparseVector.h"
+/**************************************************************
+ *
+ *
+ * This class is deprecated and not currently functioning. May
+ * be supported again in the future.
+ *
+ *
+ **************************************************************/
+
+#include "EigenSparseMatrixSolver.h"
+#include "Vector.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
-
+/*
 class CoupledEquation
 {
 public:
@@ -33,5 +42,5 @@ protected:
     BiCGSTABDiagonalPreconditioner solver_;
     SparseVector rhs_, phi_;
 };
-
+*/
 #endif

@@ -2,7 +2,7 @@
 #include "Exception.h"
 
 template<>
-VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& rhs)
+VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const Vector& rhs)
 {
     auto &self = *this;
     const size_t nActiveCells = grid.nActiveCells();
@@ -17,16 +17,22 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const SparseVector& 
 }
 
 template<>
-SparseVector VectorFiniteVolumeField::sparseVector() const
+Size VectorFiniteVolumeField::dimension() const
+{
+    return 2;
+}
+
+template<>
+Vector VectorFiniteVolumeField::vectorize() const
 {
     const auto& self = *this;
     const Size nActiveCells = grid.nActiveCells();
-    SparseVector vec = SparseVector::Zero(2*nActiveCells);
+    Vector vec(2*nActiveCells, 0.);
 
     for(const Cell& cell: grid.activeCells())
     {
-        vec[cell.globalIndex()] = self[cell.id()].x;
-        vec[nActiveCells + cell.globalIndex()] = self[cell.id()].y;
+        vec[cell.globalIndex()] = self(cell).x;
+        vec[nActiveCells + cell.globalIndex()] = self(cell).y;
     }
 
     return vec;
