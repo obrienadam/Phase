@@ -375,7 +375,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
 {
     using namespace std;
 
-    if(comm.nProcs() == 1)
+    if(comm.nProcs() == 1) // no need to perform a partition
         return;
 
     vector<idx_t> cellPartition(nCells());

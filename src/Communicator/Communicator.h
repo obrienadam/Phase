@@ -18,7 +18,7 @@ class Communicator
 public:
 
     static void init(int argc, char* argv[]);
-    static void finalize() { MPI_Finalize(); }
+    static void finalize();
 
     Communicator(MPI_Comm comm = MPI_COMM_WORLD);
     ~Communicator();

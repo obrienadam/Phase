@@ -15,10 +15,16 @@ public:
 
     virtual void write(Scalar solutionTime);
     virtual void write(const std::vector<VolumeIntegrator>& volumeIntegrators);
-
     void addPolygons(const std::vector<Polygon>& polygons, const std::string& zoneName = "Polygon Zone");
 
 protected:
+
+    int  createZone(const FiniteVolumeGrid2D& grid);
+    void writeCoords(const FiniteVolumeGrid2D& grid);
+    int  writeConnectivity(const FiniteVolumeGrid2D& grid);
+    void writeBoundaryConnectivity(const FiniteVolumeGrid2D& grid);
+    void writeImmersedBoundaries(const Solver& solver);
+    int  updateFlowSolutionPointers(Scalar solutionTime);
 
     const Solver& solver_;
 

@@ -14,6 +14,11 @@ void Communicator::init(int argc, char *argv[])
     MPI_Type_commit(&MPI_VECTOR2D_);
 }
 
+void Communicator::finalize()
+{
+    MPI_Finalize();
+}
+
 Communicator::Communicator(MPI_Comm comm)
     :
       comm_(comm)

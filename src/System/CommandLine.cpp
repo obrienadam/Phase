@@ -13,7 +13,7 @@ CommandLine::CommandLine()
     };
 }
 
-CommandLine::CommandLine(int argc, const char *argv[])
+CommandLine::CommandLine(int argc, char *argv[])
     :
       CommandLine()
 {
@@ -25,7 +25,7 @@ void CommandLine::setOptions(const std::map<std::string, std::string> &options)
     options_ = options;
 }
 
-void CommandLine::parseArguments(int argc, const char *argv[])
+void CommandLine::parseArguments(int argc, char *argv[])
 {
     argc_ = argc;
     argv_ = argv;
