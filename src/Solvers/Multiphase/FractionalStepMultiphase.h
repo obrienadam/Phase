@@ -8,7 +8,7 @@ class FractionalStepMultiphase : public FractionalStep
 {
 public:
 
-    FractionalStepMultiphase(const Input& input, FiniteVolumeGrid2D& grid);
+    FractionalStepMultiphase(const Input& input, const Communicator &comm, FiniteVolumeGrid2D& grid);
 
     virtual Scalar solve(Scalar timeStep);
 

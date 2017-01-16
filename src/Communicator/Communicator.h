@@ -20,7 +20,7 @@ public:
     static void init(int argc, char* argv[]);
     static void finalize() { MPI_Finalize(); }
 
-    Communicator(MPI_Comm comm);
+    Communicator(MPI_Comm comm = MPI_COMM_WORLD);
     ~Communicator();
 
     //- Printing

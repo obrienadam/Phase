@@ -2,14 +2,15 @@
 
 #include "Equation.h"
 #include "Exception.h"
+#include "EigenSparseMatrixSolver.h"
+#include "HypreSparseMatrixSolver.h"
 
 template<class T>
-Equation<T>::Equation(const Input& input, T& field, const std::string& name, const std::shared_ptr<SparseMatrixSolver> &spSolver)
+Equation<T>::Equation(const Input& input, const Communicator& comm, T& field, const std::string& name)
     :
       Equation<T>::Equation(field, name)
 {
-    spSolver_ = spSolver;
-    configureSparseSolver(input);
+    configureSparseSolver(input, comm);
 }
 
 template<class T>
@@ -183,10 +184,16 @@ void Equation<T>::setSparseSolver(std::shared_ptr<SparseMatrixSolver> &spSolver)
 }
 
 template<class T>
-void Equation<T>::configureSparseSolver(const Input &input)
+void Equation<T>::configureSparseSolver(const Input &input, const Communicator &comm)
 {
-    if(!spSolver_)
-        throw Exception("Equation<T>", "configureSparseSolver", "must allocate a SparseMatrixSolver object before attempting to configure.");
+    std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib", "Eigen3");
+
+    if(lib == "Eigen" || lib == "Eigen3")
+        spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
+    else if(lib == "hypre" || lib == "HYPRE")
+        spSolver_ = nullptr;
+    else
+        throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));

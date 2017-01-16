@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     grid.partition(comm);
     grid.save("test.cgns", comm);
 
-    Poisson solver(input, grid);
+    Poisson solver(input, comm, grid);
 
     for(Scalar &val: solver.phi)
         val = comm.rank();
@@ -36,5 +36,6 @@ int main(int argc, char *argv[])
     }
 
     Communicator::finalize();
+
     return 0;
 }

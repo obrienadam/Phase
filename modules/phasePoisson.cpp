@@ -11,13 +11,14 @@ int main(int argc, const char* argv[])
     using namespace std;
 
     Input input;
+    Communicator comm;
     CommandLine(argc, argv);
 
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
 
-    Poisson solver(input, *gridPtr);
+    Poisson solver(input, comm, *gridPtr);
     Viewer viewer(solver, input);
 
     solver.solve(0.);

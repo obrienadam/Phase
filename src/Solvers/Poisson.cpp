@@ -1,12 +1,13 @@
 #include "Poisson.h"
 #include "Laplacian.h"
+#include "EigenSparseMatrixSolver.h"
 
-Poisson::Poisson(const Input &input, FiniteVolumeGrid2D &grid)
+Poisson::Poisson(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
     :
       Solver(input, grid),
       phi(addScalarField(input, "phi")),
       gamma(addScalarField("gamma")),
-      phiEqn_(input, phi, "phiEqn")
+      phiEqn_(input, comm, phi, "phiEqn")
 {
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);

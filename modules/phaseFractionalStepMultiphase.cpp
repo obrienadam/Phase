@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Input.h"
+#include "Communicator.h"
 #include "CommandLine.h"
 #include "ConstructGrid.h"
 #include "FractionalStepMultiphase.h"
@@ -12,14 +13,19 @@ int main(int argc, const char* argv[])
     using namespace std;
 
     Input input;
+    Communicator comm;
     CommandLine(argc, argv);
 
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    FractionalStepMultiphase solver(input, *gridPtr);
-    Viewer viewer(solver, input);
 
+    FractionalStepMultiphase solver(input, comm, *gridPtr);
+
+    Viewer viewer(solver, input);
     RunControl runControl;
+
     runControl.run(input, solver, viewer);
+
+    return 0;
 }

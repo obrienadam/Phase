@@ -2,6 +2,7 @@
 #define FRACTIONAL_STEP_H
 
 #include "Solver.h"
+#include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
 
@@ -9,7 +10,7 @@ class FractionalStep: public Solver
 {
 public:
 
-    FractionalStep(const Input& input, FiniteVolumeGrid2D &grid);
+    FractionalStep(const Input& input, const Communicator& comm, FiniteVolumeGrid2D &grid);
 
     virtual std::string info() const;
 

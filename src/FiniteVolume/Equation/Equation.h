@@ -4,7 +4,8 @@
 #include "FiniteVolumeGrid2D.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
-#include "EigenSparseMatrixSolver.h"
+#include "SparseMatrixSolver.h"
+#include "Communicator.h"
 
 template<class T>
 class Equation
@@ -17,9 +18,9 @@ public:
     Equation(T& field,
              const std::string& name = "N/A");
     Equation(const Input& input,
+             const Communicator& comm,
              T& field,
-             const std::string& name,
-             const std::shared_ptr<SparseMatrixSolver>& spSolver = std::make_shared<EigenSparseMatrixSolver>());
+             const std::string& name);
     Equation(const Equation<T>& rhs) = default;
     Equation(Equation<T>&& rhs) = default;
 
@@ -59,7 +60,7 @@ public:
     void setSparseSolver(std::shared_ptr<SparseMatrixSolver>& spSolver);
     std::shared_ptr<SparseMatrixSolver> & sparseSolver() { return spSolver_; }
 
-    void configureSparseSolver(const Input& input);
+    void configureSparseSolver(const Input& input, const Communicator& comm);
 
     //- Solve the system
     Scalar solve();

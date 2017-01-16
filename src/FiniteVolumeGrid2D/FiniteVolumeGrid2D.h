@@ -105,8 +105,11 @@ protected:
 
     void initNodes();
     void initCells();
+
     void initConnectivity();
+#ifdef PHASE_USE_MPI
     void initGlobalIds(const Communicator& comm);
+#endif
 
     void constructActiveCellGroup();
     void computeBoundingBox();

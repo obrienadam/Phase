@@ -13,7 +13,7 @@ Solver
 	numInnerIterations 1
 	numPressureCorrections 2
 	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
+	pressureCorrectionRelaxation 0.7
 }
 
 LinearAlgebra

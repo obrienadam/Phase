@@ -88,8 +88,8 @@ void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
         const Index row = cell.globalIndex();
         Scalar &coeff = getRef(row, row);
 
-        boundaries_(row) += (1. - relaxationFactor)*coeff*field_(cell);
         coeff /= relaxationFactor;
+        boundaries_(row) += (1. - relaxationFactor)*coeff*field_(cell);
     }
 }
 
@@ -103,14 +103,13 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
         const Index rowX = cell.globalIndex();
         const Index rowY = rowX + nActiveCells;
 
-        Scalar &coeffX = getRef(rowX, rowX);
-        Scalar &coeffY = getRef(rowY, rowY);
-
-        boundaries_(rowX) += (1. - relaxationFactor)*coeffX*field_(cell).x;
-        boundaries_(rowY) += (1. - relaxationFactor)*coeffY*field_(cell).y;
+        Scalar& coeffX = getRef(rowX, rowX);
+        Scalar& coeffY = getRef(rowY, rowY);
 
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
+        boundaries_(rowX) += (1. - relaxationFactor)*coeffX*field_(cell).x;
+        boundaries_(rowY) += (1. - relaxationFactor)*coeffY*field_(cell).y;
     }
 }
 

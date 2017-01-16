@@ -5,7 +5,7 @@
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
-Piso::Piso(const Input &input, FiniteVolumeGrid2D& grid)
+Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
       Solver(input, grid),
       u(addVectorField(input, "u")),
@@ -17,8 +17,8 @@ Piso::Piso(const Input &input, FiniteVolumeGrid2D& grid)
       mu(addScalarField("mu")),
       m(addScalarField("m")),
       d(addScalarField("d")),
-      uEqn_(input, u, "uEqn"),
-      pCorrEqn_(input, pCorr, "pCorrEqn")
+      uEqn_(input, comm, u, "uEqn"),
+      pCorrEqn_(input, comm, pCorr, "pCorrEqn")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));

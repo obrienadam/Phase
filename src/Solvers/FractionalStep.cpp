@@ -4,7 +4,7 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 
-FractionalStep::FractionalStep(const Input &input, FiniteVolumeGrid2D& grid)
+FractionalStep::FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
       Solver(input, grid),
       u(addVectorField(input, "u")),
@@ -15,8 +15,8 @@ FractionalStep::FractionalStep(const Input &input, FiniteVolumeGrid2D& grid)
       rho(addScalarField("rho")),
       mu(addScalarField("mu")),
       divUStar(addScalarField("uStar")),
-      uEqn_(input, u, "uEqn"),
-      pEqn_(input, dp, "pEqn")
+      uEqn_(input, comm, u, "uEqn"),
+      pEqn_(input, comm, dp, "pEqn")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));

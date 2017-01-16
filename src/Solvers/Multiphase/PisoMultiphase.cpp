@@ -7,15 +7,15 @@
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
-PisoMultiphase::PisoMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
+PisoMultiphase::PisoMultiphase(const Input &input, const Communicator& comm, FiniteVolumeGrid2D& grid)
     :
-      Piso(input, grid),
+      Piso(input, comm, grid),
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
       gradRho(addVectorField("gradRho")),
       sg(addVectorField("sg")),
-      gammaEqn_(input, gamma, "gamma")
+      gammaEqn_(input, comm, gamma, "gamma")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");

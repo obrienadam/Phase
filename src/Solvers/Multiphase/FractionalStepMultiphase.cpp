@@ -5,15 +5,15 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 
-FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, FiniteVolumeGrid2D& grid)
+FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Communicator& comm, FiniteVolumeGrid2D& grid)
     :
-      FractionalStep(input, grid),
+      FractionalStep(input, comm, grid),
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
       sg(addVectorField("sg")),
       gradRho(addVectorField("gradRho")),
-      gammaEqn_(input, gamma, "gammaEqn"),
+      gammaEqn_(input, comm, gamma, "gammaEqn"),
       surfaceTensionForce_(input, *this)
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");

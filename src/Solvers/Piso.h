@@ -2,7 +2,7 @@
 #define PISO_H
 
 #include "Solver.h"
-#include "Input.h"
+#include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
 
@@ -10,7 +10,7 @@ class Piso : public Solver
 {
 public:
 
-    Piso(const Input& input, FiniteVolumeGrid2D &grid);
+    Piso(const Input& input, const Communicator& comm, FiniteVolumeGrid2D &grid);
 
     virtual Scalar solve(Scalar timeStep);
 

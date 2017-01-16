@@ -12,9 +12,28 @@ Solver
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
-	numInnerIterations 2
+	numInnerIterations 1
 	numPressureCorrections 1
 	smoothingKernelRadius 0.0401
+}
+
+LinearAlgebra
+{
+	uEqn
+	{
+		lib Eigen3
+		maxIteratons 10
+		tolerance 1e-6
+		iluFill 0
+	}
+
+	pEqn
+	{
+		lib Eigen3
+		maxIterations 200
+		tolerance 1e-6
+		iluFill 4
+	}
 }
 
 Properties

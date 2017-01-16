@@ -6,9 +6,9 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 0.1
-	maxTime 100
-	maxCo 10
+	timeStep 10
+	maxTime 1000
+	maxCo 1000
 	numInnerIterations 1
 	numPressureCorrections 1
 	momentumRelaxation 0.7
@@ -20,22 +20,22 @@ LinearAlgebra
   uEqn
   {
     maxIterations 15
-    tolerance 1e-12
+    tolerance 1e-6
     iluFill 1
   }
 
   pCorrEqn
   {
     maxIterations 250
-    tolerance 1e-10
-    iluFill 3
+    tolerance 1e-6
+    iluFill 2
   }
 
   pEqn
   {
     maxIterations 250
-    tolerance 1e-12
-    iluFill 4
+    tolerance 1e-5
+    iluFill 2
   }
 
   CoupledEqn
@@ -54,8 +54,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 20
-	nCellsY 20
+	nCellsX 100
+	nCellsY 100
 	width 1
 	height 1
 }

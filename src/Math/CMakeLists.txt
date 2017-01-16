@@ -3,7 +3,6 @@ set(HEADERS Matrix.h
             EigenSparseMatrixSolver.h
             Vector.h
             HypreSparseMatrixSolver.h
-            HypreVector.h
             BisectionSearch.h
             SecantSearch.h
             BilinearInterpolation.h)
