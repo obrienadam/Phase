@@ -39,7 +39,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields rho,mu,cell_status,p,pCorr
+	scalarFields rho,mu,cellStatus,p,pCorr
 }
 
 System

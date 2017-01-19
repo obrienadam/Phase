@@ -24,7 +24,7 @@ public:
     ~Communicator();
 
     //- Printing
-    int printf(const char* format, ...);
+    int printf(const char* format, ...) const;
 
     //- Info
     int rank() const;

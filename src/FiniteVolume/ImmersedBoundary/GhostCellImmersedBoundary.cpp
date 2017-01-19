@@ -10,7 +10,7 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
     for(const ImmersedBoundaryObject& ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
         {
-            const Index row = cell.globalIndex();
+            const Index row = cell.localIndex();
             const Point2D& imagePoint = ibObj.imagePoint(cell);
 
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
@@ -19,10 +19,10 @@ Equation<ScalarFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject>& 
             std::vector<Scalar> coeffs = bi(imagePoint);
 
             std::vector<Index> cols = {
-                kNN[0].get().globalIndex(),
-                kNN[1].get().globalIndex(),
-                kNN[2].get().globalIndex(),
-                kNN[3].get().globalIndex(),
+                kNN[0].get().localIndex(),
+                kNN[1].get().localIndex(),
+                kNN[2].get().localIndex(),
+                kNN[3].get().localIndex(),
             };
 
             Scalar centralCoeff, l;
@@ -71,7 +71,7 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
     for(const ImmersedBoundaryObject &ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
         {
-            const Index rowX = cell.globalIndex();
+            const Index rowX = cell.localIndex();
             const Index rowY = rowX + nActiveCells;
 
             const Point2D imagePoint = ibObj.imagePoint(cell);
@@ -83,10 +83,10 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             coeffsY = coeffsX;
 
             std::vector<Index> colsX = {
-                kNN[0].get().globalIndex(),
-                kNN[1].get().globalIndex(),
-                kNN[2].get().globalIndex(),
-                kNN[3].get().globalIndex(),
+                kNN[0].get().localIndex(),
+                kNN[1].get().localIndex(),
+                kNN[2].get().localIndex(),
+                kNN[3].get().localIndex(),
             };
 
             std::vector<Index> colsY(4);
@@ -180,7 +180,7 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
     for(const ImmersedBoundaryObject &ibObj: ibObjs)
         for(const Cell &cell: ibObj.cells())
         {
-            const Index rowX = cell.globalIndex();
+            const Index rowX = cell.localIndex();
             const Index rowY = rowX + nActiveCells;
 
             const Point2D imagePoint = ibObj.imagePoint(cell);
@@ -192,10 +192,10 @@ Equation<VectorFiniteVolumeField> ib(const std::vector<ImmersedBoundaryObject> &
             coeffsY = coeffsX;
 
             std::vector<Index> colsX = {
-                kNN[0].get().globalIndex(),
-                kNN[1].get().globalIndex(),
-                kNN[2].get().globalIndex(),
-                kNN[3].get().globalIndex(),
+                kNN[0].get().localIndex(),
+                kNN[1].get().localIndex(),
+                kNN[2].get().localIndex(),
+                kNN[3].get().localIndex(),
             };
 
             std::vector<Scalar> rhoVals = {

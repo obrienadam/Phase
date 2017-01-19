@@ -16,7 +16,7 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
         if(!useCurrentFaceValues)
             interpolateFaces(INVERSE_VOLUME, field);
 
-        for(const Cell& cell: field.grid.fluidCells())
+        for(const Cell& cell: field.grid.cellZone("fluid"))
         {
             Vector2D &grad = gradField[cell.id()];
 
@@ -35,7 +35,7 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
         if(!useCurrentFaceValues)
             interpolateNodes(field);
 
-        for(const Cell& cell: field.grid.fluidCells())
+        for(const Cell& cell: field.grid.cellZone("fluid"))
         {
             Vector2D &grad = gradField[cell.id()];
 
@@ -54,7 +54,7 @@ void computeGradient(GradientEvaluationMethod method, ScalarFiniteVolumeField& f
         if(!useCurrentFaceValues)
             interpolateFaces(fv::INVERSE_VOLUME, field);
 
-        for(const Cell &cell: field.grid.fluidCells())
+        for(const Cell &cell: field.grid.cellZone("fluid"))
         {
             Scalar sumSfx = 0., sumSfy = 0.;
             Vector2D grad(0., 0.);
@@ -109,7 +109,7 @@ void computeInverseWeightedGradient(const ScalarFiniteVolumeField& w, ScalarFini
 {
     gradField.fill(Vector2D(0., 0.));
 
-    for(const Cell &cell: field.grid.fluidCells())
+    for(const Cell &cell: field.grid.cellZone("fluid"))
     {
         Scalar sumSfx = 0., sumSfy = 0.;
         Vector2D grad(0., 0.);
@@ -166,7 +166,7 @@ void computeGradient(GradientEvaluationMethod method, VectorFiniteVolumeField& f
         if(!useCurrentFaceValues)
             interpolateFaces(INVERSE_VOLUME, field);
 
-        for(const Cell& cell: field.grid.fluidCells())
+        for(const Cell& cell: field.grid.cellZone("fluid"))
         {
             Tensor2D &grad = gradField(cell);
 
@@ -185,7 +185,7 @@ void computeGradient(GradientEvaluationMethod method, VectorFiniteVolumeField& f
         if(!useCurrentFaceValues)
             interpolateFaces(fv::INVERSE_VOLUME, field);
 
-        for(const Cell &cell: field.grid.fluidCells())
+        for(const Cell &cell: field.grid.cellZone("fluid"))
         {
             Scalar sumSfx = 0., sumSfy = 0.;
             Tensor2D grad(0., 0., 0., 0.);

@@ -23,13 +23,9 @@ int main(int argc, char* argv[])
 
 
     Poisson solver(input, comm, *gridPtr);
-    Viewer viewer(solver, input);
+    Viewer viewer(input, comm, solver);
 
-//    solver.solve(0.);
-//    viewer.write(0.);
-
-    if(comm.isMainProc())
-        viewer.write(0);
+    //viewer.write(1., comm);
 
     Communicator::finalize();
 

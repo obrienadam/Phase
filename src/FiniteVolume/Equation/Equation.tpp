@@ -171,8 +171,8 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator ==(const T& rhs)
 {
-    for(const Cell& cell: rhs.grid.fluidCells())
-        sources_(cell.globalIndex()) += rhs[cell.id()];
+    for(const Cell& cell: rhs.grid.activeCells())
+        sources_(cell.localIndex()) += rhs[cell.id()];
 
     return *this;
 }
@@ -188,10 +188,13 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
 {
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib", "Eigen3");
 
+    if(comm.nProcs() > 1) // Cannot solve using Eigen
+        lib = "HYPRE";
+
     if(lib == "Eigen" || lib == "Eigen3")
         spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
     else if(lib == "hypre" || lib == "HYPRE")
-        spSolver_ = nullptr;
+        spSolver_ = std::make_shared<HypreSparseMatrixSolver>(comm);
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
@@ -206,6 +209,8 @@ Scalar Equation<T>::solve()
     if(!spSolver_)
         throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
 
+    printf("Solving equation \"%s\"...\n", name.c_str());
+
     spSolver_->setRank(field_.dimension()*field_.grid.nActiveCells());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(boundaries_ + sources_);
@@ -213,6 +218,24 @@ Scalar Equation<T>::solve()
     spSolver_->mapSolution(field_);
 
     printf("Solved equation \"%s\" in %d iterations, error = %lf\n", name.c_str(), spSolver_->nIters(), spSolver_->error());
+    return spSolver_->error();
+}
+
+template<class T>
+Scalar Equation<T>::solveWithGuess()
+{
+    if(!spSolver_)
+        throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
+
+    printf("Solving equation \"%s\"...\n", name.c_str());
+
+    spSolver_->setRank(field_.dimension()*field_.grid.nActiveCells());
+    spSolver_->set(coeffs_);
+    spSolver_->setRhs(boundaries_ + sources_);
+    spSolver_->solve(field_.vectorize());
+    spSolver_->mapSolution(field_);
+
+    printf("Solved equation \"%s\" with an initial guess in %d iterations, error = %lf\n", name.c_str(), spSolver_->nIters(), spSolver_->error());
     return spSolver_->error();
 }
 

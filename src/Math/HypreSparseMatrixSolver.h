@@ -11,6 +11,7 @@ class HypreSparseMatrixSolver : public SparseMatrixSolver
 {
 public:
     HypreSparseMatrixSolver(const Communicator &comm);
+    ~HypreSparseMatrixSolver();
 
     void setRank(int rank);
     void set(const CoefficientList& eqn);
@@ -35,6 +36,8 @@ private:
 
     int iLower_, iUpper_, jLower_, jUpper_;
     std::vector<Size> localSizes_;
+    std::vector<int> globalInds_;
+
     const Communicator& comm_;
 
     HYPRE_IJMatrix ijMatrix_;

@@ -48,7 +48,7 @@ public:
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
-    const CellGroup& cells() const { return grid_.cellZone(name_ + "_cells"); }
+    const CellZone& cells() const { return *cells_; }
 
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }
@@ -67,6 +67,7 @@ protected:
     Label id_;
 
     FiniteVolumeGrid2D &grid_;
+    const CellZone* cells_;
     std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<Label, std::pair<Vector2D, Vector2D> > stencilPoints_;

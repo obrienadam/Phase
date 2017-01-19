@@ -7,14 +7,14 @@ Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFi
 {
     Equation<ScalarFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        Index row = cell.globalIndex();
+        Index row = cell.localIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Index col = nb.cell().globalIndex();
+            Index col = nb.cell().localIndex();
 
             Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());
 
@@ -58,16 +58,16 @@ Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFi
 
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        Index rowX = cell.globalIndex();
+        Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells;
         Scalar centralCoeffX = 0.;
         Scalar centralCoeffY = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Index colX = nb.cell().globalIndex();
+            Index colX = nb.cell().localIndex();
             Index colY = colX + nActiveCells;
 
             Scalar faceFlux = dot(u.faces()[nb.face().id()], nb.outwardNorm());

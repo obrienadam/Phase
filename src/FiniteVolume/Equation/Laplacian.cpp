@@ -7,14 +7,14 @@ Equation<ScalarFiniteVolumeField> laplacian(ScalarFiniteVolumeField& field)
 {
     Equation<ScalarFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index row = cell.globalIndex();
+        const Index row = cell.localIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Index col = nb.cell().globalIndex();
+            const Index col = nb.cell().localIndex();
             const Scalar coeff = dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
@@ -50,14 +50,14 @@ Equation<ScalarFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 {
     Equation<ScalarFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index row = cell.globalIndex();
+        const Index row = cell.localIndex();
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Index col = nb.cell().globalIndex();
+            const Index col = nb.cell().localIndex();
             const Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
             centralCoeff -= coeff;
 
@@ -95,9 +95,9 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index rowX = cell.globalIndex();
+        const Index rowX = cell.localIndex();
         const Index rowY = rowX + nActiveCells;
 
         Scalar centralCoeffX = 0.;
@@ -105,7 +105,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Index colX = nb.cell().globalIndex();
+            const Index colX = nb.cell().localIndex();
             const Index colY = colX + nActiveCells;
 
             const Scalar coeffX = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());

@@ -12,16 +12,16 @@ Equation<VectorFiniteVolumeField> div(const ScalarFiniteVolumeField& rho, const 
     const ScalarFiniteVolumeField &rho0 = rho.prev(0);
     const VectorFiniteVolumeField &u0 = u.prev(0);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index rowX = cell.globalIndex();
+        const Index rowX = cell.localIndex();
         const Index rowY = rowX + nActiveCells;
         Scalar centralCoeff0 = 0.;
         Scalar centralCoeff = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Index colX = nb.cell().globalIndex();
+            const Index colX = nb.cell().localIndex();
             const Index colY = colX + nActiveCells;
 
             const Scalar faceFlux0 = rho0(cell)*dot(u0(nb.face()), nb.outwardNorm());
@@ -89,9 +89,9 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
     const VectorFiniteVolumeField &field0 = field.prev(0);
     const ScalarFiniteVolumeField &gamma0 = gamma.prev(0);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index rowX = cell.globalIndex();
+        const Index rowX = cell.localIndex();
         const Index rowY = rowX + nActiveCells;
 
         Scalar centralCoeff0 = 0.;
@@ -99,7 +99,7 @@ Equation<VectorFiniteVolumeField> laplacian(const ScalarFiniteVolumeField& gamma
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            const Index colX = nb.cell().globalIndex();
+            const Index colX = nb.cell().localIndex();
             const Index colY = colX + nActiveCells;
 
             const Vector2D& rc = nb.rCellVec();

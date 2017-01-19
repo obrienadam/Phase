@@ -26,6 +26,11 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
 
     dp.copyBoundaryTypes(p);
 
+    //- All active cells to fluid cells
+    grid_.createCellZone("fluid", grid_.getCellIds(grid_.activeCells()));
+    ib_.initCellZones();
+    grid_.computeOrdering();
+
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
 }
@@ -94,7 +99,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     computeMassSource(timeStep);
 
     pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == divUStar);
-    Scalar error = pEqn_.solve();
+    Scalar error = pEqn_.solveWithGuess();
 
     for(const Cell& cell: p.grid.activeCells())
         p(cell) += dp(cell);
@@ -114,7 +119,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
 {
     const VectorFiniteVolumeField& gradP0 = gradP.prev(0);
 
-    for(const Cell &cell: grid_.fluidCells())
+    for(const Cell &cell: grid_.cellZone("fluid"))
         u(cell) -= timeStep/rho(cell)*(gradP(cell) - gradP0(cell));
 
     for(const Face &face: grid_.interiorFaces())
@@ -185,7 +190,7 @@ void FractionalStep::computeMassSource(Scalar timeStep)
 {
     divUStar.fill(0.);
 
-    for(const Cell &cell: grid_.fluidCells())
+    for(const Cell &cell: grid_.cellZone("fluid"))
     {
         for(const InteriorLink &nb: cell.neighbours())
             divUStar(cell) += dot(u(nb.face()), nb.outwardNorm());

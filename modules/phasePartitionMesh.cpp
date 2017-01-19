@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     if(comm.isMainProc())
     {
-        Viewer viewer(solver, input);
+        Viewer viewer(input, solver);
         viewer.write(0);
     }
 

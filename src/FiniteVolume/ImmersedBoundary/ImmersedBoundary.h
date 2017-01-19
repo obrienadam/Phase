@@ -13,6 +13,8 @@ public:
 
     ImmersedBoundary(const Input& input, Solver &solver);
 
+    void initCellZones();
+
     Equation<ScalarFiniteVolumeField> eqns(ScalarFiniteVolumeField& field);
     Equation<VectorFiniteVolumeField> eqns(VectorFiniteVolumeField& field);
 

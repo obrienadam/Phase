@@ -85,13 +85,13 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar
 void ImmersedBoundaryObject::flagIbCells()
 {
     auto internalCells = grid_.activeCells().rangeSearch(shape(), 1e-8);
-    std::vector<Label> internalCellIds;
 
-    for(const Cell &cell: internalCells)
-        internalCellIds.push_back(cell.id());
+    std::vector<Label> cells, ibCells, solidCells;
 
-    grid_.moveCellsToInactiveCellGroup(internalCellIds);
-    internalCellIds.clear();
+    for(const Cell& cell: internalCells)
+        cells.push_back(cell.id());
+
+    grid_.setCellsInactive(cells);
 
     for(const Cell &cell: internalCells)
     {
@@ -101,7 +101,7 @@ void ImmersedBoundaryObject::flagIbCells()
         {
             if(nb.cell().isActive())
             {
-                internalCellIds.push_back(cell.id());
+                ibCells.push_back(cell.id());
                 isCellActive = true;
                 break;
             }
@@ -114,13 +114,21 @@ void ImmersedBoundaryObject::flagIbCells()
         {
             if(dg.cell().isActive())
             {
-                internalCellIds.push_back(cell.id());
+                ibCells.push_back(cell.id());
+                isCellActive = true;
                 break;
             }
         }
+
+        if(isCellActive)
+            continue;
+
+        solidCells.push_back(cell.id());
     }
 
-    grid_.moveCellsToCellGroup(name_ + "_cells", internalCellIds);
+    grid_.setCellsActive(ibCells);
+    cells_ = &grid_.createCellZone(name_ + "IbCells", ibCells);
+    grid_.createCellZone(name_ + "SolidCells", solidCells);
 }
 
 void ImmersedBoundaryObject::constructStencils()

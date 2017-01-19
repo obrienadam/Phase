@@ -7,7 +7,7 @@ namespace fv
 
 VectorFiniteVolumeField source(VectorFiniteVolumeField field)
 {
-    for(const Cell &cell: field.grid.fluidCells())
+    for(const Cell &cell: field.grid.cellZone("fluid"))
         field(cell) *= cell.volume();
 
     return field;
@@ -17,7 +17,7 @@ VectorFiniteVolumeField inverseWeightedSource(const ScalarFiniteVolumeField& w, 
 {
     VectorFiniteVolumeField fb(field.grid, "fb");
 
-    for(const Cell& cell: fb.grid.fluidCells())
+    for(const Cell& cell: fb.grid.cellZone("fluid"))
     {
         Scalar sumSfx = 0., sumSfy = 0.;
         fb(cell) = Vector2D(0., 0.);
@@ -53,7 +53,7 @@ VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector
     VectorFiniteVolumeField gravity(rho.grid, "g");
     gravity.fill(Vector2D(0., 0.));
 
-    for(const Cell& cell: rho.grid.fluidCells())
+    for(const Cell& cell: rho.grid.cellZone("fluid"))
     {
         Scalar sumSfx = 0., sumSfy = 0.;
 
@@ -84,27 +84,6 @@ VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField& rho, const Vector
         gravity(face) = rho(face)*g;
 
     return gravity;
-}
-
-ScalarFiniteVolumeField hydroStaticPressureBoundaries(const ScalarFiniteVolumeField& p, const ScalarFiniteVolumeField& rho, const Vector2D& g)
-{
-    //- This function corrects the pressure along boundary faces to account for the presence of gravity
-
-    ScalarFiniteVolumeField rgh(p.grid, "rgh");
-    rgh.fill(0.);
-
-    for(const Face &face: p.grid.boundaryFaces())
-    {
-        if(!p.boundaryType(face) == ScalarFiniteVolumeField::NORMAL_GRADIENT)
-            continue;
-
-        const Vector2D rf = face.centroid() - face.lCell().centroid();
-        const Vector2D sf = face.outwardNorm(face.lCell().centroid());
-
-        rgh(face.lCell()) -= rho(face.lCell())*dot(g, rf)*dot(rf, sf)/dot(rf, rf);
-    }
-
-    return rgh;
 }
 
 }

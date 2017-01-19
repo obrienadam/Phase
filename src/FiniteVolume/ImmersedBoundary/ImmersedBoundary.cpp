@@ -7,7 +7,7 @@
 ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
     :
       solver_(solver),
-      cellStatus_(solver.addScalarField("cell_status"))
+      cellStatus_(solver.addScalarField("cellStatus"))
 {
     try //- Lazy way to check if any immersed boundary input is present
     {
@@ -149,9 +149,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
                 ibObjs_.back().addBoundaryType("dp", boundaryType);
             }
         }
-
-        ibObjs_.back().setInternalCells();
     }
+}
+
+void ImmersedBoundary::initCellZones()
+{
+    for(ImmersedBoundaryObject& ibObj: ibObjs_)
+        ibObj.setInternalCells();
 
     setCellStatus();
 }
@@ -182,12 +186,12 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 void ImmersedBoundary::setCellStatus()
 {
     for(const Cell &cell: solver_.grid().inactiveCells())
-        cellStatus_[cell.id()] = SOLID;
+        cellStatus_(cell) = SOLID;
 
-    for(const Cell &cell: solver_.grid().fluidCells())
-        cellStatus_[cell.id()] = FLUID;
+    for(const Cell &cell: solver_.grid().cellZone("fluid"))
+        cellStatus_(cell) = FLUID;
 
     for(const ImmersedBoundaryObject& ibObj: ibObjs_)
         for(const Cell &cell: ibObj.cells())
-            cellStatus_[cell.id()] = IB;
+            cellStatus_(cell) = IB;
 }

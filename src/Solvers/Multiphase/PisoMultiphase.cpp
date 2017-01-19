@@ -104,7 +104,7 @@ void PisoMultiphase::computeRho()
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
     fv::computeInverseWeightedGradient(rho, rho, gradRho);
 
-    for(const Cell& cell: sg.grid.fluidCells())
+    for(const Cell& cell: sg.grid.cellZone("fluid"))
         sg(cell) = dot(g_, cell.centroid())*gradRho(cell);
 
     for(const Face& face: sg.grid.faces())
@@ -181,7 +181,7 @@ void PisoMultiphase::rhieChowInterpolation()
         const Scalar df = d(face);
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
-        //        if(!(grid_.fluidCells().isInGroup(lCell) && grid_.fluidCells().isInGroup(rCell)))
+        //        if(!(grid_.cellZone("fluid").isInGroup(lCell) && grid_.cellZone("fluid").isInGroup(rCell)))
         //            continue;
 
         u(face) += df*ft(face) - (g*d(lCell)*ft(lCell) + (1. - g)*d(rCell)*ft(rCell))

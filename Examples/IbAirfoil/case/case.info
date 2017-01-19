@@ -58,7 +58,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields cell_status,p,pCorr,m
+	scalarFields cellStatus,p,pCorr,m
 }
 
 System

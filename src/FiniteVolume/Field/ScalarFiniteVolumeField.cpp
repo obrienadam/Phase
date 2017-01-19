@@ -6,7 +6,7 @@ ScalarFiniteVolumeField& ScalarFiniteVolumeField::operator =(const Vector& rhs)
     auto &self = *this;
 
     for(const Cell &cell: self.grid.activeCells())
-        self[cell.id()] = rhs[cell.globalIndex()];
+        self[cell.id()] = rhs[cell.localIndex()];
 
     return self;
 }

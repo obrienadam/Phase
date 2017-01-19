@@ -25,7 +25,7 @@ public:
 
     //- Status, note the use of mutable types
     void setActive() const { isActive_ = true; }
-    void setInactive() const { isActive_ = false; globalIndex_ = INACTIVE; }
+    void setInactive() const { isActive_ = false; localIndex_ = INACTIVE; }
     void setFluidCell() const { isFluidCell_ = true; }
     void setNonFluidCell() const { isFluidCell_ = false; }
 
@@ -36,15 +36,19 @@ public:
     Scalar volume() const { return volume_; }
     const Point2D& centroid() const { return centroid_; }
 
+    //- Indices
+    Index setLocalIndex(Index index) const { return localIndex_ = index; }
+    Index localIndex() const { return localIndex_; }
+
+    Index setGlobalIndex(Index index) const { return globalIndex_ = index; }
+    Index globalIndex() const { return globalIndex_; }
+
     //- Ids
+    Label globalId() const { return globalId_; }
+    Label setGlobalId(Label id) { return globalId_ = id; }
+
     Label id() const { return id_; }
     void setId(Label id) { id_ = id; }
-
-    Label globalId() const { return globalId_; }
-    void setGlobalId(Label id) { globalId_ = id; }
-
-    Index globalIndex() const { return globalIndex_; }
-    void setGlobalIndex(Index index) { globalIndex_ = index; }
 
     //- Connectivity links, should really only be done by grid classes
     void addDiagonalLink(const Cell& cell);
@@ -72,8 +76,8 @@ public:
 private:
 
     mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
-    mutable Index globalIndex_;
-    Label id_, globalId_;
+    mutable Index localIndex_, globalIndex_; // Indices for linear algebra
+    Label id_, globalId_; // Indices for identification
 
     Polygon cellShape_;
 

@@ -26,7 +26,7 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
-    for(const Cell &cell: gamma_.grid.fluidCells())
+    for(const Cell &cell: gamma_.grid.cellZone("fluid"))
         ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
     for(const Face &face: gamma_.grid.faces())
@@ -55,10 +55,10 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
     throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
 
-    for(const Cell &cell: n_.grid.fluidCells())
+    for(const Cell &cell: n_.grid.cellZone("fluid"))
     {
-        size_t rowX = cell.globalIndex();
-        size_t rowY = rowX + n_.grid.nActiveCells();
+        Index rowX = cell.localIndex();
+        Index rowY = rowX + n_.grid.nActiveCells();
 
         eqn.set(rowX, rowX, 1.);
         eqn.set(rowY, rowY, 1.);
@@ -72,8 +72,8 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
         for(const Cell &cell: ibObj.cells())
         {
-            size_t rowX = cell.globalIndex();
-            size_t rowY = rowX + n_.grid.nActiveCells();
+            Index rowX = cell.localIndex();
+            Index rowY = rowX + n_.grid.nActiveCells();
 
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
             const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
@@ -82,10 +82,10 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
             std::vector<Scalar> coeffs = bi(imagePoint);
 
             std::vector<Index> cols = {
-                kNN[0].get().globalIndex(),
-                kNN[1].get().globalIndex(),
-                kNN[2].get().globalIndex(),
-                kNN[3].get().globalIndex(),
+                kNN[0].get().localIndex(),
+                kNN[1].get().localIndex(),
+                kNN[2].get().localIndex(),
+                kNN[3].get().localIndex(),
             };
 
             //- From previous values, workout the direction and orientation of the contact line
@@ -136,7 +136,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
 void ContinuumSurfaceForce::computeCurvature()
 {
-    for(const Cell &cell: kappa_.grid.fluidCells())
+    for(const Cell &cell: kappa_.grid.cellZone("fluid"))
     {
         Scalar &k = kappa_[cell.id()] = 0.;
 

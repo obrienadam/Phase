@@ -31,7 +31,7 @@ Communicator::~Communicator()
 
 }
 
-int Communicator::printf(const char *format, ...)
+int Communicator::printf(const char *format, ...) const
 {
     int n = 0;
 

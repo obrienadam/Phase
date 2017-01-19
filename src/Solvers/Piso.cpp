@@ -30,11 +30,15 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& gri
     nPCorrections_ = input.caseInput().get<size_t>("Solver.numPressureCorrections");
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
+    pCorr.copyBoundaryTypes(p);
+
+    //- All active cells to fluid cells
+    grid_.createCellZone("fluid", grid_.getCellIds(grid_.activeCells()));
+    ib_.initCellZones();
+    grid_.computeOrdering();
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
-
-    pCorr.copyBoundaryTypes(p);
 }
 
 Scalar Piso::solve(Scalar timeStep)
@@ -101,7 +105,7 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 
 Scalar Piso::solvePCorrEqn()
 {
-    for(const Cell& cell: m.grid.fluidCells())
+    for(const Cell& cell: m.grid.cellZone("fluid"))
     {
         m(cell) = 0.;
 
@@ -129,8 +133,8 @@ void Piso::rhieChowInterpolation()
     const Scalar dt = u.prevTimeStep(0);
 
     d.fill(0.);
-    for(const Cell& cell: d.grid.fluidCells())
-        d(cell) = cell.volume()/uEqn_.get(cell.globalIndex(), cell.globalIndex());
+    for(const Cell& cell: d.grid.cellZone("fluid"))
+        d(cell) = cell.volume()/uEqn_.get(cell.localIndex(), cell.localIndex());
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 
@@ -198,7 +202,7 @@ void Piso::correctPressure()
 
 void Piso::correctVelocity()
 {
-    for(const Cell& cell: u.grid.fluidCells())
+    for(const Cell& cell: u.grid.cellZone("fluid"))
         u(cell) -= d(cell)*gradPCorr(cell);
 
     for(const Face& face: u.grid.interiorFaces())
@@ -226,7 +230,7 @@ void Piso::correctVelocity()
 
     //- Update mass source for the purpose of error checking
 
-    for(const Cell& cell: m.grid.fluidCells())
+    for(const Cell& cell: m.grid.cellZone("fluid"))
     {
         m(cell) = 0.;
 

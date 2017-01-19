@@ -8,9 +8,9 @@ Equation<ScalarFiniteVolumeField> ddt(ScalarFiniteVolumeField& field, Scalar tim
 
     Equation<ScalarFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        Index row = cell.globalIndex();
+        Index row = cell.localIndex();
 
         eqn.add(row, row, cell.volume()/timeStep);
         eqn.boundaries()(row) += cell.volume()*prevField[cell.id()]/timeStep;
@@ -26,9 +26,9 @@ Equation<VectorFiniteVolumeField> ddt(VectorFiniteVolumeField& field, Scalar tim
 
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        Index rowX = cell.globalIndex();
+        Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells;
 
         eqn.add(rowX, rowX, cell.volume()/timeStep);
@@ -49,9 +49,9 @@ Equation<VectorFiniteVolumeField> ddt(const ScalarFiniteVolumeField& rho, Vector
 
     Equation<VectorFiniteVolumeField> eqn(field);
 
-    for(const Cell& cell: field.grid.fluidCells())
+    for(const Cell& cell: field.grid.cellZone("fluid"))
     {
-        const Index rowX = cell.globalIndex();
+        const Index rowX = cell.localIndex();
         const Index rowY = rowX + nActiveCells;
 
         eqn.add(rowX, rowX, rho(cell)*cell.volume()/timeStep);

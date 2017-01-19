@@ -13,8 +13,6 @@ VectorFiniteVolumeField inverseWeightedSource(const ScalarFiniteVolumeField& w, 
 
 VectorFiniteVolumeField gravity(const ScalarFiniteVolumeField &rho, const Vector2D& g);
 
-ScalarFiniteVolumeField hydroStaticPressureBoundaries(const ScalarFiniteVolumeField& p, const ScalarFiniteVolumeField& rho, const Vector2D& g);
-
 }
 
 #endif

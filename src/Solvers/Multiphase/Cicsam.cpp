@@ -23,10 +23,10 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
     Equation<ScalarFiniteVolumeField> eqn(gamma);
     const Scalar k = 1; //- 0 For a full UQ scheme, 2 for max HC
 
-    for(const Cell &cell: gamma.grid.fluidCells())
+    for(const Cell &cell: gamma.grid.cellZone("fluid"))
     {
         Scalar centralCoeff = 0.;
-        const Index row = cell.globalIndex();
+        const Index row = cell.localIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -57,7 +57,7 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
 
             betaFace = std::max(std::min(betaFace, 1.), 0.);
 
-            const size_t col = nb.cell().globalIndex();
+            const size_t col = nb.cell().localIndex();
             Scalar coeff;
             if(&cell == &donor)
             {

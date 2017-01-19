@@ -26,6 +26,7 @@ public:
     void setRhs(const Vector& rhs);
 
     Scalar solve();
+    Scalar solve(const Vector& x0);
 
     virtual void mapSolution(ScalarFiniteVolumeField& field);
     virtual void mapSolution(VectorFiniteVolumeField& field);

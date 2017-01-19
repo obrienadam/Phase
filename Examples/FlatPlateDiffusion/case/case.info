@@ -10,6 +10,14 @@ Solver
 	maxTime 30
 }
 
+LinearAlgebra
+{
+	phiEqn
+	{
+		lib hypre
+	}
+}
+
 Properties
 {
 	gamma 1
@@ -18,8 +26,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 100
-	nCellsY 100
+	nCellsX 200
+	nCellsY 200
 
 	; Rectilinear parameters
 	width 1

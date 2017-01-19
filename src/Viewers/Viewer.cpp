@@ -7,59 +7,32 @@
 #include "Viewer.h"
 #include "Exception.h"
 
-Viewer::Viewer(const Solver &solver, const Input &input, const std::string &customName)
+Viewer::Viewer(const Input &input, const Solver &solver)
     :
-      solver_(solver),
-      caseName_(input.caseInput().get<std::string>("CaseName"))
+      solver_(solver)
 {
-    using namespace std;
-    using namespace boost;
+    init(input, solver, input.outputPath + "/"
+         + input.caseInput().get<std::string>("CaseName")
+         + ".cgns");
+}
 
-    if(customName.empty())
-        outputFilename_ = input.outputPath + "/" + caseName_ + ".cgns";
-    else
-        outputFilename_ = customName;
-
-    string vectorFields = input.caseInput().get<string>("Viewer.vectorFields");
-    string scalarFields = input.caseInput().get<string>("Viewer.scalarFields");
-
-    vector<string> vectorFieldNames, scalarFieldNames;
-    split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
-    split(scalarFieldNames, scalarFields, is_any_of(", "), token_compress_on);
-
-    for(const auto& field: solver_.scalarFields())
-    {
-        if(std::find(scalarFieldNames.begin(), scalarFieldNames.end(), field.first) != scalarFieldNames.end())
-            scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
-    }
-
-    for(const auto& field: solver_.vectorFields())
-    {
-        if(std::find(vectorFieldNames.begin(), vectorFieldNames.end(), field.first) != vectorFieldNames.end())
-            vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
-    }
-
-    cg_open(outputFilename_.c_str(), CG_MODE_WRITE, &fileId_);
-
-    cg_base_write(fileId_, caseName_.c_str(), 2, 2, &baseId_);
-    cg_simulation_type_write(fileId_, baseId_, TimeAccurate);
-
-    zoneId_ = createZone(solver.grid());
-    writeCoords(solver.grid());
-    writeConnectivity(solver.grid());
-    writeBoundaryConnectivity(solver.grid());
-    writeImmersedBoundaries(solver);
-
-    cg_close(fileId_);
+Viewer::Viewer(const Input &input, const Communicator &comm, const Solver &solver)
+    :
+      solver_(solver)
+{
+    init(input, comm, solver, input.outputPath + "/"
+         + input.caseInput().get<std::string>("CaseName")
+         + ".cgns");
 }
 
 void Viewer::write(Scalar solutionTime)
 {
     //- Open the file
-    cg_open(outputFilename_.c_str(), CG_MODE_MODIFY, &fileId_);
+    cg_open(filename_.c_str(), CG_MODE_MODIFY, &fileId_);
 
     //- Create a new solution node, get the id
-    int solutionId = updateFlowSolutionPointers(solutionTime);
+    updateBaseIterativeData(solutionTime);
+    int solutionId = updateFlowSolutionPointers();
 
     int fieldId;
     for(const ScalarFiniteVolumeField& field: scalarFields_)
@@ -85,9 +58,54 @@ void Viewer::write(Scalar solutionTime)
     cg_close(fileId_);
 }
 
+void Viewer::write(Scalar solutionTime, const Communicator &comm)
+{
+    if(comm.isMainProc())
+    {
+        cg_open(filename_.c_str(), CG_MODE_MODIFY, &fileId_);
+        updateBaseIterativeData(solutionTime);
+        cg_close(fileId_);
+    }
+
+    comm.barrier();
+    for(int proc = 0; proc < comm.nProcs(); ++proc)
+    {
+        if(proc == comm.rank())
+        {
+            cg_open(filename_.c_str(), CG_MODE_MODIFY, &fileId_);
+            int solutionId = updateFlowSolutionPointers();
+
+            int fieldId;
+            for(const ScalarFiniteVolumeField& field: scalarFields_)
+                cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, field.name().c_str(), field.data(), &fieldId);
+
+            for(const VectorFiniteVolumeField& field: vectorFields_)
+            {
+                std::vector<Scalar> xComps, yComps;
+
+                xComps.reserve(field.size());
+                yComps.reserve(field.size());
+
+                for(const Vector2D& vec: field)
+                {
+                    xComps.push_back(vec.x);
+                    yComps.push_back(vec.y);
+                }
+
+                cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name() + "X").c_str(), xComps.data(), &fieldId);
+                cg_field_write(fileId_, baseId_, zoneId_, solutionId, RealDouble, (field.name() + "Y").c_str(), yComps.data(), &fieldId);
+            }
+
+            cg_close(fileId_);
+        }
+
+        comm.barrier();
+    }
+}
+
 void Viewer::write(const std::vector<VolumeIntegrator> &volumeIntegrators)
 {
-    cg_open(outputFilename_.c_str(), CG_MODE_MODIFY, &fileId_);
+    cg_open(filename_.c_str(), CG_MODE_MODIFY, &fileId_);
 
     for(const VolumeIntegrator& vi: volumeIntegrators)
     {
@@ -102,11 +120,101 @@ void Viewer::write(const std::vector<VolumeIntegrator> &volumeIntegrators)
     cg_close(fileId_);
 }
 
-int Viewer::createZone(const FiniteVolumeGrid2D &grid)
+void Viewer::init(const Input &input, const Solver &solver, const std::string &filename)
 {
-    cgsize_t sizes[3] = {(cgsize_t)grid.nNodes(), (cgsize_t)grid.nCells(), 0}, zoneId;
-    cg_zone_write(fileId_, baseId_, "Zone 1", sizes, Unstructured, &zoneId);
-    return zoneId;
+    filename_ = filename;
+
+    initFields(input);
+
+    cg_open(filename_.c_str(), CG_MODE_WRITE, &fileId_);
+
+    baseId_ = createBase(input.caseInput().get<std::string>("CaseName"));
+    zoneId_ = createZone(solver.grid());
+
+    writeCoords(solver.grid());
+    writeConnectivity(solver.grid());
+    writeBoundaryConnectivity(solver.grid());
+
+    if(solver.ib().ibObjs().size() > 0)
+        writeImmersedBoundaries(solver);
+
+    cg_close(fileId_);
+}
+
+void Viewer::init(const Input &input, const Communicator &comm, const Solver &solver, const std::string &filename)
+{
+    filename_ = filename;
+
+    initFields(input);
+
+    if(comm.isMainProc())
+    {
+        cg_open(filename_.c_str(), CG_MODE_WRITE, &fileId_);
+        baseId_ = createBase(input.caseInput().get<std::string>("CaseName"));
+        cg_close(fileId_);
+    }
+
+    baseId_ = comm.broadcast(comm.mainProcNo(), baseId_);
+    for(int proc = 0; proc < comm.nProcs(); ++proc)
+    {
+        if(proc == comm.rank())
+        {
+            cg_open(filename_.c_str(), CG_MODE_MODIFY, &fileId_);
+
+            zoneId_ = createZone(solver.grid(), "CellsProc" + std::to_string(proc));
+
+            writeCoords(solver.grid());
+            writeConnectivity(solver.grid());
+            writeBoundaryConnectivity(solver.grid());
+
+            cg_close(fileId_);
+        }
+
+        comm.barrier();
+    }
+}
+
+void Viewer::initFields(const Input &input)
+{
+    using namespace std;
+    using namespace boost;
+
+    string vectorFields = input.caseInput().get<string>("Viewer.vectorFields");
+    string scalarFields = input.caseInput().get<string>("Viewer.scalarFields");
+
+    vector<string> vectorFieldNames, scalarFieldNames;
+    split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
+    split(scalarFieldNames, scalarFields, is_any_of(", "), token_compress_on);
+
+    for(const auto& field: solver_.scalarFields())
+    {
+        if(std::find(scalarFieldNames.begin(), scalarFieldNames.end(), field.first) != scalarFieldNames.end())
+            scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
+    }
+
+    for(const auto& field: solver_.vectorFields())
+    {
+        if(std::find(vectorFieldNames.begin(), vectorFieldNames.end(), field.first) != vectorFieldNames.end())
+            vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
+    }
+}
+
+int Viewer::createBase(const std::string &name)
+{
+    int id;
+    cg_base_write(fileId_, name.c_str(), 2, 2, &id);
+    cg_simulation_type_write(fileId_, id, TimeAccurate);
+
+    return id;
+}
+
+int Viewer::createZone(const FiniteVolumeGrid2D &grid, const std::string &name)
+{
+    cgsize_t sizes[3] = {(cgsize_t)grid.nNodes(), (cgsize_t)grid.nCells(), 0};
+    int id;
+    cg_zone_write(fileId_, baseId_, name.c_str(), sizes, Unstructured, &id);
+
+    return id;
 }
 
 void Viewer::writeCoords(const FiniteVolumeGrid2D &grid)
@@ -217,13 +325,9 @@ void Viewer::writeImmersedBoundaries(const Solver &solver)
     }
 }
 
-int Viewer::updateFlowSolutionPointers(Scalar solutionTime)
+void Viewer::updateBaseIterativeData(Scalar solutionTime)
 {
-    std::string solutionName = "FlowSolution" + std::to_string(flowSolutionPointers_.size() + 1);
-
-    //- Update time step info and flow solution pointer info
     timeValues_.push_back(solutionTime);
-    flowSolutionPointers_.push_back(solutionName);
 
     //- Rewrite the iteration info (necessary unfortunately)
     cg_biter_write(fileId_, baseId_, "TimeIterValues", timeValues_.size());
@@ -233,6 +337,14 @@ int Viewer::updateFlowSolutionPointers(Scalar solutionTime)
     dim[0] = timeValues_.size();
 
     cg_array_write("TimeValues", RealDouble, 1, dim, timeValues_.data());
+}
+
+int Viewer::updateFlowSolutionPointers()
+{
+    std::string solutionName = "FlowSolution" + std::to_string(flowSolutionPointers_.size() + 1);
+
+    //- Update time step info and flow solution pointer info
+    flowSolutionPointers_.push_back(solutionName);
 
     //- Rewrite flow solution pointers
     cg_ziter_write(fileId_, baseId_, zoneId_, "ZoneIterativeData");
@@ -246,6 +358,7 @@ int Viewer::updateFlowSolutionPointers(Scalar solutionTime)
         sout << std::left << std::setfill(' ') << str;
     }
 
+    cgsize_t dim[2];
     dim[0] = 32;
     dim[1] = flowSolutionPointers_.size();
 

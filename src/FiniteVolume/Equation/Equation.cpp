@@ -31,8 +31,8 @@ Equation<VectorFiniteVolumeField>::Equation(VectorFiniteVolumeField& field, cons
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.fluidCells())
-        sources_(cell.globalIndex()) += rhs(cell);
+    for(const Cell& cell: rhs.grid.activeCells())
+        sources_(cell.localIndex()) += rhs(cell);
 
     return *this;
 }
@@ -40,8 +40,8 @@ Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator +
 template<>
 Equation<ScalarFiniteVolumeField>& Equation<ScalarFiniteVolumeField>::operator -=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.fluidCells())
-        sources_(cell.globalIndex()) -= rhs(cell);
+    for(const Cell& cell: rhs.grid.activeCells())
+        sources_(cell.localIndex()) -= rhs(cell);
 
     return *this;
 }
@@ -51,9 +51,9 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator +
 {
     const Size nActiveCells = rhs.grid.nActiveCells();
 
-    for(const Cell& cell: rhs.grid.fluidCells())
+    for(const Cell& cell: rhs.grid.activeCells())
     {
-        Index rowX = cell.globalIndex();
+        Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells;
 
         sources_(rowX) += rhs(cell).x;
@@ -68,9 +68,9 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 {
     const Size nActiveCells = rhs.grid.nActiveCells();
 
-    for(const Cell& cell: rhs.grid.fluidCells())
+    for(const Cell& cell: rhs.grid.activeCells())
     {
-        Index rowX = cell.globalIndex();
+        Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells;
 
         sources_(rowX) -= rhs(cell).x;
@@ -83,9 +83,9 @@ Equation<VectorFiniteVolumeField>& Equation<VectorFiniteVolumeField>::operator -
 template<>
 void Equation<ScalarFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
+    for(const Cell& cell: field_.grid.activeCells()) // Should the whole matrix be relaxed??
     {
-        const Index row = cell.globalIndex();
+        const Index row = cell.localIndex();
         Scalar &coeff = getRef(row, row);
 
         coeff /= relaxationFactor;
@@ -98,9 +98,9 @@ void Equation<VectorFiniteVolumeField>::relax(Scalar relaxationFactor)
 {
     const Size nActiveCells = field_.grid.nActiveCells();
 
-    for(const Cell& cell: field_.grid.fluidCells()) // Should the whole matrix be relaxed??
+    for(const Cell& cell: field_.grid.activeCells()) // Should the whole matrix be relaxed??
     {
-        const Index rowX = cell.globalIndex();
+        const Index rowX = cell.localIndex();
         const Index rowY = rowX + nActiveCells;
 
         Scalar& coeffX = getRef(rowX, rowX);

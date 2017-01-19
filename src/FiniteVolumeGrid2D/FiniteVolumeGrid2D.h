@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include "Node.h"
 #include "Cell.h"
@@ -46,24 +47,24 @@ public:
     std::vector<int> elementList() const;
 
     //- Cell groups and zones
+    void setCellsActive(const std::vector<Label>& ids);
+    void setCellsInactive(const std::vector<Label>& ids);
+
     CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
     CellZone &cellZone(const std::string& name) const { return cellZones_.find(name)->second; }
-    CellZone &addCellZone(const std::string& name, const std::vector<Label>& ids);
 
-    const CellGroup& activeCells() const { return cellGroup("active"); }
-    const CellGroup& globallyActiveCells() const { return cellGroup("globallyActive"); }
-    const CellZone& inactiveCells() const { return cellZone("inactive"); }
-    const CellZone& fluidCells() const { return cellZone("fluid"); }
+    CellGroup &createCellGroup(const std::string& name, const std::vector<Label>& ids);
+    CellZone &createCellZone(const std::string& name, const std::vector<Label>& ids);
+
+    const CellGroup& activeCells() const { return activeCells_; }
+    const CellGroup& inactiveCells() const { return inactiveCells_; }
+
+    void setAllCellsActive();
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    CellZone& moveCellsToFluidCellGroup(const std::vector<size_t>& ids);
-    CellZone& moveAllCellsToFluidCellGroup();
-    CellZone& moveCellsToInactiveCellGroup(const std::vector<size_t>& ids);
-    CellZone& moveCellsToCellGroup(const std::string& name, const std::vector<size_t>& ids);
-    void removeFromActiveCellGroup(const std::vector<Label>& ids);
-
     const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
+    std::vector<Label> getCellIds(const CellGroup& cellGroup);
 
     void assignCellIds();
 
@@ -96,7 +97,9 @@ public:
                              const std::vector<Label>& sendOrder,
                              const std::vector<Label>& recvOrder);
 
-    std::pair<int, int> globalCellRange() const;
+    //- Active cell ordering, required for lineary algebra!
+    void computeOrdering();
+    void computeOrdering(const Communicator& comm);
 
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }
@@ -105,13 +108,8 @@ protected:
 
     void initNodes();
     void initCells();
-
     void initConnectivity();
-#ifdef PHASE_USE_MPI
-    void initGlobalIds(const Communicator& comm);
-#endif
 
-    void constructActiveCellGroup();
     void computeBoundingBox();
     void applyPatch(const std::string& patchName, const std::vector<Label> &faces);
     void applyPatchByNodes(const std::string& patchName, const std::vector<Label>& nodes);
@@ -122,8 +120,13 @@ protected:
     //- Cell related data
     std::vector<Cell> cells_;
 
-    mutable std::map<std::string, CellGroup> cellGroups_;
-    mutable std::map<std::string, CellZone> cellZones_;
+    //- Default cell groups, active and inactive (import for ordering computations!)
+    mutable CellGroup activeCells_, inactiveCells_;
+
+    //- Defined cell groups/zones
+    mutable std::unordered_map<std::string, CellGroup> cellGroups_;
+    mutable std::unordered_map<std::string, CellZone> cellZones_;
+
     std::vector<int> neighbouringProcs_;
     std::vector<std::vector<Label>> procSendOrder_;
     std::vector<std::vector<Label>> procRecvOrder_;

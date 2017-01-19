@@ -146,7 +146,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
     const VectorFiniteVolumeField& ft0 = ft.prev(0);
     const VectorFiniteVolumeField& sg0 = sg.prev(0);
 
-    for(const Cell &cell: grid_.fluidCells())
+    for(const Cell &cell: grid_.cellZone("fluid"))
         u(cell) -= timeStep*(gradP(cell)/rho(cell) - gradP0(cell)/rho0(cell)
                              - ft(cell)/rho(cell) + ft0(cell)/rho0(cell)
                              - sg(cell)/rho(cell) + sg0(cell)/rho0(cell)
@@ -194,7 +194,7 @@ void FractionalStepMultiphase::computeRho()
 
     sg.savePreviousTimeStep(0, 1);
 
-    for(const Cell& cell: sg.grid.fluidCells())
+    for(const Cell& cell: sg.grid.cellZone("fluid"))
         sg(cell) = dot(g_, -cell.centroid())*gradRho(cell);
 
     for(const Face& face: sg.grid.faces())

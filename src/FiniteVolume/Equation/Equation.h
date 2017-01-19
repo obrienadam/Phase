@@ -64,6 +64,7 @@ public:
 
     //- Solve the system
     Scalar solve();
+    Scalar solveWithGuess();
 
     //- Relax the central coefficients (will fail if a central coefficient is not specified)
     void relax(Scalar relaxationFactor);
