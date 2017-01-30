@@ -4,8 +4,9 @@ set(HEADERS Equation.h
             Divergence.h
             Laplacian.h)
 
-set(SOURCES Equation.cpp
-            Equation.tpp
+set(SOURCES Equation.tpp
+            ScalarEquation.cpp
+            VectorEquation.cpp
             TimeDerivative.cpp
             Divergence.cpp
             Laplacian.cpp)

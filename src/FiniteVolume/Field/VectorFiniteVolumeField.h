@@ -12,9 +12,6 @@ template<>
 VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const Vector& rhs);
 
 template<>
-Size VectorFiniteVolumeField::dimension() const;
-
-template<>
 Vector VectorFiniteVolumeField::vectorize() const;
 
 template<>

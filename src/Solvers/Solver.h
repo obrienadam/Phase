@@ -18,7 +18,7 @@ public:
     enum TimeDependent{ON, OFF};
 
     //- Constructors
-    Solver(const Input& input, FiniteVolumeGrid2D &grid);
+    Solver(const Input& input, const Communicator& comm, FiniteVolumeGrid2D &grid);
 
     //- Info
     virtual std::string info() const;
@@ -72,6 +72,7 @@ protected:
     void setRotating(const std::string& xFunction, const std::string& yFunction, const Vector2D& amplitude, const Vector2D& center, VectorFiniteVolumeField& field);
 
     FiniteVolumeGrid2D& grid_;
+    const Communicator comm_;
 
     //- Fields and geometries
     mutable std::map<std::string, ScalarFiniteVolumeField > scalarFields_;

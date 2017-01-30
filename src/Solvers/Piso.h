@@ -31,8 +31,8 @@ protected:
     void correctPressure();
     void correctVelocity();
 
-    Equation<VectorFiniteVolumeField> uEqn_;
-    Equation<ScalarFiniteVolumeField> pCorrEqn_;
+    Equation<Vector2D> uEqn_;
+    Equation<Scalar> pCorrEqn_;
 
     size_t nInnerIterations_, nPCorrections_;
     Scalar momentumOmega_, pCorrOmega_;

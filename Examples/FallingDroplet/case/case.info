@@ -23,16 +23,20 @@ LinearAlgebra
 {
   uEqn
   {
+    lib petsc
+    preconditioner lu
     maxIterations 50
-    tolerance 1e-12
+    tolerance 1e-6
     iluFill 1
   }
 
   pCorrEqn
   {
+    lib petsc
+    preconditioner lu
     maxIterations 500
-    tolerance 1e-15
-    iluFill 5
+    tolerance 1e-6
+    iluFill 3
   }
 
   gammaEqn

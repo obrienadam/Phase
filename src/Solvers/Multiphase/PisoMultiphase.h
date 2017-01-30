@@ -35,7 +35,7 @@ protected:
 
     std::shared_ptr<SurfaceTensionForce> surfaceTensionForce_;
 
-    Equation<ScalarFiniteVolumeField> gammaEqn_;
+    Equation<Scalar> gammaEqn_;
 
     InterfaceAdvection interfaceAdvectionMethod_;
     CurvatureEvaluation curvatureEvaluationMethod_;

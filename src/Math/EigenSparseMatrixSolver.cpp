@@ -32,17 +32,31 @@ void EigenSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar EigenSparseMatrixSolver::solve()
 {
-    solver_.compute(mat_);
+    if(nPreconUses_ == maxPreconUses_)
+    {
+        solver_.compute(mat_);
+        nPreconUses_ = 0;
+    }
+    else
+        ++nPreconUses_;
+
     x_ = solver_.solve(rhs_);
     return solver_.error();
 }
 
 Scalar EigenSparseMatrixSolver::solve(const Vector &x0)
 {
+    if(nPreconUses_ >= maxPreconUses_)
+    {
+        solver_.compute(mat_);
+        nPreconUses_ = 1;
+    }
+    else
+        ++nPreconUses_;
+
     for(int i = 0, end = x0.size(); i < end; ++i)
         x_(i) = x0(i);
 
-    solver_.compute(mat_);
     x_ = solver_.solveWithGuess(rhs_, x_);
     return solver_.error();
 }

@@ -38,11 +38,14 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vect
 
 void FiniteVolumeGrid2D::reset()
 {
-    nodes_.clear();
-    cells_.clear();
-    faces_.clear();;
+    activeCells_.clear();
+    inactiveCells_.clear();
     cellGroups_.clear();
     cellZones_.clear();
+
+    nodes_.clear();
+    cells_.clear();
+    faces_.clear();
     neighbouringProcs_.clear();
     procSendOrder_.clear();
     procRecvOrder_.clear();
@@ -438,7 +441,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     vector<int> neighboursProc(comm.nProcs(), -1);
     vector<int> nbProcs;
     vector<vector<Label>> sendOrder, recvOrder;
-    for(int i = 0; i < 2; ++i)
+    for(int i = 0; i < 1; ++i)
         for(const Cell& cell: getCells(localCellList))
         {
             for(const InteriorLink& nb: cell.neighbours())
@@ -482,7 +485,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
         comm.irecv(nbProcs[i], sendSizes[i]);
 
     for(int i = 0; i < nbProcs.size(); ++i)
-        comm.send(nbProcs[i], vector<int>(1, recvOrder[i].size()));
+        comm.ssend(nbProcs[i], vector<int>(1, recvOrder[i].size()));
 
     sendOrder.resize(nbProcs.size());
     comm.waitAll();
@@ -491,7 +494,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     {
         sendOrder[i].resize(sendSizes[i][0]);
         comm.irecv(nbProcs[i], sendOrder[i]);
-        comm.send(nbProcs[i], recvOrder[i]);
+        comm.ssend(nbProcs[i], recvOrder[i]);
     }
     comm.waitAll();
 
@@ -533,6 +536,8 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     comm.printf("Finished initializing local patches.\n");
 
     computeOrdering(comm);
+
+    comm.printf("Finished partitioning grid.\n");
 }
 
 void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
@@ -552,31 +557,71 @@ void FiniteVolumeGrid2D::computeOrdering()
     for(const Cell& cell: activeCells_)
     {
         cell.setLocalIndex(index);
-        cell.setGlobalIndex(index++);
+
+        cell.setNumberOfGlobalIndices(3);
+        cell.setGlobalIndex(0, index);
+        cell.setGlobalIndex(1, index);
+        cell.setGlobalIndex(2, index + nActiveCells());
+        ++index;
     }
+
+    nActiveCellsGlobal_ = nActiveCells();
 }
 
 void FiniteVolumeGrid2D::computeOrdering(const Communicator &comm)
 {
-    std::vector<Size> nLocalCells = comm.allGather(nActiveCells());
+    /* Note: global orderings are guaranteed to be contigous on each process.
+     * This is a requirement for the majority of sparse linear solvers. */
 
-    Index index = 0;
-    for(int proc = 0; proc < comm.rank(); ++proc)
-        index += nLocalCells[proc];
-
-    std::vector<Index> globalIndices(nCells());
-
-    for(const Cell& cell: activeCells_)
+    if(comm.nProcs() == 1)
     {
-        cell.setGlobalIndex(index);
-        globalIndices[cell.id()] = index++;
+        computeOrdering();
+        return;
     }
 
-    sendMessages(comm, globalIndices);
+    std::vector<Size> nLocalCells = comm.allGather(nActiveCells());
+
+    Index globalIndexStart = 0;
+    for(int proc = 0; proc < comm.rank(); ++proc)
+        globalIndexStart += nLocalCells[proc];
+
+    std::vector<Index> globalIndices[] = {
+        std::vector<Index>(nCells(), Cell::INACTIVE),
+        std::vector<Index>(nCells(), Cell::INACTIVE),
+        std::vector<Index>(nCells(), Cell::INACTIVE),
+    };
+
+    Index localIndex = 0;
+    for(const Cell& cell: activeCells_)
+    {
+        cell.setLocalIndex(localIndex);
+
+        cell.setNumberOfGlobalIndices(3);
+        cell.setGlobalIndex(0, globalIndexStart + localIndex);
+        cell.setGlobalIndex(1, 2*globalIndexStart + localIndex);
+        cell.setGlobalIndex(2, 2*globalIndexStart + localIndex + nLocalCells[comm.rank()]);
+        ++localIndex;
+
+        globalIndices[0][cell.id()] = cell.globalIndex(0);
+        globalIndices[1][cell.id()] = cell.globalIndex(1);
+        globalIndices[2][cell.id()] = cell.globalIndex(2);
+    }
+
+    //- Must communicate new global indices to neighbours
+    sendMessages(comm, globalIndices[0]);
+    sendMessages(comm, globalIndices[1]);
+    sendMessages(comm, globalIndices[2]);
 
     for(const auto& ids: procRecvOrder_)
         for(Label id: ids)
-            cells_[id].setGlobalIndex(globalIndices[id]);
+        {
+            cells_[id].setGlobalIndex(0, globalIndices[0][id]);
+            cells_[id].setGlobalIndex(1, globalIndices[1][id]);
+            cells_[id].setGlobalIndex(2, globalIndices[2][id]);
+        }
+
+    nActiveCellsGlobal_ = comm.sum(nActiveCells());
+    comm.printf("Num local cells = %d\nNum global cells = %d\n", nLocalCells[comm.rank()], nActiveCellsGlobal_);
 }
 
 //- Protected methods

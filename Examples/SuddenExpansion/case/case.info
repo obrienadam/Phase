@@ -16,6 +16,22 @@ Solver
 	pressureCorrectionRelaxation 0.7
 }
 
+LinearAlgebra
+{
+	uEqn
+	{
+		lib petsc
+		preconditioner pilut
+		iluFill 0
+	}
+	pEqn
+	{
+		lib petsc
+		preconditioner pilut
+		iluFill 1
+	}
+}
+
 Properties
 {
 	rho 1

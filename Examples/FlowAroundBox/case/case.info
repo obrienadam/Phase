@@ -20,23 +20,18 @@ LinearAlgebra
 {
   uEqn
   {
-    maxIterations 50
-    tolerance 1e-15
+    lib hypre
     iluFill 0
-  }
-
-  pCorrEqn
-  {
-    maxIterations 300
-    tolerance 1e-15
-    iluFill 3
+    maxIterations 50
+    tolerance 1e-6
   }
 
   pEqn
   {
+    lib hypre
+    iluFill 1
     maxIterations 300
-    tolerance 1e-15
-    iluFill 6
+    tolerance 1e-6
   }
 }
 
@@ -71,5 +66,5 @@ Integrators
 
 System
 {
-  fileWriteFrequency 20
+  fileWriteFrequency 50
 }

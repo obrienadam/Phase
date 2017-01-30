@@ -7,7 +7,7 @@ Solver
 	timeDependent Off
 	maxIterations 100
 	timeStep 0.00025
-	maxTime 15
+	maxTime 5
 	maxCo 0.8
 
 	numInnerIterations 1
@@ -20,16 +20,22 @@ LinearAlgebra
 {
 	uEqn
 	{
+	  lib hypre
+	  ;preconditioner sor
 	  maxIterations 50
-	  tolerance 1e-15
-	  iluFill 1
+	  tolerance 1e-3
+	  iluFill 0
+	  maxPreconditionerUses 10
 	}
 
 	pEqn
 	{
+	  lib hypre
+	  ;preconditioner pilut
 	  maxIterations 300
-	  tolerance 1e-15
-	  iluFill 6
+	  tolerance 1e-3
+	  iluFill 2
+	  maxPreconditionerUses 10
 	}
 }
 

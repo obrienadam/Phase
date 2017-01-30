@@ -6,8 +6,52 @@
 namespace fv
 {
 
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField& u, ScalarFiniteVolumeField& field);
-Equation<VectorFiniteVolumeField> div(const VectorFiniteVolumeField& u, VectorFiniteVolumeField& field);
+template<typename T>
+Equation<T> div(const VectorFiniteVolumeField& u, FiniteVolumeField<T>& field)
+{
+    Equation<T> eqn(field);
+
+    for(const Cell& cell: field.grid.cellZone("fluid"))
+    {
+        Scalar centralCoeff = 0.;
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            Scalar faceFlux = dot(u(nb.face()), nb.outwardNorm());
+
+            Scalar coeff = std::min(faceFlux, 0.);
+            centralCoeff += std::max(faceFlux, 0.);
+
+            eqn.add(cell, nb.cell(), coeff);
+        }
+
+        for(const BoundaryLink &bd: cell.boundaries())
+        {
+            Scalar faceFlux = dot(u(bd.face()), bd.outwardNorm());
+
+            switch(field.boundaryType(bd.face()))
+            {
+            case FiniteVolumeField<T>::FIXED:
+                eqn.addBoundary(cell, -faceFlux*field(bd.face()));
+                break;
+
+            case FiniteVolumeField<T>::NORMAL_GRADIENT:
+                centralCoeff += faceFlux;
+                break;
+
+            case FiniteVolumeField<T>::SYMMETRY:
+                break;
+
+            default:
+                throw Exception("fv", "div<T>", "unrecognized or unspecified boundary type.");
+            }
+        }
+
+        eqn.add(cell, cell, centralCoeff);
+    }
+
+    return eqn;
+}
 
 }
 

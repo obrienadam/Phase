@@ -3,30 +3,28 @@
 namespace cicsam
 {
 
-Scalar hc(Scalar gammaTilde, Scalar coD) // Maintains very sharp interface but funny things sometimes happen
+Scalar hc(Scalar gammaTilde, Scalar coD)
 {
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min(1., gammaTilde/coD) : gammaTilde;
 }
 
-
-Scalar uq(Scalar gammaTilde, Scalar coD) // Fairly sharp interface but fewer funny things
+Scalar uq(Scalar gammaTilde, Scalar coD)
 {
     return gammaTilde >= 0 && gammaTilde <= 1 ? std::min((8.*coD*gammaTilde + (1. - coD)*(6.*gammaTilde + 3.))/8., hc(gammaTilde, coD)) : gammaTilde;
 }
 
-Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
-                                     const VectorFiniteVolumeField& gradGamma,
-                                     const VectorFiniteVolumeField &m,
-                                     ScalarFiniteVolumeField &gamma,
-                                     Scalar timeStep)
+Equation<Scalar> cn(const VectorFiniteVolumeField &u,
+                    const VectorFiniteVolumeField& gradGamma,
+                    const VectorFiniteVolumeField &m,
+                    ScalarFiniteVolumeField &gamma,
+                    Scalar timeStep)
 {
-    Equation<ScalarFiniteVolumeField> eqn(gamma);
+    Equation<Scalar> eqn(gamma);
     const Scalar k = 1; //- 0 For a full UQ scheme, 2 for max HC
 
     for(const Cell &cell: gamma.grid.cellZone("fluid"))
     {
         Scalar centralCoeff = 0.;
-        const Index row = cell.localIndex();
 
         for(const InteriorLink &nb: cell.neighbours())
         {
@@ -52,12 +50,11 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
 
             Scalar betaFace = (gammaTildeF - gammaTilde)/(1. - gammaTilde);
 
-            if(isnan(betaFace)) // Central difference if non-valid beta value
+            if(std::isnan(betaFace)) // Central difference if non-valid beta value
                 betaFace = &cell == &donor ? 0. : 1.;
 
             betaFace = std::max(std::min(betaFace, 1.), 0.);
 
-            const size_t col = nb.cell().localIndex();
             Scalar coeff;
             if(&cell == &donor)
             {
@@ -70,8 +67,8 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
                 centralCoeff += betaFace*flux/2.;
             }
 
-            eqn.add(row, col, coeff);
-            eqn.boundaries()(row) -= coeff*gamma.prev()(nb.cell());
+            eqn.add(cell, nb.cell(), coeff);
+            eqn.addBoundary(cell, -coeff*gamma.prev()(nb.cell()));
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -81,12 +78,12 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
             switch(gamma.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.boundaries()(row) -= flux*gamma(bd.face());
+                eqn.addBoundary(cell, -flux*gamma(bd.face()));
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 centralCoeff += flux/2.;
-                eqn.boundaries()(row) -= flux/2.*gamma.prev()(cell);
+                eqn.addBoundary(cell, -flux/2.*gamma.prev()(cell));
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:
@@ -97,8 +94,8 @@ Equation<ScalarFiniteVolumeField> cn(const VectorFiniteVolumeField &u,
             }
         }
 
-        eqn.add(row, row, centralCoeff);
-        eqn.boundaries()(row) -= centralCoeff*gamma.prev()(cell);
+        eqn.add(cell, cell, centralCoeff);
+        eqn.addBoundary(cell, -centralCoeff*gamma.prev()(cell));
     }
 
     return eqn;

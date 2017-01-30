@@ -18,7 +18,7 @@ public:
 
 protected:
 
-    Equation<ScalarFiniteVolumeField> phiEqn_;
+    Equation<Scalar> phiEqn_;
 
 };
 

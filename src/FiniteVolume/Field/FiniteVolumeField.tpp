@@ -127,12 +127,6 @@ FiniteVolumeField<T>& FiniteVolumeField<T>::savePreviousIteration()
 }
 
 template<class T>
-Size FiniteVolumeField<T>::dimension() const
-{
-    return 1;
-}
-
-template<class T>
 Vector FiniteVolumeField<T>::vectorize() const
 {
     const auto& self = *this;

@@ -51,10 +51,10 @@ public:
     std::vector<unsigned long> allGather(unsigned long val) const;
 
     //- Blocking point-to-point communication
-    void send(int dest, const std::vector<int>& vals, int tag = 0) const;
-    void send(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
-    void send(int dest, const std::vector<double>& vals, int tag = 0) const;
-    void send(int dest, const std::vector<Vector2D>& vals, int tag = 0) const;
+    void ssend(int dest, const std::vector<int>& vals, int tag = 0) const;
+    void ssend(int dest, const std::vector<unsigned long>& vals, int tag = 0) const;
+    void ssend(int dest, const std::vector<double>& vals, int tag = 0) const;
+    void ssend(int dest, const std::vector<Vector2D>& vals, int tag = 0) const;
 
     void recv(int source, std::vector<int>& vals) const;
     void recv(int source, std::vector<unsigned long> &vals) const;
@@ -71,6 +71,9 @@ public:
     void waitAll() const;
 
     //- Collective communications
+    long sum(long val) const;
+    unsigned long sum(unsigned long val) const;
+
     double sum(double val) const;
     double min(double val) const;
     double max(double val) const;

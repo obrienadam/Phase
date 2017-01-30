@@ -29,6 +29,7 @@ public:
     Size nCells() const { return cells_.size(); }
     Size nFaces() const { return faces_.size(); }
     Size nActiveCells() const { return activeCells().size(); }
+    Size nActiveCellsGlobal() const { return nActiveCellsGlobal_; }
     std::string gridInfo() const;
 
     //- Create grid entities
@@ -122,6 +123,8 @@ protected:
 
     //- Default cell groups, active and inactive (import for ordering computations!)
     mutable CellGroup activeCells_, inactiveCells_;
+
+    Size nActiveCellsGlobal_;
 
     //- Defined cell groups/zones
     mutable std::unordered_map<std::string, CellGroup> cellGroups_;

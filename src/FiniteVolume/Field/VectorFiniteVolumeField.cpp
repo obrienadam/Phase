@@ -17,12 +17,6 @@ VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const Vector& rhs)
 }
 
 template<>
-Size VectorFiniteVolumeField::dimension() const
-{
-    return 2;
-}
-
-template<>
 Vector VectorFiniteVolumeField::vectorize() const
 {
     const auto& self = *this;

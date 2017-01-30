@@ -19,18 +19,15 @@ class Cell
 {
 public:
 
-    enum {INACTIVE = -1};
+    enum {INACTIVE = -1, ACTIVE_NO_INDEX = -2};
 
     Cell(const std::vector<Label>& nodeIds, const FiniteVolumeGrid2D& grid);
 
-    //- Status, note the use of mutable types
-    void setActive() const { isActive_ = true; }
-    void setInactive() const { isActive_ = false; localIndex_ = INACTIVE; }
-    void setFluidCell() const { isFluidCell_ = true; }
-    void setNonFluidCell() const { isFluidCell_ = false; }
-
-    bool isActive() const { return isActive_; }
-    bool isFluidCell() const { return isFluidCell_; }
+    //- Status, note the use of mutable types. Cells can be inactive and still
+    //  have a global index defined.
+    void setActive() const { localIndex_ = ACTIVE_NO_INDEX; }
+    void setInactive() const { localIndex_ = INACTIVE; }
+    bool isActive() const { return localIndex_ != INACTIVE; }
 
     //- Geometry
     Scalar volume() const { return volume_; }
@@ -40,8 +37,9 @@ public:
     Index setLocalIndex(Index index) const { return localIndex_ = index; }
     Index localIndex() const { return localIndex_; }
 
-    Index setGlobalIndex(Index index) const { return globalIndex_ = index; }
-    Index globalIndex() const { return globalIndex_; }
+    void setNumberOfGlobalIndices(Size num) const { globalIndex_.resize(num); }
+    Index setGlobalIndex(Size num, Index index) const { return globalIndex_[num] = index; }
+    Index globalIndex(Size num) const { return globalIndex_[num]; }
 
     //- Ids
     Label globalId() const { return globalId_; }
@@ -75,9 +73,9 @@ public:
 
 private:
 
-    mutable bool isActive_, isFluidCell_; // These flags are just for efficiency
-    mutable Index localIndex_, globalIndex_; // Indices for linear algebra
-    Label id_, globalId_; // Indices for identification
+    mutable Index localIndex_;
+    mutable std::vector<Index> globalIndex_; // Indices for linear algebra. May change depending on problem
+    Label id_, globalId_; // Indices for identification. Should not normally be changed
 
     Polygon cellShape_;
 

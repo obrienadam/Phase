@@ -7,7 +7,7 @@ Solver
 	timeDependent Off
 	maxIterations 100
 	timeStep 0.1
-	maxTime 2
+	maxTime 1
 	maxCo 0.8
 
 	numInnerIterations 1
@@ -20,23 +20,14 @@ LinearAlgebra
 {
   uEqn
   {
-    maxIterations 50
-    tolerance 1e-12
-    iluFill 1
-  }
-
-  pCorrEqn
-  {
-    maxIterations 300
-    tolerance 1e-15
-    iluFill 2
+    lib petsc
+    preconditioner lu
   }
 
   pEqn
   {
-    maxIterations 300
-    tolerance 1e-15
-    iluFill 6
+    lib petsc
+    preconditioner lu
   }
 }
 
@@ -51,8 +42,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 80
-	nCellsY 40
+	nCellsX 160
+	nCellsY 80
 
 	; Rectilinear parameters
 	width 0.8

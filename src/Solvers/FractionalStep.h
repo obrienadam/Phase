@@ -30,8 +30,8 @@ protected:
     virtual void computeFaceVelocities(Scalar timeStep);
     virtual void computeMassSource(Scalar timeStep);
 
-    Equation<VectorFiniteVolumeField> uEqn_;
-    Equation<ScalarFiniteVolumeField> pEqn_;
+    Equation<Vector2D> uEqn_;
+    Equation<Scalar> pEqn_;
 };
 
 #endif

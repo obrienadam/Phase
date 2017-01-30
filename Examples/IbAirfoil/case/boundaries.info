@@ -77,7 +77,7 @@ ImmersedBoundaries
       file naca0015
 
       scale 1.2
-      rotate -12
+      rotate -20
     }
 
     u

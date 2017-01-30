@@ -15,8 +15,8 @@ public:
 
     void initCellZones();
 
-    Equation<ScalarFiniteVolumeField> eqns(ScalarFiniteVolumeField& field);
-    Equation<VectorFiniteVolumeField> eqns(VectorFiniteVolumeField& field);
+    Equation<Scalar> eqns(ScalarFiniteVolumeField& field);
+    Equation<Vector2D> eqns(VectorFiniteVolumeField& field);
 
     const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
     bool isIbCell(const Cell& cell) const;

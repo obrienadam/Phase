@@ -160,12 +160,12 @@ void ImmersedBoundary::initCellZones()
     setCellStatus();
 }
 
-Equation<ScalarFiniteVolumeField> ImmersedBoundary::eqns(ScalarFiniteVolumeField &field)
+Equation<Scalar> ImmersedBoundary::eqns(ScalarFiniteVolumeField &field)
 {
     return gc::ib(ibObjs_, field);
 }
 
-Equation<VectorFiniteVolumeField> ImmersedBoundary::eqns(VectorFiniteVolumeField &field)
+Equation<Vector2D> ImmersedBoundary::eqns(VectorFiniteVolumeField &field)
 {
     return gc::ib(ibObjs_, field);
 }

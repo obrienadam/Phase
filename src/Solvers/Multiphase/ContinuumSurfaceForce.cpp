@@ -50,75 +50,54 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
 {
-    VectorEquation eqn(n_, "IB contact line normal");
+    Equation<Vector2D> eqn(n_, "IB contact line normal");
     const Scalar centralCoeff = 1.;
 
     throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
 
     for(const Cell &cell: n_.grid.cellZone("fluid"))
     {
-        Index rowX = cell.localIndex();
-        Index rowY = rowX + n_.grid.nActiveCells();
+        eqn.set(cell, cell, 1.);
 
-        eqn.set(rowX, rowX, 1.);
-        eqn.set(rowY, rowY, 1.);
-
-        Vector2D n = gradGammaTilde_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_[cell.id()].unitVec();
-
-        eqn.sources()(rowX) = n.x;
-        eqn.sources()(rowY) = n.y;
+        Vector2D n = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+        eqn.setSource(cell, n);
     }
 
     for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
         for(const Cell &cell: ibObj.cells())
         {
-            Index rowX = cell.localIndex();
-            Index rowY = rowX + n_.grid.nActiveCells();
-
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
             const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
             const Point2D &imagePoint = ibObj.imagePoint(cell);
 
             std::vector<Scalar> coeffs = bi(imagePoint);
 
-            std::vector<Index> cols = {
-                kNN[0].get().localIndex(),
-                kNN[1].get().localIndex(),
-                kNN[2].get().localIndex(),
-                kNN[3].get().localIndex(),
-            };
-
             //- From previous values, workout the direction and orientation of the contact line
             std::vector<Vector2D> velVals;
             for(const Cell &cell: kNN)
-                velVals.push_back(u_[cell.id()]);
+                velVals.push_back(u_(cell));
 
             std::vector<Vector2D> gradGammaVals;
             for(const Cell &cell: kNN)
-                gradGammaVals.push_back(gradGammaTilde_[cell.id()]);
+                gradGammaVals.push_back(gradGammaTilde_(cell));
 
             const Vector2D uIp = bi(velVals, imagePoint);
             const Vector2D gradGammaIp = bi(gradGammaVals, imagePoint);
 
             Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
+            eqn.set(cell, cell, centralCoeff/2.);
 
-            eqn.set(rowX, rowX, centralCoeff/2.);
-            eqn.set(rowY, rowY, centralCoeff/2.);
+            int i = 0;
+            for(const Cell& nbCell: kNN)
+                eqn.set(cell, nbCell, coeffs[i++]/2.);
 
-            for(int i = 0; i < coeffs.size(); ++i)
-            {   
-                eqn.set(rowX, cols[i], coeffs[i]/2.);
-                eqn.set(rowY, cols[i] + n_.grid.nActiveCells(), coeffs[i]/2.);
-            }
-
-            eqn.sources()(rowX) = bpNormal.x;
-            eqn.sources()(rowY) = bpNormal.y;
+            eqn.setSource(cell, bpNormal);
         }
 
     //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());
     Scalar error = 0;
 
-    if(isnan(error))
+    if(std::isnan(error))
     {
         printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
         ContinuumSurfaceForce::computeInterfaceNormals();

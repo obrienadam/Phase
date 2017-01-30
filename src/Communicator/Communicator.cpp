@@ -110,24 +110,24 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
     return result;
 }
 
-void Communicator::send(int dest, const std::vector<int> &vals, int tag) const
+void Communicator::ssend(int dest, const std::vector<int> &vals, int tag) const
 {
-    MPI_Send(vals.data(), vals.size(), MPI_INT, dest, tag, comm_);
+    MPI_Ssend(vals.data(), vals.size(), MPI_INT, dest, tag, comm_);
 }
 
-void Communicator::send(int dest, const std::vector<unsigned long> &vals, int tag) const
+void Communicator::ssend(int dest, const std::vector<unsigned long> &vals, int tag) const
 {
-    MPI_Send(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_);
+    MPI_Ssend(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_);
 }
 
-void Communicator::send(int dest, const std::vector<double> &vals, int tag) const
+void Communicator::ssend(int dest, const std::vector<double> &vals, int tag) const
 {
-    MPI_Send(vals.data(), vals.size(), MPI_DOUBLE, dest, tag, comm_);
+    MPI_Ssend(vals.data(), vals.size(), MPI_DOUBLE, dest, tag, comm_);
 }
 
-void Communicator::send(int dest, const std::vector<Vector2D> &vals, int tag) const
+void Communicator::ssend(int dest, const std::vector<Vector2D> &vals, int tag) const
 {
-    MPI_Send(vals.data(), vals.size(), MPI_VECTOR2D_, dest, tag, comm_);
+    MPI_Ssend(vals.data(), vals.size(), MPI_VECTOR2D_, dest, tag, comm_);
 }
 
 void Communicator::recv(int source, std::vector<int> &vals) const
@@ -194,7 +194,22 @@ void Communicator::waitAll() const
     currentRequests_.clear();
 }
 
+long Communicator::sum(long val) const
+{
+    long result;
+    MPI_Allreduce(&val, &result, 1, MPI_LONG, MPI_SUM, comm_);
+    return result;
+}
+
+unsigned long Communicator::sum(unsigned long val) const
+{
+    unsigned long result;
+    MPI_Allreduce(&val, &result, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm_);
+    return result;
+}
+
 //- Collective communication
+
 double Communicator::sum(double val) const
 {
     double result;

@@ -4,67 +4,17 @@
 #include "Exception.h"
 #include "EigenSparseMatrixSolver.h"
 #include "HypreSparseMatrixSolver.h"
+#include "PetscSparseMatrixSolver.h"
 
 template<class T>
-Equation<T>::Equation(const Input& input, const Communicator& comm, T& field, const std::string& name)
+Equation<T>::Equation(const Input& input,
+                      const Communicator& comm,
+                      FiniteVolumeField<T> &field,
+                      const std::string& name)
     :
       Equation<T>::Equation(field, name)
 {
     configureSparseSolver(input, comm);
-}
-
-template<class T>
-void Equation<T>::set(int i, int j, Scalar val)
-{
-    for(auto& coeff: coeffs_[i])
-    {
-        if(coeff.first == j)
-        {
-            coeff.second = val;
-            return;
-        }
-    }
-
-    coeffs_[i].push_back(std::make_pair(j, val));
-}
-
-template <class T>
-void Equation<T>::add(int i, int j, Scalar val)
-{
-    for(auto& coeff: coeffs_[i])
-    {
-        if(coeff.first == j)
-        {
-            coeff.second += val;
-            return;
-        }
-    }
-
-    coeffs_[i].push_back(std::make_pair(j, val));
-}
-
-template<class T>
-Scalar& Equation<T>::getRef(int i, int j)
-{
-    for(auto& coeff: coeffs_[i])
-    {
-        if(coeff.first == j)
-            return coeff.second;
-    }
-
-    throw Exception("Equation<T>", "getRef", "no such entry.");
-}
-
-template<class T>
-Scalar Equation<T>::get(int i, int j) const
-{
-    for(const auto& coeff: coeffs_[i])
-    {
-        if(coeff.first == j)
-            return coeff.second;
-    }
-
-    return 0.;
 }
 
 template<class T>
@@ -113,7 +63,7 @@ Equation<T>& Equation<T>::operator +=(const Equation<T>& rhs)
 {
     for(int i = 0; i < rhs.coeffs_.size(); ++i)
         for(const auto& entry: rhs.coeffs_[i])
-            add(i, entry.first, entry.second);
+            addValue(i, entry.first, entry.second);
 
     boundaries_ += rhs.boundaries_;
     sources_ += rhs.sources_;
@@ -161,7 +111,7 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 {
     for(int i = 0; i < rhs.coeffs_.size(); ++i)
         for(const auto& entry: rhs.coeffs_[i])
-            add(i, entry.first, -entry.second);
+            addValue(i, entry.first, -entry.second);
 
     boundaries_ -= rhs.boundaries_;
     sources_ = rhs.sources_ - sources_;
@@ -169,10 +119,10 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 }
 
 template<class T>
-Equation<T>& Equation<T>::operator ==(const T& rhs)
+Equation<T>& Equation<T>::operator ==(const FiniteVolumeField<T>& rhs)
 {
     for(const Cell& cell: rhs.grid.activeCells())
-        sources_(cell.localIndex()) += rhs[cell.id()];
+        sources_(cell.localIndex()) += rhs(cell);
 
     return *this;
 }
@@ -187,20 +137,30 @@ template<class T>
 void Equation<T>::configureSparseSolver(const Input &input, const Communicator &comm)
 {
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib", "Eigen3");
+    boost::algorithm::to_lower(lib);
 
-    if(comm.nProcs() > 1) // Cannot solve using Eigen
-        lib = "HYPRE";
-
-    if(lib == "Eigen" || lib == "Eigen3")
-        spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
-    else if(lib == "hypre" || lib == "HYPRE")
-        spSolver_ = std::make_shared<HypreSparseMatrixSolver>(comm);
+    if(lib == "eigen" || lib == "eigen3")
+        spSolver_ = std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver());
+    else if(lib == "hypre")
+        spSolver_ = std::shared_ptr<HypreSparseMatrixSolver>(new HypreSparseMatrixSolver(comm));
+    else if(lib == "petsc")
+    {
+        std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "sor");
+        spSolver_ = std::shared_ptr<PetscSparseMatrixSolver>(new PetscSparseMatrixSolver(comm, precon));
+    }
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
+
+    if(comm.nProcs() > 1 && !spSolver_->supportsMPI())
+        throw Exception("Equation<T>", "configureSparseSolver", "lib \"" + lib + "\" does not support multiple processes in its current configuration.");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));
     spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 3));
+    spSolver_->setDropToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".dropTolerance", 0.001));
+    spSolver_->setMaxPreconditionerUses(input.caseInput().get<int>("LinearAlgebra." + name + ".maxPreconditionerUses", 1));
+
+    comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());
 }
 
 template<class T>
@@ -209,15 +169,16 @@ Scalar Equation<T>::solve()
     if(!spSolver_)
         throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    printf("Solving equation \"%s\"...\n", name.c_str());
+    nActiveCells_ = field_.grid.nActiveCells();
 
-    spSolver_->setRank(field_.dimension()*field_.grid.nActiveCells());
+    spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(boundaries_ + sources_);
     spSolver_->solve();
     spSolver_->mapSolution(field_);
 
-    printf("Solved equation \"%s\" in %d iterations, error = %lf\n", name.c_str(), spSolver_->nIters(), spSolver_->error());
+    spSolver_->printStatus("Equation " + name + ":");
+
     return spSolver_->error();
 }
 
@@ -227,16 +188,61 @@ Scalar Equation<T>::solveWithGuess()
     if(!spSolver_)
         throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    printf("Solving equation \"%s\"...\n", name.c_str());
+    nActiveCells_ = field_.grid.nActiveCells();
 
-    spSolver_->setRank(field_.dimension()*field_.grid.nActiveCells());
+    spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(boundaries_ + sources_);
     spSolver_->solve(field_.vectorize());
     spSolver_->mapSolution(field_);
 
-    printf("Solved equation \"%s\" with an initial guess in %d iterations, error = %lf\n", name.c_str(), spSolver_->nIters(), spSolver_->error());
+    spSolver_->printStatus("Equation " + name + ":");
+
     return spSolver_->error();
+}
+
+//- Private methods
+
+template<class T>
+void Equation<T>::setValue(Index i, Index j, Scalar val)
+{
+    for(auto& entry: coeffs_[i])
+    {
+        if(entry.first == j)
+        {
+            entry.second = val;
+            return;
+        }
+    }
+
+    coeffs_[i].push_back(std::make_pair(j, val));
+}
+
+template<class T>
+void Equation<T>::addValue(Index i, Index j, Scalar val)
+{
+    for(auto& entry: coeffs_[i])
+    {
+        if(entry.first == j)
+        {
+            entry.second += val;
+            return;
+        }
+    }
+
+    coeffs_[i].push_back(std::make_pair(j, val));
+}
+
+template<class T>
+Scalar &Equation<T>::coeffRef(Index i, Index j)
+{
+    for(auto& entry: coeffs_[i])
+    {
+        if(entry.first == j)
+            return entry.second;
+    }
+
+    throw Exception("Equation<T>", "coeff", "requested coefficient does not exist.");
 }
 
 //- External functions
@@ -256,28 +262,28 @@ Equation<T> operator-(Equation<T> lhs, const Equation<T>& rhs)
 }
 
 template<class T>
-Equation<T> operator+(Equation<T> lhs, const T& rhs)
+Equation<T> operator+(Equation<T> lhs, const FiniteVolumeField<T>& rhs)
 {
     lhs += rhs;
     return lhs;
 }
 
 template<class T>
-Equation<T> operator+(const T& lhs, Equation<T> rhs)
+Equation<T> operator+(const FiniteVolumeField<T>& lhs, Equation<T> rhs)
 {
     rhs += lhs;
     return rhs;
 }
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const T& rhs)
+Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T>& rhs)
 {
     lhs -= rhs;
     return lhs;
 }
 
 template<class T>
-Equation<T> operator-(const T& lhs, Equation<T> rhs)
+Equation<T> operator-(const FiniteVolumeField<T>& lhs, Equation<T> rhs)
 {
     rhs -= lhs;
     return rhs;

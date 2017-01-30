@@ -9,7 +9,9 @@ class SparseMatrixSolver
 {
 public:
 
-    typedef std::vector<std::vector<std::pair<Index, Scalar>>> CoefficientList;
+    typedef std::pair<Index, Scalar> Entry;
+    typedef std::vector<Entry> Row;
+    typedef std::vector<Row> CoefficientList;
 
     virtual void setRank(int rank) = 0;
     virtual void set(const CoefficientList& eqn) = 0;
@@ -21,12 +23,21 @@ public:
     virtual void mapSolution(ScalarFiniteVolumeField& field) = 0;
     virtual void mapSolution(VectorFiniteVolumeField& field) = 0;
 
+    virtual void setPreconditioner(const std::string& preconditioner) {}
     virtual void setMaxIters(int maxIters) = 0;
     virtual void setToler(Scalar toler) = 0;
+    virtual void setDropToler(Scalar toler) = 0;
     virtual void setFillFactor(int fill) = 0;
+    virtual void setMaxPreconditionerUses(int maxPreconditionerUses);
 
     virtual int nIters() const = 0;
     virtual Scalar error() const = 0;
+
+    virtual bool supportsMPI() const = 0;
+    virtual void printStatus(const std::string& msg) const;
+
+protected:
+    int nPreconUses_ = 1, maxPreconUses_ = 1;
 };
 
 #endif

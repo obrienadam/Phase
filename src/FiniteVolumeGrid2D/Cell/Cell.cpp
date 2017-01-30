@@ -8,8 +8,7 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
       nodes_(grid.nodes()),
       nodeIds_(nodeIds)
 {   
-    isActive_ = true;
-    isFluidCell_ = true;
+    setActive();
 
     std::vector<Point2D> vertices;
 

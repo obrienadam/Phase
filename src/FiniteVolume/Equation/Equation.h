@@ -15,29 +15,36 @@ public:
     typedef SparseMatrixSolver::CoefficientList CoefficientList;
 
     //- Constructors
-    Equation(T& field,
+    Equation(FiniteVolumeField<T>& field,
              const std::string& name = "N/A");
+
     Equation(const Input& input,
              const Communicator& comm,
-             T& field,
+             FiniteVolumeField<T>& field,
              const std::string& name);
+
     Equation(const Equation<T>& rhs) = default;
     Equation(Equation<T>&& rhs) = default;
 
     //- Add/set/get coefficients
-    void set(int i, int j, Scalar val);
-    void add(int i, int j, Scalar val);
+    template<typename T2>
+    void set(const Cell& cell, const Cell& nb, T2 val);
 
-    Scalar& getRef(int i, int j);
-    Scalar get(int i, int j) const;
+    template<typename T2>
+    void add(const Cell& cell, const Cell& nb, T2 val);
 
-    CoefficientList& coeffs() { return coeffs_; }
+    T get(const Cell& cell, const Cell& nb);
+
+    //- Get a coefficient adjacency list, used only for assembling systems
     const CoefficientList& coeffs() const { return coeffs_; }
 
-    Vector& boundaries() { return boundaries_; }
-    const Vector& boundaries() const { return boundaries_; }
+    //- Set/get boundary/source vectors
+    void addBoundary(const Cell& cell, T val);
+    void setBoundary(const Cell& cell, T val);
+    void addSource(const Cell& cell, T val);
+    void setSource(const Cell& cell, T val);
 
-    Vector& sources() { return sources_; }
+    const Vector& boundaries() const { return boundaries_; }
     const Vector& sources() const { return sources_; }
 
     //- Clear equations
@@ -48,14 +55,15 @@ public:
     Equation<T>& operator=(Equation<T>&& rhs);
     Equation<T>& operator+=(const Equation<T>& rhs);
     Equation<T>& operator-=(const Equation<T>& rhs);
-    Equation<T>& operator+=(const T& rhs);
-    Equation<T>& operator-=(const T& rhs);
+    Equation<T>& operator+=(const FiniteVolumeField<T>& rhs);
+    Equation<T>& operator-=(const FiniteVolumeField<T>& rhs);
     Equation<T>& operator*=(Scalar rhs);
     Equation<T>& operator*=(const ScalarFiniteVolumeField& rhs);
 
     Equation<T>& operator==(Scalar rhs);
+
     Equation<T>& operator==(const Equation<T>& rhs);
-    Equation<T>& operator==(const T& rhs);
+    Equation<T>& operator==(const FiniteVolumeField<T>& rhs);
 
     void setSparseSolver(std::shared_ptr<SparseMatrixSolver>& spSolver);
     std::shared_ptr<SparseMatrixSolver> & sparseSolver() { return spSolver_; }
@@ -69,20 +77,25 @@ public:
     //- Relax the central coefficients (will fail if a central coefficient is not specified)
     void relax(Scalar relaxationFactor);
 
+    //- name
     std::string name;
 
 private:
+
+    Size getRank() const;
+    void setValue(Index i, Index j, Scalar val);
+    void addValue(Index i, Index j, Scalar val);
+    Scalar& coeffRef(Index i, Index j);
+
+    Size nActiveCells_; // Cached for efficiency
 
     CoefficientList coeffs_;
     Vector boundaries_, sources_;
 
     std::shared_ptr<SparseMatrixSolver> spSolver_;
 
-    T& field_;
+    FiniteVolumeField<T>& field_;
 };
-
-typedef Equation<ScalarFiniteVolumeField> ScalarEquation;
-typedef Equation<VectorFiniteVolumeField> VectorEquation;
 
 //- External functions
 template<class T>
@@ -92,19 +105,19 @@ template<class T>
 Equation<T> operator-(Equation<T> lhs, const Equation<T>& rhs);
 
 template<class T>
-Equation<T> operator+(Equation<T> lhs, const T& rhs);
+Equation<T> operator+(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
 
 template<class T>
-Equation<T> operator+(const T& lhs, Equation<T> rhs);
+Equation<T> operator+(const FiniteVolumeField<T>& lhs, Equation<T> rhs);
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const T& rhs);
+Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
 
 template<class T>
-Equation<T> operator-(const T& lhs, Equation<T> rhs);
+Equation<T> operator-(const FiniteVolumeField<T>& lhs, Equation<T> rhs);
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const T& rhs);
+Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
 
 template<class T>
 Equation<T> operator*(Equation<T> lhs, Scalar rhs);

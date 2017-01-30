@@ -7,7 +7,7 @@
 
 Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
-      Solver(input, grid),
+      Solver(input, comm, grid),
       u(addVectorField(input, "u")),
       gradP(addVectorField("gradP")),
       gradPCorr(addVectorField("gradPCorr")),
@@ -134,7 +134,10 @@ void Piso::rhieChowInterpolation()
 
     d.fill(0.);
     for(const Cell& cell: d.grid.cellZone("fluid"))
-        d(cell) = cell.volume()/uEqn_.get(cell.localIndex(), cell.localIndex());
+    {
+        Vector2D coeff = uEqn_.get(cell, cell);
+        d(cell) = cell.volume()/(0.5*(coeff.x + coeff.y));
+    }
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 

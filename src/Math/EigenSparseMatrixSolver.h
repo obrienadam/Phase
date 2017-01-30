@@ -28,15 +28,18 @@ public:
     Scalar solve();
     Scalar solve(const Vector& x0);
 
-    virtual void mapSolution(ScalarFiniteVolumeField& field);
-    virtual void mapSolution(VectorFiniteVolumeField& field);
+    void mapSolution(ScalarFiniteVolumeField& field);
+    void mapSolution(VectorFiniteVolumeField& field);
 
-    virtual void setMaxIters(int maxIters) { solver_.setMaxIterations(maxIters); }
-    virtual void setToler(Scalar toler) { solver_.setTolerance(toler); }
-    virtual void setFillFactor(int fill) { solver_.preconditioner().setFillfactor(fill); }
+    void setMaxIters(int maxIters) { solver_.setMaxIterations(maxIters); }
+    void setToler(Scalar toler) { solver_.setTolerance(toler); }
+    void setDropToler(Scalar toler) { solver_.preconditioner().setDroptol(toler); }
+    void setFillFactor(int fill) { solver_.preconditioner().setFillfactor(fill); }
 
-    virtual int nIters() const { return solver_.iterations(); }
-    virtual Scalar error() const { return solver_.error(); }
+    int nIters() const { return solver_.iterations(); }
+    Scalar error() const { return solver_.error(); }
+
+    bool supportsMPI() const { return false; }
 
     std::shared_ptr<SparseMatrixSolver> newSparseMatrixSolver() const { return std::make_shared<EigenSparseMatrixSolver>(); }
 

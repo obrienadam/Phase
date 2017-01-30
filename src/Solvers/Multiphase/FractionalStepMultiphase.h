@@ -36,7 +36,7 @@ protected:
 
     Celeste surfaceTensionForce_;
 
-    Equation<ScalarFiniteVolumeField> gammaEqn_;
+    Equation<Scalar> gammaEqn_;
 };
 
 #endif

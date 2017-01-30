@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-4
+	timeStep 2e-4
 	maxCo 0.8
 	maxTime 10
 
@@ -21,18 +21,22 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib Eigen3
+		lib petsc
+		preconditioner pilut
 		maxIteratons 10
-		tolerance 1e-6
+		tolerance 1e-5
 		iluFill 0
+		maxPreconditionerUses 30
 	}
 
 	pEqn
 	{
-		lib Eigen3
-		maxIterations 200
-		tolerance 1e-6
-		iluFill 4
+		lib petsc
+		preconditioner pilut
+		maxIterations 500
+		tolerance 1e-4
+		iluFill 100
+		maxPreconditionerUses 30
 	}
 }
 
@@ -63,6 +67,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 50
   consoleOutputFrequency 1
 }

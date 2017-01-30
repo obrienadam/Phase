@@ -9,15 +9,18 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 option(PHASE_USE_EIGEN "Use the Eigen3 linear solvers library" ON)
 option(PHASE_USE_MPI "Compile with MPI support" ON)
 option(PHASE_USE_HYPRE "Use the HYPRE linear solvers library" ON)
+option(PHASE_USE_PETSC "Use the Petsc linear solvers library" ON)
+
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 # Compiler flag setup
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -frounding-math -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -std=c++11 -frounding-math -O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3")
 
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -qopenmp -O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -march=native -mtune=native -march=native")
 endif()
 
 # find required packages

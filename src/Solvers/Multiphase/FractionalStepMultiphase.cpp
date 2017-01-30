@@ -107,10 +107,6 @@ void FractionalStepMultiphase::computeFaceVelocities(Scalar timeStep)
     {
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
-
-        if(!(lCell.isFluidCell() && rCell.isFluidCell()))
-            continue;
-
         const Scalar g = rCell.volume()/(lCell.volume() + rCell.volume());
 
         u(face) += timeStep*(ft(face)/rho(face) - g*ft0(lCell)/rho0(lCell) - (1. - g)*ft0(rCell)/rho0(rCell)

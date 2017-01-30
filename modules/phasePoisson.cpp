@@ -5,6 +5,7 @@
 #include "ConstructGrid.h"
 #include "Viewer.h"
 #include "Poisson.h"
+#include "Time.h"
 
 int main(int argc, char* argv[])
 {
@@ -21,11 +22,18 @@ int main(int argc, char* argv[])
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
     gridPtr->partition(comm);
 
-
     Poisson solver(input, comm, *gridPtr);
     Viewer viewer(input, comm, solver);
 
-    //viewer.write(1., comm);
+    Time time;
+
+    time.start();
+    solver.solve(0);
+    time.stop();
+
+    comm.printf("Time elapsed = %s\n", time.elapsedTime().c_str());
+
+    viewer.write(1, comm);
 
     Communicator::finalize();
 

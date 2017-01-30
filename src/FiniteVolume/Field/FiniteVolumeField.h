@@ -63,7 +63,6 @@ public:
     const FiniteVolumeField& prev() const { return previousIteration_.front(); }
 
     //- Vectorization
-    Size dimension() const;
     Vector vectorize() const;
 
     //- Operators

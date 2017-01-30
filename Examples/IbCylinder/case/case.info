@@ -17,6 +17,21 @@ Solver
 	smoothingKernelRadius 0.0401
 }
 
+LinearAlgebra
+{
+	uEqn
+	{
+		lib hypre
+		preconditioner lu
+	}
+
+	pEqn
+	{
+		lib hypre
+		preconditioner lu
+	}
+}
+
 Properties
 {
 	rho 998
@@ -44,6 +59,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 50
   consoleOutputFrequency 1
 }

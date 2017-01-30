@@ -6,7 +6,7 @@
 
 FractionalStep::FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
-      Solver(input, grid),
+      Solver(input, comm, grid),
       u(addVectorField(input, "u")),
       gradP(addVectorField("gradP")),
       gradDp(addVectorField("gradDp")),
@@ -29,7 +29,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     //- All active cells to fluid cells
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.activeCells()));
     ib_.initCellZones();
-    grid_.computeOrdering();
+    grid_.computeOrdering(comm_);
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
@@ -46,10 +46,10 @@ std::string FractionalStep::info() const
 Scalar FractionalStep::solve(Scalar timeStep)
 {
     solveUEqn(timeStep);
-    solvePEqn(timeStep);
-    correctVelocity(timeStep);
+    solvePEqn(timeStep); comm_.barrier();
+    correctVelocity(timeStep); comm_.barrier();
 
-    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.;
 }
@@ -66,7 +66,7 @@ Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
         maxCo = std::max(maxCo, fabs(dot(u(face), sf)/dot(rc, sf)));
     }
 
-    return maxCo*timeStep;
+    return comm_.max(maxCo*timeStep);
 }
 
 Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
@@ -74,10 +74,11 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
     Scalar co = maxCourantNumber(prevTimeStep);
     Scalar lambda1 = 0.1, lambda2 = 1.2;
 
-    return std::min(
-                std::min(maxCo/co*prevTimeStep, (1 + lambda1*maxCo/co)*prevTimeStep),
-                std::min(lambda2*prevTimeStep, maxTimeStep_)
-                );
+    return comm_.min(
+                std::min(
+                    std::min(maxCo/co*prevTimeStep, (1 + lambda1*maxCo/co)*prevTimeStep),
+                    std::min(lambda2*prevTimeStep, maxTimeStep_)
+                    ));
 }
 
 //- Protected methods
@@ -87,8 +88,9 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     u.savePreviousTimeStep(timeStep, 1);
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u) == fv::laplacian(mu, u) - fv::source(gradP));
-
     Scalar error = uEqn_.solve();
+    grid_.sendMessages(comm_, u);
+
     computeFaceVelocities(timeStep);
 
     return error;
@@ -101,8 +103,12 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == divUStar);
     Scalar error = pEqn_.solveWithGuess();
 
+    grid_.sendMessages(comm_, dp);
+
     for(const Cell& cell: p.grid.activeCells())
         p(cell) += dp(cell);
+
+    grid_.sendMessages(comm_, p);
 
     gradP.savePreviousTimeStep(timeStep, 1);
 
@@ -144,6 +150,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
             break;
         };
     }
+    //- Because faces are corrected, no need to communicate the velocity corrections
 }
 
 void FractionalStep::computeFaceVelocities(Scalar timeStep)
@@ -180,8 +187,8 @@ void FractionalStep::computeFaceVelocities(Scalar timeStep)
         }
             break;
 
-        default:
-            throw Exception("FractionalStep", "computeFaceVelocities", "unrecognized boundary condition type.");
+            //default:
+            //throw Exception("FractionalStep", "computeFaceVelocities", "unrecognized boundary condition type.");
         };
     }
 }

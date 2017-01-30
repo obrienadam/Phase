@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     Viewer viewer(input, solver);
     RunControl runControl;
 
-    runControl.run(input, solver, viewer);
+    runControl.run(input, comm, solver, viewer);
 
     Communicator::finalize();
 

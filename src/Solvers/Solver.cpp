@@ -4,9 +4,10 @@
 #include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
 
-Solver::Solver(const Input &input, FiniteVolumeGrid2D &grid)
+Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
     :
       ib_(input, *this),
+      comm_(comm),
       grid_(grid)
 {
     //- Set simulation time options
