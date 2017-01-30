@@ -494,8 +494,11 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     {
         sendOrder[i].resize(sendSizes[i][0]);
         comm.irecv(nbProcs[i], sendOrder[i]);
-        comm.ssend(nbProcs[i], recvOrder[i]);
     }
+
+    for(int i = 0; i < nbProcs.size(); ++i)
+        comm.ssend(nbProcs[i], recvOrder[i]);
+
     comm.waitAll();
 
     comm.printf("Finished constructing intraprocess communication buffers.\n"

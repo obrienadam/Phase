@@ -42,8 +42,10 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
         }
 
         solver.solve(timeStep);
+        time_.stop();
         comm.printf("Time step: %.2e s\n", timeStep);
         comm.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
+        comm.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds()/(iterNo + 1));
         comm.printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
     }
     time_.stop();
