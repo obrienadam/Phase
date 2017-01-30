@@ -2,9 +2,7 @@
 
 #include "Equation.h"
 #include "Exception.h"
-#include "EigenSparseMatrixSolver.h"
-#include "HypreSparseMatrixSolver.h"
-#include "PetscSparseMatrixSolver.h"
+#include "SparseMatrixSolver.h"
 
 template<class T>
 Equation<T>::Equation(const Input& input,
@@ -140,13 +138,25 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     boost::algorithm::to_lower(lib);
 
     if(lib == "eigen" || lib == "eigen3")
+#ifdef PHASE_USE_EIGEN
         spSolver_ = std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver());
+#else
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Eigen support.");
+#endif
     else if(lib == "hypre")
+#ifdef PHASE_USE_HYPRE
         spSolver_ = std::shared_ptr<HypreSparseMatrixSolver>(new HypreSparseMatrixSolver(comm));
+#else
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without HYPRE support.");
+#endif
     else if(lib == "petsc")
     {
+#ifdef PHASE_USE_PETSC
         std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "sor");
         spSolver_ = std::shared_ptr<PetscSparseMatrixSolver>(new PetscSparseMatrixSolver(comm, precon));
+#else
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Petsc support.");
+#endif
     }
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");

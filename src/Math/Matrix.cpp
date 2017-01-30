@@ -1,13 +1,16 @@
 #include <ostream>
 
+#ifdef __INTEL_COMPILER
+#include <mkl.h>
+#else
 extern "C"
 {
 #define lapack_complex_float float _Complex
 #define lapack_complex_double double _Complex
-#include <lapacke/lapacke.h>
-
+#include <lapacke.h>
 #include <cblas.h>
 }
+#endif
 
 #include "Matrix.h"
 #include "Exception.h"
@@ -265,12 +268,12 @@ Matrix operator*(const Matrix& A, const Matrix& B)
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.nRows(), B.nCols(), A.nCols(), 1., A.data(), A.nCols(), B.data(), B.nCols(), 1., C.data(), C.nCols());
 
     // Works for sure
-//    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
+    //    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
 
-//    for(int i = 0; i < nI; ++i)
-//        for(int j = 0; j < nJ; ++j)
-//            for(int k = 0; k < nK; ++k)
-//                C(i, j) += A(i, k)*B(k, j);
+    //    for(int i = 0; i < nI; ++i)
+    //        for(int j = 0; j < nJ; ++j)
+    //            for(int k = 0; k < nK; ++k)
+    //                C(i, j) += A(i, k)*B(k, j);
 
     return C;
 }
