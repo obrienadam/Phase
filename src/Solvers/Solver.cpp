@@ -23,7 +23,7 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
 
     //- Add default active cell group as a field (for debugging purposes)
     ScalarFiniteVolumeField& group = addScalarField("cellGroup");
-    for(const Cell& cell: group.grid.activeCells())
+    for(const Cell& cell: group.grid.localActiveCells())
         group(cell) = 1.;
 }
 
@@ -203,7 +203,7 @@ void Solver::setInitialConditions(const Input& input)
 
 void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolumeField &field)
 {
-    const Polygon pgn = circle.polygonize(400);
+    const Polygon pgn = circle.polygonize(1000);
 
     for(const Cell& cell: field.grid.cells())
     {

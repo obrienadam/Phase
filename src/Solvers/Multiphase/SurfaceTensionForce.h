@@ -3,6 +3,7 @@
 
 #include "Solver.h"
 #include "Input.h"
+#include "Communicator.h"
 
 class SurfaceTensionForce
 {

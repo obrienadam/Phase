@@ -119,7 +119,7 @@ Equation<T>& Equation<T>::operator==(const Equation<T>& rhs)
 template<class T>
 Equation<T>& Equation<T>::operator ==(const FiniteVolumeField<T>& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.localActiveCells())
         sources_(cell.localIndex()) += rhs(cell);
 
     return *this;
@@ -141,13 +141,13 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
 #ifdef PHASE_USE_EIGEN
         spSolver_ = std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver());
 #else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Eigen support.");
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Eigen support. Recompile with \"-DPHASE_USE_EIGEN=ON\".");
 #endif
     else if(lib == "hypre")
 #ifdef PHASE_USE_HYPRE
         spSolver_ = std::shared_ptr<HypreSparseMatrixSolver>(new HypreSparseMatrixSolver(comm));
 #else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without HYPRE support.");
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without HYPRE support. Recompile with \"-DPHASE_USE_HYPRE=ON\".");
 #endif
     else if(lib == "petsc")
     {
@@ -155,14 +155,14 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "sor");
         spSolver_ = std::shared_ptr<PetscSparseMatrixSolver>(new PetscSparseMatrixSolver(comm, precon));
 #else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Petsc support.");
+        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Petsc support. Recompile with \"-DPHASE_USE_PETSC=ON\".");
 #endif
     }
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
     if(comm.nProcs() > 1 && !spSolver_->supportsMPI())
-        throw Exception("Equation<T>", "configureSparseSolver", "lib \"" + lib + "\" does not support multiple processes in its current configuration.");
+        throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib + "\" does not support multiple processes in its current configuration.");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));
@@ -179,7 +179,7 @@ Scalar Equation<T>::solve()
     if(!spSolver_)
         throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nActiveCells_ = field_.grid.nActiveCells();
+    nActiveCells_ = field_.grid.nLocalActiveCells();
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
@@ -198,7 +198,7 @@ Scalar Equation<T>::solveWithGuess()
     if(!spSolver_)
         throw Exception("Equation<T>", "solve", "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nActiveCells_ = field_.grid.nActiveCells();
+    nActiveCells_ = field_.grid.nLocalActiveCells();
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);

@@ -45,6 +45,7 @@ void ContinuumSurfaceForce::constructSmoothingKernels()
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+    solver().grid().sendMessages(solver().comm(), gammaTilde_);
     computeGradient(fv::FACE_TO_CELL, gammaTilde_, gradGammaTilde_);
 }
 
@@ -106,7 +107,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
     interpolateFaces(fv::INVERSE_VOLUME, n_);
 
-    for(const Cell &cell: n_.grid.activeCells())
+    for(const Cell &cell: n_.grid.localActiveCells())
         n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
 
     for(Vector2D &n: n_.faces())
@@ -127,6 +128,8 @@ void ContinuumSurfaceForce::computeCurvature()
 
         k /= cell.volume();
     }
+
+    solver().grid().sendMessages(solver().comm(), kappa_);
 
     interpolateFaces(fv::INVERSE_VOLUME, kappa_);
 }

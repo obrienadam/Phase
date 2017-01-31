@@ -82,3 +82,4 @@ message(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 
 add_subdirectory(src)
 add_subdirectory(modules)
+add_subdirectory(utilities)

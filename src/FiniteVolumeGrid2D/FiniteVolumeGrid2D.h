@@ -28,7 +28,7 @@ public:
     Size nNodes() const { return nodes_.size(); }
     Size nCells() const { return cells_.size(); }
     Size nFaces() const { return faces_.size(); }
-    Size nActiveCells() const { return activeCells().size(); }
+    Size nLocalActiveCells() const { return localActiveCells().size(); }
     Size nActiveCellsGlobal() const { return nActiveCellsGlobal_; }
     std::string gridInfo() const;
 
@@ -50,6 +50,7 @@ public:
     //- Cell groups and zones
     void setCellsActive(const std::vector<Label>& ids);
     void setCellsInactive(const std::vector<Label>& ids);
+    void setCellsLocallyInactive(const std::vector<Label>& ids);
 
     CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
     CellZone &cellZone(const std::string& name) const { return cellZones_.find(name)->second; }
@@ -57,7 +58,8 @@ public:
     CellGroup &createCellGroup(const std::string& name, const std::vector<Label>& ids);
     CellZone &createCellZone(const std::string& name, const std::vector<Label>& ids);
 
-    const CellGroup& activeCells() const { return activeCells_; }
+    const CellGroup& localActiveCells() const { return localActiveCells_; }
+    const CellGroup& globalActiveCells() const { return globalActiveCells_; }
     const CellGroup& inactiveCells() const { return inactiveCells_; }
 
     void setAllCellsActive();
@@ -99,8 +101,7 @@ public:
                              const std::vector<Label>& recvOrder);
 
     //- Active cell ordering, required for lineary algebra!
-    void computeOrdering();
-    void computeOrdering(const Communicator& comm);
+    void computeGlobalOrdering(const Communicator& comm);
 
     //- Misc
     const BoundingBox& boundingBox() const { return bBox_; }
@@ -122,7 +123,7 @@ protected:
     std::vector<Cell> cells_;
 
     //- Default cell groups, active and inactive (import for ordering computations!)
-    mutable CellGroup activeCells_, inactiveCells_;
+    mutable CellGroup localActiveCells_, inactiveCells_, globalActiveCells_;
 
     Size nActiveCellsGlobal_;
 

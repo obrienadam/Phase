@@ -58,16 +58,8 @@ void interpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& field)
         case FiniteVolumeField<T>::FIXED:
             break;
 
-        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW:
-            field(face) = field(face.lCell());
-            break;
-
-        case FiniteVolumeField<T>::SYMMETRY:
-            field(face) = field(face.lCell());
-            break;
-
         default:
-            throw Exception("fv", "interpolateFaces", "unrecongnized boundary condition type.");
+            field(face) = field(face.lCell());
         }
     }
 }
@@ -124,16 +116,8 @@ void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T>& 
         case FiniteVolumeField<T>::FIXED:
             break;
 
-        case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            field(face) = field(face.lCell());
-            break;
-
-        case FiniteVolumeField<T>::SYMMETRY:
-            field(face) = field(face.lCell());
-            break;
-
         default:
-            throw Exception("fv", "harmonicInterpolateFaces", "unrecongnized boundary condition type.");
+            field(face) = field(face.lCell());
         }
     }
 }
@@ -159,12 +143,8 @@ void interpolateFaces(const FiniteVolumeField<Scalar> &w, FiniteVolumeField<T>& 
         case FiniteVolumeField<T>::FIXED:
             break;
 
-        case FiniteVolumeField<T>::NORMAL_GRADIENT: case FiniteVolumeField<T>::OUTFLOW: case FiniteVolumeField<T>::SYMMETRY:
-            field(face) = field(face.lCell());
-            break;
-
         default:
-            throw Exception("fv", "interpolateFaces", "unrecongnized boundary condition type.");
+            field(face) = field(face.lCell());
         }
     }
 }

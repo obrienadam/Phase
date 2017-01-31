@@ -21,9 +21,11 @@ int main(int argc, char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    PisoMultiphase solver(input, comm, *gridPtr);
+    gridPtr->partition(comm);
 
-    Viewer viewer(input, solver);
+    PisoMultiphase solver(input, comm, *gridPtr);
+    Viewer viewer(input, comm, solver);
+
     RunControl runControl;
 
     runControl.run(input, comm, solver, viewer);

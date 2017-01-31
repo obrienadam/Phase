@@ -11,7 +11,7 @@ Solver
 	maxCo 0.8
 
 	numInnerIterations 1
-	numPressureCorrections 2
+	numPressureCorrections 1
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.7
 }
@@ -21,14 +21,15 @@ LinearAlgebra
 	uEqn
 	{
 		lib petsc
-		preconditioner pilut
+		preconditioner sor
 		iluFill 0
 	}
+
 	pEqn
 	{
 		lib petsc
 		preconditioner pilut
-		iluFill 1
+		iluFill 0
 	}
 }
 

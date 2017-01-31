@@ -130,9 +130,9 @@ template<class T>
 Vector FiniteVolumeField<T>::vectorize() const
 {
     const auto& self = *this;
-    Vector vec = Vector(grid.nActiveCells(), 0.);
+    Vector vec = Vector(grid.nLocalActiveCells(), 0.);
 
-    for(const Cell& cell: grid.activeCells())
+    for(const Cell& cell: grid.localActiveCells())
         vec[cell.localIndex()] = self(cell);
 
     return vec;
@@ -377,7 +377,7 @@ FiniteVolumeField<T> smooth(const FiniteVolumeField<T>& field, const std::vector
         return r < e ? A/(2.*e)*(1. + cos(M_PI*r/e)) : 0.;
     };
 
-    for(const Cell &cell: field.grid.activeCells())
+    for(const Cell &cell: field.grid.localActiveCells())
     {
         //- Determine the normalizing constant for this kernel
         Scalar integralK = 0.;

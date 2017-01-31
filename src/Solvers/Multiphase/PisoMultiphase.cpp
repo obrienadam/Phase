@@ -15,7 +15,7 @@ PisoMultiphase::PisoMultiphase(const Input &input, const Communicator& comm, Fin
       ft(addVectorField("ft")),
       gradRho(addVectorField("gradRho")),
       sg(addVectorField("sg")),
-      gammaEqn_(input, comm, gamma, "gamma")
+      gammaEqn_(input, comm, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
@@ -50,7 +50,9 @@ PisoMultiphase::PisoMultiphase(const Input &input, const Communicator& comm, Fin
         capillaryTimeStep_ = std::min(capillaryTimeStep_, sqrt(((rho1_ + rho2_)*delta*delta*delta)/(4*M_PI*sigma)));
     }
 
-    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
+    capillaryTimeStep_ = comm_.min(capillaryTimeStep_);
+
+    comm_.printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 Scalar PisoMultiphase::solve(Scalar timeStep)
@@ -72,17 +74,17 @@ Scalar PisoMultiphase::solve(Scalar timeStep)
 
     solveGammaEqn(timeStep);
 
-    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.; // just to get rid of warning
 }
 
 Scalar PisoMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 {
-    return std::min(
-                Piso::computeMaxTimeStep(maxCo, prevTimeStep),
-                capillaryTimeStep_
-                );
+    return std::min( //- Note: no need to call comm_.min(...) here, args are already global mins
+                     Piso::computeMaxTimeStep(maxCo, prevTimeStep),
+                     capillaryTimeStep_
+                     );
 }
 
 //- Protected methods
@@ -95,11 +97,13 @@ void PisoMultiphase::computeRho()
 
     rho.savePreviousTimeStep(0, 1);
 
-    for(const Cell& cell: rho.grid.activeCells())
+    for(const Cell& cell: rho.grid.cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         rho(cell) = (1 - w)*rho1_ + w*rho2_;
     }
+
+    grid_.sendMessages(comm_, rho);
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
     fv::computeInverseWeightedGradient(rho, rho, gradRho);
@@ -119,11 +123,13 @@ void PisoMultiphase::computeMu()
 
     mu.savePreviousTimeStep(0, 1);
 
-    for(const Cell& cell: mu.grid.activeCells())
+    for(const Cell& cell: mu.grid.cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         mu(cell) = (1 - w)*mu1_ + w*mu2_;
     }
+
+    grid_.sendMessages(comm_, mu);
 
     interpolateFaces(fv::INVERSE_VOLUME, mu);
 }
@@ -139,6 +145,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
 
+    grid_.sendMessages(comm_, u);
+
     rhieChowInterpolation();
 
     return error;
@@ -147,14 +155,13 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 { 
     gamma.savePreviousTimeStep(timeStep, 1);
-    interpolateFaces(fv::INVERSE_VOLUME, gamma);
 
     switch(interfaceAdvectionMethod_)
     {
     case CICSAM:
         gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
-        break;
-        /*** PLIC is currently deprecated
+
+        /*** PLIC is currently deprecated, may be fixed in the future
     case PLIC:
         gammaEqn_ = (plic::div(u, gradGamma, gamma, timeStep, geometries()["plicPolygons"]) == 0.);
         break;
@@ -163,8 +170,14 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 
     Scalar error = gammaEqn_.solve();
 
+    grid_.sendMessages(comm_, gamma);
+
+    interpolateFaces(fv::INVERSE_VOLUME, gamma);
     gamma.setBoundaryFaces();
+
     fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
+
+    grid_.sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 
     return error;
 }
@@ -202,12 +215,6 @@ void PisoMultiphase::rhieChowInterpolation()
             u(face) += df*ft(face) - d(cellP)*ft(cellP)
                     + df*sg(face) - d(cellP)*sg(cellP);
             break;
-
-        case VectorFiniteVolumeField::SYMMETRY:
-            break;
-
-        default:
-            throw Exception("PisoMultiphase", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
     }
 }

@@ -58,17 +58,17 @@ Equation<Scalar> cn(const VectorFiniteVolumeField &u,
             Scalar coeff;
             if(&cell == &donor)
             {
-                coeff = betaFace*flux/2.;
-                centralCoeff += (1. - betaFace)*flux/2.;
+                coeff = betaFace*flux;
+                centralCoeff += (1. - betaFace)*flux;
             }
             else
             {
-                coeff = (1. - betaFace)*flux/2.;
-                centralCoeff += betaFace*flux/2.;
+                coeff = (1. - betaFace)*flux;
+                centralCoeff += betaFace*flux;
             }
 
-            eqn.add(cell, nb.cell(), coeff);
-            eqn.addBoundary(cell, -coeff*gamma.prev()(nb.cell()));
+            eqn.add(cell, nb.cell(), coeff/2.);
+            eqn.addBoundary(cell, -coeff*gamma.prev()(nb.cell())/2.);
         }
 
         for(const BoundaryLink &bd: cell.boundaries())
@@ -78,15 +78,12 @@ Equation<Scalar> cn(const VectorFiniteVolumeField &u,
             switch(gamma.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.addBoundary(cell, -flux*gamma(bd.face()));
+                eqn.addBoundary(cell, -flux*gamma(bd.face())/2.);
+                eqn.addBoundary(cell, -flux*gamma.prev(0)(bd.face())/2.);
                 break;
 
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                centralCoeff += flux/2.;
-                eqn.addBoundary(cell, -flux/2.*gamma.prev()(cell));
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
+            case ScalarFiniteVolumeField::NORMAL_GRADIENT: case ScalarFiniteVolumeField::SYMMETRY:
+                centralCoeff += flux;
                 break;
 
             default:
@@ -94,8 +91,8 @@ Equation<Scalar> cn(const VectorFiniteVolumeField &u,
             }
         }
 
-        eqn.add(cell, cell, centralCoeff);
-        eqn.addBoundary(cell, -centralCoeff*gamma.prev()(cell));
+        eqn.add(cell, cell, centralCoeff/2.);
+        eqn.addBoundary(cell, -centralCoeff*gamma.prev()(cell)/2.);
     }
 
     return eqn;

@@ -23,8 +23,8 @@ LinearAlgebra
 {
   uEqn
   {
-    lib petsc
-    preconditioner lu
+    lib hypre
+    preconditioner pilut
     maxIterations 50
     tolerance 1e-6
     iluFill 1
@@ -32,8 +32,8 @@ LinearAlgebra
 
   pCorrEqn
   {
-    lib petsc
-    preconditioner lu
+    lib hypre
+    preconditioner pilut
     maxIterations 500
     tolerance 1e-6
     iluFill 3
@@ -41,6 +41,8 @@ LinearAlgebra
 
   gammaEqn
   {
+    lib hypre
+    preconditioner pilut
     maxIterations 20
     tolerance 1e-13
     iluFill 1

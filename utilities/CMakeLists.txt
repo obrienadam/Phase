@@ -1,0 +1,2 @@
+add_executable(phaseReconstructSolution phaseReconstructSolution.cpp)
+target_link_libraries(phaseReconstructSolution System FiniteVolumeGrid2D Viewers)

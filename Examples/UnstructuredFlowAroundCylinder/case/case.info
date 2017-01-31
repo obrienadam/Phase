@@ -20,20 +20,20 @@ LinearAlgebra
 {
 	uEqn
 	{
-	  lib hypre
-	  ;preconditioner sor
+	  lib petsc
+	  preconditioner pilut
 	  maxIterations 50
-	  tolerance 1e-3
+	  tolerance 1e-8
 	  iluFill 0
 	  maxPreconditionerUses 10
 	}
 
 	pEqn
 	{
-	  lib hypre
-	  ;preconditioner pilut
+	  lib petsc
+	  preconditioner pilut
 	  maxIterations 300
-	  tolerance 1e-3
+	  tolerance 1e-8
 	  iluFill 2
 	  maxPreconditionerUses 10
 	}

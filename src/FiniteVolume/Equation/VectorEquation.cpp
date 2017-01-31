@@ -5,7 +5,7 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField& field, const std::string& 
     :
       name(name),
       field_(field),
-      nActiveCells_(field.grid.nActiveCells()),
+      nActiveCells_(field.grid.nLocalActiveCells()),
       coeffs_(2*nActiveCells_),
       boundaries_(2*nActiveCells_),
       sources_(2*nActiveCells_)
@@ -90,26 +90,23 @@ void Equation<Vector2D>::addBoundary(const Cell& cell, Vector2D val)
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.activeCells())
+    for(const Cell& cell: field_.grid.localActiveCells())
     {
-        const Index rowX = cell.localIndex();
-        const Index rowY = rowX + nActiveCells_;
-
-        Scalar &coeffX = coeffRef(rowX, rowX);
-        Scalar &coeffY = coeffRef(rowY, rowY);
+        Scalar &coeffX = coeffRef(cell.localIndex(), cell.globalIndex(1));
+        Scalar &coeffY = coeffRef(cell.localIndex() + nActiveCells_, cell.globalIndex(2));
 
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
 
-        boundaries_(rowX) += (1. - relaxationFactor)*coeffX*field_(cell).x;
-        boundaries_(rowY) += (1. - relaxationFactor)*coeffY*field_(cell).y;
+        boundaries_(cell.localIndex()) += (1. - relaxationFactor)*coeffX*field_(cell).x;
+        boundaries_(cell.localIndex() + nActiveCells_) += (1. - relaxationFactor)*coeffY*field_(cell).y;
     }
 }
 
 template<>
 Equation<Vector2D>& Equation<Vector2D>::operator +=(const VectorFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.localActiveCells())
     {
         Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells_;
@@ -124,7 +121,7 @@ Equation<Vector2D>& Equation<Vector2D>::operator +=(const VectorFiniteVolumeFiel
 template<>
 Equation<Vector2D>& Equation<Vector2D>::operator -=(const VectorFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.localActiveCells())
     {
         Index rowX = cell.localIndex();
         Index rowY = rowX + nActiveCells_;

@@ -5,7 +5,7 @@ Equation<Scalar>::Equation(ScalarFiniteVolumeField& field, const std::string& na
     :
       name(name),
       field_(field),
-      nActiveCells_(field.grid.nActiveCells()),
+      nActiveCells_(field.grid.nLocalActiveCells()),
       coeffs_(nActiveCells_),
       boundaries_(nActiveCells_),
       sources_(nActiveCells_)
@@ -66,7 +66,7 @@ void Equation<Scalar>::setSource(const Cell& cell, Scalar val)
 template<>
 void Equation<Scalar>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.activeCells())
+    for(const Cell& cell: field_.grid.localActiveCells())
     {
         const Index row = cell.localIndex();
         Scalar &coeff = coeffRef(row, row);
@@ -79,7 +79,7 @@ void Equation<Scalar>::relax(Scalar relaxationFactor)
 template<>
 Equation<Scalar>& Equation<Scalar>::operator +=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.localActiveCells())
         sources_(cell.localIndex()) += rhs(cell);
 
     return *this;
@@ -88,7 +88,7 @@ Equation<Scalar>& Equation<Scalar>::operator +=(const ScalarFiniteVolumeField& r
 template<>
 Equation<Scalar>& Equation<Scalar>::operator -=(const ScalarFiniteVolumeField& rhs)
 {
-    for(const Cell& cell: rhs.grid.activeCells())
+    for(const Cell& cell: rhs.grid.localActiveCells())
         sources_(cell.localIndex()) -= rhs(cell);
 
     return *this;

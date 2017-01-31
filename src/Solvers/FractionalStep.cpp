@@ -27,9 +27,13 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     dp.copyBoundaryTypes(p);
 
     //- All active cells to fluid cells
-    grid_.createCellZone("fluid", grid_.getCellIds(grid_.activeCells()));
+    grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
+
+    //- Create ib zones if any
     ib_.initCellZones();
-    grid_.computeOrdering(comm_);
+
+    //- Compute the global cell ordering (for lin alg)
+    grid_.computeGlobalOrdering(comm_);
 
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
     forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
@@ -46,8 +50,8 @@ std::string FractionalStep::info() const
 Scalar FractionalStep::solve(Scalar timeStep)
 {
     solveUEqn(timeStep);
-    solvePEqn(timeStep); comm_.barrier();
-    correctVelocity(timeStep); comm_.barrier();
+    solvePEqn(timeStep);
+    correctVelocity(timeStep);
 
     comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
@@ -87,7 +91,8 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u) == fv::laplacian(mu, u) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u) == cn::laplacian(mu, u, 1.5) - fv::source(gradP));
+
     Scalar error = uEqn_.solve();
     grid_.sendMessages(comm_, u);
 
@@ -105,7 +110,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
     grid_.sendMessages(comm_, dp);
 
-    for(const Cell& cell: p.grid.activeCells())
+    for(const Cell& cell: p.grid.localActiveCells())
         p(cell) += dp(cell);
 
     grid_.sendMessages(comm_, p);
@@ -115,8 +120,12 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     p.setBoundaryFaces();
     fv::computeInverseWeightedGradient(rho, p, gradP);
 
+    grid_.sendMessages(comm_, gradP);
+
     dp.setBoundaryFaces();
     fv::computeInverseWeightedGradient(rho, dp, gradDp);
+
+    grid_.sendMessages(comm_, gradDp);
 
     return error;
 }
@@ -127,6 +136,8 @@ void FractionalStep::correctVelocity(Scalar timeStep)
 
     for(const Cell &cell: grid_.cellZone("fluid"))
         u(cell) -= timeStep/rho(cell)*(gradP(cell) - gradP0(cell));
+
+    grid_.sendMessages(comm_, u);
 
     for(const Face &face: grid_.interiorFaces())
         u(face) -= timeStep/rho(face)*gradDp(face);
@@ -150,7 +161,6 @@ void FractionalStep::correctVelocity(Scalar timeStep)
             break;
         };
     }
-    //- Because faces are corrected, no need to communicate the velocity corrections
 }
 
 void FractionalStep::computeFaceVelocities(Scalar timeStep)

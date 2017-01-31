@@ -11,7 +11,7 @@ CoupledEquation::CoupledEquation(const Input &input, const ScalarFiniteVolumeFie
       p_(p),
       d_(u_.grid, "d")
 {
-    nActiveCells_ = u.grid.nActiveCells();
+    nActiveCells_ = u.grid.nLocalActiveCells();
     nVars_ = 3*nActiveCells_;
 
     spMat_ = SparseMatrix(nVars_, nVars_);
@@ -49,13 +49,13 @@ Scalar CoupledEquation::solve(Scalar timeStep)
 
     printf("Solved coupled Navier-Stokes equations. Error = %lf, number of iterations = %d.\n", solver_.error(), solver_.iterations());
 
-    for(const Cell &cell: u_.grid.activeCells())
+    for(const Cell &cell: u_.grid.localActiveCells())
         u_(cell).x = phi_(cell.globalIndex());
 
-    for(const Cell &cell: u_.grid.activeCells())
+    for(const Cell &cell: u_.grid.localActiveCells())
         u_(cell).y = phi_(cell.globalIndex() + nActiveCells_);
 
-    for(const Cell &cell: p_.grid.activeCells())
+    for(const Cell &cell: p_.grid.localActiveCells())
         p_(cell) = phi_(cell.globalIndex() + 2*nActiveCells_);
 
     return solver_.error();

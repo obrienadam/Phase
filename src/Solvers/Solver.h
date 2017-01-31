@@ -47,6 +47,9 @@ public:
     FiniteVolumeGrid2D& grid() { return grid_; }
     const FiniteVolumeGrid2D& grid() const { return grid_; }
 
+    //- Comm
+    const Communicator& comm() const { return comm_; }
+
     //- ICs/IBs
     void setInitialConditions(const Input& input);
     const ImmersedBoundary& ib() const { return ib_; }

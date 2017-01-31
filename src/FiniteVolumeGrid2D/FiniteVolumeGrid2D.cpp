@@ -38,7 +38,8 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vect
 
 void FiniteVolumeGrid2D::reset()
 {
-    activeCells_.clear();
+    localActiveCells_.clear();
+    globalActiveCells_.clear();
     inactiveCells_.clear();
     cellGroups_.clear();
     cellZones_.clear();
@@ -177,7 +178,8 @@ void FiniteVolumeGrid2D::setCellsActive(const std::vector<Label> &ids)
     for(const Cell& cell: getCells(ids))
     {
         inactiveCells_.remove(cell);
-        activeCells_.push_back(cell);
+        localActiveCells_.push_back(cell);
+        globalActiveCells_.push_back(cell);
         cell.setActive();
     }
 }
@@ -186,8 +188,18 @@ void FiniteVolumeGrid2D::setCellsInactive(const std::vector<Label> &ids)
 {
     for(const Cell& cell: getCells(ids))
     {
-        activeCells_.remove(cell);
+        localActiveCells_.remove(cell);
+        globalActiveCells_.remove(cell);
         inactiveCells_.push_back(cell);
+        cell.setInactive();
+    }
+}
+
+void FiniteVolumeGrid2D::setCellsLocallyInactive(const std::vector<Label> &ids)
+{
+    for(const Cell& cell: getCells(ids))
+    {
+        localActiveCells_.remove(cell);
         cell.setInactive();
     }
 }
@@ -215,10 +227,14 @@ CellZone &FiniteVolumeGrid2D::createCellZone(const std::string &name, const std:
 void FiniteVolumeGrid2D::setAllCellsActive()
 {
     inactiveCells_.clear();
+    localActiveCells_.clear();
+    globalActiveCells_.clear();
+
     for(const Cell& cell: cells_)
     {
         cell.setActive();
-        activeCells_.push_back(cell);
+        localActiveCells_.push_back(cell);
+        globalActiveCells_.push_back(cell);
     }
 }
 
@@ -323,8 +339,7 @@ const Node& FiniteVolumeGrid2D::findNearestNode(const Point2D& pt) const
 std::vector<std::vector<Ref<const Cell>> > FiniteVolumeGrid2D::constructSmoothingKernels(Scalar width) const
 {
     std::vector<std::vector<Ref<const Cell>>> kernels(nCells());
-    const CellGroup& group = activeCells();
-    BoundingBox gridgeom = boundingBox();
+    const CellGroup& group = globalActiveCells();
 
     for(const Cell& cell: group)
     {
@@ -441,7 +456,7 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     vector<int> neighboursProc(comm.nProcs(), -1);
     vector<int> nbProcs;
     vector<vector<Label>> sendOrder, recvOrder;
-    for(int i = 0; i < 1; ++i)
+    for(int i = 0; i < 1; ++i) // This is where buffer width can be set
         for(const Cell& cell: getCells(localCellList))
         {
             for(const InteriorLink& nb: cell.neighbours())
@@ -537,9 +552,6 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
 
     applyPatch("LocalCellBoundary", partitionPatch);
     comm.printf("Finished initializing local patches.\n");
-
-    computeOrdering(comm);
-
     comm.printf("Finished partitioning grid.\n");
 }
 
@@ -550,39 +562,16 @@ void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
     neighbouringProcs_.push_back(procNo);
     procSendOrder_.push_back(sendOrder);
     procRecvOrder_.push_back(recvOrder);
-    setCellsInactive(recvOrder);
+    setCellsLocallyInactive(recvOrder);
     createCellZone("Proc" + std::to_string(procNo) + "BufferCells", recvOrder);
 }
 
-void FiniteVolumeGrid2D::computeOrdering()
-{
-    Index index = 0;
-    for(const Cell& cell: activeCells_)
-    {
-        cell.setLocalIndex(index);
-
-        cell.setNumberOfGlobalIndices(3);
-        cell.setGlobalIndex(0, index);
-        cell.setGlobalIndex(1, index);
-        cell.setGlobalIndex(2, index + nActiveCells());
-        ++index;
-    }
-
-    nActiveCellsGlobal_ = nActiveCells();
-}
-
-void FiniteVolumeGrid2D::computeOrdering(const Communicator &comm)
+void FiniteVolumeGrid2D::computeGlobalOrdering(const Communicator &comm)
 {
     /* Note: global orderings are guaranteed to be contigous on each process.
      * This is a requirement for the majority of sparse linear solvers. */
 
-    if(comm.nProcs() == 1)
-    {
-        computeOrdering();
-        return;
-    }
-
-    std::vector<Size> nLocalCells = comm.allGather(nActiveCells());
+    std::vector<Size> nLocalCells = comm.allGather(nLocalActiveCells());
 
     Index globalIndexStart = 0;
     for(int proc = 0; proc < comm.rank(); ++proc)
@@ -595,7 +584,7 @@ void FiniteVolumeGrid2D::computeOrdering(const Communicator &comm)
     };
 
     Index localIndex = 0;
-    for(const Cell& cell: activeCells_)
+    for(const Cell& cell: localActiveCells_)
     {
         cell.setLocalIndex(localIndex);
 
@@ -618,12 +607,13 @@ void FiniteVolumeGrid2D::computeOrdering(const Communicator &comm)
     for(const auto& ids: procRecvOrder_)
         for(Label id: ids)
         {
+            cells_[id].setNumberOfGlobalIndices(3);
             cells_[id].setGlobalIndex(0, globalIndices[0][id]);
             cells_[id].setGlobalIndex(1, globalIndices[1][id]);
             cells_[id].setGlobalIndex(2, globalIndices[2][id]);
         }
 
-    nActiveCellsGlobal_ = comm.sum(nActiveCells());
+    nActiveCellsGlobal_ = comm.sum(nLocalActiveCells());
     comm.printf("Num local cells = %d\nNum global cells = %d\n", nLocalCells[comm.rank()], nActiveCellsGlobal_);
 }
 
@@ -683,7 +673,6 @@ void FiniteVolumeGrid2D::initCells()
     }
 
     setAllCellsActive();
-    computeOrdering();
 }
 
 void FiniteVolumeGrid2D::initConnectivity()

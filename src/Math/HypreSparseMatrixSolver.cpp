@@ -97,37 +97,37 @@ Scalar HypreSparseMatrixSolver::solve()
 
 void HypreSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
-    std::vector<int> inds(field.grid.activeCells().size());
-    std::vector<Scalar> vals(field.grid.activeCells().size());
+    std::vector<int> inds(field.grid.localActiveCells().size());
+    std::vector<Scalar> vals(field.grid.localActiveCells().size());
 
-    std::transform(field.grid.activeCells().begin(), field.grid.activeCells().end(),
+    std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
                    inds.begin(), [](const Cell& cell)->int{ return cell.globalIndex(0); });
 
     HYPRE_IJVectorGetValues(x_, inds.size(), inds.data(), vals.data());
 
     auto begin = vals.begin();
-    for(const Cell& cell: field.grid.activeCells())
+    for(const Cell& cell: field.grid.localActiveCells())
         field(cell) = *(begin++);
 }
 
 void HypreSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
-    std::vector<int> inds(2*field.grid.activeCells().size());
-    std::vector<Scalar> vals(2*field.grid.activeCells().size());
+    std::vector<int> inds(2*field.grid.localActiveCells().size());
+    std::vector<Scalar> vals(2*field.grid.localActiveCells().size());
 
-    Size nActiveCells = field.grid.activeCells().size();
+    Size nActiveCells = field.grid.localActiveCells().size();
 
-    std::transform(field.grid.activeCells().begin(), field.grid.activeCells().end(),
+    std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
                    inds.begin(), [](const Cell& cell)->int{ return cell.globalIndex(1); });
 
-    std::transform(field.grid.activeCells().begin(), field.grid.activeCells().end(),
+    std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
                    inds.begin() + nActiveCells,
                    [nActiveCells](const Cell& cell)->int{ return cell.globalIndex(2); });
 
     HYPRE_IJVectorGetValues(x_, inds.size(), inds.data(), vals.data());
 
     auto begin = vals.begin();
-    for(const Cell& cell: field.grid.activeCells())
+    for(const Cell& cell: field.grid.localActiveCells())
     {
         field(cell).x = *begin;
         field(cell).y = *(begin + nActiveCells);

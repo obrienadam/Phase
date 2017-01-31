@@ -70,7 +70,7 @@ void Celeste::constructGammaTildeMatrices()
     gradGammaTildeStencils_.resize(gradGammaTilde_.size());
     for(const Cell &cell: gammaTilde_.grid.cellZone("fluid"))
     {
-        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.activeCells().kNearestNeighbourSearch(cell.centroid(), 9);
+        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.globalActiveCells().kNearestNeighbourSearch(cell.centroid(), 9);
 
         A.resize(8, 5);
         int i = 0;
@@ -192,6 +192,9 @@ void Celeste::constructKappaMatrices()
 void Celeste::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+
+    solver().grid().sendMessages(solver().comm(), gammaTilde_);
+
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
     Matrix b(8, 1);
@@ -217,12 +220,16 @@ void Celeste::computeGradGammaTilde()
         b = gradGammaTildeMatrices_[cell.id()]*b;
         gradGammaTilde_(cell) = Vector2D(b(0, 0), b(1, 0));
     }
+
+    solver().grid().sendMessages(solver().comm(), gradGammaTilde_);
 }
 
 void Celeste::computeInterfaceNormals()
 {
     for(const Cell &cell: n_.grid.cellZone("fluid"))
         n_(cell) = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+
+    solver().grid().sendMessages(solver().comm(), n_);
 
     for(const Face &face: n_.grid.interiorFaces()) // Not super important how this is computed, it's just for the cicsam scheme
     {
@@ -322,6 +329,8 @@ void Celeste::computeCurvature()
         kappa_(cell) = bx(0, 0) + by(1, 0);
     }
 
+    solver().grid().sendMessages(solver().comm(), kappa_);
+
     //weightCurvatures();
     interpolateCurvatureFaces();
 }
@@ -359,6 +368,8 @@ void Celeste::weightCurvatures()
             kappa_(cell) = sumKappaW/sumW;
     }
 
+    solver().grid().sendMessages(solver().comm(), kappa_);
+
     kappa_.savePreviousIteration();
 
     for(const Cell &cell: kappa_.grid.cellZone("fluid"))
@@ -394,4 +405,6 @@ void Celeste::weightCurvatures()
         else
             kappa_(cell) = num/den;
     }
+
+    solver().grid().sendMessages(solver().comm(), kappa_);
  }

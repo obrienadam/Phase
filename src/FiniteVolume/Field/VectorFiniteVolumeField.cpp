@@ -5,9 +5,9 @@ template<>
 VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const Vector& rhs)
 {
     auto &self = *this;
-    const size_t nActiveCells = grid.nActiveCells();
+    const size_t nActiveCells = grid.nLocalActiveCells();
 
-    for(const Cell &cell: grid.activeCells())
+    for(const Cell &cell: grid.localActiveCells())
     {
         self[cell.id()].x = rhs[cell.localIndex()];
         self[cell.id()].y = rhs[cell.localIndex() + nActiveCells];
@@ -20,10 +20,10 @@ template<>
 Vector VectorFiniteVolumeField::vectorize() const
 {
     const auto& self = *this;
-    const Size nActiveCells = grid.nActiveCells();
+    const Size nActiveCells = grid.nLocalActiveCells();
     Vector vec(2*nActiveCells, 0.);
 
-    for(const Cell& cell: grid.activeCells())
+    for(const Cell& cell: grid.localActiveCells())
     {
         vec[cell.localIndex()] = self(cell).x;
         vec[nActiveCells + cell.localIndex()] = self(cell).y;

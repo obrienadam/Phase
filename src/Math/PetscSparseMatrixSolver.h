@@ -40,7 +40,7 @@ private:
     static int solversActive_;
 
     const Communicator &comm_;
-    PetscInt maxIters_ = 500, iLower_, iUpper_, error_;
+    PetscInt maxIters_ = 500, iLower_ = 0, iUpper_ = 0, error_;
     PetscReal rTol_ = 1e-10, absTol_ = 1e-10;
 
     Mat A_;
@@ -48,9 +48,6 @@ private:
 
     PC precon_;
     KSP solver_;
-
-    //- Viewer, for debugging
-    PetscViewer viewer_;
 };
 
 #endif

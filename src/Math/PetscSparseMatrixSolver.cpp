@@ -17,11 +17,10 @@ PetscSparseMatrixSolver::PetscSparseMatrixSolver(const Communicator &comm, const
     error_ = VecSetType(x_, VECMPI);
 
     KSPCreate(comm_.communicator(), &solver_);
-    KSPSetOperators(solver_, A_, A_);
-    KSPSetType(solver_, KSPBCGS);
-
+    KSPGetPC(solver_, &precon_); // will be destroyed
     setPreconditioner(preconditioner);
-    PetscViewerCreate(comm.communicator(), &viewer_);
+    KSPSetOperators(solver_, A_, A_);
+    KSPSetReusePreconditioner(solver_, PETSC_TRUE);
 
     ++solversActive_;
 }
@@ -31,8 +30,6 @@ PetscSparseMatrixSolver::~PetscSparseMatrixSolver()
     MatDestroy(&A_);
     VecDestroy(&x_);
     VecDestroy(&b_);
-    KSPDestroy(&solver_);
-    PetscViewerDestroy(&viewer_);
 }
 
 void PetscSparseMatrixSolver::setRank(int rank)
@@ -41,7 +38,7 @@ void PetscSparseMatrixSolver::setRank(int rank)
     {
         error_ = MatSetSizes(A_, rank, rank, PETSC_DETERMINE, PETSC_DETERMINE);
         error_ = MatSeqAIJSetPreallocation(A_, 5, PETSC_NULL);
-        error_ = MatMPIAIJSetPreallocation(A_, 5, PETSC_NULL, 2, PETSC_NULL);
+        error_ = MatMPIAIJSetPreallocation(A_, 5, PETSC_NULL, 4, PETSC_NULL);
         error_ = MatGetOwnershipRange(A_, &iLower_, &iUpper_);
         error_ = VecSetSizes(x_, rank, PETSC_DECIDE);
         error_ = VecSetSizes(b_, rank, PETSC_DECIDE);
@@ -75,22 +72,15 @@ void PetscSparseMatrixSolver::setRhs(const Vector &rhs)
 Scalar PetscSparseMatrixSolver::solve()
 {
     MatAssemblyEnd(A_, MAT_FINAL_ASSEMBLY);
-
-    KSPDestroy(&solver_);
-    KSPCreate(comm_.communicator(), &solver_); // Unfortunately necessary to fix memory leak!
-    KSPSetOperators(solver_, A_, A_);
-    KSPSetType(solver_, KSPBCGS);
-
-    setPreconditioner("pilut");
-
     KSPSolve(solver_, b_, x_);
+
     return error();
 }
 
 void PetscSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     PetscInt row = iLower_;
-    for(const Cell& cell: field.grid.activeCells())
+    for(const Cell& cell: field.grid.localActiveCells())
     {
         VecGetValues(x_, 1, &row, &(field(cell)));
         ++row;
@@ -100,8 +90,8 @@ void PetscSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 void PetscSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     PetscInt rowX = iLower_;
-    PetscInt rowY = rowX + field.grid.nActiveCells();
-    for(const Cell& cell: field.grid.activeCells())
+    PetscInt rowY = rowX + field.grid.nLocalActiveCells();
+    for(const Cell& cell: field.grid.localActiveCells())
     {
         VecGetValues(x_, 1, &rowX, &(field(cell).x));
         VecGetValues(x_, 1, &rowY, &(field(cell).y));
@@ -113,7 +103,8 @@ void PetscSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 
 void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditioner)
 {
-    KSPGetPC(solver_, &precon_);
+    PCDestroy(&precon_);
+    PCCreate(comm_.communicator(), &precon_);
 
     if(preconditioner == "pilut")
     {
@@ -140,10 +131,12 @@ void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditione
     else if(preconditioner == "lu")
     {
         PCSetType(precon_, PCLU);
-        KSPSetType(solver_, KSPPREONLY);
     }
     else
         throw Exception("PetscSparseMatrixSolver", "setPreconditioner", "unrecognized preconditioner type \"" + preconditioner + "\".");
+
+    KSPSetPC(solver_, precon_);
+    KSPSetType(solver_, KSPBCGS);
 }
 
 void PetscSparseMatrixSolver::setMaxIters(int maxIters)

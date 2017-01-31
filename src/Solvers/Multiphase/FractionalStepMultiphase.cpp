@@ -178,7 +178,7 @@ void FractionalStepMultiphase::computeRho()
 
     rho.savePreviousTimeStep(0, 1);
 
-    for(const Cell &cell: grid_.activeCells())
+    for(const Cell &cell: grid_.localActiveCells())
     {
         Scalar g = std::max(0., std::min(1., w(cell)));
         rho(cell) = (1. - g)*rho1_ + g*rho2_;
@@ -203,7 +203,7 @@ void FractionalStepMultiphase::computeMu()
 
     mu.savePreviousTimeStep(0, 1);
 
-    for(const Cell &cell: grid_.activeCells())
+    for(const Cell &cell: grid_.localActiveCells())
     {
         Scalar g = std::max(0., std::min(1., w(cell)));
         mu(cell) = (1. - g)*mu1_ + g*mu2_;

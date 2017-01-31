@@ -14,8 +14,29 @@ Solver
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 1
 	numPressureCorrections 2
-	smoothingKernelRadius 0.04
+	smoothingKernelRadius 0.02
 	surfaceTensionModel CELESTE
+}
+
+LinearAlgebra
+{
+	uEqn
+	{
+		lib petsc
+		preconditioner lu
+	}
+
+	pCorrEqn
+	{
+		lib petsc
+		preconditioner lu
+	}
+
+	gammaEqn
+	{
+		lib petsc
+		preconditioner lu
+	}
 }
 
 Properties
@@ -24,7 +45,7 @@ Properties
 	rho2 1.5
 	mu1 0.01
 	mu2 0.01
-	sigma 0.07
+	sigma 0
 
 	advancingContactAngle 90
 	recedingContactAngle 90
@@ -35,8 +56,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 50
-	nCellsY 50
+	nCellsX 100
+	nCellsY 100
 
 	; Rectilinear parameters
 	width 1
@@ -52,6 +73,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 1
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

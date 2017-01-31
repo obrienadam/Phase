@@ -21,12 +21,12 @@ int main(int argc, char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
+    gridPtr->partition(comm);
 
     Piso solver(input, comm, *gridPtr);
+    Viewer viewer(input, comm, solver);
 
-    Viewer viewer(input, solver);
     RunControl runControl;
-
     runControl.run(input, comm, solver, viewer);
 
     Communicator::finalize();
