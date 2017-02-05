@@ -91,23 +91,25 @@ void ImmersedBoundaryObject::flagIbCells()
     for(const Cell& cell: internalCells)
         cells.push_back(cell.id());
 
-    grid_.setCellsInactive(cells);
+    //- Create a new cell zone for the IB (this does not affect if the cell is active or not)
+    cells_ = &grid_.createCellZone(name_ + "Cells", cells);
 
-    for(const Cell &cell: internalCells)
+    //- Sort the new zone into ib cells and solid cells
+    for(const Cell &cell: *cells_)
     {
-        bool isCellActive = false;
+        bool isIbCell = false;
 
         for(const InteriorLink &nb: cell.neighbours())
         {
             if(nb.cell().isActive())
             {
                 ibCells.push_back(cell.id());
-                isCellActive = true;
+                isIbCell = true;
                 break;
             }
         }
 
-        if(isCellActive)
+        if(isIbCell)
             continue;
 
         for(const DiagonalCellLink &dg: cell.diagonals())
@@ -115,20 +117,20 @@ void ImmersedBoundaryObject::flagIbCells()
             if(dg.cell().isActive())
             {
                 ibCells.push_back(cell.id());
-                isCellActive = true;
+                isIbCell = true;
                 break;
             }
         }
 
-        if(isCellActive)
+        if(isIbCell)
             continue;
 
         solidCells.push_back(cell.id());
     }
 
-    grid_.setCellsActive(ibCells);
-    cells_ = &grid_.createCellZone(name_ + "IbCells", ibCells);
-    grid_.createCellZone(name_ + "SolidCells", solidCells);
+    grid_.setCellsInactive(solidCells);
+    ibCells_ = &grid_.createCellGroup(name_ + "IbCells", ibCells);
+    solidCells_ = &grid_.createCellGroup(name_ + "SolidCells", solidCells);
 }
 
 void ImmersedBoundaryObject::constructStencils()
@@ -136,7 +138,7 @@ void ImmersedBoundaryObject::constructStencils()
     stencilPoints_.clear();
     imagePointStencils_.clear();
 
-    for(const Cell& cell: cells())
+    for(const Cell& cell: ibCells())
     {
         const Point2D bp = shape().nearestIntersect(cell.centroid()), ip = 2.*bp - cell.centroid();
 

@@ -13,7 +13,7 @@ Equation<T> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, FiniteVolumeFi
     Equation<T> eqn(field);
 
     for(const ImmersedBoundaryObject& ibObj: ibObjs)
-        for(const Cell &cell: ibObj.cells())
+        for(const Cell &cell: ibObj.ibCells())
         {
             const Point2D& imagePoint = ibObj.imagePoint(cell);
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);

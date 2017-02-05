@@ -164,7 +164,7 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
 
     for(const Cell& cell: cells_)
     {
-        elems.push_back(cell.nodes().size() == 3 ? TRI_3 : QUAD_4);
+        elems.push_back(cell.nodes().size() == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4));
 
         for(const Node& node: cell.nodes())
             elems.push_back(node.id() + 1);
@@ -563,7 +563,6 @@ void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
     procSendOrder_.push_back(sendOrder);
     procRecvOrder_.push_back(recvOrder);
     setCellsLocallyInactive(recvOrder);
-    createCellZone("Proc" + std::to_string(procNo) + "BufferCells", recvOrder);
 }
 
 void FiniteVolumeGrid2D::computeGlobalOrdering(const Communicator &comm)

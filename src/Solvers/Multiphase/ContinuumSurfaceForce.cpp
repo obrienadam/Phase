@@ -65,7 +65,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
     }
 
     for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-        for(const Cell &cell: ibObj.cells())
+        for(const Cell &cell: ibObj.ibCells())
         {
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
             const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);

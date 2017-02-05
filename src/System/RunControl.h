@@ -4,7 +4,7 @@
 #include "Input.h"
 #include "Communicator.h"
 #include "Solver.h"
-#include "Viewer.h"
+#include "CgnsViewer.h"
 #include "Time.h"
 
 class RunControl

@@ -15,7 +15,7 @@ Solver
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.0001
+	smoothingKernelRadius 0.000025
 	surfaceTensionModel CELESTE
 }
 
@@ -24,28 +24,38 @@ LinearAlgebra
   uEqn
   {
     lib hypre
-    preconditioner pilut
     maxIterations 50
-    tolerance 1e-6
-    iluFill 1
+    tolerance 1e-4
+    iluFill 0
+    maxPreconditionerUses 10
   }
 
   pCorrEqn
   {
     lib hypre
-    preconditioner pilut
     maxIterations 500
-    tolerance 1e-6
-    iluFill 3
+    tolerance 1e-4
+    iluFill 4
+    maxPreconditionerUses 10
+  }
+  
+  pEqn
+  {
+    lib petsc
+    preconditioner boomeramg
+    maxIterations 500
+    tolerance 1e-4
+    iluFill 4
+    maxPreconditionerUses 10
   }
 
   gammaEqn
   {
     lib hypre
-    preconditioner pilut
     maxIterations 20
-    tolerance 1e-13
-    iluFill 1
+    tolerance 1e-4
+    iluFill 0
+    maxPreconditionerUses 10
   }
 }
 
@@ -65,8 +75,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 100
-	nCellsY 50
+	nCellsX 400
+	nCellsY 200
 	width 0.005
 	height 0.0025
 }
@@ -75,7 +85,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u,n,ft,gradRho
-	scalarFields p,pCorr,m,gamma,rho,mu,kappa
+	scalarFields p,m,gamma,rho,mu,kappa
 }
 
 Integrators

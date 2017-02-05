@@ -14,9 +14,8 @@ LinearAlgebra
 {
 	phiEqn
 	{
-		lib hypre
-		preconditioner pilut
-		iluFill 5
+		lib petsc
+		preconditioner boomeramg
 	}
 }
 
@@ -28,8 +27,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 200
-	nCellsY 200
+	nCellsX 400
+	nCellsY 400
 
 	; Rectilinear parameters
 	width 1

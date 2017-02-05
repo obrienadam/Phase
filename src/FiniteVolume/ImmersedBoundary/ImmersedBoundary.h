@@ -9,9 +9,9 @@ class ImmersedBoundary
 {
 public:
 
-    enum {SOLID = 1, FLUID = 2, IB = 3};
+    enum {FLUID = 1, IB = 2, SOLID = 3};
 
-    ImmersedBoundary(const Input& input, Solver &solver);
+    ImmersedBoundary(const Input& input, const Communicator& comm, Solver &solver);
 
     void initCellZones();
 

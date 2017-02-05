@@ -21,7 +21,7 @@ LinearAlgebra
   uEqn
   {
     lib petsc
-    preconditioner lu
+    preconditioner sor
   }
 
   pEqn

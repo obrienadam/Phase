@@ -27,7 +27,7 @@ public:
     Shape2D& shape() { return *shapePtr_; }
     const Shape2D& shape() const { return *shapePtr_; }
 
-    //- Accessing stencil poings
+    //- Accessing stencil points for an ib cell
     const Point2D& boundaryPoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).first; }
     const Point2D& imagePoint(const Cell &cell) const { return (stencilPoints_.find(cell.id())->second).second; }
     const std::pair<Point2D, Point2D>& stencilPoints(const Cell &cell) const { return stencilPoints_.find(cell.id())->second; }
@@ -48,8 +48,11 @@ public:
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
-    const CellZone& cells() const { return *cells_; }
+    //- Reference to cell zone for iterating
+    const CellGroup& ibCells() const { return *ibCells_; }
+    const CellGroup& solidCells() const { return *solidCells_; }
 
+    //- Boundary info
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }
 
@@ -67,6 +70,8 @@ protected:
     Label id_;
 
     FiniteVolumeGrid2D &grid_;
+
+    const CellGroup* ibCells_, *solidCells_;
     const CellZone* cells_;
     std::shared_ptr<Shape2D> shapePtr_;
 

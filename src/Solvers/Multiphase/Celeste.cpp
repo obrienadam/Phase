@@ -116,7 +116,7 @@ void Celeste::constructKappaMatrices()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
-                if(ibObj.cells().isInGroup(nb.cell()))
+                if(ibObj.ibCells().isInGroup(nb.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
@@ -147,7 +147,7 @@ void Celeste::constructKappaMatrices()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
-                if(ibObj.cells().isInGroup(dg.cell()))
+                if(ibObj.ibCells().isInGroup(dg.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
@@ -269,7 +269,7 @@ void Celeste::computeCurvature()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
-                if(ibObj.cells().isInGroup(nb.cell()))
+                if(ibObj.ibCells().isInGroup(nb.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
@@ -294,7 +294,7 @@ void Celeste::computeCurvature()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
             {
-                if(ibObj.cells().isInGroup(dg.cell()))
+                if(ibObj.ibCells().isInGroup(dg.cell()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 

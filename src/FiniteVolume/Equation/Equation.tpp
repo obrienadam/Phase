@@ -165,8 +165,8 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib + "\" does not support multiple processes in its current configuration.");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
-    spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-10));
-    spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 3));
+    spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-6));
+    spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 2));
     spSolver_->setDropToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".dropTolerance", 0.001));
     spSolver_->setMaxPreconditionerUses(input.caseInput().get<int>("LinearAlgebra." + name + ".maxPreconditionerUses", 1));
 

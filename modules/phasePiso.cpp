@@ -5,7 +5,7 @@
 #include "CommandLine.h"
 #include "ConstructGrid.h"
 #include "Piso.h"
-#include "Viewer.h"
+#include "CgnsViewer.h"
 #include "RunControl.h"
 
 int main(int argc, char* argv[])
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     gridPtr->partition(comm);
 
     Piso solver(input, comm, *gridPtr);
-    Viewer viewer(input, comm, solver);
+    CgnsViewer viewer(input, comm, solver);
 
     RunControl runControl;
     runControl.run(input, comm, solver, viewer);

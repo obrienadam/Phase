@@ -5,7 +5,7 @@
 #include "CommandLine.h"
 #include "ConstructGrid.h"
 #include "FractionalStepMultiphase.h"
-#include "Viewer.h"
+#include "CgnsViewer.h"
 #include "RunControl.h"
 
 int main(int argc, char* argv[])
@@ -21,10 +21,11 @@ int main(int argc, char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
+    gridPtr->partition(comm);
 
     FractionalStepMultiphase solver(input, comm, *gridPtr);
 
-    Viewer viewer(input, solver);
+    CgnsViewer viewer(input, comm, solver);
     RunControl runControl;
 
     runControl.run(input, comm, solver, viewer);

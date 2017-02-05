@@ -72,6 +72,7 @@ void PetscSparseMatrixSolver::setRhs(const Vector &rhs)
 Scalar PetscSparseMatrixSolver::solve()
 {
     MatAssemblyEnd(A_, MAT_FINAL_ASSEMBLY);
+    KSPSetInitialGuessNonzero(solver_, PETSC_TRUE);
     KSPSolve(solver_, b_, x_);
 
     return error();

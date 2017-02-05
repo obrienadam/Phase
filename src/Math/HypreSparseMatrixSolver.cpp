@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "HypreSparseMatrixSolver.h"
 
 HypreSparseMatrixSolver::HypreSparseMatrixSolver(const Communicator& comm)
@@ -86,7 +88,15 @@ Scalar HypreSparseMatrixSolver::solve()
     HYPRE_IJVectorGetObject(b_, (void**) &b);
     HYPRE_IJVectorGetObject(x_, (void**) &x);
 
-    HYPRE_ParCSRBiCGSTABSetup(solver_, A, b, x);
+    if(nPreconUses_ == maxPreconUses_)
+    {
+        comm_.printf("Computing preconditioner...\n");
+        HYPRE_ParCSRBiCGSTABSetup(solver_, A, b, x);
+        nPreconUses_ = 0;
+    }
+    else
+        ++nPreconUses_;
+
     HYPRE_ParCSRBiCGSTABSolve(solver_, A, b, x);
 
     HYPRE_ParCSRBiCGSTABGetFinalRelativeResidualNorm(solver_, &toler_);

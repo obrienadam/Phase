@@ -8,7 +8,7 @@ Solver
 	maxIterations 100
 	timeStep 1e-2
 	maxCo 0.8
-	maxTime 10
+	maxTime 30
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
@@ -22,7 +22,7 @@ LinearAlgebra
 	uEqn
 	{
 		lib petsc
-		preconditioner lu
+		preconditioner sor
 		tolerance 1e-6
 		maxPreconditionerUses 10
 	}
@@ -30,7 +30,7 @@ LinearAlgebra
 	pEqn
 	{
 		lib petsc
-		preconditioner lu
+		preconditioner pilut
 		tolerance 1e-6
 		maxPreconditionerUses 10
 		iluFill 6
@@ -47,8 +47,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 120
-	nCellsY 80
+	nCellsX 480
+	nCellsY 320
 
 	; Rectilinear parameters
 	width 3
@@ -64,6 +64,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 25
+  fileWriteFrequency 50
   consoleOutputFrequency 1
 }

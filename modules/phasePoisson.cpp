@@ -3,7 +3,7 @@
 #include "Input.h"
 #include "CommandLine.h"
 #include "ConstructGrid.h"
-#include "Viewer.h"
+#include "CgnsViewer.h"
 #include "Poisson.h"
 #include "Time.h"
 
@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     gridPtr->partition(comm);
 
     Poisson solver(input, comm, *gridPtr);
-    Viewer viewer(input, comm, solver);
+    CgnsViewer viewer(input, comm, solver);
 
     Time time;
 

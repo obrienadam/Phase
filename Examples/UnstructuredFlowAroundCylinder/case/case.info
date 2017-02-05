@@ -20,22 +20,22 @@ LinearAlgebra
 {
 	uEqn
 	{
-	  lib petsc
-	  preconditioner pilut
+	  lib hypre
+	  preconditioner sor
 	  maxIterations 50
-	  tolerance 1e-8
+	  tolerance 1e-2
 	  iluFill 0
-	  maxPreconditionerUses 10
+	  maxPreconditionerUses 20
 	}
 
 	pEqn
 	{
-	  lib petsc
+	  lib hypre
 	  preconditioner pilut
 	  maxIterations 300
-	  tolerance 1e-8
+	  tolerance 1e-2
 	  iluFill 2
-	  maxPreconditionerUses 10
+	  maxPreconditionerUses 20
 	}
 }
 
@@ -56,7 +56,7 @@ Viewer
 {
 	type tecplot
 	vectorFields u
-	scalarFields p,m,rho,mu,phi,cellGroup
+	scalarFields p,m
 }
 
 Integrators
@@ -69,5 +69,5 @@ Integrators
 
 System
 {
-  fileWriteFrequency 150
+  fileWriteFrequency 100
 }

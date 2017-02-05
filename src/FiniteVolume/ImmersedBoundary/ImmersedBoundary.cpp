@@ -4,18 +4,18 @@
 #include "Solver.h"
 #include "GhostCellImmersedBoundary.h"
 
-ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
+ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm, Solver &solver)
     :
       solver_(solver),
       cellStatus_(solver.addScalarField("cellStatus"))
 {
-    try //- Lazy way to check if any immersed boundary input is present
+    try //- Lazy way to check if any immersed boundary input is present, just catch the exception if it fails
     {
         input.boundaryInput().get_child("ImmersedBoundaries");
     }
     catch(...)
     {
-        printf("No immersed boundaries present.\n");
+        comm.printf("No immersed boundaries present.\n");
         return;
     }
 
@@ -70,7 +70,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             if(!fin.is_open())
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "failed to open file \"" + filename + "\".");
 
-            printf("Reading data for \"%s\" from file \"%s\".\n", ibObject.first.c_str(), filename.c_str());
+            comm.printf("Reading data for \"%s\" from file \"%s\".\n", ibObject.first.c_str(), filename.c_str());
 
             while(!fin.eof())
             {
@@ -104,13 +104,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
         if(scaleFactor)
         {
-            printf("Scaling \"%s\" by a factor of %lf.\n", ibObject.first.c_str(), scaleFactor.get());
+            comm.printf("Scaling \"%s\" by a factor of %lf.\n", ibObject.first.c_str(), scaleFactor.get());
             ibObjs_.back().shape().scale(scaleFactor.get());
         }
 
         if(rotationAngle)
         {
-            printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObject.first.c_str(), rotationAngle.get());
+            comm.printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObject.first.c_str(), rotationAngle.get());
             ibObjs_.back().shape().rotate(rotationAngle.get()*M_PI/180.);
         }
 
@@ -138,7 +138,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
-            printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
+            comm.printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
 
             ibObjs_.back().addBoundaryType(child.first, boundaryType);
             ibObjs_.back().addBoundaryRefValue(child.first, boundaryRefValue);
@@ -174,7 +174,7 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 {
     for(const ImmersedBoundaryObject& ibObj: ibObjs_)
     {
-        if(ibObj.cells().isInGroup(cell))
+        if(ibObj.ibCells().isInGroup(cell))
             return true;
     }
 
@@ -185,13 +185,16 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 
 void ImmersedBoundary::setCellStatus()
 {
-    for(const Cell &cell: solver_.grid().inactiveCells())
-        cellStatus_(cell) = SOLID;
 
     for(const Cell &cell: solver_.grid().cellZone("fluid"))
         cellStatus_(cell) = FLUID;
 
     for(const ImmersedBoundaryObject& ibObj: ibObjs_)
-        for(const Cell &cell: ibObj.cells())
+    {
+        for(const Cell& cell: ibObj.ibCells())
             cellStatus_(cell) = IB;
+
+        for(const Cell& cell: ibObj.solidCells())
+            cellStatus_(cell) = SOLID;
+    }
 }
