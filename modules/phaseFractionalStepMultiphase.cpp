@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    gridPtr->partition(comm);
+    gridPtr->partition(input, comm);
 
     FractionalStepMultiphase solver(input, comm, *gridPtr);
 

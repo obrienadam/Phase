@@ -13,6 +13,7 @@
 #include "CellZone.h"
 #include "Search.h"
 #include "Communicator.h"
+#include "Input.h"
 
 class FiniteVolumeGrid2D
 {
@@ -91,7 +92,7 @@ public:
 
     //- Parallel/paritioning
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
-    void partition(const Communicator& comm);
+    void partition(const Input &input, const Communicator& comm);
 
     template<typename T>
     void sendMessages(const Communicator& comm, std::vector<T>& data) const;

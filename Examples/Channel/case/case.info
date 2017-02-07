@@ -27,7 +27,7 @@ LinearAlgebra
   pEqn
   {
     lib petsc
-    preconditioner lu
+    preconditioner boomeramg
   }
 }
 

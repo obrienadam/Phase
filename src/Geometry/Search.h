@@ -10,17 +10,18 @@ class Search
 {
 public:
 
-    Search(std::vector<T>& items) : items_(items) {}
+    Search(const std::vector<T>& items) : items_(items) {}
 
     void constructRTree();
 
     std::vector< Ref<const T> > rangeSearch(const Circle &circle) const;
     std::vector< Ref<const T> > kNearestNeighbourSearch(const Point2D& point, size_t k) const;
 
+    void clear();
+
 private:
 
     typedef std::pair< Point2D, Ref< const T > > Value;
-
     std::vector< Ref<const T> > getRefs(const std::vector< Value >& vals) const;
 
     boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<32> > rTree_;

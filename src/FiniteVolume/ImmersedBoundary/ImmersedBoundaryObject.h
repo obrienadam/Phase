@@ -44,7 +44,7 @@ public:
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D& ptA, const Point2D& ptB) const; // returns a intersection point and the edge normal
 
     //- Internal cells and boundaries
-    void setInternalCells();
+    void setInternalCells(const Communicator& comm);
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
@@ -63,7 +63,7 @@ public:
 
 protected:
 
-    void flagIbCells();
+    void flagIbCells(const Communicator& comm);
     void constructStencils();
 
     std::string name_;

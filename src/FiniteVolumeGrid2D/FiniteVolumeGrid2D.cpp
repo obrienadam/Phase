@@ -45,6 +45,7 @@ void FiniteVolumeGrid2D::reset()
     cellZones_.clear();
 
     nodes_.clear();
+    nodeSearch_.clear();
     cells_.clear();
     faces_.clear();
     neighbouringProcs_.clear();
@@ -371,7 +372,7 @@ std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementCo
     return connectivity;
 }
 
-void FiniteVolumeGrid2D::partition(const Communicator &comm)
+void FiniteVolumeGrid2D::partition(const Input& input, const Communicator &comm)
 {
     using namespace std;
     comm.printf("Partitioning...\n");
@@ -456,7 +457,10 @@ void FiniteVolumeGrid2D::partition(const Communicator &comm)
     vector<int> neighboursProc(comm.nProcs(), -1);
     vector<int> nbProcs;
     vector<vector<Label>> sendOrder, recvOrder;
-    for(int i = 0; i < 1; ++i) // This is where buffer width can be set
+
+    int bufferWidth = input.caseInput().get<int>("Grid.partitionBufferWidth", 1); //- Must be set carefully!
+
+    for(int i = 0; i < bufferWidth; ++i) // This is where buffer width can be set
         for(const Cell& cell: getCells(localCellList))
         {
             for(const InteriorLink& nb: cell.neighbours())

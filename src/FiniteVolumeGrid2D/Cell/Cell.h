@@ -28,6 +28,7 @@ public:
     void setActive() const { localIndex_ = ACTIVE_NO_INDEX; }
     void setInactive() const { localIndex_ = INACTIVE; }
     bool isActive() const { return localIndex_ != INACTIVE; }
+    bool isGloballyActive() const { return globalIndex_.size() != 0; }
 
     //- Geometry
     Scalar volume() const { return volume_; }

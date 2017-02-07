@@ -271,7 +271,10 @@ Solution loadSolution(const std::string& filename)
     cg_sol_size(fid, 1, 1, 1, &datadim, dimvals);
 
     if(datadim != 1)
+    {
+        std::cout << "Solution data dimension is not 1, exiting...\n";
         exit(-1);
+    }
 
     cgsize_t rmin = 1, rmax = dimvals[0];
 
@@ -340,7 +343,10 @@ void mergeGrids(const std::vector<Base>& grids,
 
                         break;
                     default:
+                    {
+                        cout << "Invalid element type. Exiting...\n";
                         exit(-1);
+                    }
                     };
                 }
 
@@ -446,6 +452,7 @@ std::vector<Point> mergeNodes(const std::vector<Point>& nodes, const std::vector
             nVerts = 4;
             break;
         default:
+            std::cout << "Invalid element type. Exiting...\n";
             exit(-1);
         }
 
@@ -490,6 +497,7 @@ std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
             nVerts = 4;
             break;
         default:
+            cout << "Invalid element type. Exiting...\n";
             exit(-1);
         }
 
@@ -552,6 +560,7 @@ std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
             nVerts = 4;
             break;
         default:
+            cout << "Invalid element type. Exiting...\n";
             exit(-1);
         }
 

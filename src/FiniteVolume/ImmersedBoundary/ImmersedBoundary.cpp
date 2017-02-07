@@ -23,7 +23,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
 
     for(const auto& ibObject: input.boundaryInput().get_child("ImmersedBoundaries"))
     {
-        printf("Initializing immersed boundary object \"%s\".\n", ibObject.first.c_str());
+        comm.printf("Initializing immersed boundary object \"%s\".\n", ibObject.first.c_str());
 
         //- Initialize the geometry
         const std::string type = ibObject.second.get<std::string>("geometry.type");
@@ -152,12 +152,12 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
     }
 }
 
-void ImmersedBoundary::initCellZones()
+void ImmersedBoundary::initCellZones(const Communicator &comm)
 {
     for(ImmersedBoundaryObject& ibObj: ibObjs_)
-        ibObj.setInternalCells();
+        ibObj.setInternalCells(comm);
 
-    setCellStatus();
+    setCellStatus(comm);
 }
 
 Equation<Scalar> ImmersedBoundary::eqns(ScalarFiniteVolumeField &field)
@@ -183,7 +183,7 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 
 //- Protected
 
-void ImmersedBoundary::setCellStatus()
+void ImmersedBoundary::setCellStatus(const Communicator &comm)
 {
 
     for(const Cell &cell: solver_.grid().cellZone("fluid"))
@@ -197,4 +197,6 @@ void ImmersedBoundary::setCellStatus()
         for(const Cell& cell: ibObj.solidCells())
             cellStatus_(cell) = SOLID;
     }
+
+    cellStatus_.grid.sendMessages(comm, cellStatus_);
 }

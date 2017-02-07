@@ -29,6 +29,7 @@ CgnsViewer::CgnsViewer(const Input &input, const Communicator &comm, const Solve
     writeCoords(fid, bid, zid, solver_.grid());
     writeConnectivity(fid, bid, zid, solver_.grid());
     writeBoundaryConnectivity(fid, bid, zid, solver_.grid());
+    writeImmersedBoundaries(fid, solver_);
     cg_close(fid);
 }
 

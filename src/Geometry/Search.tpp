@@ -38,6 +38,12 @@ std::vector< Ref<const T> > Search<T>::kNearestNeighbourSearch(const Point2D& po
     return getRefs(result);
 }
 
+template<class T>
+void Search<T>::clear()
+{
+    rTree_.clear();
+}
+
 //- Private methods
 
 template<class T>

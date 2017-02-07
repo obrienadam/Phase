@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    gridPtr->partition(comm);
+    gridPtr->partition(input, comm);
 
     Poisson solver(input, comm, *gridPtr);
     CgnsViewer viewer(input, comm, solver);

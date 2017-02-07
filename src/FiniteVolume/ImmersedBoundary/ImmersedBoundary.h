@@ -13,7 +13,7 @@ public:
 
     ImmersedBoundary(const Input& input, const Communicator& comm, Solver &solver);
 
-    void initCellZones();
+    void initCellZones(const Communicator& comm);
 
     Equation<Scalar> eqns(ScalarFiniteVolumeField& field);
     Equation<Vector2D> eqns(VectorFiniteVolumeField& field);
@@ -23,7 +23,7 @@ public:
 
 protected:
 
-    void setCellStatus();
+    void setCellStatus(const Communicator& comm);
 
     const Solver &solver_;
     ScalarFiniteVolumeField &cellStatus_;

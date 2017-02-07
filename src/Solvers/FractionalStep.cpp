@@ -30,7 +30,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
     //- Create ib zones if any
-    ib_.initCellZones();
+    ib_.initCellZones(comm);
 
     //- Compute the global cell ordering (for lin alg)
     grid_.computeGlobalOrdering(comm_);

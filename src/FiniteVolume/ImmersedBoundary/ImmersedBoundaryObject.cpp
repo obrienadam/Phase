@@ -64,10 +64,11 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
                 );
 }
 
-void ImmersedBoundaryObject::setInternalCells()
+void ImmersedBoundaryObject::setInternalCells(const Communicator &comm)
 {
-    flagIbCells();
+    flagIbCells(comm);
     constructStencils();
+    comm.printf("IB cells set for object \"%s\".\n", name().c_str());
 }
 
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
@@ -82,9 +83,9 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar
 
 //- Protected methods
 
-void ImmersedBoundaryObject::flagIbCells()
+void ImmersedBoundaryObject::flagIbCells(const Communicator &comm)
 {
-    auto internalCells = grid_.localActiveCells().rangeSearch(shape(), 1e-8);
+    auto internalCells = grid_.localActiveCells().rangeSearch(shape(), 1e-10);
 
     std::vector<Label> cells, ibCells, solidCells;
 
@@ -101,7 +102,7 @@ void ImmersedBoundaryObject::flagIbCells()
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            if(nb.cell().isActive())
+            if(!shape().isCovered(nb.cell().centroid()))
             {
                 ibCells.push_back(cell.id());
                 isIbCell = true;
@@ -114,7 +115,7 @@ void ImmersedBoundaryObject::flagIbCells()
 
         for(const DiagonalCellLink &dg: cell.diagonals())
         {
-            if(dg.cell().isActive())
+            if(!shape().isCovered(dg.cell().centroid()))
             {
                 ibCells.push_back(cell.id());
                 isIbCell = true;
@@ -145,6 +146,10 @@ void ImmersedBoundaryObject::constructStencils()
         stencilPoints_[cell.id()] = std::make_pair(bp, ip);
 
         const auto& kNN = grid_.findNearestNode(ip).cells();
+
+        for(const Cell& cell: kNN)
+            if(solidCells_->isInGroup(cell))
+                throw Exception("ImmersedBoundaryActive", "constructStencils", "attempted to add solid cell to stencil.");
 
         std::vector<Point2D> centroids = {
             kNN[0].get().centroid(),

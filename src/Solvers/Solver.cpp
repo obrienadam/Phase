@@ -25,6 +25,13 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
     ScalarFiniteVolumeField& group = addScalarField("cellGroup");
     for(const Cell& cell: group.grid.localActiveCells())
         group(cell) = 1.;
+
+    int rank = comm.rank();
+
+    ScalarFiniteVolumeField& proc = addScalarField("proc");
+
+    for(const Cell& cell: grid_.cells())
+        proc(cell) = rank;
 }
 
 std::string Solver::info() const
