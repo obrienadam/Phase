@@ -1,13 +1,6 @@
 #ifndef COMMUNICATOR_H
 #define COMMUNICATOR_H
 
-//-------------------------------------------------
-// This class will be used for managing the future
-// planned MPI support for Phase. It currently
-// is not actually used in the code, but is placed
-// here for development and testing.
-//-------------------------------------------------
-
 #include <mpi.h>
 #include <vector>
 

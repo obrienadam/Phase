@@ -3,14 +3,17 @@ set(HEADERS Matrix.h
     Vector.h
     BisectionSearch.h
     SecantSearch.h
-    BilinearInterpolation.h)
+    Interpolation.h
+    BilinearInterpolation.h
+    QuadraticNormalInterpolation.h)
 
 set(SOURCES Matrix.cpp
     SparseMatrixSolver.cpp
     Vector.cpp
     BisectionSearch.cpp
     SecantSearch.cpp
-    BilinearInterpolation.cpp)
+    BilinearInterpolation.cpp
+    QuadraticNormalInterpolation.cpp)
 
 if(PHASE_USE_EIGEN)
     set(HEADERS ${HEADERS} EigenSparseMatrixSolver.h)

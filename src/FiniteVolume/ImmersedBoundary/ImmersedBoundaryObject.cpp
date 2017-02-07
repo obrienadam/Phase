@@ -1,5 +1,8 @@
+#include <memory>
+
 #include "ImmersedBoundaryObject.h"
 #include "LineSegment2D.h"
+#include "QuadraticNormalInterpolation.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
                                                const Point2D& center,
@@ -30,13 +33,13 @@ Scalar ImmersedBoundaryObject::imagePointVal(const Cell &cell, const ScalarFinit
 {
     const Point2D &ip = imagePoint(cell);
     const auto &ipCells = imagePointCells(cell);
-    const auto &bi = imagePointInterpolation(cell);
+    const auto &interpolator = imagePointInterpolation(cell);
 
     std::vector<Scalar> vals;
     for(const Cell &kCell: ipCells)
         vals.push_back(field[kCell.id()]);
 
-    return bi(vals, ip);
+    return interpolator(vals, ip);
 }
 
 Vector2D ImmersedBoundaryObject::imagePointVal(const Cell &cell, const VectorFiniteVolumeField& field) const
@@ -158,6 +161,14 @@ void ImmersedBoundaryObject::constructStencils()
             kNN[3].get().centroid(),
         };
 
-        imagePointStencils_[cell.id()] = std::make_pair(kNN, BilinearInterpolation(centroids));
+        switch(interpolationType_)
+        {
+        case BILINEAR:
+            imagePointStencils_[cell.id()] = std::make_pair(kNN, std::unique_ptr<Interpolation>(new BilinearInterpolation(centroids)));
+            break;
+        case QUADRATIC_NORMAL:
+            imagePointStencils_[cell.id()] = std::make_pair(kNN, std::unique_ptr<Interpolation>(new QuadraticNormalInterpolation(centroids, ip - bp)));
+            break;
+        }
     }
 }

@@ -17,7 +17,7 @@ Equation<T> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, FiniteVolumeFi
         {
             const Point2D& imagePoint = ibObj.imagePoint(cell);
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
-            const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
+            const Interpolation &bi = ibObj.imagePointInterpolation(cell);
             std::vector<Scalar> coeffs = bi(imagePoint);
 
             Scalar centralCoeff, l;

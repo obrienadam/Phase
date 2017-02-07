@@ -80,6 +80,11 @@ ImmersedBoundaries
       rotate -20
     }
 
+    interpolation
+    {
+	type quadraticNormal
+    }
+
     u
     {
       type fixed

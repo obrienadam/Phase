@@ -21,8 +21,7 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib petsc
-		preconditioner pilut
+		lib hypre
 		maxIteratons 10
 		tolerance 1e-5
 		iluFill 0
@@ -31,11 +30,10 @@ LinearAlgebra
 
 	pEqn
 	{
-		lib petsc
-		preconditioner pilut
+		lib hypre
 		maxIterations 500
 		tolerance 1e-4
-		iluFill 100
+		iluFill 4
 		maxPreconditionerUses 30
 	}
 }
@@ -56,6 +54,7 @@ Grid
 	; Rectilinear parameters
 	width 3
 	height 2
+	partitionBufferWidth 3
 }
 
 Viewer

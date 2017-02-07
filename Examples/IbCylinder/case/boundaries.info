@@ -77,6 +77,11 @@ ImmersedBoundaries
       radius 0.3
     }
 
+    interpolation
+    {
+      type quadraticNormal
+    }
+
     u
     {
       type fixed

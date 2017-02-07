@@ -114,10 +114,26 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
             ibObjs_.back().shape().rotate(rotationAngle.get()*M_PI/180.);
         }
 
+        boost::optional<std::string> interpolationType = ibObject.second.get_optional<std::string>("interpolation.type");
+
+        if(interpolationType)
+        {
+            comm.printf("Setting interpolation type \"%s\".\n", interpolationType.get().c_str());
+
+            if(interpolationType.get() == "quadraticNormal")
+                ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::QUADRATIC_NORMAL);
+            else if(interpolationType.get() == "bilinear")
+                ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::BILINEAR);
+            else
+                throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject", "invalid interpolation type \"" + interpolationType.get() + "\".");
+        }
+        else
+            ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::BILINEAR);
+
         //- Boundary information
         for(const auto& child: ibObject.second)
         {
-            if(child.first == "geometry")
+            if(child.first == "geometry" || child.first == "interpolation")
                 continue;
 
             std::string type = child.second.get<std::string>("type");

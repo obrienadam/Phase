@@ -1,14 +1,13 @@
-#ifndef BILINEAR_INTERPOLATION_H
-#define BILINEAR_INTERPOLATION_H
+#ifndef QUADRATIC_NORMAL_INTERPOLATION_H
+#define QUADRATIC_NORMAL_INTERPOLATION_H
 
 #include "Interpolation.h"
 
-class BilinearInterpolation : public Interpolation
+class QuadraticNormalInterpolation : public Interpolation
 {
 public:
-
-    BilinearInterpolation() {}
-    BilinearInterpolation(const std::vector<Point2D> &pts);
+    QuadraticNormalInterpolation(){}
+    QuadraticNormalInterpolation(const std::vector<Point2D> &pts, const Vector2D& normal);
 
     Scalar operator()(const std::vector<Scalar>& vals, const Point2D& ip) const;
     Vector2D operator()(const std::vector<Vector2D>& vals, const Point2D& ip) const;
@@ -19,6 +18,7 @@ private:
 
     void constructMatrix(const std::vector<Point2D>& pts);
 
+    Vector2D normal_;
 };
 
 #endif

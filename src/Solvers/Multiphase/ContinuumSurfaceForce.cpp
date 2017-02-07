@@ -1,5 +1,5 @@
 #include "ContinuumSurfaceForce.h"
-#include "BilinearInterpolation.h"
+#include "Interpolation.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
@@ -68,7 +68,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
         for(const Cell &cell: ibObj.ibCells())
         {
             const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
-            const BilinearInterpolation &bi = ibObj.imagePointInterpolation(cell);
+            const Interpolation &bi = ibObj.imagePointInterpolation(cell);
             const Point2D &imagePoint = ibObj.imagePoint(cell);
 
             std::vector<Scalar> coeffs = bi(imagePoint);

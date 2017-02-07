@@ -22,13 +22,15 @@ LinearAlgebra
 	uEqn
 	{
 		lib hypre
-		preconditioner lu
+		iluFill 0
+		maxPreconditionerUses 10
 	}
 
 	pEqn
 	{
 		lib hypre
-		preconditioner lu
+		iluFill 2
+		maxPreconditionerUses 10
 	}
 }
 
@@ -48,13 +50,13 @@ Grid
 	; Rectilinear parameters
 	width 3
 	height 2
+	partitionBufferWidth 4
 }
 
 Viewer
 {
-	type tecplot
 	vectorFields u
-	scalarFields rho,mu,cellStatus,p,pCorr
+	scalarFields p
 }
 
 System

@@ -3,13 +3,14 @@
 
 #include "Shape2D.h"
 #include "Equation.h"
-#include "BilinearInterpolation.h"
+#include "Interpolation.h"
 
 class ImmersedBoundaryObject
 {
 public:
 
     enum BoundaryType{FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP};
+    enum InterpolationType{BILINEAR, QUADRATIC_NORMAL};
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string& name,
@@ -34,7 +35,7 @@ public:
 
     //- For interpolating the image point
     const std::vector< Ref<const Cell> >& imagePointCells(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).first; }
-    const BilinearInterpolation& imagePointInterpolation(const Cell &cell) const { return (imagePointStencils_.find(cell.id())->second).second; }
+    const Interpolation& imagePointInterpolation(const Cell &cell) const { return *(imagePointStencils_.find(cell.id())->second).second; }
 
     //- Interpolate a value to the image point
     Scalar imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const;
@@ -42,6 +43,7 @@ public:
 
     //- Operations
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D& ptA, const Point2D& ptB) const; // returns a intersection point and the edge normal
+    void setInterpolationType(InterpolationType type) { interpolationType_ = type; }
 
     //- Internal cells and boundaries
     void setInternalCells(const Communicator& comm);
@@ -68,6 +70,7 @@ protected:
 
     std::string name_;
     Label id_;
+    InterpolationType interpolationType_ = BILINEAR;
 
     FiniteVolumeGrid2D &grid_;
 
@@ -76,7 +79,7 @@ protected:
     std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<Label, std::pair<Vector2D, Vector2D> > stencilPoints_;
-    std::map<Label, std::pair< std::vector< Ref<const Cell> >, BilinearInterpolation > > imagePointStencils_;
+    std::map<Label, std::pair< std::vector< Ref<const Cell> >, std::unique_ptr<Interpolation> > > imagePointStencils_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefValues_;
