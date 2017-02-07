@@ -23,7 +23,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Com
 
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
-    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+    //volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
     surfaceTensionForce_.compute();
     computeRho();
@@ -76,8 +76,8 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho.prev(0)*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP - ft - sg.prev(0)));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u)
+             == cn::laplacian(mu, u, 1.5) - fv::source(gradP - ft - sg.prev(0)));
 
     Scalar error = uEqn_.solve();
 

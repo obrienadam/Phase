@@ -38,7 +38,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native")
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
         message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
@@ -46,7 +46,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -mkl -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -mtune=native")
+    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost -flto")
 endif()
 
 

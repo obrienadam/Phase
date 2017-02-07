@@ -24,7 +24,7 @@ PisoMultiphase::PisoMultiphase(const Input &input, const Communicator& comm, Fin
 
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
 
-    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
+    // volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
@@ -140,8 +140,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.eqns(u)
-             == fv::laplacian(mu, u) - fv::source(gradP) + fv::source(ft) - fv::source(sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u)
+             == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(ft) - fv::source(sg));
 
     Scalar error = uEqn_.solve();
 
