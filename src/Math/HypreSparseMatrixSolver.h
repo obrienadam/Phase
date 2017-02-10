@@ -12,9 +12,9 @@ class HypreSparseMatrixSolver : public SparseMatrixSolver
 {
 public:
 
-    enum SolverType{BiCGSTAB, BOOMER_AMG};
+    enum PreconditionerType{EUCLID, BOOMER_AMG};
 
-    HypreSparseMatrixSolver(const Communicator &comm);
+    HypreSparseMatrixSolver(const Communicator &comm, PreconditionerType preconType = EUCLID);
     ~HypreSparseMatrixSolver();
 
     void setRank(int rank);
@@ -43,6 +43,8 @@ private:
 
     void initialize(int rank);
     void deinitialize();
+
+    PreconditionerType preconType_;
 
     int nIters_, maxIters_, fill_;
     Scalar minToler_, toler_;

@@ -7,7 +7,7 @@
 ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm, Solver &solver)
     :
       solver_(solver),
-      cellStatus_(solver.addScalarField("cellStatus"))
+      cellStatus_(solver.addIntegerField("cellStatus"))
 {
     try //- Lazy way to check if any immersed boundary input is present, just catch the exception if it fails
     {
@@ -32,12 +32,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
         if(type == "circle")
         {
             ibObjs_.push_back(
-                        ImmersedBoundaryObject(ibObject.first,
-                                               center,
-                                               ibObject.second.get<Scalar>("geometry.radius"),
-                                               id++,
-                                               solver.grid())
-                        );
+                        std::make_shared<ImmersedBoundaryObject>(
+                            ImmersedBoundaryObject(ibObject.first,
+                                                   center,
+                                                   ibObject.second.get<Scalar>("geometry.radius"),
+                                                   id++,
+                                                   solver.grid())
+                            ));
         }
         else if(type == "box")
         {
@@ -52,11 +53,12 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
             };
 
             ibObjs_.push_back(
-                        ImmersedBoundaryObject(ibObject.first,
-                                               box,
-                                               id++,
-                                               solver.grid())
-                        );
+                        std::make_shared<ImmersedBoundaryObject>(
+                            ImmersedBoundaryObject(ibObject.first,
+                                                   box,
+                                                   id++,
+                                                   solver.grid())
+                            ));
         }
         else if(type == "polygon")
         {
@@ -89,11 +91,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
                 vert += translation;
 
             ibObjs_.push_back(
-                        ImmersedBoundaryObject(ibObject.first,
-                                               verts,
-                                               id++,
-                                               solver.grid())
-                        );
+                        std::make_shared<ImmersedBoundaryObject>(
+                            ImmersedBoundaryObject(ibObject.first,
+                                                   verts,
+                                                   id++,
+                                                   solver.grid())
+
+                            ));
         }
         else
             throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject", "invalid geometry type \"" + type + "\".");
@@ -105,13 +109,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
         if(scaleFactor)
         {
             comm.printf("Scaling \"%s\" by a factor of %lf.\n", ibObject.first.c_str(), scaleFactor.get());
-            ibObjs_.back().shape().scale(scaleFactor.get());
+            ibObjs_.back()->shape().scale(scaleFactor.get());
         }
 
         if(rotationAngle)
         {
             comm.printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObject.first.c_str(), rotationAngle.get());
-            ibObjs_.back().shape().rotate(rotationAngle.get()*M_PI/180.);
+            ibObjs_.back()->shape().rotate(rotationAngle.get()*M_PI/180.);
         }
 
         boost::optional<std::string> interpolationType = ibObject.second.get_optional<std::string>("interpolation.type");
@@ -121,19 +125,19 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
             comm.printf("Setting interpolation type \"%s\".\n", interpolationType.get().c_str());
 
             if(interpolationType.get() == "quadraticNormal")
-                ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::QUADRATIC_NORMAL);
+                ibObjs_.back()->setInterpolationType(ImmersedBoundaryObject::QUADRATIC_NORMAL);
             else if(interpolationType.get() == "bilinear")
-                ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::BILINEAR);
+                ibObjs_.back()->setInterpolationType(ImmersedBoundaryObject::BILINEAR);
             else
                 throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject", "invalid interpolation type \"" + interpolationType.get() + "\".");
         }
         else
-            ibObjs_.back().setInterpolationType(ImmersedBoundaryObject::BILINEAR);
+            ibObjs_.back()->setInterpolationType(ImmersedBoundaryObject::BILINEAR);
 
         //- Boundary information
         for(const auto& child: ibObject.second)
         {
-            if(child.first == "geometry" || child.first == "interpolation")
+            if(child.first == "geometry" || child.first == "interpolation" || child.first == "motion")
                 continue;
 
             std::string type = child.second.get<std::string>("type");
@@ -156,13 +160,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
 
             comm.printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
 
-            ibObjs_.back().addBoundaryType(child.first, boundaryType);
-            ibObjs_.back().addBoundaryRefValue(child.first, boundaryRefValue);
+            ibObjs_.back()->addBoundaryType(child.first, boundaryType);
+            ibObjs_.back()->addBoundaryRefValue(child.first, boundaryRefValue);
 
             if(child.first == "p")
             {
-                ibObjs_.back().addBoundaryType("pCorr", boundaryType);
-                ibObjs_.back().addBoundaryType("dp", boundaryType);
+                ibObjs_.back()->addBoundaryType("pCorr", boundaryType);
+                ibObjs_.back()->addBoundaryType("dp", boundaryType);
             }
         }
     }
@@ -170,27 +174,37 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
 
 void ImmersedBoundary::initCellZones(const Communicator &comm)
 {
-    for(ImmersedBoundaryObject& ibObj: ibObjs_)
-        ibObj.setInternalCells(comm);
+    for(auto& ibObj: ibObjs_)
+        ibObj->setInternalCells(comm);
 
     setCellStatus(comm);
 }
 
 Equation<Scalar> ImmersedBoundary::eqns(ScalarFiniteVolumeField &field)
 {
-    return gc::ib(ibObjs_, field);
+    return gc::ib(ibObjs(), field);
 }
 
 Equation<Vector2D> ImmersedBoundary::eqns(VectorFiniteVolumeField &field)
 {
-    return gc::ib(ibObjs_, field);
+    return gc::ib(ibObjs(), field);
+}
+
+std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
+{
+    std::vector<Ref<const ImmersedBoundaryObject>> refs;
+
+    std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
+                   [](const std::shared_ptr<ImmersedBoundaryObject>& ptr)->const ImmersedBoundaryObject&{ return *ptr; });
+
+    return refs;
 }
 
 bool ImmersedBoundary::isIbCell(const Cell &cell) const
 {
-    for(const ImmersedBoundaryObject& ibObj: ibObjs_)
+    for(const auto& ibObj: ibObjs_)
     {
-        if(ibObj.ibCells().isInGroup(cell))
+        if(ibObj->ibCells().isInGroup(cell))
             return true;
     }
 
@@ -205,12 +219,12 @@ void ImmersedBoundary::setCellStatus(const Communicator &comm)
     for(const Cell &cell: solver_.grid().cellZone("fluid"))
         cellStatus_(cell) = FLUID;
 
-    for(const ImmersedBoundaryObject& ibObj: ibObjs_)
+    for(const auto& ibObj: ibObjs_)
     {
-        for(const Cell& cell: ibObj.ibCells())
+        for(const Cell& cell: ibObj->ibCells())
             cellStatus_(cell) = IB;
 
-        for(const Cell& cell: ibObj.solidCells())
+        for(const Cell& cell: ibObj->solidCells())
             cellStatus_(cell) = SOLID;
     }
 

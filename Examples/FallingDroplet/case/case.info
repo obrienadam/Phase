@@ -8,14 +8,14 @@ Solver
 	maxIterations 100
 	timeStep 1e-4
 	maxCo 0.3
-	maxTime 1
+	maxTime 0.2
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 1
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.000025
+	smoothingKernelRadius 0.00005
 	surfaceTensionModel CELESTE
 }
 
@@ -41,12 +41,11 @@ LinearAlgebra
   
   pEqn
   {
-    lib petsc
-    preconditioner boomeramg
+    lib hypre
     maxIterations 500
     tolerance 1e-4
     iluFill 4
-    maxPreconditionerUses 10
+    maxPreconditionerUses 1
   }
 
   gammaEqn
@@ -68,17 +67,18 @@ Properties
 	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 45
-	recedingContactAngle 45
+	advancingContactAngle 135
+	recedingContactAngle 135
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 400
-	nCellsY 200
+	nCellsX 200
+	nCellsY 100
 	width 0.005
 	height 0.0025
+	partitionBufferWidth 2
 }
 
 Viewer

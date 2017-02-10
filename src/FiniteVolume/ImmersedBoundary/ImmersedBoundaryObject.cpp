@@ -69,7 +69,7 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
 
 void ImmersedBoundaryObject::setInternalCells(const Communicator &comm)
 {
-    flagIbCells(comm);
+    flagIbCells();
     constructStencils();
     comm.printf("IB cells set for object \"%s\".\n", name().c_str());
 }
@@ -86,7 +86,7 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar
 
 //- Protected methods
 
-void ImmersedBoundaryObject::flagIbCells(const Communicator &comm)
+void ImmersedBoundaryObject::flagIbCells()
 {
     auto internalCells = grid_.localActiveCells().rangeSearch(shape(), 1e-10);
 

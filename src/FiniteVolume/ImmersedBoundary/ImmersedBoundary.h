@@ -1,7 +1,7 @@
 #ifndef IMMERSED_BOUNDARY_H
 #define IMMERSED_BOUNDARY_H
 
-#include "ImmersedBoundaryObject.h"
+#include "MovingImmersedBoundaryObject.h"
 
 class Solver;
 
@@ -18,7 +18,9 @@ public:
     Equation<Scalar> eqns(ScalarFiniteVolumeField& field);
     Equation<Vector2D> eqns(VectorFiniteVolumeField& field);
 
-    const std::vector<ImmersedBoundaryObject>& ibObjs() const { return ibObjs_; }
+    Size nIbObjects() const { return ibObjs_.size(); }
+    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
+
     bool isIbCell(const Cell& cell) const;
 
 protected:
@@ -26,8 +28,8 @@ protected:
     void setCellStatus(const Communicator& comm);
 
     const Solver &solver_;
-    ScalarFiniteVolumeField &cellStatus_;
-    std::vector<ImmersedBoundaryObject> ibObjs_;
+    FiniteVolumeField<int>& cellStatus_;
+    std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
 
 };
 

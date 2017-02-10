@@ -11,12 +11,20 @@ Viewer::Viewer(const Input &input, const Communicator &comm, const Solver &solve
 
     filename_ = input.caseInput().get<std::string>("CaseName");
 
-    string vectorFields = input.caseInput().get<string>("Viewer.vectorFields");
-    string scalarFields = input.caseInput().get<string>("Viewer.scalarFields");
+    string integerFields = input.caseInput().get<string>("Viewer.integerFields", "");
+    string scalarFields = input.caseInput().get<string>("Viewer.scalarFields", "");
+    string vectorFields = input.caseInput().get<string>("Viewer.vectorFields", "");
 
-    vector<string> vectorFieldNames, scalarFieldNames;
-    split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
+    vector<string> integerFieldNames, scalarFieldNames, vectorFieldNames;
+    split(integerFieldNames, integerFields, is_any_of(", "), token_compress_on);
     split(scalarFieldNames, scalarFields, is_any_of(", "), token_compress_on);
+    split(vectorFieldNames, vectorFields, is_any_of(", "), token_compress_on);
+
+    for(const auto& field: solver_.integerFields())
+    {
+        if(std::find(integerFieldNames.begin(), integerFieldNames.end(), field.first) != integerFieldNames.end())
+            integerFields_.push_back(Ref<const FiniteVolumeField<int> >(field.second));
+    }
 
     for(const auto& field: solver_.scalarFields())
     {

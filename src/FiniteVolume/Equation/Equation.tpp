@@ -167,7 +167,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-6));
     spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 2));
-    spSolver_->setDropToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".dropTolerance", 0.001));
+    spSolver_->setDropToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".dropTolerance", 0));
     spSolver_->setMaxPreconditionerUses(input.caseInput().get<int>("LinearAlgebra." + name + ".maxPreconditionerUses", 1));
 
     comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());

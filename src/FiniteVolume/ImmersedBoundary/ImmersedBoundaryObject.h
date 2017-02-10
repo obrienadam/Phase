@@ -65,7 +65,7 @@ public:
 
 protected:
 
-    void flagIbCells(const Communicator& comm);
+    void flagIbCells();
     void constructStencils();
 
     std::string name_;
@@ -74,8 +74,8 @@ protected:
 
     FiniteVolumeGrid2D &grid_;
 
-    const CellGroup* ibCells_, *solidCells_;
-    const CellZone* cells_;
+    CellGroup* ibCells_, *solidCells_;
+    CellZone* cells_;
     std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<Label, std::pair<Vector2D, Vector2D> > stencilPoints_;

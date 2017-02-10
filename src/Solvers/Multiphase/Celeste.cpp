@@ -204,15 +204,14 @@ void Celeste::computeGradGammaTilde()
         const auto &nb = gradGammaTildeStencils_[cell.id()];
 
         b.resize(8, 1);
-        int i = 0;
 
+        int i = 0;
         for(const Cell &kCell: nb)
         {
             if(&cell == &kCell)
                 continue;
 
-            const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
-            b(i, 0) = (gammaTilde_(kCell) - gammaTilde_(cell))/sSqr;
+            b(i, 0) = (gammaTilde_(kCell) - gammaTilde_(cell))/(kCell.centroid() - cell.centroid()).magSqr();
 
             ++i;
         }
@@ -227,7 +226,7 @@ void Celeste::computeGradGammaTilde()
 void Celeste::computeInterfaceNormals()
 {
     for(const Cell &cell: n_.grid.cellZone("fluid"))
-        n_(cell) = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+        n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
 
     solver().grid().sendMessages(solver().comm(), n_);
 

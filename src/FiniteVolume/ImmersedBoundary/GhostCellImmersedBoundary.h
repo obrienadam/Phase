@@ -7,8 +7,8 @@
 namespace gc
 {
 
-template<typename T>
-Equation<T> ib(const std::vector<ImmersedBoundaryObject>& ibObjs, FiniteVolumeField<T>& field)
+template<class ImmersedBoundaryObject_t, typename T> // Allow for use of reference wrappers as well
+Equation<T> ib(const std::vector<ImmersedBoundaryObject_t>& ibObjs, FiniteVolumeField<T>& field)
 {
     Equation<T> eqn(field);
 

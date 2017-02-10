@@ -1,20 +1,14 @@
-; Test case for the 2D immersed boundary cylinder
+; Test case for the 2D translating immersed boundary cylinder
 
-CaseName ImmersedBoundaryCylinder2D
+CaseName TranslatingImmersedBoundaryCylinder2D
 
 Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-2
+	timeStep 1e-2
 	maxCo 0.8
-	maxTime 1000
-
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
-	numInnerIterations 2
-	numPressureCorrections 1
-	smoothingKernelRadius 0.0401
+	maxTime 6
 }
 
 LinearAlgebra
@@ -37,23 +31,20 @@ LinearAlgebra
 Properties
 {
 	rho 1
-	mu 0.01 ; Re = 100
+	mu 0.01 ; Re = 100, cylinder moves at u* = 1
 	g (0,0)
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 300
-	nCellsY 300
+	nCellsX 200
+	nCellsY 100
 
 	; Rectilinear parameters
-	width 50
-	height 50
+	width 10
+	height 5
 	partitionBufferWidth 4
-
-	refineX (10,20)
-	refineY (20,30)
 }
 
 Viewer
@@ -64,6 +55,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 50
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

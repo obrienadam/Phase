@@ -68,7 +68,9 @@ public:
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
     const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
-    std::vector<Label> getCellIds(const CellGroup& cellGroup);
+
+    template<class T>
+    std::vector<Label> getCellIds(const T& cells);
 
     void assignCellIds();
 
@@ -133,8 +135,9 @@ protected:
     mutable std::unordered_map<std::string, CellZone> cellZones_;
 
     std::vector<int> neighbouringProcs_;
-    std::vector<std::vector<Label>> procSendOrder_;
-    std::vector<std::vector<Label>> procRecvOrder_;
+
+    std::vector<CellGroup> sendCellGroups_;
+    std::vector<CellZone> bufferCellZones_;
 
     //- Face related data
     std::vector<Face> faces_;

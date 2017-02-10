@@ -53,6 +53,10 @@ void CgnsViewer::write(Scalar solutionTime, const Communicator &comm)
     cg_sol_write(fid, bid, zid, "Solution", CGNS_ENUMV(CellCenter), &sid);
 
     int fieldId;
+
+    for(const FiniteVolumeField<int>& field: integerFields_)
+        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), field.name().c_str(), field.data(), &fieldId);
+
     for(const ScalarFiniteVolumeField& field: scalarFields_)
         cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), field.name().c_str(), field.data(), &fieldId);
 

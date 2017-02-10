@@ -19,6 +19,7 @@ protected:
 
     std::string filename_;
 
+    std::vector< Ref<const FiniteVolumeField<int> > > integerFields_;
     std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
     std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;
 

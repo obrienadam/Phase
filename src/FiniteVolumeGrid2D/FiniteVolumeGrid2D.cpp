@@ -49,8 +49,8 @@ void FiniteVolumeGrid2D::reset()
     cells_.clear();
     faces_.clear();
     neighbouringProcs_.clear();
-    procSendOrder_.clear();
-    procRecvOrder_.clear();
+    sendCellGroups_.clear();
+    bufferCellZones_.clear();
     faceDirectory_.clear();
     interiorFaces_.clear();
     boundaryFaces_.clear();
@@ -252,16 +252,6 @@ const std::vector<Ref<const Cell> > FiniteVolumeGrid2D::getCells(const std::vect
                    [this](Label id){ return std::cref(this->cells_[id]); });
 
     return cells;
-}
-
-std::vector<Label> FiniteVolumeGrid2D::getCellIds(const CellGroup &cellGroup)
-{
-    std::vector<Label> ids(cellGroup.size());
-
-    std::transform(cellGroup.begin(), cellGroup.end(), ids.begin(),
-                   [](const Cell& cell)->Label{ return cell.id(); });
-
-    return ids;
 }
 
 void FiniteVolumeGrid2D::assignCellIds()
@@ -564,8 +554,20 @@ void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
                                              const std::vector<Label> &recvOrder)
 {
     neighbouringProcs_.push_back(procNo);
-    procSendOrder_.push_back(sendOrder);
-    procRecvOrder_.push_back(recvOrder);
+
+    CellGroup sendCellGroup;
+
+    for(Label id: sendOrder)
+        sendCellGroup.push_back(cells_[id]);
+
+    CellZone bufferCellZone;
+
+    for(Label id: recvOrder)
+        bufferCellZone.push_back(cells_[id]);
+
+    sendCellGroups_.push_back(sendCellGroup);
+    bufferCellZones_.push_back(bufferCellZone);
+
     setCellsLocallyInactive(recvOrder);
 }
 
@@ -607,13 +609,14 @@ void FiniteVolumeGrid2D::computeGlobalOrdering(const Communicator &comm)
     sendMessages(comm, globalIndices[1]);
     sendMessages(comm, globalIndices[2]);
 
-    for(const auto& ids: procRecvOrder_)
-        for(Label id: ids)
+    //- Set global ids for the buffer zones
+    for(const CellZone& bufferZone: bufferCellZones_)
+        for(const Cell& cell: bufferZone)
         {
-            cells_[id].setNumberOfGlobalIndices(3);
-            cells_[id].setGlobalIndex(0, globalIndices[0][id]);
-            cells_[id].setGlobalIndex(1, globalIndices[1][id]);
-            cells_[id].setGlobalIndex(2, globalIndices[2][id]);
+            cell.setNumberOfGlobalIndices(3);
+            cell.setGlobalIndex(0, globalIndices[0][cell.id()]);
+            cell.setGlobalIndex(1, globalIndices[1][cell.id()]);
+            cell.setGlobalIndex(2, globalIndices[2][cell.id()]);
         }
 
     nActiveCellsGlobal_ = comm.sum(nLocalActiveCells());

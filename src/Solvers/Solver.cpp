@@ -28,7 +28,7 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
 
     int rank = comm.rank();
 
-    ScalarFiniteVolumeField& proc = addScalarField("proc");
+    FiniteVolumeField<int>& proc = addIntegerField("proc");
 
     for(const Cell& cell: grid_.cells())
         proc(cell) = rank;
@@ -37,54 +37,58 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
 std::string Solver::info() const
 {
     return "SOLVER INFO\n"
-               "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n";
+           "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n";
+}
+
+FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
+{
+    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(grid_, name)));
+
+    if(!insert.second)
+        throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
+
+    return insert.first->second;
 }
 
 ScalarFiniteVolumeField& Solver::addScalarField(const Input& input, const std::string& name)
 {
-    typedef std::pair< std::string, ScalarFiniteVolumeField> Key;
-
-    auto insert = scalarFields_.insert(Key(name, ScalarFiniteVolumeField(input, grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, grid_, name)));
 
     if(!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
 
 
-    return (insert.first)->second;
+    return insert.first->second;
 }
 
 ScalarFiniteVolumeField& Solver::addScalarField(const std::string& name)
 {
-    typedef std::pair< std::string, ScalarFiniteVolumeField> Key;
-    auto insert = scalarFields_.insert(Key(name, ScalarFiniteVolumeField(grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(grid_, name)));
 
     if(!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
 
-    return (insert.first)->second;
+    return insert.first->second;
 }
 
 VectorFiniteVolumeField& Solver::addVectorField(const Input& input, const std::string& name)
 {
-    typedef std::pair< std::string, VectorFiniteVolumeField> Key;
-    auto insert = vectorFields_.insert(Key(name, VectorFiniteVolumeField(input, grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, grid_, name)));
 
     if(!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
 
-    return (insert.first)->second;
+    return insert.first->second;
 }
 
 VectorFiniteVolumeField& Solver::addVectorField(const std::string& name)
 {
-    typedef std::pair< std::string, VectorFiniteVolumeField> Key;
-
-    auto insert = vectorFields_.insert(Key(name, VectorFiniteVolumeField(grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(grid_, name)));
 
     if(!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
 
-    return (insert.first)->second;
+    return insert.first->second;
 }
 
 std::vector<Polygon>& Solver::addGeometries(const std::string &name)

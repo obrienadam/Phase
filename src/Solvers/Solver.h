@@ -31,6 +31,8 @@ public:
     Scalar maxTimeStep() const { return maxTimeStep_; }
 
     //- Field management
+    FiniteVolumeField<int>& addIntegerField(const std::string& name);
+
     ScalarFiniteVolumeField& addScalarField(const Input& input, const std::string& name);
     ScalarFiniteVolumeField& addScalarField(const std::string& name);
 
@@ -39,6 +41,7 @@ public:
 
     std::vector<Polygon>& addGeometries(const std::string& name);
 
+    std::map<std::string, FiniteVolumeField<int> >& integerFields() const { return integerFields_; }
     std::map<std::string, ScalarFiniteVolumeField >& scalarFields() const { return scalarFields_; }
     std::map<std::string, VectorFiniteVolumeField >& vectorFields() const { return vectorFields_; }
     std::map<std::string, std::vector<Polygon> >& geometries() const { return geometries_; }
@@ -78,6 +81,7 @@ protected:
     const Communicator comm_;
 
     //- Fields and geometries
+    mutable std::map<std::string, FiniteVolumeField<int> > integerFields_;
     mutable std::map<std::string, ScalarFiniteVolumeField > scalarFields_;
     mutable std::map<std::string, VectorFiniteVolumeField > vectorFields_;
     mutable std::map<std::string, std::vector<Polygon> > geometries_;

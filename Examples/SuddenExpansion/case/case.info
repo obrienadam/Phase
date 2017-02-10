@@ -20,16 +20,16 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib petsc
-		preconditioner sor
+		lib hypre
 		iluFill 0
+		maxPreconditionerUses 10
 	}
 
 	pEqn
 	{
-		lib petsc
-		preconditioner pilut
-		iluFill 0
+		lib hypre
+		iluFill 1
+		maxPreconditionerUses 10
 	}
 }
 
@@ -50,8 +50,8 @@ Grid
 Viewer
 {
   type tecplot
-  vectorFields u,gradP
-  scalarFields p,dp,pCorr,m
+  vectorFields u,gradP,gradPhi
+  scalarFields phi
 }
 
 System

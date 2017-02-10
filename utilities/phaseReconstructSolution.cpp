@@ -22,7 +22,8 @@ struct Section
 struct Field
 {
     char name[256];
-    std::vector<double> data;
+    std::vector<double> scalarData;
+    std::vector<int> integerData;
     CGNS_ENUMT(DataType_t) type;
 };
 
@@ -111,8 +112,6 @@ int main(int argc, char *argv[])
 
         timeSteps.push_back(stod(solutionDir.filename().c_str()));
     }
-
-    std::sort(timeSteps.begin(), timeSteps.end());
 
     vector<Point> nodes;
     vector<cgsize_t> elements;
@@ -288,11 +287,13 @@ Solution loadSolution(const std::string& filename)
 
         cg_field_info(fid, 1, 1, 1, fieldid, &field.type, field.name);
 
-        if(field.type != CGNS_ENUMV(RealDouble))
+        if(field.type == CGNS_ENUMV(Integer))
+            continue;
+        else if(field.type != CGNS_ENUMV(RealDouble))
             exit(-1);
 
-        field.data.resize(dimvals[0]);
-        cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.data.data());
+        field.scalarData.resize(dimvals[0]);
+        cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.scalarData.data());
     }
 
     cg_close(fid);
@@ -360,7 +361,7 @@ void mergeGrids(const std::vector<Base>& grids,
                         if(globalField.size() < nTimeSteps)
                             globalField.resize(nTimeSteps);
 
-                        globalField[timeStepNo].insert(globalField[timeStepNo].end(), field.data.begin(), field.data.end());
+                        globalField[timeStepNo].insert(globalField[timeStepNo].end(), field.scalarData.begin(), field.scalarData.end());
                     }
 
                     ++timeStepNo;

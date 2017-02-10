@@ -1,4 +1,4 @@
-; Boundary conditions for the 2D immersed boundary cylinder
+; Boundary conditions for the 2D translating immersed boundary cylinder
 
 Boundaries
 {
@@ -12,19 +12,19 @@ Boundaries
 
     y+
     {
-      type normal_gradient
+      type fixed
       value (0,0)
     }
 
     x-
     {
-      type fixed
+      type normal_gradient
       value (1,0)
     }
 
     y-
     {
-      type normal_gradient
+      type fixed
       value (0,0)
     }
   }
@@ -39,41 +39,39 @@ Boundaries
 
     y+
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 
     x-
     {
-      type normal_gradient
+      type fixed
       value 0
     }
 
     y-
     {
-      type fixed
-      value 0
-    }    
-  }
-  
-  gamma
-  {
-    *
-    {
       type normal_gradient
       value 0
-    }
+    }    
   }
 }
 
 ImmersedBoundaries
 {
-  Cylinder1
+  TranslatingCylinder
   {
+    motion
+    {
+      type translating
+      velocity (1,0)
+      maxDisplacement 8
+    }
+
     geometry
     {
       type circle
-      center (15,25)
+      center (2,2.5)
       radius 0.5
     }
 

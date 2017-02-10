@@ -48,11 +48,14 @@ Grid
 	; Rectilinear parameters
 	width 0.8
 	height 0.4
+
+	refineX (0,0.25) ; Some refinement near the entrance
 }
 
 Viewer
 {
 	type tecplot
+	integerFields proc
 	vectorFields u,gradP
 	scalarFields p,pCorr,m
 }

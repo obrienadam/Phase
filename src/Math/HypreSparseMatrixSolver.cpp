@@ -2,22 +2,46 @@
 
 #include "HypreSparseMatrixSolver.h"
 
-HypreSparseMatrixSolver::HypreSparseMatrixSolver(const Communicator& comm)
+HypreSparseMatrixSolver::HypreSparseMatrixSolver(const Communicator& comm, PreconditionerType preconType)
     :
-      comm_(comm)
+      comm_(comm),
+      preconType_(preconType)
 {
     HYPRE_ParCSRBiCGSTABCreate(comm.communicator(), &solver_);
-    HYPRE_EuclidCreate(comm.communicator(), &precon_);
-    HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
-                                   (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSolve,
-                                   (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSetup,
-                                   precon_);
+
+    switch(preconType_)
+    {
+    case EUCLID:
+        HYPRE_EuclidCreate(comm.communicator(), &precon_);
+        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSolve,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSetup,
+                                       precon_);
+        break;
+    case BOOMER_AMG:
+        HYPRE_BoomerAMGCreate(&precon_);
+        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSolve,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSetup,
+                                       precon_);
+        break;
+    }
 }
 
 HypreSparseMatrixSolver::~HypreSparseMatrixSolver()
 {
     HYPRE_ParCSRBiCGSTABDestroy(solver_);
-    HYPRE_EuclidDestroy(precon_);
+
+    switch(preconType_)
+    {
+    case EUCLID:
+        HYPRE_EuclidDestroy(precon_);
+        break;
+    case BOOMER_AMG:
+        HYPRE_BoomerAMGDestroy(precon_);
+        break;
+    }
+
     deinitialize();
 }
 
@@ -157,12 +181,25 @@ void HypreSparseMatrixSolver::setToler(Scalar toler)
 
 void HypreSparseMatrixSolver::setDropToler(Scalar toler)
 {
-    HYPRE_EuclidSetSparseA(solver_, toler);
+    switch(preconType_)
+    {
+    case EUCLID:
+        HYPRE_EuclidSetSparseA(precon_, toler);
+        break;
+    case BOOMER_AMG:
+        HYPRE_BoomerAMGSetEuSparseA(precon_, toler);
+        break;
+    }
 }
 
 void HypreSparseMatrixSolver::setFillFactor(int fill)
 {
-    HYPRE_EuclidSetLevel(precon_, fill);
+    switch(preconType_)
+    {
+    case EUCLID:
+        HYPRE_EuclidSetLevel(precon_, fill);
+        break;
+    }
 }
 
 void HypreSparseMatrixSolver::printStatus(const std::string &msg) const
