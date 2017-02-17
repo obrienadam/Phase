@@ -20,14 +20,18 @@ LinearAlgebra
 {
   uEqn
   {
-    lib petsc
-    preconditioner sor
+    lib trilinos
+    solver BiCGSTAB
+    preconditioner DIAGONAL
+    iluFill 0
   }
 
   pEqn
   {
-    lib petsc
-    preconditioner boomeramg
+    lib trilinos
+    solver BiCGSTAB
+    preconditioner RILUK
+    iluFill 3
   }
 }
 

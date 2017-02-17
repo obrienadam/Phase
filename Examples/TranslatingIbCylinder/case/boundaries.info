@@ -19,7 +19,7 @@ Boundaries
     x-
     {
       type normal_gradient
-      value (1,0)
+      value (0,0)
     }
 
     y-
@@ -55,19 +55,21 @@ Boundaries
       value 0
     }    
   }
+  
+  gamma
+  {
+    *
+    {
+      type normal_gradient
+      value 0
+    }
+  }
 }
 
 ImmersedBoundaries
 {
   TranslatingCylinder
   {
-    motion
-    {
-      type translating
-      velocity (1,0)
-      maxDisplacement 8
-    }
-
     geometry
     {
       type circle
@@ -75,9 +77,10 @@ ImmersedBoundaries
       radius 0.5
     }
 
-    interpolation
+    motion
     {
-      type bilinear
+      type translating
+      velocity (1,0)
     }
 
     u

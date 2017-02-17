@@ -131,5 +131,7 @@ void StructuredRectilinearGrid::refineDims(Scalar start, Scalar end, std::vector
             newDims.push_back(x + (dims[i + 1] - x)/2.);
     }
 
+    newDims.push_back(dims.back());
+
     dims = std::move(newDims);
 }

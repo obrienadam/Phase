@@ -49,6 +49,7 @@ public:
     std::vector<int> elementList() const;
 
     //- Cell groups and zones
+    void setCellActive(Cell &cell);
     void setCellsActive(const std::vector<Label>& ids);
     void setCellsInactive(const std::vector<Label>& ids);
     void setCellsLocallyInactive(const std::vector<Label>& ids);
@@ -67,7 +68,8 @@ public:
 
     const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
 
-    const std::vector< Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
+    std::vector<Ref<Cell> > getCells(const std::vector<Label>& ids);
+    std::vector<Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
 
     template<class T>
     std::vector<Label> getCellIds(const T& cells);

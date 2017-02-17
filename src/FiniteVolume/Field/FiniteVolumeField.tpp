@@ -133,7 +133,7 @@ Vector FiniteVolumeField<T>::vectorize() const
     Vector vec = Vector(grid.nLocalActiveCells(), 0.);
 
     for(const Cell& cell: grid.localActiveCells())
-        vec[cell.localIndex()] = self(cell);
+        vec[cell.index(0)] = self(cell);
 
     return vec;
 }

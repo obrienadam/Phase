@@ -20,16 +20,27 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib hypre
+		lib trilinos
+		solver BiCGSTAB
+		preconditioner DIAGONAL
 		iluFill 0
 		maxPreconditionerUses 10
+		tolerance 1e-3
 	}
 
 	pEqn
 	{
-		lib hypre
-		iluFill 1
+		lib trilinos
+		solver BiCGSTAB
+		preconditioner RILUK
+		iluFill 3
 		maxPreconditionerUses 10
+	}
+
+	pCorrEqn
+	{
+		lib trilinos
+		iluFill 2
 	}
 }
 

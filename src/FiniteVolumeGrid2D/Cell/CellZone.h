@@ -10,17 +10,16 @@ public:
     CellZone(const std::string& name = "N/A") : CellGroup(name) {}
     ~CellZone();
 
-    virtual void push_back(const Cell &cell); // does not insert if the cell is found in the registry
-    virtual void moveToGroup(const Cell &cell); // inserts or moves the cell to this group
-    virtual void moveToGroup(const std::vector<Ref<const Cell>>& cells);
-    virtual void moveAllCellsToThisGroup();
-
-    virtual void remove(const Cell &cell);
-    virtual void clear();
+    void push_back(Cell &cell); // does not insert if the cell is found in the registry
+    void moveToGroup(Cell &cell); // inserts or moves the cell to this group
+    void moveToGroup(const std::vector<Ref<Cell>>& cells);
+    void remove(const Cell &cell);
+    void merge(CellZone &other);
+    void clear();
 
 private:
 
-    static std::map< const Cell*, Ref<CellZone> > registry_;
+    static std::map< Label, Ref<CellZone> > registry_;
 };
 
 #endif

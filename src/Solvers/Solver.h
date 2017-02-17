@@ -39,6 +39,8 @@ public:
     VectorFiniteVolumeField& addVectorField(const Input& input, const std::string& name);
     VectorFiniteVolumeField& addVectorField(const std::string& name);
 
+    FiniteVolumeField<int>& getIntegerField(const std::string& name) { return integerFields_.find(name)->second; }
+
     std::vector<Polygon>& addGeometries(const std::string& name);
 
     std::map<std::string, FiniteVolumeField<int> >& integerFields() const { return integerFields_; }

@@ -3,6 +3,7 @@
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
+#include "Source.h"
 
 FractionalStep::FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
@@ -14,7 +15,6 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
       dp(addScalarField("dp")),
       rho(addScalarField("rho")),
       mu(addScalarField("mu")),
-      divUStar(addScalarField("uStar")),
       uEqn_(input, comm, u, "uEqn"),
       pEqn_(input, comm, dp, "pEqn")
 {
@@ -29,14 +29,8 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     //- All active cells to fluid cells
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
-    //- Create ib zones if any
-    ib_.initCellZones(comm);
-
-    //- Compute the global cell ordering (for lin alg)
-    grid_.computeGlobalOrdering(comm_);
-
-    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-    forceIntegrators_ = ForceIntegrator::initForceIntegrators(input, p, rho, mu, u);
+    //- Create ib zones if any. Will also update local/global indices
+    ib_.initCellZones();
 }
 
 std::string FractionalStep::info() const
@@ -49,6 +43,7 @@ std::string FractionalStep::info() const
 
 Scalar FractionalStep::solve(Scalar timeStep)
 {
+    ib_.update(timeStep);
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -90,10 +85,10 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u) == cn::laplacian(mu, u, 1.5) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP));
 
     Scalar error = uEqn_.solve();
+
     grid_.sendMessages(comm_, u);
 
     computeFaceVelocities(timeStep);
@@ -103,9 +98,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    computeMassSource(timeStep);
-
-    pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == divUStar);
+    pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == source::div(u));
     Scalar error = pEqn_.solveWithGuess();
 
     grid_.sendMessages(comm_, dp);
@@ -200,20 +193,6 @@ void FractionalStep::computeFaceVelocities(Scalar timeStep)
             //default:
             //throw Exception("FractionalStep", "computeFaceVelocities", "unrecognized boundary condition type.");
         };
-    }
-}
-
-void FractionalStep::computeMassSource(Scalar timeStep)
-{
-    divUStar.fill(0.);
-
-    for(const Cell &cell: grid_.cellZone("fluid"))
-    {
-        for(const InteriorLink &nb: cell.neighbours())
-            divUStar(cell) += dot(u(nb.face()), nb.outwardNorm());
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            divUStar(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 }
 

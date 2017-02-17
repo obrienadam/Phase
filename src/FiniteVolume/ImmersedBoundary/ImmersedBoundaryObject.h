@@ -14,17 +14,13 @@ public:
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string& name,
-                           const Point2D& center,
-                           Scalar radius,
                            Label id,
                            FiniteVolumeGrid2D& grid);
 
-    ImmersedBoundaryObject(const std::string& name,
-                           const std::vector<Point2D>& vertices,
-                           Label id,
-                           FiniteVolumeGrid2D &grid);
-
     //- The shape
+    void initCircle(const Point2D& center, Scalar radius);
+    void initPolygon(const std::vector<Point2D>& vertices);
+
     Shape2D& shape() { return *shapePtr_; }
     const Shape2D& shape() const { return *shapePtr_; }
 
@@ -46,7 +42,7 @@ public:
     void setInterpolationType(InterpolationType type) { interpolationType_ = type; }
 
     //- Internal cells and boundaries
-    void setInternalCells(const Communicator& comm);
+    void setInternalCells();
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
     void addBoundaryRefValue(const std::string& name, Scalar boundaryRefValue);
 
@@ -57,6 +53,10 @@ public:
     //- Boundary info
     BoundaryType boundaryType(const std::string& name) const { return boundaryTypes_.find(name)->second; }
     Scalar boundaryRefValue(const std::string& name) const { return boundaryRefValues_.find(name)->second; }
+
+    //- Update (meant to be overriden
+    virtual void update(Scalar timeStep) {}
+    virtual void updateCells();
 
     const std::string& name() const { return name_; }
 

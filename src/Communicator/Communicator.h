@@ -41,6 +41,7 @@ public:
 
     //- Collectives
     int scatter(int root, const std::vector<int> &send) const;
+    std::vector<int> allGather(int val) const;
     std::vector<unsigned long> allGather(unsigned long val) const;
 
     //- Blocking point-to-point communication
@@ -68,6 +69,7 @@ public:
     unsigned long sum(unsigned long val) const;
 
     double sum(double val) const;
+    int min(int val) const;
     double min(double val) const;
     double max(double val) const;
 

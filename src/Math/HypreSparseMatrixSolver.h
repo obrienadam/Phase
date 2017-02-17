@@ -41,21 +41,22 @@ public:
 
 private:
 
-    void initialize(int rank);
-    void deinitialize();
+    void initializeSolver();
+    void deinitializeSolver();
+
+    void initializeIJObjects(Size rank);
+    void deinitializeIJObjects();
 
     PreconditionerType preconType_;
 
-    int nIters_, maxIters_, fill_;
-    Scalar minToler_, toler_;
+    HYPRE_Int nIters_, maxIters_, fill_;
+    HYPRE_Complex minToler_, toler_, dropToler_;
 
-    int iLower_, iUpper_;
+    HYPRE_Int iLower_, iUpper_;
     std::vector<Size> localSizes_;
-    std::vector<int> globalInds_;
+    std::vector<HYPRE_Int> globalInds_;
 
     const Communicator& comm_;
-
-    bool initialized_ = false;
 
     HYPRE_IJMatrix ijMatrix_;
     HYPRE_IJVector b_, x_;

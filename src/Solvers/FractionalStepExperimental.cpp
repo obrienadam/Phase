@@ -31,10 +31,7 @@ FractionalStepExperimental::FractionalStepExperimental(const Input &input, const
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
     //- Create ib zones if any
-    ib_.initCellZones(comm);
-
-    //- Compute the global cell ordering (for lin alg)
-    grid_.computeGlobalOrdering(comm_);
+    ib_.initCellZones();
 }
 
 std::string FractionalStepExperimental::info() const

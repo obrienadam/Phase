@@ -19,16 +19,14 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u, &gradP, &gradDp;
-    ScalarFiniteVolumeField &p, &dp, &rho, &mu, &divUStar;
+    ScalarFiniteVolumeField &p, &dp, &rho, &mu;
 
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
     virtual Scalar solvePEqn(Scalar timeStep);
     virtual void correctVelocity(Scalar timeStep);
-
     virtual void computeFaceVelocities(Scalar timeStep);
-    virtual void computeMassSource(Scalar timeStep);
 
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;

@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <boost/algorithm/string.hpp>
 
 #include "Solver.h"
@@ -20,11 +22,6 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
 
     //- Set voluem integrators
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-
-    //- Add default active cell group as a field (for debugging purposes)
-    ScalarFiniteVolumeField& group = addScalarField("cellGroup");
-    for(const Cell& cell: group.grid.localActiveCells())
-        group(cell) = 1.;
 
     int rank = comm.rank();
 
@@ -325,9 +322,9 @@ void Solver::setRotating(const std::string &function, Scalar amplitude, const Ve
     std::function<Scalar(Scalar)> func;
 
     if(function == "sin")
-        func = sin;
+        func = [](Scalar x){ return sin(x); };
     else if(function == "cos")
-        func = cos;
+        func = [](Scalar x){ return cos(x); };
     else
         throw Exception("Input", "setRotating", "invalid rotation function.");
 
@@ -353,16 +350,16 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
     std::function<Scalar(Scalar)> xFunc, yFunc;
 
     if(xFunction == "sin")
-        xFunc = sin;
+        xFunc = [](Scalar x) { return sin(x); };
     else if(xFunction == "cos")
-        xFunc = cos;
+        xFunc = [](Scalar x) { return cos(x); };
     else
         throw Exception("Input", "setRotating", "invalid x rotation function.");
 
     if(yFunction == "sin")
-        yFunc = sin;
+        yFunc = [](Scalar x) { return sin(x); };
     else if(yFunction == "cos")
-        yFunc = cos;
+        yFunc = [](Scalar x) { return cos(x); };
     else
         throw Exception("Input", "setRotating", "invalid y rotation function.");
 

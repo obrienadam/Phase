@@ -120,7 +120,7 @@ template<class T>
 Equation<T>& Equation<T>::operator ==(const FiniteVolumeField<T>& rhs)
 {
     for(const Cell& cell: rhs.grid.localActiveCells())
-        sources_(cell.localIndex()) += rhs(cell);
+        sources_(cell.index(0)) += rhs(cell);
 
     return *this;
 }
@@ -156,6 +156,16 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         spSolver_ = std::shared_ptr<PetscSparseMatrixSolver>(new PetscSparseMatrixSolver(comm, precon));
 #else
         throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Petsc support. Recompile with \"-DPHASE_USE_PETSC=ON\".");
+#endif
+    }
+    else if(lib == "trilinos")
+    {
+#ifdef PHASE_USE_TRILINOS
+        std::string solver = input.caseInput().get<std::string>("LinearAlgebra." + name + ".solver", "BiCGSTAB");
+        std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "RILUK");
+        spSolver_ = std::shared_ptr<TrilinosSparseMatrixSolver>(new TrilinosSparseMatrixSolver(comm, solver, precon));
+#else
+        throw Exception("Equation<T>", "configuerSparseMatrixSolver", "Phase was build without Trilinos support. Recompile with \"-DPHASE_USE_TRILINOS=ON\".");
 #endif
     }
     else

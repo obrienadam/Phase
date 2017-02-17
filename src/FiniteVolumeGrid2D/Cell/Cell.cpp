@@ -7,9 +7,7 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
     :
       nodes_(grid.nodes()),
       nodeIds_(nodeIds)
-{   
-    setActive();
-
+{
     std::vector<Point2D> vertices;
 
     for(Label id: nodeIds_)

@@ -1,14 +1,20 @@
 ; Test case for the 2D translating immersed boundary cylinder
 
-CaseName TranslatingImmersedBoundaryCylinder2D
+CaseName TranslatingIBCylinder
 
 Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-2
+	timeStep 1e-3
 	maxCo 0.8
 	maxTime 6
+
+	momentumRelaxation 1
+	pressureCorrectionRelaxation 0.5
+	numInnerIterations 2
+	numPressureCorrections 1
+	smoothingKernelRadius 0.0401
 }
 
 LinearAlgebra
@@ -31,7 +37,7 @@ LinearAlgebra
 Properties
 {
 	rho 1
-	mu 0.01 ; Re = 100, cylinder moves at u* = 1
+	mu 0.01 ; Re = 100
 	g (0,0)
 }
 
@@ -49,6 +55,7 @@ Grid
 
 Viewer
 {
+	integerFields cellStatus,index
 	vectorFields u
 	scalarFields p
 }

@@ -12,7 +12,7 @@ typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>
 
 struct Section
 {
-    char name[256];
+    char name[32];
     std::vector<cgsize_t> elements;
     CGNS_ENUMT(ElementType_t) type;
     cgsize_t start, end, parentData;
@@ -21,7 +21,7 @@ struct Section
 
 struct Field
 {
-    char name[256];
+    char name[32];
     std::vector<double> scalarData;
     std::vector<int> integerData;
     CGNS_ENUMT(DataType_t) type;
@@ -29,13 +29,13 @@ struct Field
 
 struct Solution
 {
-    char name[256];
+    char name[32];
     std::vector<Field> fields;
     CGNS_ENUMT(GridLocation_t) location;
 };
 
 struct Zone {
-    char name[256];
+    char name[32];
     cgsize_t sizes[3];
     std::vector<Point> nodes;
     std::vector<Section> sections;
@@ -44,7 +44,7 @@ struct Zone {
 };
 
 struct Base {
-    char name[256];
+    char name[32];
     int cellDim, physDim;
     std::vector<Zone> zones;
 };
@@ -56,7 +56,7 @@ Solution loadSolution(const std::string& filename);
 void mergeGrids(const std::vector<Base>& grids,
                 const std::vector<std::vector<Solution>>& solutions,
                 std::vector<Point>& nodes, std::vector<cgsize_t>& elements, int nTimeSteps,
-                std::map<std::string, std::vector<std::vector<double>>> &fields);
+                std::map<std::string, std::vector<Field>> &fields);
 
 std::vector<cgsize_t> getNodeMergeList(const std::vector<Point>& nodes);
 
@@ -67,7 +67,7 @@ std::vector<Point> mergeNodes(const std::vector<Point>& nodes,
 std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
                                     const std::vector<cgsize_t>& elements,
                                     int& nElements,
-                                    std::map<std::string, std::vector<std::vector<double> > > &fields);
+                                    std::map<std::string, std::vector<Field> > &fields);
 
 int main(int argc, char *argv[])
 {
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
     vector<Point> nodes;
     vector<cgsize_t> elements;
-    map<string, vector<vector<double>>>fields;
+    map<string, vector<Field>>fields;
 
     mergeGrids(procGrids, procSolutions, nodes, elements, timeSteps.size(), fields);
     nodes = mergeNodes(nodes, getNodeMergeList(nodes), elements);
@@ -165,7 +165,16 @@ int main(int argc, char *argv[])
         for(const auto& field: fields)
         {
             int fieldId;
-            cg_field_write(fid, bid, zid, solId, CGNS_ENUMV(RealDouble), field.first.c_str(), field.second[i].data(), &fieldId);
+
+            switch(field.second[i].type)
+            {
+            case CGNS_ENUMV(Integer):
+                cg_field_write(fid, bid, zid, solId, CGNS_ENUMV(Integer), field.first.c_str(), field.second[i].integerData.data(), &fieldId);
+                break;
+            case CGNS_ENUMV(RealDouble):
+                cg_field_write(fid, bid, zid, solId, CGNS_ENUMV(RealDouble), field.first.c_str(), field.second[i].scalarData.data(), &fieldId);
+                break;
+            }
         }
 
         sout.width(32);
@@ -287,13 +296,20 @@ Solution loadSolution(const std::string& filename)
 
         cg_field_info(fid, 1, 1, 1, fieldid, &field.type, field.name);
 
-        if(field.type == CGNS_ENUMV(Integer))
-            continue;
-        else if(field.type != CGNS_ENUMV(RealDouble))
+        switch(field.type)
+        {
+        case CGNS_ENUMV(Integer):
+            field.integerData.resize(dimvals[0]);
+            cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.integerData.data());
+            break;
+        case CGNS_ENUMV(RealDouble):
+            field.scalarData.resize(dimvals[0]);
+            cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.scalarData.data());
+            break;
+        default:
+            std::cout << "Urecognized datat type.\n";
             exit(-1);
-
-        field.scalarData.resize(dimvals[0]);
-        cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.scalarData.data());
+        }
     }
 
     cg_close(fid);
@@ -305,7 +321,7 @@ void mergeGrids(const std::vector<Base>& grids,
                 const std::vector<std::vector<Solution>>& solutions,
                 std::vector<Point> &nodes, std::vector<cgsize_t> &elements,
                 int nTimeSteps,
-                std::map<std::string, std::vector<std::vector<double> > > &fields)
+                std::map<std::string, std::vector<Field> > &fields)
 {
     using namespace std;
 
@@ -356,12 +372,22 @@ void mergeGrids(const std::vector<Base>& grids,
                 {
                     for(const Field& field: soln.fields)
                     {
-                        vector<vector<double>> &globalField = fields[field.name];
+                        vector<Field> &globalField = fields[field.name];
 
                         if(globalField.size() < nTimeSteps)
                             globalField.resize(nTimeSteps);
 
-                        globalField[timeStepNo].insert(globalField[timeStepNo].end(), field.scalarData.begin(), field.scalarData.end());
+                        globalField[timeStepNo].type = field.type;
+
+                        switch(field.type)
+                        {
+                        case CGNS_ENUMV(Integer):
+                            globalField[timeStepNo].integerData.insert(globalField[timeStepNo].integerData.end(), field.integerData.begin(), field.integerData.end());
+                            break;
+                        case CGNS_ENUMV(RealDouble):
+                            globalField[timeStepNo].scalarData.insert(globalField[timeStepNo].scalarData.end(), field.scalarData.begin(), field.scalarData.end());
+                            break;
+                        }
                     }
 
                     ++timeStepNo;
@@ -471,7 +497,7 @@ std::vector<Point> mergeNodes(const std::vector<Point>& nodes, const std::vector
 
 std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
                                     const std::vector<cgsize_t>& elements, int &nElements,
-                                    std::map<std::string, std::vector<std::vector<double > > > &fields)
+                                    std::map<std::string, std::vector<Field> > &fields)
 {
     using namespace std;
 
@@ -582,17 +608,37 @@ std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
     //- Modify field data
     for(auto& field: fields)
     {
-        for(vector<double>& timeStep: field.second)
+        for(Field& timeStep: field.second)
         {
-            vector<double> newTimeStep;
+            switch(timeStep.type)
+            {
+            case CGNS_ENUMV(Integer):
+            {
+                vector<int> newTimeStep;
 
-            auto removeItr = removeElement.begin();
+                auto removeItr = removeElement.begin();
 
-            for(double val: timeStep)
-                if(!*(removeItr++))
-                    newTimeStep.push_back(val);
+                for(int val: timeStep.integerData)
+                    if(!*(removeItr++))
+                        newTimeStep.push_back(val);
 
-            timeStep = newTimeStep;
+                timeStep.integerData = newTimeStep;
+            }
+                break;
+            case CGNS_ENUMV(RealDouble):
+            {
+                vector<double> newTimeStep;
+
+                auto removeItr = removeElement.begin();
+
+                for(double val: timeStep.scalarData)
+                    if(!*(removeItr++))
+                        newTimeStep.push_back(val);
+
+                timeStep.scalarData = newTimeStep;
+            }
+                break;
+            }
         }
     }
 

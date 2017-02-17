@@ -33,6 +33,11 @@ if(PHASE_USE_PETSC)
     add_definitions(-DPHASE_USE_PETSC)
 endif()
 
+option(PHASE_USE_TRILINOS "Use the Trilinos (Belos) linear solvers library." ON)
+if(PHASE_USE_TRILINOS)
+    add_definitions(-DPHASE_USE_TRILINOS)
+endif()
+
 # Compiler flag setup
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
@@ -46,7 +51,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -mkl -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost -flto")
+    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost")
 endif()
 
 

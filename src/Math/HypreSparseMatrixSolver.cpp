@@ -7,50 +7,35 @@ HypreSparseMatrixSolver::HypreSparseMatrixSolver(const Communicator& comm, Preco
       comm_(comm),
       preconType_(preconType)
 {
-    HYPRE_ParCSRBiCGSTABCreate(comm.communicator(), &solver_);
+    solver_ = nullptr;
+    precon_ = nullptr;
 
-    switch(preconType_)
-    {
-    case EUCLID:
-        HYPRE_EuclidCreate(comm.communicator(), &precon_);
-        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
-                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSolve,
-                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSetup,
-                                       precon_);
-        break;
-    case BOOMER_AMG:
-        HYPRE_BoomerAMGCreate(&precon_);
-        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
-                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSolve,
-                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSetup,
-                                       precon_);
-        break;
-    }
+    ijMatrix_ = nullptr;
+    b_ = nullptr;
+    x_ = nullptr;
+
+    //- Set defaults
+    maxIters_ = 500;
+    fill_ = 0;
+    toler_ = 1e-6;
+    dropToler_ = 0.001;
 }
 
 HypreSparseMatrixSolver::~HypreSparseMatrixSolver()
 {
-    HYPRE_ParCSRBiCGSTABDestroy(solver_);
-
-    switch(preconType_)
-    {
-    case EUCLID:
-        HYPRE_EuclidDestroy(precon_);
-        break;
-    case BOOMER_AMG:
-        HYPRE_BoomerAMGDestroy(precon_);
-        break;
-    }
-
-    deinitialize();
+    deinitializeSolver();
+    deinitializeIJObjects();
 }
 
 void HypreSparseMatrixSolver::setRank(int rank)
 {
-    if(rank != iUpper_ - iLower_ + 1) // check if rank has changed
+    if(comm_.min(rank != iUpper_ - iLower_ + 1)) // check if rank has changed
     {
-        deinitialize();
-        initialize(rank);
+        deinitializeIJObjects();
+        initializeIJObjects(rank);
+
+        deinitializeSolver();
+        initializeSolver();
     }
 }
 
@@ -135,7 +120,7 @@ void HypreSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
     std::vector<Scalar> vals(field.grid.localActiveCells().size());
 
     std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
-                   inds.begin(), [](const Cell& cell)->int{ return cell.globalIndex(0); });
+                   inds.begin(), [](const Cell& cell)->int{ return cell.index(1); });
 
     HYPRE_IJVectorGetValues(x_, inds.size(), inds.data(), vals.data());
 
@@ -152,11 +137,11 @@ void HypreSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
     Size nActiveCells = field.grid.localActiveCells().size();
 
     std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
-                   inds.begin(), [](const Cell& cell)->int{ return cell.globalIndex(1); });
+                   inds.begin(), [](const Cell& cell)->int{ return cell.index(2); });
 
     std::transform(field.grid.localActiveCells().begin(), field.grid.localActiveCells().end(),
                    inds.begin() + nActiveCells,
-                   [nActiveCells](const Cell& cell)->int{ return cell.globalIndex(2); });
+                   [nActiveCells](const Cell& cell)->int{ return cell.index(3); });
 
     HYPRE_IJVectorGetValues(x_, inds.size(), inds.data(), vals.data());
 
@@ -171,44 +156,83 @@ void HypreSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 
 void HypreSparseMatrixSolver::setMaxIters(int maxIters)
 {
-    HYPRE_ParCSRBiCGSTABSetMaxIter(solver_, maxIters);
+    maxIters_ = maxIters;
 }
 
 void HypreSparseMatrixSolver::setToler(Scalar toler)
 {
-    HYPRE_ParCSRBiCGSTABSetTol(solver_, toler);
+    toler_ = toler;
 }
 
 void HypreSparseMatrixSolver::setDropToler(Scalar toler)
 {
-    switch(preconType_)
-    {
-    case EUCLID:
-        HYPRE_EuclidSetSparseA(precon_, toler);
-        break;
-    case BOOMER_AMG:
-        HYPRE_BoomerAMGSetEuSparseA(precon_, toler);
-        break;
-    }
+    dropToler_ = toler;
 }
 
 void HypreSparseMatrixSolver::setFillFactor(int fill)
 {
-    switch(preconType_)
-    {
-    case EUCLID:
-        HYPRE_EuclidSetLevel(precon_, fill);
-        break;
-    }
+    fill_ = fill;
 }
 
 void HypreSparseMatrixSolver::printStatus(const std::string &msg) const
 {
-
     comm_.printf("%s iterations = %d, error = %lf.\n", msg.c_str(), nIters(), error());
 }
 
-void HypreSparseMatrixSolver::initialize(int rank)
+void HypreSparseMatrixSolver::initializeSolver()
+{
+    HYPRE_ParCSRBiCGSTABCreate(comm_.communicator(), &solver_);
+
+    switch(preconType_)
+    {
+    case EUCLID:
+        HYPRE_EuclidCreate(comm_.communicator(), &precon_);
+        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSolve,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_EuclidSetup,
+                                       precon_);
+        HYPRE_EuclidSetSparseA(precon_, dropToler_);
+        HYPRE_EuclidSetLevel(precon_, fill_);
+        break;
+
+    case BOOMER_AMG:
+        HYPRE_BoomerAMGCreate(&precon_);
+        HYPRE_ParCSRBiCGSTABSetPrecond(solver_,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSolve,
+                                       (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSetup,
+                                       precon_);
+        HYPRE_BoomerAMGSetEuSparseA(precon_, dropToler_);
+        break;
+    }
+
+    HYPRE_ParCSRBiCGSTABSetMaxIter(solver_, maxIters_);
+    HYPRE_ParCSRBiCGSTABSetTol(solver_, toler_);
+
+    nPreconUses_ = maxPreconUses_; //- force the preconditioner to re-initialize
+}
+
+void HypreSparseMatrixSolver::deinitializeSolver()
+{
+    if(solver_)
+    {
+        HYPRE_ParCSRBiCGSTABDestroy(solver_);
+
+        switch(preconType_)
+        {
+        case EUCLID:
+            HYPRE_EuclidDestroy(precon_);
+            break;
+        case BOOMER_AMG:
+            HYPRE_BoomerAMGDestroy(precon_);
+            break;
+        }
+
+        solver_ = nullptr;
+        precon_ = nullptr;
+    }
+}
+
+void HypreSparseMatrixSolver::initializeIJObjects(Size rank)
 {
     localSizes_ = comm_.allGather(rank);
 
@@ -224,22 +248,33 @@ void HypreSparseMatrixSolver::initialize(int rank)
     HYPRE_IJMatrixCreate(comm_.communicator(), iLower_, iUpper_, iLower_, iUpper_, &ijMatrix_);
     HYPRE_IJMatrixSetObjectType(ijMatrix_, HYPRE_PARCSR);
 
+    std::vector<HYPRE_Int> sizes(globalInds_.size(), 5);
+
+    HYPRE_IJMatrixSetRowSizes(ijMatrix_, sizes.data());
+
     HYPRE_IJVectorCreate(comm_.communicator(), iLower_, iUpper_, &b_);
     HYPRE_IJVectorSetObjectType(b_, HYPRE_PARCSR);
 
     HYPRE_IJVectorCreate(comm_.communicator(), iLower_, iUpper_, &x_);
     HYPRE_IJVectorSetObjectType(x_, HYPRE_PARCSR);
 
-    initialized_ = true;
+    std::vector<double> zeros(globalInds_.size(), 0);
+
+    HYPRE_IJVectorInitialize(x_);
+    HYPRE_IJVectorSetValues(x_, zeros.size(), globalInds_.data(), zeros.data());
+    HYPRE_IJVectorAssemble(x_);
 }
 
-void HypreSparseMatrixSolver::deinitialize()
+void HypreSparseMatrixSolver::deinitializeIJObjects()
 {
-    if(initialized_)
+    if(ijMatrix_)
     {
         HYPRE_IJMatrixDestroy(ijMatrix_);
         HYPRE_IJVectorDestroy(b_);
         HYPRE_IJVectorDestroy(x_);
-        initialized_ = false;
+
+        ijMatrix_ = nullptr;
+        b_ = nullptr;
+        x_ = nullptr;
     }
 }

@@ -103,6 +103,13 @@ int Communicator::scatter(int root, const std::vector<int> &send) const
     return num[0];
 }
 
+std::vector<int> Communicator::allGather(int val) const
+{
+    std::vector<int> result(nProcs());
+    MPI_Allgather(&val, 1, MPI_INT, result.data(), 1, MPI_INT, comm_);
+    return result;
+}
+
 std::vector<unsigned long> Communicator::allGather(unsigned long val) const
 {
     std::vector<unsigned long> result(nProcs());
@@ -214,6 +221,13 @@ double Communicator::sum(double val) const
 {
     double result;
     MPI_Allreduce(&val, &result, 1, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+int Communicator::min(int val) const
+{
+    int result;
+    MPI_Allreduce(&val, &result, 1, MPI_INT, MPI_MIN, comm_);
     return result;
 }
 

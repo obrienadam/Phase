@@ -52,4 +52,8 @@ protected:
 #include "PetscSparseMatrixSolver.h"
 #endif
 
+#ifdef PHASE_USE_TRILINOS
+#include "TrilinosSparseMatrixSolver.h"
+#endif
+
 #endif

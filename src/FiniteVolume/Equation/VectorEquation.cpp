@@ -17,48 +17,48 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField& field, const std::string& 
 template<> template<>
 void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
 {
-    setValue(cell.localIndex(),
-             nb.globalIndex(1),
+    setValue(cell.index(0),
+             nb.index(2),
              val);
 
-    setValue(cell.localIndex() + nActiveCells_,
-             nb.globalIndex(2),
+    setValue(cell.index(0) + nActiveCells_,
+             nb.index(3),
              val);
 }
 
 template<> template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 {
-    addValue(cell.localIndex(),
-             nb.globalIndex(1),
+    addValue(cell.index(0),
+             nb.index(2),
              val);
 
-    addValue(cell.localIndex() + nActiveCells_,
-             nb.globalIndex(2),
+    addValue(cell.index(0) + nActiveCells_,
+             nb.index(3),
              val);
 }
 
 template<> template<>
 void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, const Vector2D& val)
 {
-    setValue(cell.localIndex(),
-             nb.globalIndex(1),
+    setValue(cell.index(0),
+             nb.index(2),
              val.x);
 
-    setValue(cell.localIndex() + nActiveCells_,
-             nb.globalIndex(2),
+    setValue(cell.index(0) + nActiveCells_,
+             nb.index(3),
              val.y);
 }
 
 template<> template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D& val)
 {
-    addValue(cell.localIndex(),
-             nb.globalIndex(1),
+    addValue(cell.index(0),
+             nb.index(2),
              val.x);
 
-    addValue(cell.localIndex() + nActiveCells_,
-             nb.globalIndex(2),
+    addValue(cell.index(0) + nActiveCells_,
+             nb.index(3),
              val.y);
 }
 
@@ -66,10 +66,10 @@ template<>
 Vector2D Equation<Vector2D>::get(const Cell& cell, const Cell& nb)
 {
     int i = 0;
-    for(const auto& entry: coeffs_[cell.localIndex()])
+    for(const auto& entry: coeffs_[cell.index(0)])
     {
-        if(entry.first == nb.globalIndex(1))
-            return Vector2D(entry.second, coeffs_[cell.localIndex() + nActiveCells_][i].second);
+        if(entry.first == nb.index(2))
+            return Vector2D(entry.second, coeffs_[cell.index(0) + nActiveCells_][i].second);
         ++i;
     }
 
@@ -79,8 +79,8 @@ Vector2D Equation<Vector2D>::get(const Cell& cell, const Cell& nb)
 template<>
 void Equation<Vector2D>::addBoundary(const Cell& cell, Vector2D val)
 {
-    boundaries_[cell.localIndex()] += val.x;
-    boundaries_[cell.localIndex() + nActiveCells_] += val.y;
+    boundaries_[cell.index(0)] += val.x;
+    boundaries_[cell.index(0) + nActiveCells_] += val.y;
 }
 
 //void setBoundary(const Cell& cell, T val);
@@ -92,14 +92,14 @@ void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
     for(const Cell& cell: field_.grid.localActiveCells())
     {
-        Scalar &coeffX = coeffRef(cell.localIndex(), cell.globalIndex(1));
-        Scalar &coeffY = coeffRef(cell.localIndex() + nActiveCells_, cell.globalIndex(2));
+        Scalar &coeffX = coeffRef(cell.index(0), cell.index(2));
+        Scalar &coeffY = coeffRef(cell.index(0) + nActiveCells_, cell.index(3));
 
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
 
-        boundaries_(cell.localIndex()) += (1. - relaxationFactor)*coeffX*field_(cell).x;
-        boundaries_(cell.localIndex() + nActiveCells_) += (1. - relaxationFactor)*coeffY*field_(cell).y;
+        boundaries_(cell.index(0)) += (1. - relaxationFactor)*coeffX*field_(cell).x;
+        boundaries_(cell.index(0) + nActiveCells_) += (1. - relaxationFactor)*coeffY*field_(cell).y;
     }
 }
 
@@ -108,7 +108,7 @@ Equation<Vector2D>& Equation<Vector2D>::operator +=(const VectorFiniteVolumeFiel
 {
     for(const Cell& cell: rhs.grid.localActiveCells())
     {
-        Index rowX = cell.localIndex();
+        Index rowX = cell.index(0);
         Index rowY = rowX + nActiveCells_;
 
         sources_(rowX) += rhs(cell).x;
@@ -123,7 +123,7 @@ Equation<Vector2D>& Equation<Vector2D>::operator -=(const VectorFiniteVolumeFiel
 {
     for(const Cell& cell: rhs.grid.localActiveCells())
     {
-        Index rowX = cell.localIndex();
+        Index rowX = cell.index(0);
         Index rowY = rowX + nActiveCells_;
 
         sources_(rowX) -= rhs(cell).x;

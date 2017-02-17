@@ -14,7 +14,7 @@ LinearAlgebra
 {
 	phiEqn
 	{
-		lib petsc
+		lib trilinos
 		preconditioner boomeramg
 	}
 }
@@ -27,8 +27,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 400
-	nCellsY 400
+	nCellsX 100
+	nCellsY 100
 
 	; Rectilinear parameters
 	width 1

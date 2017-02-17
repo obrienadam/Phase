@@ -1,7 +1,7 @@
 #include "CellZone.h"
 
 // Initialize the registry
-std::map< const Cell*, Ref<CellZone> > CellZone::registry_;
+std::map< Label, Ref<CellZone> > CellZone::registry_;
 
 //- public static methods
 
@@ -10,15 +10,15 @@ CellZone::~CellZone()
     clear();
 }
 
-void CellZone::push_back(const Cell &cell)
+void CellZone::push_back(Cell &cell)
 {
-    if(registry_.insert(std::make_pair(&cell, std::ref(*this))).second)
+    if(registry_.insert(std::make_pair(cell.id(), std::ref(*this))).second)
         CellGroup::push_back(cell);
 }
 
-void CellZone::moveToGroup(const Cell &cell)
+void CellZone::moveToGroup(Cell &cell)
 {
-    auto insertion = registry_.insert(std::make_pair(&cell, std::ref(*this)));
+    auto insertion = registry_.insert(std::make_pair(cell.id(), std::ref(*this)));
 
     if(insertion.second)
         CellGroup::push_back(cell);
@@ -31,37 +31,28 @@ void CellZone::moveToGroup(const Cell &cell)
     }
 }
 
-void CellZone::moveToGroup(const std::vector<Ref<const Cell> > &cells)
+void CellZone::moveToGroup(const std::vector<Ref<Cell> > &cells)
 {
-    for(const Cell& cell: cells)
+    for(Cell& cell: cells)
         moveToGroup(cell);
-}
-
-void CellZone::moveAllCellsToThisGroup()
-{
-    for(auto &entry: registry_) // careful with this iterator
-    {
-        CellZone &group = entry.second;
-
-        if(&group == this)
-            continue;
-
-        group.::CellGroup::remove(*(entry.first));
-        CellGroup::push_back(*(entry.first));
-        entry.second = std::ref(*this);
-    }
 }
 
 void CellZone::remove(const Cell &cell)
 {
-    registry_.erase(&cell);
+    registry_.erase(cell.id());
     CellGroup::remove(cell);
+}
+
+void CellZone::merge(CellZone &other)
+{
+    for(Cell& cell: other.cells())
+        moveToGroup(cell);
 }
 
 void CellZone::clear()
 {
     for(const Cell &cell: cells_)
-        registry_.erase(&cell);
+        registry_.erase(cell.id());
 
     CellGroup::clear();
 }

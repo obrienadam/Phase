@@ -34,7 +34,7 @@ PetscSparseMatrixSolver::~PetscSparseMatrixSolver()
 
 void PetscSparseMatrixSolver::setRank(int rank)
 {
-    if(rank != iUpper_ - iLower_)
+    if(comm_.min(rank != iUpper_ - iLower_))
     {
         error_ = MatSetSizes(A_, rank, rank, PETSC_DETERMINE, PETSC_DETERMINE);
         error_ = MatSeqAIJSetPreallocation(A_, 5, PETSC_NULL);

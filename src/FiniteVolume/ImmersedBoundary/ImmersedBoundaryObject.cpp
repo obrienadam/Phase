@@ -5,8 +5,6 @@
 #include "QuadraticNormalInterpolation.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
-                                               const Point2D& center,
-                                               Scalar radius,
                                                Label id,
                                                FiniteVolumeGrid2D &grid)
     :
@@ -14,17 +12,15 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
       grid_(grid),
       id_(id)
 {
+
+}
+
+void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
+{
     shapePtr_ = std::shared_ptr<Shape2D>(new Circle(center, radius));
 }
 
-ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
-                                               const std::vector<Point2D> &vertices,
-                                               Label id,
-                                               FiniteVolumeGrid2D& grid)
-    :
-      name_(name),
-      grid_(grid),
-      id_(id)
+void ImmersedBoundaryObject::initPolygon(const std::vector<Point2D> &vertices)
 {
     shapePtr_ = std::shared_ptr<Shape2D>(new Polygon(vertices));
 }
@@ -67,11 +63,10 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
                 );
 }
 
-void ImmersedBoundaryObject::setInternalCells(const Communicator &comm)
+void ImmersedBoundaryObject::setInternalCells()
 {
     flagIbCells();
     constructStencils();
-    comm.printf("IB cells set for object \"%s\".\n", name().c_str());
 }
 
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
@@ -82,6 +77,23 @@ void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryTy
 void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)
 {
     boundaryRefValues_[name] = boundaryRefValue;
+}
+
+void ImmersedBoundaryObject::updateCells()
+{
+    ibCells_->clear();
+    solidCells_->clear();
+
+    CellZone& fluidCells = grid_.cellZone("fluid");
+
+    for(Cell& cell: cells_->cells())
+    {
+        fluidCells.moveToGroup(cell);
+        grid_.setCellActive(cell);
+    }
+
+    flagIbCells();
+    constructStencils();
 }
 
 //- Protected methods

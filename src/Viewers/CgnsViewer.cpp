@@ -29,7 +29,7 @@ CgnsViewer::CgnsViewer(const Input &input, const Communicator &comm, const Solve
     writeCoords(fid, bid, zid, solver_.grid());
     writeConnectivity(fid, bid, zid, solver_.grid());
     writeBoundaryConnectivity(fid, bid, zid, solver_.grid());
-    writeImmersedBoundaries(fid, solver_);
+    //writeImmersedBoundaries(fid, solver_);
     cg_close(fid);
 }
 
@@ -76,6 +76,10 @@ void CgnsViewer::write(Scalar solutionTime, const Communicator &comm)
 int CgnsViewer::createBase(int fid, const std::string &name)
 {
     int id;
+
+    if(name.size() > 32)
+        throw Exception("CgnsViewer", "createBase", "case name \"" + name + "\" is too long, names can only contain a max of 32 characters.");
+
     cg_base_write(fid, name.c_str(), 2, 2, &id);
     //cg_simulation_type_write(fid, id, TimeAccurate);
 

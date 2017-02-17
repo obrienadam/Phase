@@ -13,12 +13,9 @@ Poisson::Poisson(const Input &input, const Communicator &comm, FiniteVolumeGrid2
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
     //- Create ib zones if any
-    ib_.initCellZones(comm);
+    ib_.initCellZones();
 
-    //- Compute the global cell ordering (for lin alg)
-    grid_.computeGlobalOrdering(comm_);
     gamma.fill(input.caseInput().get<Scalar>("Properties.gamma", 1.));
-    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
 }
 
 Scalar Poisson::solve(Scalar timeStep)

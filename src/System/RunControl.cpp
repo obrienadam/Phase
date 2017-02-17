@@ -8,7 +8,7 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
 
     //- Time
     Scalar time = 0.;
-    Scalar timeStep = solver.maxTimeStep();
+    Scalar timeStep = input.caseInput().get<Scalar>("Solver.initialTimeStep", solver.maxTimeStep());
 
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;

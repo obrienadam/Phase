@@ -30,6 +30,11 @@ if(PHASE_USE_PETSC)
     set(SOURCES ${SOURCES} PetscSparseMatrixSolver.cpp)
 endif()
 
+if(PHASE_USE_TRILINOS)
+    set(HEADERS ${HEADERS} TrilinosSparseMatrixSolver.h)
+    set(SOURCES ${SOURCES} TrilinosSparseMatrixSolver.cpp)
+endif()
+
 add_library(Math ${HEADERS} ${SOURCES})
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -42,4 +47,21 @@ endif()
 
 if(PHASE_USE_HYPRE)
     target_link_libraries(Math HYPRE)
+endif()
+
+if(PHASE_USE_TRILINOS)
+    target_link_libraries(Math
+        teuchoscore
+        teuchosparameterlist
+        teuchoscomm
+        teuchoskokkoscompat
+        teuchosnumerics
+        teuchosremainder
+        kokkoscore
+        tpetra
+        tpetrakernels
+        belos
+        ifpack2
+        amesos2
+        zoltan2)
 endif()
