@@ -4,28 +4,30 @@
 #include "Equation.h"
 #include "ImmersedBoundaryObject.h"
 
-namespace gc
+namespace ib
 {
 
 template<class ImmersedBoundaryObject_t, typename T> // Allow for use of reference wrappers as well
-Equation<T> ib(const std::vector<ImmersedBoundaryObject_t>& ibObjs, FiniteVolumeField<T>& field)
+Equation<T> gc(const std::vector<ImmersedBoundaryObject_t>& ibObjs, FiniteVolumeField<T>& field)
 {
     Equation<T> eqn(field);
 
     for(const ImmersedBoundaryObject& ibObj: ibObjs)
-        for(const Cell &cell: ibObj.ibCells())
+        for(const GhostCellStencil& stencil: ibObj.stencils())
         {
-            const Point2D& imagePoint = ibObj.imagePoint(cell);
-            const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
-            const Interpolation &bi = ibObj.imagePointInterpolation(cell);
-            std::vector<Scalar> coeffs = bi(imagePoint);
+            Scalar centralCoeff, l, lambda;
+            std::vector<Scalar> coeffs = stencil.ipCoeffs();
 
-            Scalar centralCoeff, l;
-            // Then here we shall do the boundary assembly!
+            //- Boundary assembly
             switch(ibObj.boundaryType(field.name()))
             {
             case ImmersedBoundaryObject::FIXED:
-                centralCoeff = 1.;
+                centralCoeff = 0.5;
+                for(Scalar &coeff: coeffs)
+                    coeff *= 0.5;
+
+                eqn.addBoundary(stencil.cell(), ibObj.getBoundaryRefValue<T>(field.name()));
+
                 break;
 
             case ImmersedBoundaryObject::NORMAL_GRADIENT:
@@ -37,23 +39,24 @@ Equation<T> ib(const std::vector<ImmersedBoundaryObject_t>& ibObjs, FiniteVolume
                 break;
 
             case ImmersedBoundaryObject::PARTIAL_SLIP:
-                l = (cell.centroid() - imagePoint).mag();
-                centralCoeff = 1. + 2.*ibObj.boundaryRefValue(field.name())/l;
+                l = stencil.length();
+                lambda = ibObj.getBoundaryRefValue<Scalar>(field.name());
+                centralCoeff = 1. + 2.*lambda/l;
 
                 for(Scalar &coeff: coeffs)
-                    coeff *= 1. - 2.*ibObj.boundaryRefValue(field.name())/l;
+                    coeff *= 1. - 2.*lambda/l;
 
                 break;
 
             default:
-                throw Exception("gc", "ib<T>", "invalid boundary type.");
+                throw Exception("ib", "gc<ImmersedBoundaryObject_t, T>", "invalid boundary type.");
             }
 
-            eqn.add(cell, cell, centralCoeff);
+            eqn.add(stencil.cell(), stencil.cell(), centralCoeff);
 
             int i = 0;
-            for(const Cell& bCell: kNN)
-                eqn.add(cell, bCell, coeffs[i++]);
+            for(const Cell& ipCell: stencil.ipCells())
+                eqn.add(stencil.cell(), ipCell, coeffs[i++]);
         }
 
     return eqn;

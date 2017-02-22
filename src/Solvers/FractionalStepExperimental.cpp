@@ -1,23 +1,22 @@
 #include "FractionalStepExperimental.h"
-#include "FiniteVolumeEquation.h"
 #include "CrankNicolson.h"
-#include "SourceEvaluation.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
+#include "SourceEvaluation.h"
+#include "Source.h"
+#include "MovingGhostCellImmersedBoundary.h"
+#include "FiniteVolumeEquation.h"
 
-FractionalStepExperimental::FractionalStepExperimental(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
+FractionalStepExperimental::FractionalStepExperimental(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
       Solver(input, comm, grid),
       u(addVectorField(input, "u")),
-      gradP(addVectorField(input, "gradP")),
-      gradPhi(addVectorField("gradPhi")),
+      gradP(addVectorField("gradP")),
       p(addScalarField(input, "p")),
-      phi(addScalarField("phi")),
       rho(addScalarField("rho")),
       mu(addScalarField("mu")),
-      divUStar(addScalarField("divUStar")),
       uEqn_(input, comm, u, "uEqn"),
-      phiEqn_(input, comm, phi, "phiEqn")
+      pEqn_(input, comm, p, "pEqn")
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -25,27 +24,26 @@ FractionalStepExperimental::FractionalStepExperimental(const Input &input, const
     rho.savePreviousTimeStep(0., 1);
     mu.savePreviousTimeStep(0., 1);
 
-    phi.copyBoundaryTypes(p);
-
     //- All active cells to fluid cells
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
-    //- Create ib zones if any
-    ib_.initCellZones();
+    //- Create ib zones if any. Will also update local/global indices
+    ibObjManager_.initCellZones();
 }
 
 std::string FractionalStepExperimental::info() const
 {
     return Solver::info()
-            + "Type: 2nd order fractional-step (experimental)\n"
+            + "Type: 2nd order fractional-step\n"
             + "Advection time-marching: Crank-Nicolson\n"
             + "Diffusion time-marching: Adams-Bashforth\n";
 }
 
 Scalar FractionalStepExperimental::solve(Scalar timeStep)
 {
+    ibObjManager_.update(timeStep);
     solveUEqn(timeStep);
-    solvePhiEqn(timeStep);
+    solvePEqn(timeStep);
     correctVelocity(timeStep);
 
     comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
@@ -80,13 +78,15 @@ Scalar FractionalStepExperimental::computeMaxTimeStep(Scalar maxCo, Scalar prevT
                     ));
 }
 
+//- Protected methods
+
 Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.) + ib_.eqns(u) == cn::laplacian(mu, u, 0.) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::mv_gc(ibObjs(), rho, u, timeStep) == cn::laplacian(mu, u, 0.5));
 
     Scalar error = uEqn_.solve();
+
     grid_.sendMessages(comm_, u);
 
     computeFaceVelocities(timeStep);
@@ -94,50 +94,61 @@ Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
     return error;
 }
 
-Scalar FractionalStepExperimental::solvePhiEqn(Scalar timeStep)
+Scalar FractionalStepExperimental::solvePEqn(Scalar timeStep)
 {
-    phi.savePreviousTimeStep(timeStep, 1);
+    pEqn_ = (fv::laplacian(timeStep/rho, p) + ib::mv_gc(ibObjs(), u, p) == source::div(u));
+    Scalar error = pEqn_.solveWithGuess();
 
-    computeMassSource(timeStep);
+    grid_.sendMessages(comm_, p);
 
-    phiEqn_ = (fv::laplacian(1., phi) + ib_.eqns(phi) == divUStar);
-    Scalar error = phiEqn_.solve();
+    p.setBoundaryFaces();
+    fv::computeInverseWeightedGradient(rho, p, gradP);
 
-    grid_.sendMessages(comm_, phi);
-
-    phi.setBoundaryFaces();
-    fv::computeInverseWeightedGradient(rho, phi, gradPhi);
-
-    for(const Cell& cell: grid_.localActiveCells())
-        gradP(cell) += gradPhi(cell)*rho(cell)/timeStep;
+    grid_.sendMessages(comm_, gradP);
 
     return error;
 }
 
 void FractionalStepExperimental::correctVelocity(Scalar timeStep)
 {
-    for(const Cell& cell: grid_.localActiveCells())
-        u(cell) -= gradPhi(cell);
+    for(const Cell &cell: grid_.cellZone("fluid"))
+        u(cell) -= timeStep/rho(cell)*gradP(cell);
 
-    for(const Face& face: grid_.interiorFaces())
-        u(face) -= gradPhi(face);
+    grid_.sendMessages(comm_, u);
+
+    for(const Face &face: grid_.interiorFaces())
+        u(face) -= timeStep/rho(face)*gradP(face);
+
+    for(const Face &face: grid_.boundaryFaces())
+    {
+        switch(u.boundaryType(face))
+        {
+        case VectorFiniteVolumeField::FIXED:
+            break;
+
+        case VectorFiniteVolumeField::SYMMETRY:
+        {
+            const Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+            u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall)*nWall/nWall.magSqr();
+        }
+            break;
+
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            u(face) -= timeStep/rho(face)*gradP(face);
+            break;
+        };
+    }
 }
 
 void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
 {
-    u.setBoundaryFaces();
-    fv::interpolateFaces(fv::INVERSE_DISTANCE, u);
-    return;
-
     for(const Face& face: u.grid.interiorFaces())
     {
         const Cell &lCell = face.lCell();
         const Cell &rCell = face.rCell();
         const Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
 
-        u(face) = g*(u(lCell) + timeStep/rho(lCell)*gradP(lCell))
-                + (1. - g)*(u(rCell) + timeStep/rho(rCell)*gradP(rCell))
-                - timeStep/rho(face)*gradP(face);
+        u(face) = g*u(lCell) + (1. - g)*u(rCell);
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -150,8 +161,7 @@ void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
             break;
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            u(face) = u(cell) + timeStep/rho(cell)*gradP(cell)
-                    - timeStep/rho(face)*gradP(face);
+            u(face) = u(cell);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:
@@ -162,21 +172,8 @@ void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
             break;
 
             //default:
-            //throw Exception("FractionalStep", "computeFaceVelocities", "unrecognized boundary condition type.");
+            //throw Exception("FractionalStepExperimental", "computeFaceVelocities", "unrecognized boundary condition type.");
         };
     }
 }
 
-void FractionalStepExperimental::computeMassSource(Scalar timeStep)
-{
-    divUStar.fill(0.);
-
-    for(const Cell &cell: grid_.cellZone("fluid"))
-    {
-        for(const InteriorLink &nb: cell.neighbours())
-            divUStar(cell) += dot(u(nb.face()), nb.outwardNorm());
-
-        for(const BoundaryLink &bd: cell.boundaries())
-            divUStar(cell) += dot(u(bd.face()), bd.outwardNorm());
-    }
-}

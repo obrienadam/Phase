@@ -5,7 +5,8 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <Ifpack2_Factory.hpp>
+#include <Ifpack2_RILUK.hpp>
+#include <Ifpack2_Diagonal.hpp>
 
 #include "SparseMatrixSolver.h"
 
@@ -13,11 +14,12 @@ class TrilinosSparseMatrixSolver: public SparseMatrixSolver
 {
 public:
     TrilinosSparseMatrixSolver(const Communicator& comm,
-                               const std::string& solver = "LSQR",
+                               const std::string& solver = "BiCGSTAB",
                                const std::string& preconType = "RILUK");
 
     void setRank(int rank);
     void set(const CoefficientList& eqn);
+    void setGuess(const Vector& x0);
     void setRhs(const Vector& rhs);
 
     Scalar solve();
@@ -63,10 +65,11 @@ private:
 
     SolverFactory solverFactory_;
     Teuchos::RCP<LinearProblem> linearProblem_;
+    std::string solverType_;
     Teuchos::RCP<Solver> solver_;
 
     std::string preconType_;
-    Ifpack2::Factory preconditionerFactory_;
+    //Ifpack2::Factory preconditionerFactory_;
     Teuchos::RCP<Preconditioner> preconditioner_;
 };
 

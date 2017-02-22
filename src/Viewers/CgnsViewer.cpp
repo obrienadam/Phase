@@ -169,7 +169,7 @@ void CgnsViewer::writeImmersedBoundaries(int fid, const Solver &solver)
     //- Create new zones for the ibs and write them
     int ibBase;
     cg_base_write(fid, "IBs", 1, 2, &ibBase);
-    for(const ImmersedBoundaryObject& ibObj: solver.ib().ibObjs())
+    for(const ImmersedBoundaryObject& ibObj: solver.ibObjs())
     {
         Polygon pgn = ibObj.shape().polygonize();
         int nVerts = pgn.vertices().size() - 1;

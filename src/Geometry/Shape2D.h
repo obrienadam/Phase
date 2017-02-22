@@ -33,8 +33,8 @@ public:
     virtual void rotate(Scalar theta) = 0;
 
     //- Translations
-    virtual void operator+=(const Vector2D& vec) = 0;
-    virtual void operator-=(const Vector2D& vec) = 0;
+    virtual Shape2D& operator+=(const Vector2D& vec) = 0;
+    virtual Shape2D& operator-=(const Vector2D& vec) = 0;
 
     //- Bounding box
     virtual boost::geometry::model::box<Point2D> boundingBox() const = 0;

@@ -51,7 +51,9 @@ public:
     //- Cell groups and zones
     void setCellActive(Cell &cell);
     void setCellsActive(const std::vector<Label>& ids);
+    void setCellsActive(CellGroup &cellGroup);
     void setCellsInactive(const std::vector<Label>& ids);
+    void setCellsInactive(CellGroup &cellGroup);
     void setCellsLocallyInactive(const std::vector<Label>& ids);
 
     CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }

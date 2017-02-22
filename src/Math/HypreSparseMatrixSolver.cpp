@@ -72,6 +72,19 @@ void HypreSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn
     HYPRE_IJMatrixAssemble(ijMatrix_);
 }
 
+void HypreSparseMatrixSolver::setGuess(const Vector &x0)
+{
+    std::vector<int> rows(x0.size());
+
+    int row = iLower_;
+    for(int& val: rows)
+        val = row++;
+
+    HYPRE_IJVectorInitialize(x_);
+    HYPRE_IJVectorSetValues(x_, x0.size(), rows.data(), x0.data());
+    HYPRE_IJVectorAssemble(x_);
+}
+
 void HypreSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     std::vector<int> rows(rhs.size());

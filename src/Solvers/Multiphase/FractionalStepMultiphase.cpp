@@ -4,6 +4,7 @@
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
+#include "GhostCellImmersedBoundary.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Communicator& comm, FiniteVolumeGrid2D& grid)
     :
@@ -76,7 +77,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib_.eqns(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib::gc(ibObjs(), u)
              == cn::laplacian(mu, u, 0.5) - fv::source(gradP - ft.prev(0) - sg.prev(0)));
 
     Scalar error = uEqn_.solve();
@@ -92,7 +93,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
 
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_.n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_.n(), gamma, timeStep) + ib::gc(ibObjs(), gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 

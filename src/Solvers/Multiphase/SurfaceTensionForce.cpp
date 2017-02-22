@@ -31,7 +31,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
             throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "invalid contact angle status \"" + status + "\".");
     }
 
-    for(const ImmersedBoundaryObject &ibObj: solver.ib().ibObjs())
+    for(const ImmersedBoundaryObject &ibObj: solver.ibObjs())
     {
         ibContactAngles_.insert(
                     std::make_pair(ibObj.id(),

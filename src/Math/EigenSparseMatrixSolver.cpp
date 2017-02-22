@@ -24,6 +24,12 @@ void EigenSparseMatrixSolver::set(const CoefficientList &coeffs)
     mat_.setFromTriplets(triplets.begin(), triplets.end());
 }
 
+void EigenSparseMatrixSolver::setGuess(const Vector &x0)
+{
+    for(int i = 0, end = x0.size(); i < end; ++i)
+        x_(i) = x0(i);
+}
+
 void EigenSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     for(int i = 0, end = rhs.size(); i < end; ++i)

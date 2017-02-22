@@ -208,17 +208,19 @@ Polygon Polygon::scale(Scalar factor) const
 }
 
 //- Translations
-void Polygon::operator+=(const Vector2D& translationVec)
+Polygon& Polygon::operator+=(const Vector2D& translationVec)
 {
     for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
         vtx += translationVec;
 
     centroid_ += translationVec;
+
+    return *this;
 }
 
-void Polygon::operator-=(const Vector2D& translationVec)
+Polygon& Polygon::operator-=(const Vector2D& translationVec)
 {
-    operator +=(-translationVec);
+    return operator +=(-translationVec);
 }
 
 //- Bounding box

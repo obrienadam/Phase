@@ -187,6 +187,12 @@ void FiniteVolumeGrid2D::setCellsActive(const std::vector<Label> &ids)
         setCellActive(cell);
 }
 
+void FiniteVolumeGrid2D::setCellsActive(CellGroup &cellGroup)
+{
+    for(Cell& cell: cellGroup)
+        setCellActive(cell);
+}
+
 void FiniteVolumeGrid2D::setCellsInactive(const std::vector<Label> &ids)
 {
     for(Cell& cell: getCells(ids))
@@ -194,6 +200,18 @@ void FiniteVolumeGrid2D::setCellsInactive(const std::vector<Label> &ids)
         localActiveCells_.remove(cell);
         globalActiveCells_.remove(cell);
         inactiveCells_.push_back(cell);
+        cell.clearIndices();
+    }
+}
+
+void FiniteVolumeGrid2D::setCellsInactive(CellGroup &cellGroup)
+{
+    for(Cell& cell: cellGroup)
+    {
+        localActiveCells_.remove(cell);
+        globalActiveCells_.remove(cell);
+        inactiveCells_.push_back(cell);
+        cell.clearIndices();
     }
 }
 
@@ -597,9 +615,6 @@ void FiniteVolumeGrid2D::computeGlobalOrdering(const Communicator &comm)
         std::vector<Index>(nCells(), -1),
         std::vector<Index>(nCells(), -1),
     };
-
-    for(Cell& cell: cells_)
-        cell.clearIndices();
 
     Index localIndex = 0;
     for(Cell& cell: localActiveCells_)

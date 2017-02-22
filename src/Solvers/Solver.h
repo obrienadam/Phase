@@ -57,7 +57,8 @@ public:
 
     //- ICs/IBs
     void setInitialConditions(const Input& input);
-    const ImmersedBoundary& ib() const { return ib_; }
+
+    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const { return ibObjManager_.ibObjs(); }
 
     //- Integrators
     const std::vector<VolumeIntegrator>& volumeIntegrators() const { return volumeIntegrators_; }
@@ -91,7 +92,7 @@ protected:
     TimeDependent timeDependent_;
     Scalar timeStepRelaxation_, maxTimeStep_;
 
-    ImmersedBoundary ib_;
+    ImmersedBoundary ibObjManager_;
 
     std::vector<VolumeIntegrator> volumeIntegrators_;
     std::vector<ForceIntegrator> forceIntegrators_;

@@ -12,7 +12,7 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string& name,
       grid_(grid),
       id_(id)
 {
-
+    freshlyClearedCells_ = &grid.createCellGroup(name_ + "FreshlyClearedCells", std::vector<Label>());
 }
 
 void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
@@ -23,32 +23,6 @@ void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
 void ImmersedBoundaryObject::initPolygon(const std::vector<Point2D> &vertices)
 {
     shapePtr_ = std::shared_ptr<Shape2D>(new Polygon(vertices));
-}
-
-Scalar ImmersedBoundaryObject::imagePointVal(const Cell &cell, const ScalarFiniteVolumeField& field) const
-{
-    const Point2D &ip = imagePoint(cell);
-    const auto &ipCells = imagePointCells(cell);
-    const auto &interpolator = imagePointInterpolation(cell);
-
-    std::vector<Scalar> vals;
-    for(const Cell &kCell: ipCells)
-        vals.push_back(field[kCell.id()]);
-
-    return interpolator(vals, ip);
-}
-
-Vector2D ImmersedBoundaryObject::imagePointVal(const Cell &cell, const VectorFiniteVolumeField& field) const
-{
-    const Point2D &ip = imagePoint(cell);
-    const auto &ipCells = imagePointCells(cell);
-    const auto &bi = imagePointInterpolation(cell);
-
-    std::vector<Vector2D> vals;
-    for(const Cell &kCell: ipCells)
-        vals.push_back(field[kCell.id()]);
-
-    return bi(vals, ip);
 }
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D& ptA, const Point2D& ptB) const
@@ -74,9 +48,39 @@ void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryTy
     boundaryTypes_[name] = boundaryType;
 }
 
+template<>
+Scalar ImmersedBoundaryObject::getBoundaryRefValue<Scalar>(const std::string& name) const
+{
+    return boundaryRefScalars_.find(name)->second;
+}
+
+template<>
+Vector2D ImmersedBoundaryObject::getBoundaryRefValue<Vector2D>(const std::string& name) const
+{
+    return boundaryRefVectors_.find(name)->second;
+}
+
 void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)
 {
-    boundaryRefValues_[name] = boundaryRefValue;
+    boundaryRefScalars_[name] = boundaryRefValue;
+}
+
+void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, const Vector2D &boundaryRefValue)
+{
+    boundaryRefVectors_[name] = boundaryRefValue;
+}
+
+void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, const std::string &value)
+{
+    try
+    {
+        boundaryRefScalars_[name] = std::stod(value);
+        return;
+    }
+    catch(...)
+    {
+        boundaryRefVectors_[name] = Vector2D(value);
+    }
 }
 
 void ImmersedBoundaryObject::updateCells()
@@ -151,36 +155,7 @@ void ImmersedBoundaryObject::flagIbCells()
 
 void ImmersedBoundaryObject::constructStencils()
 {
-    stencilPoints_.clear();
-    imagePointStencils_.clear();
-
-    for(const Cell& cell: ibCells())
-    {
-        const Point2D bp = shape().nearestIntersect(cell.centroid()), ip = 2.*bp - cell.centroid();
-
-        stencilPoints_[cell.id()] = std::make_pair(bp, ip);
-
-        const auto& kNN = grid_.findNearestNode(ip).cells();
-
-        for(const Cell& cell: kNN)
-            if(solidCells_->isInGroup(cell))
-                throw Exception("ImmersedBoundaryActive", "constructStencils", "attempted to add solid cell to stencil.");
-
-        std::vector<Point2D> centroids = {
-            kNN[0].get().centroid(),
-            kNN[1].get().centroid(),
-            kNN[2].get().centroid(),
-            kNN[3].get().centroid(),
-        };
-
-        switch(interpolationType_)
-        {
-        case BILINEAR:
-            imagePointStencils_[cell.id()] = std::make_pair(kNN, std::unique_ptr<Interpolation>(new BilinearInterpolation(centroids)));
-            break;
-        case QUADRATIC_NORMAL:
-            imagePointStencils_[cell.id()] = std::make_pair(kNN, std::unique_ptr<Interpolation>(new QuadraticNormalInterpolation(centroids, ip - bp)));
-            break;
-        }
-    }
+    stencils_.clear();
+    for(const Cell& cell: *ibCells_)
+        stencils_.push_back(GhostCellStencil(cell, *shapePtr_, grid_));
 }

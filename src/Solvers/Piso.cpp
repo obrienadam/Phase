@@ -4,6 +4,7 @@
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
+#include "GhostCellImmersedBoundary.h"
 
 Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
@@ -36,11 +37,12 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& gri
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
     //- Create ib zones if any
-    ib_.initCellZones();
+    ibObjManager_.initCellZones();
 }
 
 Scalar Piso::solve(Scalar timeStep)
 {
+    ibObjManager_.update(timeStep);
     u.savePreviousTimeStep(timeStep, 1);
 
     for(size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
@@ -92,7 +94,7 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u) == cn::laplacian(mu, u, 1.5) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u) == cn::laplacian(mu, u, 1.5) - fv::source(gradP));
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
@@ -117,7 +119,7 @@ Scalar Piso::solvePCorrEqn()
             m(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 
-    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.eqns(pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib::gc(ibObjs(), pCorr) == m);
     Scalar error = pCorrEqn_.solve();
 
     grid_.sendMessages(comm_, pCorr);

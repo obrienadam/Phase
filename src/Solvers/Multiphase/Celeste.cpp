@@ -114,7 +114,7 @@ void Celeste::constructKappaMatrices()
             Scalar dy = nb.cell().centroid().y - cell.centroid().y;
             Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
                 if(ibObj.ibCells().isInGroup(nb.cell()))
                 {
@@ -145,7 +145,7 @@ void Celeste::constructKappaMatrices()
             Scalar dy = dg.cell().centroid().y - cell.centroid().y;
             Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
                 if(ibObj.ibCells().isInGroup(dg.cell()))
                 {
@@ -266,7 +266,7 @@ void Celeste::computeCurvature()
             Vector2D n = n_(nb.cell()) - n_(cell);
             Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
                 if(ibObj.ibCells().isInGroup(nb.cell()))
                 {
@@ -291,7 +291,7 @@ void Celeste::computeCurvature()
             Vector2D n = n_(dg.cell()) - n_(cell);
             Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
 
-            for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
+            for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
                 if(ibObj.ibCells().isInGroup(dg.cell()))
                 {

@@ -41,8 +41,8 @@ public:
     Polygon scale(Scalar factor) const;
 
     //- Translations
-    virtual void operator+=(const Vector2D& translationVec);
-    virtual void operator-=(const Vector2D& translationVec);
+    Polygon& operator+=(const Vector2D& translationVec);
+    Polygon& operator-=(const Vector2D& translationVec);
 
     //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;

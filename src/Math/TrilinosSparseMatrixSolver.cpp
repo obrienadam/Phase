@@ -12,9 +12,11 @@ TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm,
     ifpackParameters_ = rcp(new Teuchos::ParameterList());
 
     linearProblem_ = rcp(new LinearProblem());
-    solver_ = solverFactory_.create(solver, belosParameters_);
-    solver_->setProblem(linearProblem_);
 
+    solverType_ = solver;
+
+    solver_ = solverFactory_.create(solverType_, belosParameters_);
+    solver_->setProblem(linearProblem_);
     preconType_ = preconType;
 }
 
@@ -38,7 +40,7 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
     bool newMatrix = mat_.is_null();
 
     if(newMatrix)
-        mat_ = rcp(new TpetraMatrix(map_, 9, Tpetra::DynamicProfile));
+        mat_ = rcp(new TpetraMatrix(map_, 5, Tpetra::DynamicProfile));
     else
         mat_->resumeFill();
 
@@ -65,14 +67,27 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
 
     if(newMatrix)
     {
-        preconditioner_ = preconditionerFactory_.create(preconType_, rcp_implicit_cast<const TpetraMatrix>(mat_));
+        //preconditioner_ = preconditionerFactory_.create(preconType_, rcp_implicit_cast<const TpetraMatrix>(mat_));
+        if(preconType_ == "RILUK")
+            preconditioner_ = rcp(new Ifpack2::RILUK<Tpetra::RowMatrix<Scalar, Index, Index>>(rcp_implicit_cast<const TpetraMatrix>(mat_)));
+        else if(preconType_ == "DIAGONAL")
+            preconditioner_ = rcp(new Ifpack2::Diagonal<Tpetra::RowMatrix<Scalar, Index, Index>>(rcp_implicit_cast<const TpetraMatrix>(mat_)));
+        else
+            throw Exception("TrilinosSparseMatrixSolver", "set", "invalid preconditioner type \"" + preconType_ + "\".");
+
         preconditioner_->setParameters(*ifpackParameters_);
         preconditioner_->initialize();
         preconditioner_->compute();
 
-        linearProblem_->setOperator(mat_);
+        linearProblem_ = rcp(new LinearProblem(mat_, x_, b_));
         linearProblem_->setRightPrec(preconditioner_);
+        solver_->setProblem(linearProblem_);
     }
+}
+
+void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)
+{
+    std::transform(x0.begin(), x0.end(), x_->getDataNonConst().begin(), [](Scalar val) { return val; });
 }
 
 void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
@@ -82,7 +97,7 @@ void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar TrilinosSparseMatrixSolver::solve()
 {
-    linearProblem_->setProblem(x_, b_);
+    linearProblem_->setProblem();
     solver_->solve();
 
     return error();
@@ -146,5 +161,5 @@ Scalar TrilinosSparseMatrixSolver::error() const
 
 void TrilinosSparseMatrixSolver::printStatus(const std::string& msg) const
 {
-    comm_.printf("%s iterations = %d, error = %lf.\n", msg.c_str(), nIters(), error());
+    comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), solverType_.c_str(), nIters(), error());
 }

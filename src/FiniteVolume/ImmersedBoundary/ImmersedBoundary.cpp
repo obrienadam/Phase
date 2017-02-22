@@ -2,6 +2,7 @@
 
 #include "ImmersedBoundary.h"
 #include "TranslatingImmersedBoundaryObject.h"
+#include "OscillatingImmersedBoundaryObject.h"
 #include "Solver.h"
 #include "GhostCellImmersedBoundary.h"
 
@@ -39,7 +40,18 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
         {
             ibObject = std::make_shared<TranslatingImmersedBoundaryObject>(
                         TranslatingImmersedBoundaryObject(ibObjectInput.first,
-                                                          ibObjectInput.second.get<std::string>("motion.velocity"),
+                                                          ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)"),
+                                                          ibObjectInput.second.get<Scalar>("motion.omega", 0),
+                                                          id++,
+                                                          solver.grid())
+                        );
+        }
+        else if(motion == "oscillating")
+        {
+            ibObject = std::make_shared<OscillatingImmersedBoundaryObject>(
+                        OscillatingImmersedBoundaryObject(ibObjectInput.first,
+                                                          ibObjectInput.second.get<Scalar>("motion.amplitude", 1.),
+                                                          ibObjectInput.second.get<Scalar>("motion.frequency", 0.),
                                                           id++,
                                                           solver.grid())
                         );
@@ -120,22 +132,6 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
             ibObject->shape().rotate(rotationAngle.get()*M_PI/180.);
         }
 
-        boost::optional<std::string> interpolationType = ibObjectInput.second.get_optional<std::string>("interpolation.type");
-
-        if(interpolationType)
-        {
-            comm.printf("Setting interpolation type \"%s\".\n", interpolationType.get().c_str());
-
-            if(interpolationType.get() == "quadraticNormal")
-                ibObject->setInterpolationType(ImmersedBoundaryObject::QUADRATIC_NORMAL);
-            else if(interpolationType.get() == "bilinear")
-                ibObject->setInterpolationType(ImmersedBoundaryObject::BILINEAR);
-            else
-                throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject", "invalid interpolation type \"" + interpolationType.get() + "\".");
-        }
-        else
-            ibObject->setInterpolationType(ImmersedBoundaryObject::BILINEAR);
-
         //- Boundary information
         for(const auto& child: ibObjectInput.second)
         {
@@ -144,18 +140,26 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
 
             std::string type = child.second.get<std::string>("type");
             ImmersedBoundaryObject::BoundaryType boundaryType;
-            Scalar boundaryRefValue = 0.;
 
             if(type == "fixed")
+            {
                 boundaryType = ImmersedBoundaryObject::FIXED;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
             else if(type == "normal_gradient")
+            {
                 boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
             else if(type == "contact_angle")
+            {
                 boundaryType = ImmersedBoundaryObject::CONTACT_ANGLE;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
             else if(type == "partial_slip")
             {
                 boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
-                boundaryRefValue = child.second.get<Scalar>("lambda");
+                ibObject->addBoundaryRefValue(child.first, child.second.get<Scalar>("lambda"));
             }
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
@@ -163,7 +167,6 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator& comm,
             comm.printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
 
             ibObject->addBoundaryType(child.first, boundaryType);
-            ibObject->addBoundaryRefValue(child.first, boundaryRefValue);
 
             if(child.first == "p")
             {
@@ -194,22 +197,12 @@ void ImmersedBoundary::update(Scalar timeStep)
     solver_.grid().computeGlobalOrdering(comm_);
 }
 
-Equation<Scalar> ImmersedBoundary::eqns(ScalarFiniteVolumeField &field)
-{
-    return gc::ib(ibObjs(), field);
-}
-
-Equation<Vector2D> ImmersedBoundary::eqns(VectorFiniteVolumeField &field)
-{
-    return gc::ib(ibObjs(), field);
-}
-
 std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
 {
     std::vector<Ref<const ImmersedBoundaryObject>> refs;
 
     std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
-                   [](const std::shared_ptr<ImmersedBoundaryObject>& ptr)->const ImmersedBoundaryObject&{ return *ptr; });
+                   [](const std::shared_ptr<ImmersedBoundaryObject>& ptr)->const ImmersedBoundaryObject& { return *ptr; });
 
     return refs;
 }
@@ -240,6 +233,9 @@ void ImmersedBoundary::setCellStatus()
 
         for(const Cell& cell: ibObj->solidCells())
             cellStatus_(cell) = SOLID;
+
+        for(const Cell& cell: ibObj->freshlyClearedCells())
+            cellStatus_(cell) = FRESHLY_CLEARED;
     }
 
     cellStatus_.grid.sendMessages(comm_, cellStatus_);

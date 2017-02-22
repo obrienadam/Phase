@@ -8,7 +8,7 @@
 
 Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
     :
-      ib_(input, comm, *this),
+      ibObjManager_(input, comm, *this),
       comm_(comm),
       grid_(grid)
 {

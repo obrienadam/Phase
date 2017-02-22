@@ -12,7 +12,7 @@ Boundaries
 
     y+
     {
-      type fixed
+      type normal_gradient
       value (0,0)
     }
 
@@ -33,19 +33,19 @@ Boundaries
   {
     x+
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 
     y+
     {
-      type normal_gradient
+      type fixed
       value 0
     }
 
     x-
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 
@@ -81,6 +81,7 @@ ImmersedBoundaries
     {
       type translating
       velocity (1,0)
+      omega 0
     }
 
     u

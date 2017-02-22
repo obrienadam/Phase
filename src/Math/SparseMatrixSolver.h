@@ -15,6 +15,7 @@ public:
 
     virtual void setRank(int rank) = 0;
     virtual void set(const CoefficientList& eqn) = 0;
+    virtual void setGuess(const Vector& x0) = 0;
     virtual void setRhs(const Vector& rhs) = 0;
 
     virtual Scalar solve() = 0;

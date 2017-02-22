@@ -36,8 +36,8 @@ public:
     void rotate(Scalar theta) { }
 
     //- Translations
-    void operator+=(const Vector2D& translationVec);
-    void operator-=(const Vector2D& translationVec);
+    Circle& operator+=(const Vector2D& translationVec);
+    Circle& operator-=(const Vector2D& translationVec);
 
     //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;

@@ -6,6 +6,7 @@
 class FractionalStepExperimental: public Solver
 {
 public:
+
     FractionalStepExperimental(const Input& input, const Communicator& comm, FiniteVolumeGrid2D &grid);
 
     virtual std::string info() const;
@@ -14,20 +15,18 @@ public:
     Scalar maxCourantNumber(Scalar timeStep) const;
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &gradP, &gradPhi;
-    ScalarFiniteVolumeField &p, &phi, &rho, &mu, &divUStar;
+    VectorFiniteVolumeField &u, &gradP;
+    ScalarFiniteVolumeField &p, &rho, &mu;
 
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
-    virtual Scalar solvePhiEqn(Scalar timeStep);
+    virtual Scalar solvePEqn(Scalar timeStep);
     virtual void correctVelocity(Scalar timeStep);
-
     virtual void computeFaceVelocities(Scalar timeStep);
-    virtual void computeMassSource(Scalar timeStep);
 
     Equation<Vector2D> uEqn_;
-    Equation<Scalar> phiEqn_;
+    Equation<Scalar> pEqn_;
 };
 
 #endif

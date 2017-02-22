@@ -9,15 +9,13 @@ class ImmersedBoundary
 {
 public:
 
-    enum {FLUID = 1, IB = 2, SOLID = 3};
+    enum {FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4};
 
     ImmersedBoundary(const Input& input, const Communicator& comm, Solver &solver);
 
     void initCellZones();
 
     void update(Scalar timeStep);
-    Equation<Scalar> eqns(ScalarFiniteVolumeField& field);
-    Equation<Vector2D> eqns(VectorFiniteVolumeField& field);
 
     Size nIbObjects() const { return ibObjs_.size(); }
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;

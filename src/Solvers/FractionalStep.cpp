@@ -4,6 +4,7 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 #include "Source.h"
+#include "MovingGhostCellImmersedBoundary.h"
 
 FractionalStep::FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
     :
@@ -30,7 +31,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
 
     //- Create ib zones if any. Will also update local/global indices
-    ib_.initCellZones();
+    ibObjManager_.initCellZones();
 }
 
 std::string FractionalStep::info() const
@@ -43,7 +44,7 @@ std::string FractionalStep::info() const
 
 Scalar FractionalStep::solve(Scalar timeStep)
 {
-    ib_.update(timeStep);
+    ibObjManager_.update(timeStep);
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -85,7 +86,7 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u) == cn::laplacian(mu, u, 0.5) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.) + ib::mv_gc(ibObjs(), rho, u, timeStep) == cn::laplacian(mu, u, 1.) - fv::source(gradP));
 
     Scalar error = uEqn_.solve();
 
@@ -98,7 +99,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib_.eqns(dp) == source::div(u));
+    pEqn_ = (fv::laplacian(timeStep/rho, dp) + ib::mv_gc(ibObjs(), u, dp) == source::div(u));
     Scalar error = pEqn_.solveWithGuess();
 
     grid_.sendMessages(comm_, dp);

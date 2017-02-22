@@ -64,35 +64,24 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
         eqn.setSource(cell, n);
     }
 
-    for(const ImmersedBoundaryObject &ibObj: solver_.ib().ibObjs())
-        for(const Cell &cell: ibObj.ibCells())
+    for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
+        for(const GhostCellStencil &stencil: ibObj.stencils())
         {
-            const std::vector< Ref<const Cell> > &kNN = ibObj.imagePointCells(cell);
-            const Interpolation &bi = ibObj.imagePointInterpolation(cell);
-            const Point2D &imagePoint = ibObj.imagePoint(cell);
-
-            std::vector<Scalar> coeffs = bi(imagePoint);
+            std::vector<Scalar> coeffs = stencil.ipCoeffs();
 
             //- From previous values, workout the direction and orientation of the contact line
-            std::vector<Vector2D> velVals;
-            for(const Cell &cell: kNN)
-                velVals.push_back(u_(cell));
 
-            std::vector<Vector2D> gradGammaVals;
-            for(const Cell &cell: kNN)
-                gradGammaVals.push_back(gradGammaTilde_(cell));
+            Vector2D uIp = stencil.ipValue(u_);
+            Vector2D gradGammaIp = stencil.ipValue(gradGamma_);
 
-            const Vector2D uIp = bi(velVals, imagePoint);
-            const Vector2D gradGammaIp = bi(gradGammaVals, imagePoint);
-
-            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, cell.centroid() - imagePoint, uIp);
-            eqn.set(cell, cell, centralCoeff/2.);
+            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, stencil.cell().centroid() - stencil.imagePoint(), uIp);
+            eqn.set(stencil.cell(), stencil.cell(), centralCoeff/2.);
 
             int i = 0;
-            for(const Cell& nbCell: kNN)
-                eqn.set(cell, nbCell, coeffs[i++]/2.);
+            for(const Cell& nbCell: stencil.ipCells())
+                eqn.set(stencil.cell(), nbCell, coeffs[i++]/2.);
 
-            eqn.setSource(cell, bpNormal);
+            eqn.setSource(stencil.cell(), bpNormal);
         }
 
     //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());

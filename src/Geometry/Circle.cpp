@@ -86,14 +86,16 @@ void Circle::scale(Scalar factor)
 }
 
 //- Translations
-void Circle::operator +=(const Vector2D& translationVec)
+Circle& Circle::operator +=(const Vector2D& translationVec)
 {
     center_ += translationVec;
+    return *this;
 }
 
-void Circle::operator -=(const Vector2D& translationVec)
+Circle& Circle::operator -=(const Vector2D& translationVec)
 {
     center_ -= translationVec;
+    return *this;
 }
 
 boost::geometry::model::box<Point2D> Circle::boundingBox() const

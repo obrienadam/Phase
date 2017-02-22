@@ -59,6 +59,16 @@ void PetscSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn
     MatAssemblyBegin(A_, MAT_FINAL_ASSEMBLY);
 }
 
+void PetscSparseMatrixSolver::setGuess(const Vector &x0)
+{
+    PetscInt rowNo = iLower_;
+    for(Scalar val: x0)
+        VecSetValue(x_, rowNo++, val, INSERT_VALUES);
+
+    VecAssemblyBegin(x_);
+    VecAssemblyEnd(x_);
+}
+
 void PetscSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     PetscInt rowNo = iLower_;

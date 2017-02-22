@@ -6,6 +6,7 @@
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
+#include "GhostCellImmersedBoundary.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input, const Communicator& comm, FiniteVolumeGrid2D& grid)
     :
@@ -140,7 +141,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib_.eqns(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u)
              == cn::laplacian(mu, u, 0.5) - fv::source(gradP) + fv::source(ft) - fv::source(sg));
 
     Scalar error = uEqn_.solve();
@@ -159,7 +160,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     switch(interfaceAdvectionMethod_)
     {
     case CICSAM:
-        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib_.eqns(gamma) == 0.);
+        gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) + ib::gc(ibObjs(), gamma) == 0.);
 
         /*** PLIC is currently deprecated, may be fixed in the future
     case PLIC:

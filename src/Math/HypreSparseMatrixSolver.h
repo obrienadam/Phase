@@ -19,6 +19,7 @@ public:
 
     void setRank(int rank);
     void set(const CoefficientList& eqn);
+    void setGuess(const Vector& x0);
     void setRhs(const Vector& rhs);
 
     Scalar solve();
