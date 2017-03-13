@@ -3,15 +3,15 @@
 #include "Exception.h"
 
 CgnsUnstructuredGrid::CgnsUnstructuredGrid()
-    :
-      FiniteVolumeGrid2D()
+        :
+        FiniteVolumeGrid2D()
 {
     fileIsOpen_ = false;
 }
 
 CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
-    :
-      CgnsUnstructuredGrid()
+        :
+        CgnsUnstructuredGrid()
 {
     const std::string filename = input.caseInput().get<std::string>("Grid.filename");
     const Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
@@ -26,7 +26,7 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
 
     cg_base_read(fileId, baseId, name, &cellDim, &physDim);
 
-    if(cellDim != 2)
+    if (cellDim != 2)
         throw Exception("CgnsUnstructuredGrid", "CgnsUnstructuredGrid", "cell dimension must be 2.");
 
     printf("Reading mesh base \"%s\"...\n", name);
@@ -38,7 +38,7 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
     CGNS_ENUMT(ZoneType_t) zoneType;
     cg_zone_type(fileId, baseId, zoneId, &zoneType);
 
-    if(zoneType != CGNS_ENUMV(Unstructured))
+    if (zoneType != CGNS_ENUMV(Unstructured))
         throw Exception("CgnsUnstructuredGrid", "CgnsUnstructuredGrid", "zone type must be unstructured.");
 
     cgsize_t sizes[2];
@@ -68,7 +68,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename) const
     cg_base_write(fid, "mesh", 2, 2, &bid);
 
     int zid;
-    cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
+    cgsize_t sizes[] = {(cgsize_t) nNodes(), (cgsize_t) nCells(), 0};
 
     cg_zone_write(fid, bid, "Zone", sizes, CGNS_ENUMV(Unstructured), &zid);
 
@@ -88,7 +88,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename) const
 void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator &comm) const
 {
     int bid;
-    if(comm.isMainProc())
+    if (comm.isMainProc())
     {
         int fid;
         cg_open(filename.c_str(), CG_MODE_WRITE, &fid);
@@ -96,7 +96,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator 
         cg_base_write(fid, "mesh", 2, 2, &bid);
 
         int zid;
-        cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
+        cgsize_t sizes[] = {(cgsize_t) nNodes(), (cgsize_t) nCells(), 0};
 
         cg_zone_write(fid, bid, ("Zone" + std::to_string(comm.rank())).c_str(), sizes, CGNS_ENUMV(Unstructured), &zid);
 
@@ -115,17 +115,18 @@ void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator 
 
     bid = comm.broadcast(comm.mainProcNo(), bid);
 
-    for(int proc = 0; proc < comm.nProcs(); ++proc)
+    for (int proc = 0; proc < comm.nProcs(); ++proc)
     {
-        if(proc == comm.rank() && !comm.isMainProc())
+        if (proc == comm.rank() && !comm.isMainProc())
         {
             int fid;
             cg_open(filename.c_str(), CG_MODE_MODIFY, &fid);
 
             int zid;
-            cgsize_t sizes[] = {(cgsize_t)nNodes(), (cgsize_t)nCells(), 0};
+            cgsize_t sizes[] = {(cgsize_t) nNodes(), (cgsize_t) nCells(), 0};
 
-            cg_zone_write(fid, bid, ("Zone_proc" + std::to_string(comm.rank())).c_str(), sizes, CGNS_ENUMV(Unstructured), &zid);
+            cg_zone_write(fid, bid, ("Zone_proc" + std::to_string(comm.rank())).c_str(), sizes,
+                          CGNS_ENUMV(Unstructured), &zid);
 
             auto xCoords = this->xCoords(), yCoords = this->yCoords();
 
@@ -146,7 +147,7 @@ void CgnsUnstructuredGrid::save(const std::string &filename, const Communicator 
 
 int CgnsUnstructuredGrid::addZone(const std::string &zoneName, int nNodes, int nCells)
 {
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "addZone", "no cgns file is currently open.");
 
     cgsize_t sizes[] = {nNodes, nCells, 0};
@@ -158,14 +159,14 @@ int CgnsUnstructuredGrid::addZone(const std::string &zoneName, int nNodes, int n
 
 void CgnsUnstructuredGrid::addNodes(int zoneId, const std::vector<Point2D> &nodes)
 {
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "addNodes", "no cgns file is currently open.");
 
     std::vector<double> coordsX, coordsY;
     coordsX.reserve(nodes.size());
     coordsY.reserve(nodes.size());
 
-    for(const Point2D& node: nodes)
+    for (const Point2D &node: nodes)
     {
         coordsX.push_back(node.x);
         coordsY.push_back(node.y);
@@ -178,17 +179,18 @@ void CgnsUnstructuredGrid::addNodes(int zoneId, const std::vector<Point2D> &node
 
 int CgnsUnstructuredGrid::addTriCells(int zoneId, const std::vector<cgsize_t> &cells)
 {
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "addTriCells", "no cgns file currently open.");
 
     int secId;
-    cg_section_write(fileId_, baseId_, zoneId, "GridElements", CGNS_ENUMV(TRI_3), 1, cells.size()/3, 0, cells.data(), &secId);
+    cg_section_write(fileId_, baseId_, zoneId, "GridElements", CGNS_ENUMV(TRI_3), 1, cells.size() / 3, 0, cells.data(),
+                     &secId);
     return secId;
 }
 
 int CgnsUnstructuredGrid::addMixedCells(int zoneId, int nCells, const std::vector<cgsize_t> &cells)
 {
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "addMixedCells", "no cgns file is currently open.");
 
     int secId;
@@ -199,7 +201,7 @@ int CgnsUnstructuredGrid::addMixedCells(int zoneId, int nCells, const std::vecto
 
 int CgnsUnstructuredGrid::addBc(int zoneId, const std::string &name, const std::vector<cgsize_t> &faces)
 {
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "addBc", "no cgns file is currently open.");
 
     int secId;
@@ -208,7 +210,7 @@ int CgnsUnstructuredGrid::addBc(int zoneId, const std::string &name, const std::
     cg_nsections(fileId_, baseId_, zoneId, &nSecs);
 
     cgsize_t maxElement = 0, start, end;
-    for(int secNo = 1; secNo <= nSecs; ++secNo)
+    for (int secNo = 1; secNo <= nSecs; ++secNo)
     {
         char secName[256];
         CGNS_ENUMT(ElementType_t) type;
@@ -219,23 +221,26 @@ int CgnsUnstructuredGrid::addBc(int zoneId, const std::string &name, const std::
     }
 
     start = maxElement + 1;
-    end = start + faces.size()/2 - 1;
+    end = start + faces.size() / 2 - 1;
 
-    cg_section_write(fileId_, baseId_, zoneId, (name + "Faces").c_str(), CGNS_ENUMV(BAR_2), start, end, 0, faces.data(), &secId);
+    cg_section_write(fileId_, baseId_, zoneId, (name + "Faces").c_str(), CGNS_ENUMV(BAR_2), start, end, 0, faces.data(),
+                     &secId);
 
     int bcId;
     cgsize_t pointRange[] = {start, end};
 
-    cg_boco_write(fileId_, baseId_, zoneId, name.c_str(), CGNS_ENUMV(BCGeneral), CGNS_ENUMV(PointRange), end - start + 1, pointRange, &bcId);
+    cg_boco_write(fileId_, baseId_, zoneId, name.c_str(), CGNS_ENUMV(BCGeneral), CGNS_ENUMV(PointRange),
+                  end - start + 1, pointRange, &bcId);
 
     return bcId;
 }
 
-int CgnsUnstructuredGrid::connectZones(int zoneId, const std::vector<cgsize_t> &faces, int donorZoneId, const std::vector<cgsize_t>& donorCells)
+int CgnsUnstructuredGrid::connectZones(int zoneId, const std::vector<cgsize_t> &faces, int donorZoneId,
+                                       const std::vector<cgsize_t> &donorCells)
 {
     using namespace std;
 
-    if(!fileIsOpen_)
+    if (!fileIsOpen_)
         throw Exception("CgnsUnstructuredGrid", "connectZones", "no cgns file is currently open.");
 
     int interfaceId;
@@ -245,7 +250,7 @@ int CgnsUnstructuredGrid::connectZones(int zoneId, const std::vector<cgsize_t> &
     cg_zone_read(fileId_, baseId_, donorZoneId, donorName, sizes);
 
     cg_conn_write(fileId_, baseId_, zoneId,
-                  (string(donorName) + "_interface").c_str(), CGNS_ENUMV(EdgeCenter), CGNS_ENUMV( Abutting1to1 ),
+                  (string(donorName) + "_interface").c_str(), CGNS_ENUMV(EdgeCenter), CGNS_ENUMV(Abutting1to1),
                   CGNS_ENUMV(PointList), faces.size(), faces.data(),
                   donorName, CGNS_ENUMV(Unstructured), CGNS_ENUMV(CellListDonor),
                   CGNS_ENUMV(LongInteger), donorCells.size(), donorCells.data(), &interfaceId);
@@ -263,8 +268,8 @@ void CgnsUnstructuredGrid::readNodes(int fileId, int baseId, int zoneId, int nNo
     cg_coord_read(fileId, baseId, zoneId, "CoordinateX", CGNS_ENUMV(RealDouble), &rmin, &rmax, xCoords.data());
     cg_coord_read(fileId, baseId, zoneId, "CoordinateY", CGNS_ENUMV(RealDouble), &rmin, &rmax, yCoords.data());
 
-    for(int i = 0; i < nNodes; ++i)
-        addNode(Point2D(xCoords[i]*convertToMeters, yCoords[i]*convertToMeters));
+    for (int i = 0; i < nNodes; ++i)
+        addNode(Point2D(xCoords[i] * convertToMeters, yCoords[i] * convertToMeters));
 
     //initNodes();
 }
@@ -274,7 +279,7 @@ void CgnsUnstructuredGrid::readElements(int fileId, int baseId, int zoneId)
     int nSections;
     cg_nsections(fileId, baseId, zoneId, &nSections);
 
-    for(int secId = 1; secId <= nSections; ++secId)
+    for (int secId = 1; secId <= nSections; ++secId)
     {
         char name[256];
         CGNS_ENUMT(ElementType_t) type;
@@ -285,34 +290,35 @@ void CgnsUnstructuredGrid::readElements(int fileId, int baseId, int zoneId)
         const cgsize_t nElems = end - start + 1;
         cgsize_t nElemNodes;
 
-        switch(type)
+        switch (type)
         {
-        case CGNS_ENUMV(TRI_3):
-            printf("Initializing triangular elements of section \"%s\"...\n", name);
-            nElemNodes = 3;
-            break;
+            case CGNS_ENUMV(TRI_3):
+                printf("Initializing triangular elements of section \"%s\"...\n", name);
+                nElemNodes = 3;
+                break;
 
-        case CGNS_ENUMV(QUAD_4):
-            printf("Initializing quadrilateral elements of section \"%s\"...\n", name);
-            nElemNodes = 4;
-            break;
+            case CGNS_ENUMV(QUAD_4):
+                printf("Initializing quadrilateral elements of section \"%s\"...\n", name);
+                nElemNodes = 4;
+                break;
 
-        case CGNS_ENUMV(BAR_2):
-            continue;
+            case CGNS_ENUMV(BAR_2):
+                continue;
 
-        default:
-            throw Exception("CgnsUnstructuredGrid", "readElements", "unsupported element type. Only TRI_3, QUAD_4 and BAR_2 are currently valid.");
+            default:
+                throw Exception("CgnsUnstructuredGrid", "readElements",
+                                "unsupported element type. Only TRI_3, QUAD_4 and BAR_2 are currently valid.");
         };
 
-        std::vector<cgsize_t> elems(nElemNodes*nElems);
+        std::vector<cgsize_t> elems(nElemNodes * nElems);
         cg_elements_read(fileId, baseId, zoneId, secId, elems.data(), NULL);
 
-        for(int i = 0; i < nElems; ++i)
+        for (int i = 0; i < nElems; ++i)
         {
             std::vector<Label> nodeIds;
 
-            for(int j = 0; j < nElemNodes; ++j)
-                nodeIds.push_back(elems[nElemNodes*i + j] - 1);
+            for (int j = 0; j < nElemNodes; ++j)
+                nodeIds.push_back(elems[nElemNodes * i + j] - 1);
 
             createCell(nodeIds);
         }
@@ -331,7 +337,7 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
     map<pair<int, int>, vector<cgsize_t> > eleMap;
 
     //- Find the boundary elements
-    for(int secId = 1; secId <= nSections; ++secId)
+    for (int secId = 1; secId <= nSections; ++secId)
     {
         char name[256];
         CGNS_ENUMT(ElementType_t) type;
@@ -339,17 +345,18 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
 
         cg_section_read(fileId, baseId, zoneId, secId, name, &type, &start, &end, &nBoundary, &parentFlag);
 
-        switch(type)
+        switch (type)
         {
-        case CGNS_ENUMV(TRI_3): case CGNS_ENUMV(QUAD_4):
-            continue;
+            case CGNS_ENUMV(TRI_3):
+            case CGNS_ENUMV(QUAD_4):
+                continue;
 
-        case CGNS_ENUMV(BAR_2):
-            break;
+            case CGNS_ENUMV(BAR_2):
+                break;
         }
 
         const cgsize_t nElems = end - start + 1;
-        vector<cgsize_t> elems(2*nElems);
+        vector<cgsize_t> elems(2 * nElems);
 
         cg_elements_read(fileId, baseId, zoneId, secId, elems.data(), NULL);
         eleMap.insert(make_pair(make_pair(start, end), elems));
@@ -359,7 +366,7 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
     int nBcs;
     cg_nbocos(fileId, baseId, zoneId, &nBcs);
 
-    for(int bcId = 1; bcId <= nBcs; ++bcId)
+    for (int bcId = 1; bcId <= nBcs; ++bcId)
     {
         char name[256];
         CGNS_ENUMT(BCType_t) bcType;
@@ -370,31 +377,32 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
         CGNS_ENUMT(DataType_t) dataType;
         int nDataSet;
 
-        cg_boco_info(fileId, baseId, zoneId, bcId, name, &bcType, &pointSetType, &nElems, &normalIndex, &normalListSize, &dataType, &nDataSet);
+        cg_boco_info(fileId, baseId, zoneId, bcId, name, &bcType, &pointSetType, &nElems, &normalIndex, &normalListSize,
+                     &dataType, &nDataSet);
 
         printf("\nCreating boundary patch \"%s\"...\n", name);
         printf("BC type: %s\n", BCTypeName[bcType]);
-        printf("Number of faces: %d\n", (int)nElems);
+        printf("Number of faces: %d\n", (int) nElems);
 
         vector<cgsize_t> elemIds(nElems);
         cg_boco_read(fileId, baseId, zoneId, bcId, elemIds.data(), NULL);
 
         vector<Label> faces;
-        for(cgsize_t elemId: elemIds)
+        for (cgsize_t elemId: elemIds)
         {
             Label n1, n2;
 
-            for(const auto &entry: eleMap)
+            for (const auto &entry: eleMap)
             {
                 const auto &range = entry.first;
 
-                if(elemId >= range.first && elemId <= range.second)
+                if (elemId >= range.first && elemId <= range.second)
                 {
                     const auto &elems = entry.second;
                     const int i = elemId - range.first;
 
-                    n1 = elems[2*i] - 1;
-                    n2 = elems[2*i + 1] - 1;
+                    n1 = elems[2 * i] - 1;
+                    n2 = elems[2 * i + 1] - 1;
                     break;
                 }
             }

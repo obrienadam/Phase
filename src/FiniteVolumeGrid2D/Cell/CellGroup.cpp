@@ -1,20 +1,23 @@
 #include <algorithm>
 
 #include "CellGroup.h"
+#include "FiniteVolumeGrid2D.h"
 
 void CellGroup::clear()
 {
     cellSet_.clear();
     cells_.clear();
     rTree_.clear();
+    geomRTree_.clear();
 }
 
 void CellGroup::push_back(Cell &cell)
 {
-    if(cellSet_.insert(std::make_pair(cell.id(), std::ref(cell))).second)
+    if (cellSet_.insert(std::make_pair(cell.id(), std::ref(cell))).second)
     {
         cells_.push_back(std::ref(cell));
         rTree_.insert(Value(cell.centroid(), cell.id()));
+        geomRTree_.insert(std::make_pair(cell.shape().boundingBox(), cell.id()));
     }
 }
 
@@ -22,17 +25,19 @@ void CellGroup::remove(const Cell &cell)
 {
     auto entry = cellSet_.find(cell.id());
 
-    if(entry != cellSet_.end())
+    if (entry != cellSet_.end())
     {
-        cells_.erase(std::remove_if(cells_.begin(), cells_.end(), [&cell](const Cell &c){ return cell.id() == c.id(); }));
+        cells_.erase(
+                std::remove_if(cells_.begin(), cells_.end(), [&cell](const Cell &c) { return cell.id() == c.id(); }));
         cellSet_.erase(entry);
         rTree_.remove(Value(cell.centroid(), cell.id()));
+        geomRTree_.remove(std::make_pair(cell.shape().boundingBox(), cell.id()));
     }
 }
 
 void CellGroup::merge(CellGroup &other)
 {
-    for(Cell& cell: other.cells())
+    for (Cell &cell: other.cells())
     {
         push_back(cell);
         other.remove(cell);
@@ -40,10 +45,9 @@ void CellGroup::merge(CellGroup &other)
 }
 
 //- Searching
-std::vector< Ref<Cell> > CellGroup::rangeSearch(const Shape2D& shape)
+std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Shape2D &shape)
 {
-    auto insideShape = [&shape](const Value &val)
-    {
+    auto insideShape = [&shape](const Value &val) {
         return shape.isCovered(val.first);
     };
 
@@ -59,10 +63,9 @@ std::vector< Ref<Cell> > CellGroup::rangeSearch(const Shape2D& shape)
     return getRefs(result);
 }
 
-std::vector< Ref<Cell> > CellGroup::rangeSearch(const Shape2D &shape, Scalar toler)
+std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Shape2D &shape, Scalar toler)
 {
-    auto insideShape = [&shape, toler](const Value &val)
-    {
+    auto insideShape = [&shape, toler](const Value &val) {
         return shape.isBoundedBy(val.first, toler);
     };
 
@@ -77,9 +80,22 @@ std::vector< Ref<Cell> > CellGroup::rangeSearch(const Shape2D &shape, Scalar tol
     return getRefs(result);
 }
 
-std::vector< Ref<Cell> > CellGroup::kNearestNeighbourSearch(const Point2D& pt, size_t k)
+std::vector<Ref<Cell> > CellGroup::cellsOverlapping(const Shape2D &shape)
 {
-    std::vector< Value > result;
+    std::vector<std::pair<boost::geometry::model::box<Point2D>, Label>> result;
+
+    geomRTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()), std::back_inserter(result));
+
+    std::vector<Label> ids;
+    for (const auto &val: result)
+        ids.push_back(val.second);
+
+    return grid_.getCells(ids); //- Will be ok for cartesian cases
+}
+
+std::vector<Ref<Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt, size_t k)
+{
+    std::vector<Value> result;
 
     rTree_.query(boost::geometry::index::nearest(pt, k),
                  std::back_inserter(result));
@@ -87,46 +103,42 @@ std::vector< Ref<Cell> > CellGroup::kNearestNeighbourSearch(const Point2D& pt, s
     return getRefs(result);
 }
 
-std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Shape2D& shape) const
+std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Shape2D &shape) const
 {
-    auto insideShape = [&shape](const Value &val)
-    {
-        return shape.isCovered(val.first);
-    };
-
-
     std::vector<Value> result;
-
-    boost::geometry::model::box<Point2D> box = shape.boundingBox();
-
-    rTree_.query(boost::geometry::index::within(box)
-                 && boost::geometry::index::satisfies(insideShape),
+    rTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()),
                  std::back_inserter(result));
 
     return getRefs(result);
 }
 
-std::vector< Ref<const Cell> > CellGroup::rangeSearch(const Shape2D &shape, Scalar toler) const
+std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Shape2D &shape, Scalar toler) const
 {
-    auto insideShape = [&shape, toler](const Value &val)
-    {
-        return shape.isBoundedBy(val.first, toler);
-    };
-
     std::vector<Value> result;
 
-    boost::geometry::model::box<Point2D> box = shape.boundingBox();
-
-    rTree_.query(boost::geometry::index::within(box)
-                 && boost::geometry::index::satisfies(insideShape),
+    rTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()),
                  std::back_inserter(result));
 
     return getRefs(result);
 }
 
-std::vector< Ref<const Cell> > CellGroup::kNearestNeighbourSearch(const Point2D& pt, size_t k) const
+std::vector<Ref<const Cell> > CellGroup::cellsOverlapping(const Shape2D &shape) const
 {
-    std::vector< Value > result;
+    std::vector<std::pair<boost::geometry::model::box<Point2D>, Label>> result;
+
+    geomRTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()), std::back_inserter(result));
+
+    std::vector<Label> ids;
+    for (const auto &val: result)
+        ids.push_back(val.second);
+
+    const auto &grid = grid_; // Stupid, but required to call the const version of this method
+    return grid.getCells(ids); //- Will be ok for cartesian cases
+}
+
+std::vector<Ref<const Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt, size_t k) const
+{
+    std::vector<Value> result;
 
     rTree_.query(boost::geometry::index::nearest(pt, k),
                  std::back_inserter(result));
@@ -142,23 +154,23 @@ bool CellGroup::isInGroup(const Cell &cell) const
 
 //- Protected
 
-std::vector< Ref<Cell> > CellGroup::getRefs(const std::vector< Value >& vals)
+std::vector<Ref<Cell> > CellGroup::getRefs(const std::vector<Value> &vals)
 {
-    std::vector< Ref<Cell> > refs;
+    std::vector<Ref<Cell> > refs;
     refs.reserve(vals.size());
 
-    for(const Value &val: vals)
+    for (const Value &val: vals)
         refs.push_back(cellSet_.find(val.second)->second);
 
     return refs;
 }
 
-std::vector< Ref<const Cell> > CellGroup::getRefs(const std::vector< Value >& vals) const
+std::vector<Ref<const Cell> > CellGroup::getRefs(const std::vector<Value> &vals) const
 {
-    std::vector< Ref<const Cell> > refs;
+    std::vector<Ref<const Cell> > refs;
     refs.reserve(vals.size());
 
-    for(const Value &val: vals)
+    for (const Value &val: vals)
         refs.push_back(std::cref(cellSet_.find(val.second)->second));
 
     return refs;

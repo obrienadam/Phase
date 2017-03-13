@@ -73,7 +73,7 @@ ImmersedBoundaries
     geometry
     {
       type circle
-      center (15,25)
+      center (2,2.5)
       radius 0.5
     }
 

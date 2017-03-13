@@ -6,52 +6,52 @@
 namespace fv
 {
 
-template<typename T>
-Equation<T> div(const VectorFiniteVolumeField& u, FiniteVolumeField<T>& field)
-{
-    Equation<T> eqn(field);
-
-    for(const Cell& cell: field.grid.cellZone("fluid"))
+    template<typename T>
+    Equation<T> div(const VectorFiniteVolumeField &u, FiniteVolumeField<T> &field)
     {
-        Scalar centralCoeff = 0.;
+        Equation<T> eqn(field);
 
-        for(const InteriorLink &nb: cell.neighbours())
+        for (const Cell &cell: field.grid.cellZone("fluid"))
         {
-            Scalar faceFlux = dot(u(nb.face()), nb.outwardNorm());
+            Scalar centralCoeff = 0.;
 
-            Scalar coeff = std::min(faceFlux, 0.);
-            centralCoeff += std::max(faceFlux, 0.);
-
-            eqn.add(cell, nb.cell(), coeff);
-        }
-
-        for(const BoundaryLink &bd: cell.boundaries())
-        {
-            Scalar faceFlux = dot(u(bd.face()), bd.outwardNorm());
-
-            switch(field.boundaryType(bd.face()))
+            for (const InteriorLink &nb: cell.neighbours())
             {
-            case FiniteVolumeField<T>::FIXED:
-                eqn.addBoundary(cell, -faceFlux*field(bd.face()));
-                break;
+                Scalar faceFlux = dot(u(nb.face()), nb.outwardNorm());
 
-            case FiniteVolumeField<T>::NORMAL_GRADIENT:
-                centralCoeff += faceFlux;
-                break;
+                Scalar coeff = std::min(faceFlux, 0.);
+                centralCoeff += std::max(faceFlux, 0.);
 
-            case FiniteVolumeField<T>::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("fv", "div<T>", "unrecognized or unspecified boundary type.");
+                eqn.add(cell, nb.cell(), coeff);
             }
+
+            for (const BoundaryLink &bd: cell.boundaries())
+            {
+                Scalar faceFlux = dot(u(bd.face()), bd.outwardNorm());
+
+                switch (field.boundaryType(bd.face()))
+                {
+                    case FiniteVolumeField<T>::FIXED:
+                        eqn.addBoundary(cell, -faceFlux * field(bd.face()));
+                        break;
+
+                    case FiniteVolumeField<T>::NORMAL_GRADIENT:
+                        centralCoeff += faceFlux;
+                        break;
+
+                    case FiniteVolumeField<T>::SYMMETRY:
+                        break;
+
+                    default:
+                        throw Exception("fv", "div<T>", "unrecognized or unspecified boundary type.");
+                }
+            }
+
+            eqn.add(cell, cell, centralCoeff);
         }
 
-        eqn.add(cell, cell, centralCoeff);
+        return eqn;
     }
-
-    return eqn;
-}
 
 }
 

@@ -15,63 +15,82 @@ public:
     typedef SparseMatrixSolver::CoefficientList CoefficientList;
 
     //- Constructors
-    Equation(FiniteVolumeField<T>& field,
-             const std::string& name = "N/A");
+    Equation(FiniteVolumeField<T> &field,
+             const std::string &name = "N/A");
 
-    Equation(const Input& input,
-             const Communicator& comm,
-             FiniteVolumeField<T>& field,
-             const std::string& name);
+    Equation(const Input &input,
+             const Communicator &comm,
+             FiniteVolumeField<T> &field,
+             const std::string &name);
 
-    Equation(const Equation<T>& rhs) = default;
-    Equation(Equation<T>&& rhs) = default;
+    Equation(const Equation<T> &rhs) = default;
+
+    Equation(Equation<T> &&rhs) = default;
 
     //- Add/set/get coefficients
     template<typename T2>
-    void set(const Cell& cell, const Cell& nb, T2 val);
+    void set(const Cell &cell, const Cell &nb, T2 val);
 
     template<typename T2>
-    void add(const Cell& cell, const Cell& nb, T2 val);
+    void add(const Cell &cell, const Cell &nb, T2 val);
 
-    T get(const Cell& cell, const Cell& nb);
+    T get(const Cell &cell, const Cell &nb);
 
     //- Get a coefficient adjacency list, used only for assembling systems
-    const CoefficientList& coeffs() const { return coeffs_; }
+    const CoefficientList &coeffs() const
+    { return coeffs_; }
 
     //- Set/get boundary/source vectors
-    void addBoundary(const Cell& cell, T val);
-    void setBoundary(const Cell& cell, T val);
-    void addSource(const Cell& cell, T val);
-    void setSource(const Cell& cell, T val);
+    void addBoundary(const Cell &cell, T val);
 
-    const Vector& boundaries() const { return boundaries_; }
-    const Vector& sources() const { return sources_; }
+    void setBoundary(const Cell &cell, T val);
+
+    void addSource(const Cell &cell, T val);
+
+    void setSource(const Cell &cell, T val);
+
+    const Vector &boundaries() const
+    { return boundaries_; }
+
+    const Vector &sources() const
+    { return sources_; }
 
     //- Clear equations
     void clear();
 
     //- Operators
-    Equation<T>& operator=(const Equation<T>& rhs);
-    Equation<T>& operator=(Equation<T>&& rhs);
-    Equation<T>& operator+=(const Equation<T>& rhs);
-    Equation<T>& operator-=(const Equation<T>& rhs);
-    Equation<T>& operator+=(const FiniteVolumeField<T>& rhs);
-    Equation<T>& operator-=(const FiniteVolumeField<T>& rhs);
-    Equation<T>& operator*=(Scalar rhs);
-    Equation<T>& operator*=(const ScalarFiniteVolumeField& rhs);
+    Equation<T> &operator=(const Equation<T> &rhs);
 
-    Equation<T>& operator==(Scalar rhs);
+    Equation<T> &operator=(Equation<T> &&rhs);
 
-    Equation<T>& operator==(const Equation<T>& rhs);
-    Equation<T>& operator==(const FiniteVolumeField<T>& rhs);
+    Equation<T> &operator+=(const Equation<T> &rhs);
 
-    void setSparseSolver(std::shared_ptr<SparseMatrixSolver>& spSolver);
-    std::shared_ptr<SparseMatrixSolver> & sparseSolver() { return spSolver_; }
+    Equation<T> &operator-=(const Equation<T> &rhs);
 
-    void configureSparseSolver(const Input& input, const Communicator& comm);
+    Equation<T> &operator+=(const FiniteVolumeField<T> &rhs);
+
+    Equation<T> &operator-=(const FiniteVolumeField<T> &rhs);
+
+    Equation<T> &operator*=(Scalar rhs);
+
+    Equation<T> &operator*=(const ScalarFiniteVolumeField &rhs);
+
+    Equation<T> &operator==(Scalar rhs);
+
+    Equation<T> &operator==(const Equation<T> &rhs);
+
+    Equation<T> &operator==(const FiniteVolumeField<T> &rhs);
+
+    void setSparseSolver(std::shared_ptr<SparseMatrixSolver> &spSolver);
+
+    std::shared_ptr<SparseMatrixSolver> &sparseSolver()
+    { return spSolver_; }
+
+    void configureSparseSolver(const Input &input, const Communicator &comm);
 
     //- Solve the system
     Scalar solve();
+
     Scalar solveWithGuess();
 
     //- Relax the central coefficients (will fail if a central coefficient is not specified)
@@ -83,9 +102,12 @@ public:
 private:
 
     Size getRank() const;
+
     void setValue(Index i, Index j, Scalar val);
+
     void addValue(Index i, Index j, Scalar val);
-    Scalar& coeffRef(Index i, Index j);
+
+    Scalar &coeffRef(Index i, Index j);
 
     Size nActiveCells_; // Cached for efficiency
 
@@ -94,30 +116,30 @@ private:
 
     std::shared_ptr<SparseMatrixSolver> spSolver_;
 
-    FiniteVolumeField<T>& field_;
+    FiniteVolumeField<T> &field_;
 };
 
 //- External functions
 template<class T>
-Equation<T> operator+(Equation<T> lhs, const Equation<T>& rhs);
+Equation<T> operator+(Equation<T> lhs, const Equation<T> &rhs);
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const Equation<T>& rhs);
+Equation<T> operator-(Equation<T> lhs, const Equation<T> &rhs);
 
 template<class T>
-Equation<T> operator+(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
+Equation<T> operator+(Equation<T> lhs, const FiniteVolumeField<T> &rhs);
 
 template<class T>
-Equation<T> operator+(const FiniteVolumeField<T>& lhs, Equation<T> rhs);
+Equation<T> operator+(const FiniteVolumeField<T> &lhs, Equation<T> rhs);
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
+Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T> &rhs);
 
 template<class T>
-Equation<T> operator-(const FiniteVolumeField<T>& lhs, Equation<T> rhs);
+Equation<T> operator-(const FiniteVolumeField<T> &lhs, Equation<T> rhs);
 
 template<class T>
-Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T>& rhs);
+Equation<T> operator-(Equation<T> lhs, const FiniteVolumeField<T> &rhs);
 
 template<class T>
 Equation<T> operator*(Equation<T> lhs, Scalar rhs);

@@ -6,7 +6,7 @@
 #include "Coupled.h"
 #include "RunControl.h"
 
-int main(int argc, const char* argv[])
+int main(int argc, const char *argv[])
 {
     using namespace std;
 

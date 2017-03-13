@@ -17,7 +17,7 @@ set(SOURCES Vector2D.cpp
             Circle.cpp
             Polygon.cpp
             BoundingBox.cpp
-            Search.tpp)
+            Search.cpp)
 
 add_library(Geometry ${HEADERS} ${SOURCES})
 target_link_libraries(Geometry System Equation)

@@ -22,106 +22,161 @@ public:
     FiniteVolumeGrid2D(Size nNodes = 0, Size nCells = 0, Size nFaces = 0);
 
     //- Initialization
-    void init(const std::vector<Point2D>& nodes, const std::vector<Label>& cellInds, const std::vector<Label>& cells);
+    void init(const std::vector<Point2D> &nodes, const std::vector<Label> &cellInds, const std::vector<Label> &cells);
+
     void reset();
 
     //- Size info
-    Size nNodes() const { return nodes_.size(); }
-    Size nCells() const { return cells_.size(); }
-    Size nFaces() const { return faces_.size(); }
-    Size nLocalActiveCells() const { return localActiveCells().size(); }
-    Size nActiveCellsGlobal() const { return nActiveCellsGlobal_; }
+    Size nNodes() const
+    { return nodes_.size(); }
+
+    Size nCells() const
+    { return cells_.size(); }
+
+    Size nFaces() const
+    { return faces_.size(); }
+
+    Size nLocalActiveCells() const
+    { return localActiveCells().size(); }
+
+    Size nActiveCellsGlobal() const
+    { return nActiveCellsGlobal_; }
+
     std::string gridInfo() const;
 
     //- Create grid entities
     Label createCell(const std::vector<Label> &nodeIds);
-    Label addNode(const Point2D& point);
+
+    Label addNode(const Point2D &point);
 
     //- Node related methods
-    const std::vector<Node>& nodes() const { return nodes_; }
+    const std::vector<Node> &nodes() const
+    { return nodes_; }
+
     std::vector<Point2D> coords() const;
+
     std::vector<Scalar> xCoords() const;
+
     std::vector<Scalar> yCoords() const;
+
+    std::vector<Ref<Node> > getNodes(const std::vector<Label> &ids);
+
+    std::vector<Ref<const Node> > getNodes(const std::vector<Label> &ids) const;
+
     void assignNodeIds();
 
     //- Cell related methods
-    const std::vector<Cell>& cells() const { return cells_; }
+    const std::vector<Cell> &cells() const
+    { return cells_; }
+
     std::vector<int> elementList() const;
 
     //- Cell groups and zones
     void setCellActive(Cell &cell);
-    void setCellsActive(const std::vector<Label>& ids);
+
+    void setCellsActive(const std::vector<Label> &ids);
+
     void setCellsActive(CellGroup &cellGroup);
-    void setCellsInactive(const std::vector<Label>& ids);
+
+    void setCellsInactive(const std::vector<Label> &ids);
+
     void setCellsInactive(CellGroup &cellGroup);
-    void setCellsLocallyInactive(const std::vector<Label>& ids);
 
-    CellGroup &cellGroup(const std::string& name) const { return cellGroups_.find(name)->second; }
-    CellZone &cellZone(const std::string& name) const { return cellZones_.find(name)->second; }
+    void setCellsLocallyInactive(const std::vector<Label> &ids);
 
-    CellGroup &createCellGroup(const std::string& name, const std::vector<Label>& ids);
-    CellZone &createCellZone(const std::string& name, const std::vector<Label>& ids);
+    CellGroup &cellGroup(const std::string &name) const
+    { return cellGroups_.find(name)->second; }
 
-    const CellGroup& localActiveCells() const { return localActiveCells_; }
-    const CellGroup& globalActiveCells() const { return globalActiveCells_; }
-    const CellGroup& inactiveCells() const { return inactiveCells_; }
+    CellZone &cellZone(const std::string &name) const
+    { return cellZones_.find(name)->second; }
+
+    CellGroup &createCellGroup(const std::string &name, const std::vector<Label> &ids = std::vector<Label>());
+
+    CellZone &createCellZone(const std::string &name, const std::vector<Label> &ids = std::vector<Label>());
+
+    const CellGroup &localActiveCells() const
+    { return localActiveCells_; }
+
+    const CellGroup &globalActiveCells() const
+    { return globalActiveCells_; }
+
+    const CellGroup &inactiveCells() const
+    { return inactiveCells_; }
 
     void setAllCellsActive();
 
-    const Cell& findContainingCell(const Point2D& point, const Cell &guess) const;
+    const Cell &findContainingCell(const Point2D &point, const Cell &guess) const;
 
-    std::vector<Ref<Cell> > getCells(const std::vector<Label>& ids);
-    std::vector<Ref<const Cell> > getCells(const std::vector<Label>& ids) const;
+    std::vector<Ref<Cell> > getCells(const std::vector<Label> &ids);
+
+    std::vector<Ref<const Cell> > getCells(const std::vector<Label> &ids) const;
 
     template<class T>
-    std::vector<Label> getCellIds(const T& cells);
+    std::vector<Label> getCellIds(const T &cells);
 
     void assignCellIds();
 
     //- Face related methods
-    const std::vector<Face>& faces() const { return faces_; }
+    const std::vector<Face> &faces() const
+    { return faces_; }
 
-    const std::vector< Ref<const Face> >& interiorFaces() const { return interiorFaces_; }
-    const std::vector< Ref<const Face> >& boundaryFaces() const { return boundaryFaces_; }
+    const std::vector<Ref<const Face> > &interiorFaces() const
+    { return interiorFaces_; }
+
+    const std::vector<Ref<const Face> > &boundaryFaces() const
+    { return boundaryFaces_; }
 
     bool faceExists(Label n1, Label n2) const;
+
     Label findFace(Label n1, Label n2) const;
 
     void assignFaceIds();
 
     //- Patch related methods
-    const std::map<std::string, Patch>& patches() const { return patches_; }
+    const std::map<std::string, Patch> &patches() const
+    { return patches_; }
 
     //- Entity searches
-    const Node& findNearestNode(const Point2D& pt) const;
+    const Node &findNearestNode(const Point2D &pt) const;
+
+    std::vector<Ref<Node>> nodesInShape(const Shape2D &shape);
+
+    std::vector<Ref<const Node>> nodesInShape(const Shape2D &shape) const;
+
     std::vector<std::vector<Ref<const Cell> > > constructSmoothingKernels(Scalar width) const;
 
     //- Parallel/paritioning
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
-    void partition(const Input &input, const Communicator& comm);
+
+    void partition(const Input &input, const Communicator &comm);
 
     template<typename T>
-    void sendMessages(const Communicator& comm, std::vector<T>& data) const;
+    void sendMessages(const Communicator &comm, std::vector<T> &data) const;
 
     void addNeighbouringProc(int procNo,
-                             const std::vector<Label>& sendOrder,
-                             const std::vector<Label>& recvOrder);
+                             const std::vector<Label> &sendOrder,
+                             const std::vector<Label> &recvOrder);
 
     //- Active cell ordering, required for lineary algebra!
-    void computeGlobalOrdering(const Communicator& comm);
+    void computeGlobalOrdering(const Communicator &comm);
 
     //- Misc
-    const BoundingBox& boundingBox() const { return bBox_; }
+    const BoundingBox &boundingBox() const
+    { return bBox_; }
 
 protected:
 
     void initNodes();
+
     void initCells();
+
     void initConnectivity();
 
     void computeBoundingBox();
-    void applyPatch(const std::string& patchName, const std::vector<Label> &faces);
-    void applyPatchByNodes(const std::string& patchName, const std::vector<Label>& nodes);
+
+    void applyPatch(const std::string &patchName, const std::vector<Label> &faces);
+
+    void applyPatchByNodes(const std::string &patchName, const std::vector<Label> &nodes);
 
     //- Node related data
     std::vector<Node> nodes_;
@@ -139,7 +194,6 @@ protected:
     mutable std::unordered_map<std::string, CellZone> cellZones_;
 
     std::vector<int> neighbouringProcs_;
-
     std::vector<CellGroup> sendCellGroups_;
     std::vector<CellZone> bufferCellZones_;
 
@@ -148,8 +202,8 @@ protected:
     std::map<std::pair<Label, Label>, Label> faceDirectory_; // A directory that can find a face given the two node ids
 
     //- Interior adn boundary face data structures
-    std::vector< Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
-    std::vector< Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell
+    std::vector<Ref<const Face> > interiorFaces_; // All interior faces neighboured by two active cells
+    std::vector<Ref<const Face> > boundaryFaces_; // All boundary faces neighboured by one active cell
 
     //- Patches
     std::map<std::string, Patch> patches_;
@@ -158,7 +212,7 @@ protected:
     Polygon domain_;
 
     //- For node searches
-    Search<Node> nodeSearch_;
+    Search nodeSearch_;
 };
 
 #include "FiniteVolumeGrid2D.tpp"

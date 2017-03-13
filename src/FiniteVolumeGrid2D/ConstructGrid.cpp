@@ -5,13 +5,13 @@
 #include "CgnsUnstructuredGrid.h"
 #include "Exception.h"
 
-std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
+std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input)
 {
     using namespace std;
 
     string gridType = input.caseInput().get<string>("Grid.type");
 
-    if(gridType == "rectilinear")
+    if (gridType == "rectilinear")
     {
         Scalar width = input.caseInput().get<Scalar>("Grid.width");
         Scalar height = input.caseInput().get<Scalar>("Grid.height");
@@ -33,7 +33,7 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input& input)
                                                                             xDimRefinements,
                                                                             yDimRefinements));
     }
-    else if(gridType == "cgns")
+    else if (gridType == "cgns")
     {
         return shared_ptr<FiniteVolumeGrid2D>(new CgnsUnstructuredGrid(input));
     }

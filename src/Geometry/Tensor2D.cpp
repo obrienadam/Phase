@@ -2,7 +2,7 @@
 
 //- Public methods
 
-Tensor2D& Tensor2D::operator+=(const Tensor2D& rhs)
+Tensor2D &Tensor2D::operator+=(const Tensor2D &rhs)
 {
     xx += rhs.xx;
     xy += rhs.xy;
@@ -12,7 +12,7 @@ Tensor2D& Tensor2D::operator+=(const Tensor2D& rhs)
     return *this;
 }
 
-Tensor2D& Tensor2D::operator-=(const Tensor2D& rhs)
+Tensor2D &Tensor2D::operator-=(const Tensor2D &rhs)
 {
     xx -= rhs.xx;
     xy -= rhs.xy;
@@ -22,7 +22,7 @@ Tensor2D& Tensor2D::operator-=(const Tensor2D& rhs)
     return *this;
 }
 
-Tensor2D& Tensor2D::operator*=(Scalar a)
+Tensor2D &Tensor2D::operator*=(Scalar a)
 {
     xx *= a;
     xy *= a;
@@ -32,7 +32,7 @@ Tensor2D& Tensor2D::operator*=(Scalar a)
     return *this;
 }
 
-Tensor2D& Tensor2D::operator/=(Scalar a)
+Tensor2D &Tensor2D::operator/=(Scalar a)
 {
     xx /= a;
     xy /= a;
@@ -43,36 +43,36 @@ Tensor2D& Tensor2D::operator/=(Scalar a)
 }
 
 //- External functions
-Vector2D dot(const Tensor2D& tau, const Vector2D& u)
+Vector2D dot(const Tensor2D &tau, const Vector2D &u)
 {
     return Vector2D(
-                tau.xx*u.x + tau.xy*u.y,
-                tau.yx*u.x + tau.yy*u.y
-                );
+            tau.xx * u.x + tau.xy * u.y,
+            tau.yx * u.x + tau.yy * u.y
+    );
 }
 
-Tensor2D dot(const Tensor2D& tau, const Tensor2D& sigma)
+Tensor2D dot(const Tensor2D &tau, const Tensor2D &sigma)
 {
     return Tensor2D(
-                tau.xx*sigma.xx + tau.xy*sigma.yx, tau.xx*sigma.xy + tau.xy*sigma.yy,
-                tau.yx*sigma.xx + tau.yy*sigma.yx, tau.yx*sigma.xy + tau.yy*sigma.yy
-                );
+            tau.xx * sigma.xx + tau.xy * sigma.yx, tau.xx * sigma.xy + tau.xy * sigma.yy,
+            tau.yx * sigma.xx + tau.yy * sigma.yx, tau.yx * sigma.xy + tau.yy * sigma.yy
+    );
 }
 
-Tensor2D outer(const Vector2D& u, const Vector2D& v)
+Tensor2D outer(const Vector2D &u, const Vector2D &v)
 {
     return Tensor2D(
-                u.x*v.x, u.x*v.y,
-                u.y*v.x, u.y*v.y
-                );
+            u.x * v.x, u.x * v.y,
+            u.y * v.x, u.y * v.y
+    );
 }
 
-Tensor2D operator+(Tensor2D lhs, const Tensor2D& rhs)
+Tensor2D operator+(Tensor2D lhs, const Tensor2D &rhs)
 {
     return lhs += rhs;
 }
 
-Tensor2D operator-(Tensor2D lhs, const Tensor2D& rhs)
+Tensor2D operator-(Tensor2D lhs, const Tensor2D &rhs)
 {
     return lhs -= rhs;
 }

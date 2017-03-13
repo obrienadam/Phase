@@ -20,8 +20,8 @@ void Communicator::finalize()
 }
 
 Communicator::Communicator(MPI_Comm comm)
-    :
-      comm_(comm)
+        :
+        comm_(comm)
 {
 
 }
@@ -35,7 +35,7 @@ int Communicator::printf(const char *format, ...) const
 {
     int n = 0;
 
-    if(isMainProc())
+    if (isMainProc())
     {
         va_list argsPtr;
         va_start(argsPtr, format);
@@ -185,7 +185,7 @@ void Communicator::irecv(int source, std::vector<double> &vals, int tag) const
     currentRequests_.push_back(request);
 }
 
-void Communicator::irecv(int source, std::vector<Vector2D>& vals, int tag) const
+void Communicator::irecv(int source, std::vector<Vector2D> &vals, int tag) const
 {
     MPI_Request request;
     MPI_Irecv(vals.data(), vals.size(), MPI_VECTOR2D_, source, tag, comm_, &request);

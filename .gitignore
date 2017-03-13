@@ -103,3 +103,9 @@ lib
 *.mp4
 *.log
 *.cbp
+
+# Video files
+*.wmv
+*.mp4
+*.avi
+.idea

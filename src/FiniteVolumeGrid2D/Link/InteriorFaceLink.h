@@ -9,18 +9,20 @@ class InteriorLink : public BoundaryLink
 {
 public:
 
-    InteriorLink(const Cell& self, const Face& face, const Cell& cell);
-    explicit InteriorLink(const InteriorLink& other);
+    InteriorLink(const Cell &self, const Face &face, const Cell &cell);
 
-    InteriorLink& operator=(const InteriorLink& rhs);
+    explicit InteriorLink(const InteriorLink &other);
 
-    const Cell& cell() const;
+    InteriorLink &operator=(const InteriorLink &rhs);
 
-    const Vector2D& rCellVec() const { return rCellVec_; }
+    const Cell &cell() const;
+
+    const Vector2D &rCellVec() const
+    { return rCellVec_; }
 
 protected:
 
-    const Cell& cell_;
+    const Cell &cell_;
     Vector2D rCellVec_;
 };
 

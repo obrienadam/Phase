@@ -6,17 +6,20 @@
 class QuadraticNormalInterpolation : public Interpolation
 {
 public:
-    QuadraticNormalInterpolation(){}
-    QuadraticNormalInterpolation(const std::vector<Point2D> &pts, const Vector2D& normal);
+    QuadraticNormalInterpolation()
+    {}
 
-    Scalar operator()(const std::vector<Scalar>& vals, const Point2D& ip) const;
-    Vector2D operator()(const std::vector<Vector2D>& vals, const Point2D& ip) const;
+    QuadraticNormalInterpolation(const std::vector<Point2D> &pts, const Vector2D &normal);
 
-    std::vector<Scalar> operator()(const Point2D& ip) const;
+    Scalar operator()(const std::vector<Scalar> &vals, const Point2D &ip) const;
+
+    Vector2D operator()(const std::vector<Vector2D> &vals, const Point2D &ip) const;
+
+    std::vector<Scalar> operator()(const Point2D &ip) const;
 
 private:
 
-    void constructMatrix(const std::vector<Point2D>& pts);
+    void constructMatrix(const std::vector<Point2D> &pts);
 
     Vector2D normal_;
 };

@@ -5,12 +5,13 @@
 #include "Vector2D.h"
 #include "Exception.h"
 
-const Scalar Vector2D::EPSILON_ = 10.*std::numeric_limits<Scalar>::epsilon(); // This parameter governs the precision of vector operations
+const Scalar Vector2D::EPSILON_ =
+        10. * std::numeric_limits<Scalar>::epsilon(); // This parameter governs the precision of vector operations
 
 Vector2D::Vector2D(Scalar x, Scalar y)
-    :
-      x(x),
-      y(y)
+        :
+        x(x),
+        y(y)
 {
 
 }
@@ -31,18 +32,18 @@ Vector2D::Vector2D(std::string vecStr)
 
 Scalar Vector2D::mag() const
 {
-    return sqrt(x*x + y*y);
+    return sqrt(x * x + y * y);
 }
 
 Scalar Vector2D::magSqr() const
 {
-    return x*x + y*y;
+    return x * x + y * y;
 }
 
 Vector2D Vector2D::unitVec() const
 {
-    Scalar invMag = 1./mag();
-    return Vector2D(x*invMag, y*invMag);
+    Scalar invMag = 1. / mag();
+    return Vector2D(x * invMag, y * invMag);
 }
 
 Vector2D Vector2D::normalVec() const
@@ -60,20 +61,20 @@ Scalar Vector2D::angle() const
     return atan2(y, x);
 }
 
-Scalar Vector2D::angle(const Vector2D& other) const
+Scalar Vector2D::angle(const Vector2D &other) const
 {
     return atan2(y - other.y, x - other.x);
 }
 
 bool Vector2D::isParallel(const Vector2D &other) const
 {
-    return fabs(dot(*this, other)*dot(*this, other) - magSqr()*other.magSqr()) < EPSILON_;
+    return fabs(dot(*this, other) * dot(*this, other) - magSqr() * other.magSqr()) < EPSILON_;
 }
 
 Vector2D Vector2D::rotate(Scalar theta) const
 {
     Scalar cosTheta = cos(theta), sinTheta = sin(theta);
-    return Vector2D(x*cosTheta - y*sinTheta, x*sinTheta + y*cosTheta);
+    return Vector2D(x * cosTheta - y * sinTheta, x * sinTheta + y * cosTheta);
 }
 
 Vector2D Vector2D::transform(const Vector2D &uPrime) const
@@ -90,85 +91,91 @@ std::string Vector2D::toString() const
 
 //- Operators
 
-Scalar& Vector2D::operator ()(int component)
+Scalar &Vector2D::operator()(int component)
 {
-    switch(component)
+    switch (component)
     {
-    case 0: return x;
-    case 1: return y;
-    default: throw Exception("Vector2D", "operator()", "invalid component.");
+        case 0:
+            return x;
+        case 1:
+            return y;
+        default:
+            throw Exception("Vector2D", "operator()", "invalid component.");
     }
 }
 
-Scalar Vector2D::operator ()(int component) const
+Scalar Vector2D::operator()(int component) const
 {
-    switch(component)
+    switch (component)
     {
-    case 0: return x;
-    case 1: return y;
-    default: throw Exception("Vector2D", "operator()", "invalid component.");
+        case 0:
+            return x;
+        case 1:
+            return y;
+        default:
+            throw Exception("Vector2D", "operator()", "invalid component.");
     }
 }
 
-Vector2D& Vector2D::operator +=(const Vector2D& other)
+Vector2D &Vector2D::operator+=(const Vector2D &other)
 {
     x += other.x;
     y += other.y;
     return *this;
 }
 
-Vector2D& Vector2D::operator -=(const Vector2D& other)
+Vector2D &Vector2D::operator-=(const Vector2D &other)
 {
     x -= other.x;
     y -= other.y;
     return *this;
 }
 
-Vector2D& Vector2D::operator *=(Scalar other)
+Vector2D &Vector2D::operator*=(Scalar other)
 {
     x *= other;
     y *= other;
     return *this;
 }
 
-Vector2D& Vector2D::operator /=(Scalar other)
+Vector2D &Vector2D::operator/=(Scalar other)
 {
     x /= other;
     y /= other;
     return *this;
 }
 
-bool Vector2D::operator==(const Vector2D& rhs) const
+bool Vector2D::operator==(const Vector2D &rhs) const
 {
     return fabs(x - rhs.x) < EPSILON_
-            && fabs(y - rhs.y) < EPSILON_;
+           && fabs(y - rhs.y) < EPSILON_;
 }
 
-bool Vector2D::operator <(const Vector2D& rhs)
+bool Vector2D::operator<(const Vector2D &rhs)
 {
     return x < rhs.x || (x == rhs.x && y < rhs.y) ? true : false;
 }
 
 //- External functions
 
-std::ostream& operator<<(std::ostream& os, const Vector2D& vec)
+std::ostream &operator<<(std::ostream &os, const Vector2D &vec)
 {
     return os << "(" << vec.x << ", " << vec.y << ")";
 }
 
-Vector2D operator+(Vector2D lhs, const Vector2D& rhs)
+Vector2D operator+(Vector2D lhs, const Vector2D &rhs)
 {
     lhs += rhs;
     return lhs;
 }
 
-Vector2D operator-(Vector2D lhs, const Vector2D& rhs)
+Vector2D operator-(Vector2D lhs, const Vector2D &rhs)
 {
     lhs -= rhs;
     return lhs;
 }
 
-Vector2D operator-(const Vector2D& rhs)
+Vector2D operator-(const Vector2D &rhs)
 {
     return Vector2D(-rhs.x, -rhs.y);
 }
@@ -181,7 +188,7 @@ Vector2D operator*(Vector2D lhs, Scalar rhs)
 
 Vector2D operator*(Scalar lhs, Vector2D rhs)
 {
-    return rhs*lhs;
+    return rhs * lhs;
 }
 
 Vector2D operator/(Vector2D lhs, Scalar rhs)
@@ -192,12 +199,12 @@ Vector2D operator/(Vector2D lhs, Scalar rhs)
 
 Scalar dot(const Vector2D &u, const Vector2D &v)
 {
-    return u.x*v.x + u.y*v.y;
+    return u.x * v.x + u.y * v.y;
 }
 
 Scalar cross(const Vector2D &u, const Vector2D &v)
 {
-    return u.x*v.y - u.y*v.x;
+    return u.x * v.y - u.y * v.x;
 }
 
 std::string to_string(const Vector2D &vec)

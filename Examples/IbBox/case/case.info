@@ -22,7 +22,7 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib trilinos
+		lib hypre
 		solver BiCGSTAB
 		preconditioner DIAGONAL
 		tolerance 1e-6
@@ -30,11 +30,12 @@ LinearAlgebra
 
 	pEqn
 	{
-		lib trilinos
+		lib hypre
 		solver GMRES
 		preconditioner RILUK
-		iluFill 5
+		iluFill 4
 		tolerance 1e-6
+		maxPreconditionerUses 10
 	}
 }
 

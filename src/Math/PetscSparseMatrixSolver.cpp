@@ -3,10 +3,10 @@
 int PetscSparseMatrixSolver::solversActive_ = 0;
 
 PetscSparseMatrixSolver::PetscSparseMatrixSolver(const Communicator &comm, const std::string &preconditioner)
-    :
-      comm_(comm)
+        :
+        comm_(comm)
 {
-    if(!PetscInitializeCalled)
+    if (!PetscInitializeCalled)
         PetscInitialize(PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL);
 
     error_ = MatCreate(comm_.communicator(), &A_);
@@ -34,7 +34,7 @@ PetscSparseMatrixSolver::~PetscSparseMatrixSolver()
 
 void PetscSparseMatrixSolver::setRank(int rank)
 {
-    if(comm_.min(rank != iUpper_ - iLower_))
+    if (comm_.min(rank != iUpper_ - iLower_))
     {
         error_ = MatSetSizes(A_, rank, rank, PETSC_DETERMINE, PETSC_DETERMINE);
         error_ = MatSeqAIJSetPreallocation(A_, 5, PETSC_NULL);
@@ -48,9 +48,9 @@ void PetscSparseMatrixSolver::setRank(int rank)
 void PetscSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
 {
     PetscInt rowNo = iLower_;
-    for(const Row& row: eqn)
+    for (const Row &row: eqn)
     {
-        for(const Entry& entry: row)
+        for (const Entry &entry: row)
             MatSetValue(A_, rowNo, entry.first, entry.second, INSERT_VALUES);
 
         rowNo++;
@@ -62,7 +62,7 @@ void PetscSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn
 void PetscSparseMatrixSolver::setGuess(const Vector &x0)
 {
     PetscInt rowNo = iLower_;
-    for(Scalar val: x0)
+    for (Scalar val: x0)
         VecSetValue(x_, rowNo++, val, INSERT_VALUES);
 
     VecAssemblyBegin(x_);
@@ -72,7 +72,7 @@ void PetscSparseMatrixSolver::setGuess(const Vector &x0)
 void PetscSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     PetscInt rowNo = iLower_;
-    for(Scalar val: rhs)
+    for (Scalar val: rhs)
         VecSetValue(b_, rowNo++, val, INSERT_VALUES);
 
     VecAssemblyBegin(b_);
@@ -91,7 +91,7 @@ Scalar PetscSparseMatrixSolver::solve()
 void PetscSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     PetscInt row = iLower_;
-    for(const Cell& cell: field.grid.localActiveCells())
+    for (const Cell &cell: field.grid.localActiveCells())
     {
         VecGetValues(x_, 1, &row, &(field(cell)));
         ++row;
@@ -102,7 +102,7 @@ void PetscSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     PetscInt rowX = iLower_;
     PetscInt rowY = rowX + field.grid.nLocalActiveCells();
-    for(const Cell& cell: field.grid.localActiveCells())
+    for (const Cell &cell: field.grid.localActiveCells())
     {
         VecGetValues(x_, 1, &rowX, &(field(cell).x));
         VecGetValues(x_, 1, &rowY, &(field(cell).y));
@@ -117,15 +117,15 @@ void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditione
     PCDestroy(&precon_);
     PCCreate(comm_.communicator(), &precon_);
 
-    if(preconditioner == "pilut")
+    if (preconditioner == "pilut")
     {
         PCSetType(precon_, PCHYPRE);
         PCHYPRESetType(precon_, "pilut");
-        PetscOptionsSetValue(NULL, "-pc_hypre_pilut_factorrowsize","100");
+        PetscOptionsSetValue(NULL, "-pc_hypre_pilut_factorrowsize", "100");
         PetscOptionsSetValue(NULL, "-pc_hypre_pilut_tol", "0.001");
         PCSetFromOptions(precon_);
     }
-    else if(preconditioner == "boomeramg")
+    else if (preconditioner == "boomeramg")
     {
         PCSetType(precon_, PCHYPRE);
         PCHYPRESetType(precon_, "boomeramg");
@@ -135,16 +135,17 @@ void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditione
         PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_max_iter", "5");
         PCSetFromOptions(precon_);
     }
-    else if(preconditioner == "sor")
+    else if (preconditioner == "sor")
     {
         PCSetType(precon_, PCSOR);
     }
-    else if(preconditioner == "lu")
+    else if (preconditioner == "lu")
     {
         PCSetType(precon_, PCLU);
     }
     else
-        throw Exception("PetscSparseMatrixSolver", "setPreconditioner", "unrecognized preconditioner type \"" + preconditioner + "\".");
+        throw Exception("PetscSparseMatrixSolver", "setPreconditioner",
+                        "unrecognized preconditioner type \"" + preconditioner + "\".");
 
     KSPSetPC(solver_, precon_);
     KSPSetType(solver_, KSPBCGS);

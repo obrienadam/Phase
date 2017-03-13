@@ -13,53 +13,89 @@
 #include "DiagonalCellLink.h"
 
 class CellGroup;
+
 class FiniteVolumeGrid2D;
 
 class Cell
 {
 public:
 
-    Cell(const std::vector<Label>& nodeIds, const FiniteVolumeGrid2D& grid);
+    Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid);
 
     //- Geometry
-    Scalar volume() const { return volume_; }
-    const Point2D& centroid() const { return centroid_; }
+    Scalar volume() const
+    { return volume_; }
+
+    const Point2D &centroid() const
+    { return centroid_; }
 
     //- Indices
-    Index& index(Size indexNo) { return indices_[indexNo]; }
-    Index index(Size indexNo) const { return indices_[indexNo]; }
-    void setNumIndices(Size num) { indices_.resize(num, -1); }
-    void clearIndices() { indices_.clear(); }
+    Index &index(Size indexNo)
+    { return indices_[indexNo]; }
+
+    Index index(Size indexNo) const
+    { return indices_[indexNo]; }
+
+    void setNumIndices(Size num)
+    { indices_.resize(num, -1); }
+
+    void clearIndices()
+    { indices_.clear(); }
 
     //- Ids
-    Label globalId() const { return globalId_; }
-    Label setGlobalId(Label id) { return globalId_ = id; }
+    Label globalId() const
+    { return globalId_; }
 
-    Label id() const { return id_; }
-    void setId(Label id) { id_ = id; }
+    Label setGlobalId(Label id)
+    { return globalId_ = id; }
+
+    Label id() const
+    { return id_; }
+
+    void setId(Label id)
+    { id_ = id; }
 
     //- Connectivity links, should really only be done by grid classes
-    void addDiagonalLink(const Cell& cell);
-    void addBoundaryLink(const Face& face);
-    void addInteriorLink(const Face& face, const Cell& cell);
+    void addDiagonalLink(const Cell &cell);
 
-    const std::vector<InteriorLink>& neighbours() const { return interiorLinks_; }
-    const std::vector<BoundaryLink>& boundaries() const { return boundaryLinks_; }
-    const std::vector<DiagonalCellLink>& diagonals() const { return diagonalLinks_; }
+    void addBoundaryLink(const Face &face);
+
+    void addInteriorLink(const Face &face, const Cell &cell);
+
+    const std::vector<InteriorLink> &neighbours() const
+    { return interiorLinks_; }
+
+    const std::vector<BoundaryLink> &boundaries() const
+    { return boundaryLinks_; }
+
+    const std::vector<DiagonalCellLink> &diagonals() const
+    { return diagonalLinks_; }
+
+    const Cell& faceNeighbour(const Node& lNode, const Node& rNode) const;
 
     //- Nodes
-    const std::vector< Ref<const Node> > nodes() const;
-    const Polygon& shape() const { return cellShape_; }
+    const std::vector<Ref<const Node> > nodes() const;
 
-    Size nFaces() const { return cellShape_.vertices().size() - 1; }
-    Size nInteriorFaces() const { return interiorLinks_.size(); }
-    Size nBoundaryFaces() const { return boundaryLinks_.size(); }
-    Size nNeighbours() const { return interiorLinks_.size(); }
+    const Polygon &shape() const
+    { return cellShape_; }
+
+    Size nFaces() const
+    { return cellShape_.vertices().size() - 1; }
+
+    Size nInteriorFaces() const
+    { return interiorLinks_.size(); }
+
+    Size nBoundaryFaces() const
+    { return boundaryLinks_.size(); }
+
+    Size nNeighbours() const
+    { return interiorLinks_.size(); }
 
     //- Cell group
-    const CellGroup& cellGroup() const { return *cellGroupPtr_; }
+    const CellGroup &cellGroup() const
+    { return *cellGroupPtr_; }
 
-    bool isInCell(const Point2D& point) const;
+    bool isInCell(const Point2D &point) const;
 
 private:
 
@@ -72,15 +108,15 @@ private:
     Vector2D centroid_;
 
     std::vector<Label> nodeIds_;
-    const std::vector<Node>& nodes_;
+    const std::vector<Node> &nodes_;
 
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
     std::vector<DiagonalCellLink> diagonalLinks_;
 
-    const CellGroup* cellGroupPtr_;
+    const CellGroup *cellGroupPtr_;
 };
 
-bool cellsShareFace(const Cell& cellA, const Cell& cellB);
+bool cellsShareFace(const Cell &cellA, const Cell &cellB);
 
 #endif

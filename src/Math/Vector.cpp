@@ -2,8 +2,8 @@
 #include "Vector.h"
 
 Vector::Vector(size_t size, Scalar val)
-    :
-      std::vector<Scalar>(size, val)
+        :
+        std::vector<Scalar>(size, val)
 {
 
 }
@@ -22,7 +22,7 @@ Vector &Vector::operator-=(const Vector &rhs)
 
 Vector &Vector::operator*=(Scalar rhs)
 {
-    std::transform(this->begin(), this->end(), this->begin(), [rhs](Scalar val){ return val*rhs; });
+    std::transform(this->begin(), this->end(), this->begin(), [rhs](Scalar val) { return val * rhs; });
     return *this;
 }
 

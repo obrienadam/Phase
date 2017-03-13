@@ -14,9 +14,9 @@ private:
     SparseVector boundaries_;
     SparseVector sources_;
 
-    friend Term operator+(const Term& lhs, const Term& rhs);
+    friend Term operator+(const Term &lhs, const Term &rhs);
 };
 
-Term operator+(const Term& lhs, const Term& rhs);
+Term operator+(const Term &lhs, const Term &rhs);
 
 #endif

@@ -12,40 +12,58 @@ class HypreSparseMatrixSolver : public SparseMatrixSolver
 {
 public:
 
-    enum PreconditionerType{EUCLID, BOOMER_AMG};
+    enum PreconditionerType
+    {
+        EUCLID, BOOMER_AMG
+    };
 
     HypreSparseMatrixSolver(const Communicator &comm, PreconditionerType preconType = EUCLID);
+
     ~HypreSparseMatrixSolver();
 
     void setRank(int rank);
-    void set(const CoefficientList& eqn);
-    void setGuess(const Vector& x0);
-    void setRhs(const Vector& rhs);
+
+    void set(const CoefficientList &eqn);
+
+    void setGuess(const Vector &x0);
+
+    void setRhs(const Vector &rhs);
 
     Scalar solve();
 
-    void mapSolution(ScalarFiniteVolumeField& field);
-    void mapSolution(VectorFiniteVolumeField& field);
+    void mapSolution(ScalarFiniteVolumeField &field);
+
+    void mapSolution(VectorFiniteVolumeField &field);
 
     void setMaxIters(int maxIters);
+
     void setToler(Scalar toler);
+
     void setDropToler(Scalar toler);
+
     void setFillFactor(int fill);
 
-    int nIters() const { return nIters_; }
-    Scalar error() const { return toler_; }
+    int nIters() const
+    { return nIters_; }
 
-    bool supportsMPI() const { return true; }
-    void printStatus(const std::string& msg) const;
+    Scalar error() const
+    { return toler_; }
+
+    bool supportsMPI() const
+    { return true; }
+
+    void printStatus(const std::string &msg) const;
 
     void init();
 
 private:
 
     void initializeSolver();
+
     void deinitializeSolver();
 
     void initializeIJObjects(Size rank);
+
     void deinitializeIJObjects();
 
     PreconditionerType preconType_;
@@ -57,7 +75,7 @@ private:
     std::vector<Size> localSizes_;
     std::vector<HYPRE_Int> globalInds_;
 
-    const Communicator& comm_;
+    const Communicator &comm_;
 
     HYPRE_IJMatrix ijMatrix_;
     HYPRE_IJVector b_, x_;

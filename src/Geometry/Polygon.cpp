@@ -11,21 +11,21 @@ Polygon::Polygon()
 
 Polygon::Polygon(const std::vector<Point2D> &vertices)
 {
-    for(const Point2D& vtx: vertices)
+    for (const Point2D &vtx: vertices)
         boost::geometry::append(poly_, vtx);
 
     init();
 }
 
 Polygon::Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn)
-    :
-      poly_(boostPgn)
+        :
+        poly_(boostPgn)
 {
     init();
 }
 
 //- Tests
-bool Polygon::isInside(const Point2D& testPoint) const
+bool Polygon::isInside(const Point2D &testPoint) const
 {
     return boost::geometry::within(testPoint, poly_);
 }
@@ -56,25 +56,25 @@ bool Polygon::isEmpty() const
 }
 
 //- Intersections
-std::vector<Point2D> Polygon::intersections(const Line2D& line) const
+std::vector<Point2D> Polygon::intersections(const Line2D &line) const
 {
     auto vtx0 = vertices().begin();
     auto vtx1 = vtx0 + 1;
     std::vector<Point2D> intersections;
 
-    for(; vtx1 != vertices().end(); ++vtx1, ++vtx0)
+    for (; vtx1 != vertices().end(); ++vtx1, ++vtx0)
     {
         //- check for vertex intersections
-        if(line.isApproximatelyOnLine(*vtx1))
+        if (line.isApproximatelyOnLine(*vtx1))
             intersections.push_back(*vtx1);
-        else if(line.isApproximatelyOnLine(*vtx0))
+        else if (line.isApproximatelyOnLine(*vtx0))
             continue;
         else // check for edge intersection
         {
             const Line2D edge(*vtx0, (*vtx1 - *vtx0).tangentVec());
             const Point2D xc = Line2D::intersection(edge, line).first;
 
-            if((xc - *vtx0).magSqr() < (*vtx1 - *vtx0).magSqr() && dot(*vtx1 - *vtx0, xc - *vtx0) > 0.)
+            if ((xc - *vtx0).magSqr() < (*vtx1 - *vtx0).magSqr() && dot(*vtx1 - *vtx0, xc - *vtx0) > 0.)
                 intersections.push_back(xc);
         }
     }
@@ -82,20 +82,20 @@ std::vector<Point2D> Polygon::intersections(const Line2D& line) const
     return intersections;
 }
 
-Point2D Polygon::nearestIntersect(const Point2D& point) const
+Point2D Polygon::nearestIntersect(const Point2D &point) const
 {
     auto vtx0 = vertices().begin();
     auto vtx1 = vtx0 + 1;
     Scalar minDistSqr = (*vtx0 - point).magSqr();
     Vector2D nearestPoint = *vtx0;
 
-    for(; vtx1 != vertices().end(); ++vtx0, ++vtx1)
+    for (; vtx1 != vertices().end(); ++vtx0, ++vtx1)
     {
         auto edge = std::make_pair(*vtx0, *vtx1);
         const Vector2D edgeVec = edge.second - edge.first;
 
         Vector2D rel = point - edge.first;
-        Vector2D tan = dot(rel, edgeVec)*edgeVec/edgeVec.magSqr();
+        Vector2D tan = dot(rel, edgeVec) * edgeVec / edgeVec.magSqr();
         Vector2D norm = rel - tan;
 
         Scalar distSqr = norm.magSqr();
@@ -109,7 +109,7 @@ Point2D Polygon::nearestIntersect(const Point2D& point) const
             Scalar distSqrV0 = (point - edge.first).magSqr();
             Scalar distSqrV1 = (point - edge.second).magSqr();
 
-            if(distSqrV0 < distSqrV1)
+            if (distSqrV0 < distSqrV1)
             {
                 minDistSqr = distSqrV0;
                 nearestPoint = edge.first;
@@ -123,7 +123,7 @@ Point2D Polygon::nearestIntersect(const Point2D& point) const
             continue;
         }
 
-        if(distSqr < minDistSqr && t >= 0 && t < tmax)
+        if (distSqr < minDistSqr && t >= 0 && t < tmax)
         {
             minDistSqr = distSqr;
             nearestPoint = edge.first + tan;
@@ -131,7 +131,7 @@ Point2D Polygon::nearestIntersect(const Point2D& point) const
 
         //- Checke for a neares vertex
         distSqr = (edge.first - point).magSqr();
-        if(distSqr < minDistSqr)
+        if (distSqr < minDistSqr)
         {
             minDistSqr = distSqr;
             nearestPoint = edge.first;
@@ -141,20 +141,20 @@ Point2D Polygon::nearestIntersect(const Point2D& point) const
     return nearestPoint;
 }
 
-std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D& point) const
+std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D &point) const
 {
     auto vtx0 = vertices().begin();
     auto vtx1 = vtx0 + 1;
     Scalar minDistSqr = (*vtx0 - point).magSqr();
     std::pair<Point2D, Point2D> nearestEdge = std::make_pair(*vtx0, *vtx1);
 
-    for(; vtx1 != vertices().end(); ++vtx0, ++vtx1)
+    for (; vtx1 != vertices().end(); ++vtx0, ++vtx1)
     {
         auto edge = std::make_pair(*vtx0, *vtx1);
         const Vector2D edgeVec = edge.second - edge.first;
 
         Vector2D rel = point - edge.first;
-        Vector2D tan = dot(rel, edgeVec)*edgeVec/edgeVec.magSqr();
+        Vector2D tan = dot(rel, edgeVec) * edgeVec / edgeVec.magSqr();
         Vector2D norm = rel - tan;
 
         Scalar distSqr = norm.magSqr();
@@ -163,7 +163,7 @@ std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D& point) const
         const Scalar t = dot(xc - edge.first, tan.unitVec());
         const Scalar tmax = edgeVec.mag();
 
-        if(distSqr < minDistSqr && t >= 0 && t < tmax)
+        if (distSqr < minDistSqr && t >= 0 && t < tmax)
         {
             minDistSqr = distSqr;
             nearestEdge = edge;
@@ -171,7 +171,7 @@ std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D& point) const
 
         distSqr = (edge.first - point).magSqr();
 
-        if(distSqr < minDistSqr)
+        if (distSqr < minDistSqr)
         {
             minDistSqr = distSqr;
             nearestEdge = edge;
@@ -181,18 +181,23 @@ std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D& point) const
     return nearestEdge;
 }
 
+bool Polygon::intersects(const Shape2D &shape) const
+{
+    return boost::geometry::intersects(poly_, shape.polygonize().boostPolygon());
+}
+
 //- Transformations
 void Polygon::scale(Scalar factor)
 {
-    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
-        vtx = factor*(vtx - centroid_) + centroid_;
+    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx = factor * (vtx - centroid_) + centroid_;
 
     init();
 }
 
 void Polygon::rotate(Scalar theta)
 {
-    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
         vtx = (vtx - centroid_).rotate(theta) + centroid_;
 }
 
@@ -201,16 +206,16 @@ Polygon Polygon::scale(Scalar factor) const
     std::vector<Point2D> verts;
     verts.reserve(vertices().size());
 
-    for(const Point2D &vtx: boost::geometry::exterior_ring(poly_))
-        verts.push_back(factor*(vtx - centroid_) + centroid_);
+    for (const Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        verts.push_back(factor * (vtx - centroid_) + centroid_);
 
     return Polygon(verts);
 }
 
 //- Translations
-Polygon& Polygon::operator+=(const Vector2D& translationVec)
+Polygon &Polygon::operator+=(const Vector2D &translationVec)
 {
-    for(Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
         vtx += translationVec;
 
     centroid_ += translationVec;
@@ -218,9 +223,9 @@ Polygon& Polygon::operator+=(const Vector2D& translationVec)
     return *this;
 }
 
-Polygon& Polygon::operator-=(const Vector2D& translationVec)
+Polygon &Polygon::operator-=(const Vector2D &translationVec)
 {
-    return operator +=(-translationVec);
+    return operator+=(-translationVec);
 }
 
 //- Bounding box
@@ -236,7 +241,7 @@ boost::geometry::model::box<Point2D> Polygon::boundingBox() const
 
 void Polygon::init()
 {
-    if(boost::geometry::exterior_ring(poly_).size() > 0)
+    if (boost::geometry::exterior_ring(poly_).size() > 0)
     {
         boost::geometry::correct(poly_);
         area_ = boost::geometry::area(poly_);
@@ -252,11 +257,11 @@ void Polygon::init()
 //- External functions
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector< boost::geometry::model::polygon<Point2D, false, true> > pgn;
+    std::vector<boost::geometry::model::polygon<Point2D, false, true> > pgn;
 
     boost::geometry::intersection(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
 
-    if(pgn.size() == 0)
+    if (pgn.size() == 0)
         return Polygon();
     else if (pgn.size() > 1)
         throw Exception("Polygon", "intersectionPolygon", "there are two polygons!");
@@ -266,43 +271,43 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 
 Polygon difference(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector< boost::geometry::model::polygon<Point2D, false, true> > pgn;
+    std::vector<boost::geometry::model::polygon<Point2D, false, true> > pgn;
     boost::geometry::difference(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
 
-    if(pgn.size() == 0)
+    if (pgn.size() == 0)
         return Polygon();
-    else if(pgn.size() > 1)
+    else if (pgn.size() > 1)
         throw Exception("Polygon", "difference", "there is more than one output polygon!");
 
     return Polygon(pgn.front());
 }
 
-Polygon clipPolygon(const Polygon& pgn, const Line2D& line)
+Polygon clipPolygon(const Polygon &pgn, const Line2D &line)
 {
     std::vector<Point2D> verts;
 
-    for(auto vertIt = pgn.vertices().begin(); vertIt != pgn.vertices().end() - 1; ++vertIt)
+    for (auto vertIt = pgn.vertices().begin(); vertIt != pgn.vertices().end() - 1; ++vertIt)
     {
-        const Vector2D& vtx = *vertIt;
-        const Vector2D& nextVtx = *(vertIt + 1);
+        const Vector2D &vtx = *vertIt;
+        const Vector2D &nextVtx = *(vertIt + 1);
         Line2D edgeLine = Line2D(vtx, (nextVtx - vtx).normalVec());
 
-        if(line.isApproximatelyOnLine(vtx))
+        if (line.isApproximatelyOnLine(vtx))
         {
             verts.push_back(vtx); // special case
             continue;
         }
-        else if(line.isBelowLine(vtx))
+        else if (line.isBelowLine(vtx))
             verts.push_back(vtx);
 
         std::pair<Point2D, bool> xc = Line2D::intersection(line, edgeLine);
 
-        if(xc.second) // the lines are not paralell, ie xc is valid
+        if (xc.second) // the lines are not paralell, ie xc is valid
         {
             Scalar l = (nextVtx - vtx).magSqr();
             Scalar x = dot(nextVtx - vtx, xc.first - vtx);
 
-            if(x < l && x > 0 && !(xc.first == vtx || xc.first == nextVtx)) // intersection is on the segment
+            if (x < l && x > 0 && !(xc.first == vtx || xc.first == nextVtx)) // intersection is on the segment
                 verts.push_back(xc.first);
         }
     }

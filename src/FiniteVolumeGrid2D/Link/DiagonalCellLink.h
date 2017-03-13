@@ -7,13 +7,17 @@ class DiagonalCellLink : public Link
 {
 public:
 
-    DiagonalCellLink(const Cell& self, const Cell& cell);
-    explicit DiagonalCellLink(const DiagonalCellLink& other);
+    DiagonalCellLink(const Cell &self, const Cell &cell);
 
-    DiagonalCellLink& operator=(const DiagonalCellLink& rhs);
+    explicit DiagonalCellLink(const DiagonalCellLink &other);
 
-    const Cell& cell() const { return cell_; }
-    const Vector2D& rCellVec() const { return rCellVec_; }
+    DiagonalCellLink &operator=(const DiagonalCellLink &rhs);
+
+    const Cell &cell() const
+    { return cell_; }
+
+    const Vector2D &rCellVec() const
+    { return rCellVec_; }
 
 protected:
 

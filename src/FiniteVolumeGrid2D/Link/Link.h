@@ -10,16 +10,17 @@ class Link
 {
 public:
 
-    Link(const Cell& self);
-    explicit Link(const Link& other);
+    Link(const Cell &self);
 
-    Link& operator=(const Link& rhs);
+    explicit Link(const Link &other);
 
-    const Cell& self() const;
+    Link &operator=(const Link &rhs);
+
+    const Cell &self() const;
 
 protected:
 
-    const Cell& self_;
+    const Cell &self_;
 };
 
 #endif

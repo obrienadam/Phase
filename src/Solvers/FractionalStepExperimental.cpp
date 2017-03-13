@@ -4,7 +4,8 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 #include "Source.h"
-#include "MovingGhostCellImmersedBoundary.h"
+#include "GhostCellImmersedBoundary.h"
+//#include "MovingGhostCellImmersedBoundary.h"
 #include "FiniteVolumeEquation.h"
 
 FractionalStepExperimental::FractionalStepExperimental(const Input &input, const Communicator &comm, FiniteVolumeGrid2D& grid)
@@ -83,7 +84,7 @@ Scalar FractionalStepExperimental::computeMaxTimeStep(Scalar maxCo, Scalar prevT
 Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::mv_gc(ibObjs(), rho, u, timeStep) == cn::laplacian(mu, u, 0.5));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u) == cn::laplacian(mu, u, 0.5));
 
     Scalar error = uEqn_.solve();
 
@@ -96,7 +97,7 @@ Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepExperimental::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep/rho, p) + ib::mv_gc(ibObjs(), u, p) == source::div(u));
+    pEqn_ = (fv::laplacian(timeStep/rho, p) + ib::gc(ibObjs(), p) == source::div(u));
     Scalar error = pEqn_.solveWithGuess();
 
     grid_.sendMessages(comm_, p);

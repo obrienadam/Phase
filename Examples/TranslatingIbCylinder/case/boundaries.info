@@ -80,7 +80,7 @@ ImmersedBoundaries
     motion
     {
       type translating
-      velocity (1,0)
+      velocity (0,0)
       omega 0
     }
 

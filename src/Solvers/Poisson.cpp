@@ -3,11 +3,11 @@
 #include "GhostCellImmersedBoundary.h"
 
 Poisson::Poisson(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
-    :
-      Solver(input, comm, grid),
-      phi(addScalarField(input, "phi")),
-      gamma(addScalarField("gamma")),
-      phiEqn_(input, comm, phi, "phiEqn")
+        :
+        Solver(input, comm, grid),
+        phi(addScalarField(input, "phi")),
+        gamma(addScalarField("gamma")),
+        phiEqn_(input, comm, phi, "phiEqn")
 {
     //- All active cells to fluid cells
     grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));

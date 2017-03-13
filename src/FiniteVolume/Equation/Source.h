@@ -7,8 +7,9 @@
 namespace source
 {
 
-ScalarFiniteVolumeField div(const VectorFiniteVolumeField& field);
-VectorFiniteVolumeField grad(const ScalarFiniteVolumeField& field);
+    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
+
+    VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field);
 
 }
 

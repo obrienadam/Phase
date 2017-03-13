@@ -1,20 +1,20 @@
 #include "Equation.h"
 
 template<>
-Equation<Vector2D>::Equation(VectorFiniteVolumeField& field, const std::string& name)
-    :
-      name(name),
-      field_(field),
-      nActiveCells_(field.grid.nLocalActiveCells()),
-      coeffs_(2*nActiveCells_),
-      boundaries_(2*nActiveCells_),
-      sources_(2*nActiveCells_)
+Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &name)
+        :
+        name(name),
+        field_(field),
+        coeffs_(2 * nActiveCells_),
+        boundaries_(2 * nActiveCells_),
+        sources_(2 * nActiveCells_)
 {
-    for(auto& coeff: coeffs_)
-        coeff.reserve(10);
+    for (auto &coeff: coeffs_)
+        coeff.reserve(5);
 }
 
-template<> template<>
+template<>
+template<>
 void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
 {
     setValue(cell.index(0),
@@ -26,7 +26,8 @@ void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
              val);
 }
 
-template<> template<>
+template<>
+template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 {
     addValue(cell.index(0),
@@ -38,8 +39,9 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
              val);
 }
 
-template<> template<>
-void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, const Vector2D& val)
+template<>
+template<>
+void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
     setValue(cell.index(0),
              nb.index(2),
@@ -50,8 +52,9 @@ void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, const Vector2D& v
              val.y);
 }
 
-template<> template<>
-void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D& val)
+template<>
+template<>
+void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
     addValue(cell.index(0),
              nb.index(2),
@@ -63,12 +66,12 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D& v
 }
 
 template<>
-Vector2D Equation<Vector2D>::get(const Cell& cell, const Cell& nb)
+Vector2D Equation<Vector2D>::get(const Cell &cell, const Cell &nb)
 {
     int i = 0;
-    for(const auto& entry: coeffs_[cell.index(0)])
+    for (const auto &entry: coeffs_[cell.index(0)])
     {
-        if(entry.first == nb.index(2))
+        if (entry.first == nb.index(2))
             return Vector2D(entry.second, coeffs_[cell.index(0) + nActiveCells_][i].second);
         ++i;
     }
@@ -77,20 +80,16 @@ Vector2D Equation<Vector2D>::get(const Cell& cell, const Cell& nb)
 }
 
 template<>
-void Equation<Vector2D>::addBoundary(const Cell& cell, Vector2D val)
+void Equation<Vector2D>::addBoundary(const Cell &cell, Vector2D val)
 {
     boundaries_[cell.index(0)] += val.x;
     boundaries_[cell.index(0) + nActiveCells_] += val.y;
 }
 
-//void setBoundary(const Cell& cell, T val);
-//void addSource(const Cell& cell, T val);
-//void setSource(const Cell& cell, T val)
-
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    for(const Cell& cell: field_.grid.localActiveCells())
+    for (const Cell &cell: field_.grid.localActiveCells())
     {
         Scalar &coeffX = coeffRef(cell.index(0), cell.index(2));
         Scalar &coeffY = coeffRef(cell.index(0) + nActiveCells_, cell.index(3));
@@ -98,15 +97,15 @@ void Equation<Vector2D>::relax(Scalar relaxationFactor)
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
 
-        boundaries_(cell.index(0)) += (1. - relaxationFactor)*coeffX*field_(cell).x;
-        boundaries_(cell.index(0) + nActiveCells_) += (1. - relaxationFactor)*coeffY*field_(cell).y;
+        boundaries_(cell.index(0)) += (1. - relaxationFactor) * coeffX * field_(cell).x;
+        boundaries_(cell.index(0) + nActiveCells_) += (1. - relaxationFactor) * coeffY * field_(cell).y;
     }
 }
 
 template<>
-Equation<Vector2D>& Equation<Vector2D>::operator +=(const VectorFiniteVolumeField& rhs)
+Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField &rhs)
 {
-    for(const Cell& cell: rhs.grid.localActiveCells())
+    for (const Cell &cell: rhs.grid.localActiveCells())
     {
         Index rowX = cell.index(0);
         Index rowY = rowX + nActiveCells_;
@@ -119,9 +118,9 @@ Equation<Vector2D>& Equation<Vector2D>::operator +=(const VectorFiniteVolumeFiel
 }
 
 template<>
-Equation<Vector2D>& Equation<Vector2D>::operator -=(const VectorFiniteVolumeField& rhs)
+Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField &rhs)
 {
-    for(const Cell& cell: rhs.grid.localActiveCells())
+    for (const Cell &cell: rhs.grid.localActiveCells())
     {
         Index rowX = cell.index(0);
         Index rowY = rowX + nActiveCells_;
@@ -137,5 +136,5 @@ Equation<Vector2D>& Equation<Vector2D>::operator -=(const VectorFiniteVolumeFiel
 template<>
 Size Equation<Vector2D>::getRank() const
 {
-    return 2*nActiveCells_;
+    return 2 * nActiveCells_;
 }

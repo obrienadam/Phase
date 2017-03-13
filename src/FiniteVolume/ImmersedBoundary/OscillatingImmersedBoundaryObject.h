@@ -3,22 +3,24 @@
 
 #include "ImmersedBoundaryObject.h"
 
-class OscillatingImmersedBoundaryObject: public ImmersedBoundaryObject
+class OscillatingImmersedBoundaryObject : public ImmersedBoundaryObject
 {
 public:
 
-    OscillatingImmersedBoundaryObject(const std::string& name,
+    OscillatingImmersedBoundaryObject(const std::string &name,
                                       Scalar amplitude,
                                       Scalar frequency,
                                       Label id,
-                                      FiniteVolumeGrid2D& grid);
+                                      FiniteVolumeGrid2D &grid);
 
     void update(Scalar timeStep);
-    void updateCells();
 
     //- Motion info
-    Vector2D velocity(const Point2D& point) const { return amp_*omega_*cos(omega_*time_); }
-    Vector2D trajectory() const { return amp_*omega_*cos(omega_*time_); }
+    Vector2D velocity(const Point2D &point) const
+    { return amp_ * omega_ * cos(omega_ * time_); }
+
+    Vector2D trajectory() const
+    { return amp_ * omega_ * cos(omega_ * time_); }
 
 private:
 

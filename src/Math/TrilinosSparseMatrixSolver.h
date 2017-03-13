@@ -10,33 +10,44 @@
 
 #include "SparseMatrixSolver.h"
 
-class TrilinosSparseMatrixSolver: public SparseMatrixSolver
+class TrilinosSparseMatrixSolver : public SparseMatrixSolver
 {
 public:
-    TrilinosSparseMatrixSolver(const Communicator& comm,
-                               const std::string& solver = "BiCGSTAB",
-                               const std::string& preconType = "RILUK");
+    TrilinosSparseMatrixSolver(const Communicator &comm,
+                               const std::string &solver = "BiCGSTAB",
+                               const std::string &preconType = "RILUK");
 
     void setRank(int rank);
-    void set(const CoefficientList& eqn);
-    void setGuess(const Vector& x0);
-    void setRhs(const Vector& rhs);
+
+    void set(const CoefficientList &eqn);
+
+    void setGuess(const Vector &x0);
+
+    void setRhs(const Vector &rhs);
 
     Scalar solve();
 
-    void mapSolution(ScalarFiniteVolumeField& field);
-    void mapSolution(VectorFiniteVolumeField& field);
+    void mapSolution(ScalarFiniteVolumeField &field);
+
+    void mapSolution(VectorFiniteVolumeField &field);
 
     void setMaxIters(int maxIters);
+
     void setToler(Scalar toler);
+
     void setDropToler(Scalar toler);
+
     void setFillFactor(int fill);
+
     void setMaxPreconditionerUses(int maxPreconditionerUses);
 
     int nIters() const;
+
     Scalar error() const;
 
-    bool supportsMPI() const { return true; }
+    bool supportsMPI() const
+    { return true; }
+
     void printStatus(const std::string &msg) const;
 
 private:
@@ -54,7 +65,7 @@ private:
 
     typedef Ifpack2::Preconditioner<Scalar, Index, Index> Preconditioner;
 
-    const Communicator& comm_;
+    const Communicator &comm_;
     Teuchos::RCP<TeuchosComm> Tcomm_;
     Teuchos::RCP<TpetraMap> map_;
 

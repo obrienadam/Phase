@@ -2,8 +2,8 @@
 #include "Vector2D.h"
 
 Point2D::Point2D(const Vector2D &other)
-    :
-      Kernel::Point_2(other.x(), other.y())
+        :
+        Kernel::Point_2(other.x(), other.y())
 {
 
 }
@@ -15,17 +15,17 @@ std::string Point2D::toString() const
 
 //- External functions
 
-Point2D operator+(const Point2D& lhs, const Point2D& rhs)
+Point2D operator+(const Point2D &lhs, const Point2D &rhs)
 {
     return Point2D(lhs.x() + rhs.x(), lhs.y() + rhs.y());
 }
 
-Point2D operator-(const Point2D& lhs, const Point2D& rhs)
+Point2D operator-(const Point2D &lhs, const Point2D &rhs)
 {
     return Point2D(lhs.x() - rhs.x(), lhs.y() - rhs.y());
 }
 
-Point2D operator*(const Scalar& lhs, const Point2D& rhs)
+Point2D operator*(const Scalar &lhs, const Point2D &rhs)
 {
-    return Point2D(lhs*rhs.x(), lhs*rhs.y());
+    return Point2D(lhs * rhs.x(), lhs * rhs.y());
 }

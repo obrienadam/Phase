@@ -9,7 +9,7 @@ typedef FiniteVolumeField<Vector2D> VectorFiniteVolumeField;
 
 //- Specializations
 template<>
-VectorFiniteVolumeField& VectorFiniteVolumeField::operator=(const Vector& rhs);
+VectorFiniteVolumeField &VectorFiniteVolumeField::operator=(const Vector &rhs);
 
 template<>
 Vector VectorFiniteVolumeField::vectorize() const;
@@ -18,9 +18,12 @@ template<>
 void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input);
 
 //- External
-VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, VectorFiniteVolumeField rhs);
-VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
-VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField& lhs, const Vector2D& rhs);
-VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField& rhs);
+VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, VectorFiniteVolumeField rhs);
+
+VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField &rhs);
+
+VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, const Vector2D &rhs);
+
+VectorFiniteVolumeField operator/(VectorFiniteVolumeField lhs, const ScalarFiniteVolumeField &rhs);
 
 #endif

@@ -5,7 +5,7 @@ add_executable(phasePiso phasePiso.cpp)
 target_link_libraries(phasePiso System FiniteVolumeGrid2D Viewers Solvers)
 
 add_executable(phasePisoMultiphase phasePisoMultiphase.cpp)
-target_link_libraries(phasePisoMultiphase System FiniteVolumeGrid2D Viewers Multiphase)
+target_link_libraries(phasePisoMultiphase System FiniteVolumeGrid2D Viewers Solvers)
 
 # This target has been deprecated
 #add_executable(phaseCoupled phaseCoupled.cpp)
@@ -18,4 +18,4 @@ add_executable(phaseFractionalStepExperimental phaseFractionalStepExperimental.c
 target_link_libraries(phaseFractionalStepExperimental System FiniteVolumeGrid2D Viewers Solvers)
 
 add_executable(phaseFractionalStepMultiphase phaseFractionalStepMultiphase.cpp)
-target_link_libraries(phaseFractionalStepMultiphase System FiniteVolumeGrid2D Viewers Multiphase)
+target_link_libraries(phaseFractionalStepMultiphase System FiniteVolumeGrid2D Viewers Solvers)

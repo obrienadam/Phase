@@ -25,7 +25,7 @@ void Matrix::resize(size_t nRows, size_t nCols)
     nRows_ = nRows;
     nCols_ = nCols;
     isSquare_ = nRows_ == nCols_;
-    std::vector<Scalar>::resize(nRows*nCols);
+    std::vector<Scalar>::resize(nRows * nCols);
     ipiv_.resize(nRows_);
     zero();
 }
@@ -40,65 +40,65 @@ void Matrix::init(const Scalar *begin, const Scalar *end)
     std::vector<Scalar>::assign(begin, end);
 }
 
-Scalar& Matrix::operator()(size_t m, size_t n)
+Scalar &Matrix::operator()(size_t m, size_t n)
 {
-    return std::vector<Scalar>::operator [](m*nCols_ + n);
+    return std::vector<Scalar>::operator[](m * nCols_ + n);
 }
 
-const Scalar& Matrix::operator()(size_t m, size_t n) const
+const Scalar &Matrix::operator()(size_t m, size_t n) const
 {
-    return std::vector<Scalar>::operator [](m*nCols_ + n);
+    return std::vector<Scalar>::operator[](m * nCols_ + n);
 }
 
-Matrix& Matrix::operator=(const std::initializer_list<Scalar>& list)
+Matrix &Matrix::operator=(const std::initializer_list<Scalar> &list)
 {
-    if(list.size() != nRows_*nCols_)
+    if (list.size() != nRows_ * nCols_)
         throw Exception("Matrix", "operator=", "initializer list size does not match matrix dimensions.");
 
-    std::vector<Scalar>::operator =(list);
+    std::vector<Scalar>::operator=(list);
     return *this;
 }
 
 //- Operators
-Matrix& Matrix::operator+=(const Matrix& rhs)
+Matrix &Matrix::operator+=(const Matrix &rhs)
 {
-    for(size_t m = 0; m < nRows_; ++m)
-        for(size_t n = 0; n < nCols_; ++n)
-            operator ()(m, n) += rhs(m, n);
+    for (size_t m = 0; m < nRows_; ++m)
+        for (size_t n = 0; n < nCols_; ++n)
+            operator()(m, n) += rhs(m, n);
 
     return *this;
 }
 
-Matrix& Matrix::operator-=(const Matrix& rhs)
+Matrix &Matrix::operator-=(const Matrix &rhs)
 {
-    for(size_t m = 0; m < nRows_; ++m)
-        for(size_t n = 0; n < nCols_; ++n)
-            operator ()(m, n) -= rhs(m, n);
+    for (size_t m = 0; m < nRows_; ++m)
+        for (size_t n = 0; n < nCols_; ++n)
+            operator()(m, n) -= rhs(m, n);
 
     return *this;
 }
 
-Matrix& Matrix::operator*=(Scalar rhs)
+Matrix &Matrix::operator*=(Scalar rhs)
 {
-    for(size_t m = 0; m < nRows_; ++m)
-        for(size_t n = 0; n < nCols_; ++n)
-            operator ()(m, n) *= rhs;
+    for (size_t m = 0; m < nRows_; ++m)
+        for (size_t n = 0; n < nCols_; ++n)
+            operator()(m, n) *= rhs;
 
     return *this;
 }
 
-Matrix& Matrix::operator/=(Scalar rhs)
+Matrix &Matrix::operator/=(Scalar rhs)
 {
-    for(size_t m = 0; m < nRows_; ++m)
-        for(size_t n = 0; n < nCols_; ++n)
-            operator ()(m, n) /= rhs;
+    for (size_t m = 0; m < nRows_; ++m)
+        for (size_t n = 0; n < nCols_; ++n)
+            operator()(m, n) /= rhs;
 
     return *this;
 }
 
-Matrix& Matrix::solve(Matrix& b)
+Matrix &Matrix::solve(Matrix &b)
 {
-    if(isSquare_)
+    if (isSquare_)
         LAPACKE_dgesv(LAPACK_ROW_MAJOR, nRows_, b.nCols_, data(), nCols_, ipiv_.data(), b.data(), b.nCols_);
     else
     {
@@ -109,14 +109,14 @@ Matrix& Matrix::solve(Matrix& b)
     return b;
 }
 
-Matrix& Matrix::transpose()
+Matrix &Matrix::transpose()
 {
-    if(isSquare_) // Square matrices
+    if (isSquare_) // Square matrices
     {
         auto &self = *this;
 
-        for(size_t m = 0; m < nRows_; ++m)
-            for(size_t n = m + 1; n < nCols_; ++n)
+        for (size_t m = 0; m < nRows_; ++m)
+            for (size_t n = m + 1; n < nCols_; ++n)
                 std::swap(self(m, n), self(n, m));
     }
     else // General non-square matrices
@@ -126,7 +126,7 @@ Matrix& Matrix::transpose()
         int m = nCols_;
 
         const int mn1 = (last - first - 1);
-        const int n   = (last - first) / m;
+        const int n = (last - first) / m;
         std::vector<bool> visited(last - first);
         auto cycle = first;
         while (++cycle != last)
@@ -134,7 +134,8 @@ Matrix& Matrix::transpose()
             if (visited[cycle - first])
                 continue;
             int a = cycle - first;
-            do  {
+            do
+            {
                 a = a == mn1 ? mn1 : (n * a) % mn1;
                 std::swap(*(first + a), *cycle);
                 visited[a] = true;
@@ -147,15 +148,15 @@ Matrix& Matrix::transpose()
     return *this;
 }
 
-Matrix& Matrix::invert()
+Matrix &Matrix::invert()
 {
-    if(nRows_ != nCols_)
-        operator=(Matrix(*this).transpose()*(*this));
+    if (nRows_ != nCols_)
+        operator=(Matrix(*this).transpose() * (*this));
 
     lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
     lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
 
-    if(info1 != 0 || info2 != 0)
+    if (info1 != 0 || info2 != 0)
         throw Exception("Matrix", "invert", "inversion failed, matrix is singular to working precision.");
 
     return *this;
@@ -178,8 +179,8 @@ Matrix Matrix::subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t
     Matrix subMat(endRow - startRow, endCol - startCol);
     auto &self = *this;
 
-    for(size_t m = startRow; m < endRow; ++m)
-        for(size_t n = startCol; n < endCol; ++n)
+    for (size_t m = startRow; m < endRow; ++m)
+        for (size_t n = startCol; n < endCol; ++n)
             subMat(m - startRow, n - startCol) = self(m, n);
 
     return subMat;
@@ -189,7 +190,7 @@ Matrix Matrix::subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t
 Matrix eye(size_t nRows, size_t nCols)
 {
     Matrix mat(nRows, nCols);
-    for(size_t i = 0; i < nRows && i < nCols; ++i)
+    for (size_t i = 0; i < nRows && i < nCols; ++i)
         mat(i, i) = 1.;
 
     return mat;
@@ -199,9 +200,9 @@ Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max)
 {
     Matrix mat(nRows, nCols);
 
-    for(size_t m = 0; m < nRows; ++m)
-        for(size_t n = 0; n < nCols; ++n)
-            mat(m, n) = (double)rand()/RAND_MAX*(max - min) + min;
+    for (size_t m = 0; m < nRows; ++m)
+        for (size_t n = 0; n < nCols; ++n)
+            mat(m, n) = (double) rand() / RAND_MAX * (max - min) + min;
 
     return mat;
 }
@@ -221,32 +222,32 @@ Matrix solve(Matrix A, Matrix b)
     return A.solve(b);
 }
 
-Matrix sum(const Matrix& A)
+Matrix sum(const Matrix &A)
 {
     Matrix result(1, A.nRows() == 1 ? 1 : A.nCols());
     result.zero();
 
-    if(result.nCols() == 1)
+    if (result.nCols() == 1)
     {
-        for(int i = 0; i < A.nCols(); ++i)
+        for (int i = 0; i < A.nCols(); ++i)
             result(0, 0) += A(0, i);
     }
     else
     {
-        for(int i = 0; i < A.nRows(); ++i)
-            for(int j = 0; j < A.nCols(); ++j)
+        for (int i = 0; i < A.nRows(); ++i)
+            for (int j = 0; j < A.nCols(); ++j)
                 result(0, j) += A(i, j);
     }
 
     return result;
 }
 
-Matrix operator+(Matrix lhs, const Matrix& rhs)
+Matrix operator+(Matrix lhs, const Matrix &rhs)
 {
     return lhs += rhs;
 }
 
-Matrix operator-(Matrix lhs, const Matrix& rhs)
+Matrix operator-(Matrix lhs, const Matrix &rhs)
 {
     return lhs -= rhs;
 }
@@ -261,11 +262,12 @@ Matrix operator*(Scalar lhs, Matrix rhs)
     return rhs *= lhs;
 }
 
-Matrix operator*(const Matrix& A, const Matrix& B)
+Matrix operator*(const Matrix &A, const Matrix &B)
 {
     Matrix C(A.nRows(), B.nCols());
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.nRows(), B.nCols(), A.nCols(), 1., A.data(), A.nCols(), B.data(), B.nCols(), 1., C.data(), C.nCols());
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.nRows(), B.nCols(), A.nCols(), 1., A.data(), A.nCols(),
+                B.data(), B.nCols(), 1., C.data(), C.nCols());
 
     // Works for sure
     //    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
@@ -283,11 +285,11 @@ Matrix operator/(Matrix lhs, Scalar rhs)
     return lhs /= rhs;
 }
 
-std::ostream& operator<<(std::ostream& os, const Matrix& mat)
+std::ostream &operator<<(std::ostream &os, const Matrix &mat)
 {
-    for(size_t m = 0; m < mat.nRows(); ++m)
+    for (size_t m = 0; m < mat.nRows(); ++m)
     {
-        for(size_t n = 0; n < mat.nCols(); ++n)
+        for (size_t n = 0; n < mat.nCols(); ++n)
         {
             os << mat(m, n) << ' ';
         }

@@ -9,14 +9,19 @@ class BoundaryLink : public Link
 {
 public:
 
-    BoundaryLink(const Cell& self, const Face& face);
-    explicit BoundaryLink(const BoundaryLink& other);
+    BoundaryLink(const Cell &self, const Face &face);
+
+    explicit BoundaryLink(const BoundaryLink &other);
 
     //BoundaryLink& operator=(const BoundaryLink& rhs);
 
-    const Face& face() const;
-    const Vector2D& rFaceVec() const { return rFaceVec_; }
-    const Vector2D& outwardNorm() const { return outwardNorm_; }
+    const Face &face() const;
+
+    const Vector2D &rFaceVec() const
+    { return rFaceVec_; }
+
+    const Vector2D &outwardNorm() const
+    { return outwardNorm_; }
 
 protected:
 

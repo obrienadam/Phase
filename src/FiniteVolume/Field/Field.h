@@ -6,15 +6,18 @@
 
 #include "Types.h"
 
-template <class T>
+template<class T>
 class Field : public std::vector<T>
 {
 public:
 
-    Field(size_t size = 0, const T& initialValue = T(), const std::string& name = "N/A");
-    Field(const Field<T>& other) : std::vector<T>(other), name_(other.name_) {}
+    Field(size_t size = 0, const T &initialValue = T(), const std::string &name = "N/A");
 
-    const std::string& name() const { return name_; }
+    Field(const Field<T> &other) : std::vector<T>(other), name_(other.name_)
+    {}
+
+    const std::string &name() const
+    { return name_; }
 
 protected:
 

@@ -5,30 +5,32 @@
 
 #include "Circle.h"
 
-template <class T>
 class Search
 {
 public:
 
-    Search(const std::vector<T>& items) : items_(items) {}
+    Search()
+    {}
 
-    void constructRTree();
+    Search(const std::vector<Point2D> &points)
+    { constructRTree(points); }
 
-    std::vector< Ref<const T> > rangeSearch(const Circle &circle) const;
-    std::vector< Ref<const T> > kNearestNeighbourSearch(const Point2D& point, size_t k) const;
+    void constructRTree(const std::vector<Point2D> &points);
 
-    void clear();
+    void add(const Point2D &point, Label label);
+
+    void clear()
+    { rTree_.clear(); }
+
+    std::vector<Label> rangeSearch(const Circle &circle) const;
+
+    std::vector<Label> kNearestNeighbourSearch(const Point2D &point, size_t k) const;
+
+    std::vector<Label> rangeSearch(const Shape2D &shape) const;
 
 private:
 
-    typedef std::pair< Point2D, Ref< const T > > Value;
-    std::vector< Ref<const T> > getRefs(const std::vector< Value >& vals) const;
-
-    boost::geometry::index::rtree< Value, boost::geometry::index::quadratic<32> > rTree_;
-    const std::vector<T>& items_;
-
+    boost::geometry::index::rtree<std::pair<Point2D, Label>, boost::geometry::index::quadratic<32> > rTree_;
 };
-
-#include "Search.tpp"
 
 #endif

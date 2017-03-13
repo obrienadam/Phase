@@ -9,26 +9,31 @@ class ImmersedBoundary
 {
 public:
 
-    enum {FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4};
+    enum
+    {
+        FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4
+    };
 
-    ImmersedBoundary(const Input& input, const Communicator& comm, Solver &solver);
+    ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver);
 
     void initCellZones();
 
     void update(Scalar timeStep);
 
-    Size nIbObjects() const { return ibObjs_.size(); }
+    Size nIbObjects() const
+    { return ibObjs_.size(); }
+
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
 
-    bool isIbCell(const Cell& cell) const;
+    bool isIbCell(const Cell &cell) const;
 
 protected:
 
     void setCellStatus();
 
     Solver &solver_;
-    const Communicator& comm_;
-    FiniteVolumeField<int>& cellStatus_;
+    const Communicator &comm_;
+    FiniteVolumeField<int> &cellStatus_;
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
 
 };

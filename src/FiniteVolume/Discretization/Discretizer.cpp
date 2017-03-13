@@ -6,10 +6,10 @@ Term operator+(const Term &lhs, const Term &rhs)
 
     result.preallocate(lhs.triplets_.size() + rhs.triplets_.size());
 
-    for(const Triplet& triplet: lhs.triplets_)
+    for (const Triplet &triplet: lhs.triplets_)
         result.triplets_.push_back(triplet);
 
-    for(const Triplet& triplet: rhs.triplets_)
+    for (const Triplet &triplet: rhs.triplets_)
         result.triplets_.push_back(triplet);
 
 

@@ -11,17 +11,22 @@ class Face;
 
 class Patch
 {
-   public:
+public:
 
-    Patch(const std::string& name, Label id) : name(name), id_(id) {}
-    Patch(const Patch& other);
+    Patch(const std::string &name, Label id) : name(name), id_(id)
+    {}
 
-    Label id() const { return id_; }
+    Patch(const Patch &other);
 
-    void addFace(const Face& face);
-    void addFaces(const std::vector< Ref<Face> >& faces);
+    Label id() const
+    { return id_; }
 
-    const std::vector< Ref<const Face> >& faces() const { return faces_; }
+    void addFace(const Face &face);
+
+    void addFaces(const std::vector<Ref<Face> > &faces);
+
+    const std::vector<Ref<const Face> > &faces() const
+    { return faces_; }
 
     std::string name;
 
@@ -29,7 +34,7 @@ private:
 
     Label id_;
 
-    std::vector< Ref<const Face> > faces_;
+    std::vector<Ref<const Face> > faces_;
 
     friend class FiniteVolumeGrid2D;
 };

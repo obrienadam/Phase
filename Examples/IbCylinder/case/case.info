@@ -22,15 +22,22 @@ LinearAlgebra
 	uEqn
 	{
 		lib hypre
-		iluFill 0
-		maxPreconditionerUses 10
+		iluFill 1
+		maxPreconditionerUses 100
 	}
 
 	pEqn
 	{
 		lib hypre
-		iluFill 2
-		maxPreconditionerUses 10
+		iluFill 4
+		maxPreconditionerUses 100
+	}
+
+	pCorrEqn
+	{
+		lib hypre
+		iluFill 4
+		maxPreconditionerUses 100
 	}
 }
 
@@ -44,16 +51,16 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 300
-	nCellsY 300
+	nCellsX 200
+	nCellsY 100
 
 	; Rectilinear parameters
-	width 50
-	height 50
+	width 10
+	height 5
 	partitionBufferWidth 4
 
-	refineX (10,20)
-	refineY (20,30)
+	;refineX (10,20)
+	;refineY (20,30)
 }
 
 Viewer

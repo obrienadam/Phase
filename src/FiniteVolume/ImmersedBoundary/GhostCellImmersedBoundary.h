@@ -7,60 +7,61 @@
 namespace ib
 {
 
-template<class ImmersedBoundaryObject_t, typename T> // Allow for use of reference wrappers as well
-Equation<T> gc(const std::vector<ImmersedBoundaryObject_t>& ibObjs, FiniteVolumeField<T>& field)
-{
-    Equation<T> eqn(field);
+    template<class ImmersedBoundaryObject_t, typename T>
+    // Allow for use of reference wrappers as well
+    Equation<T> gc(const std::vector<ImmersedBoundaryObject_t> &ibObjs, FiniteVolumeField<T> &field)
+    {
+        Equation <T> eqn(field);
 
-    for(const ImmersedBoundaryObject& ibObj: ibObjs)
-        for(const GhostCellStencil& stencil: ibObj.stencils())
-        {
-            Scalar centralCoeff, l, lambda;
-            std::vector<Scalar> coeffs = stencil.ipCoeffs();
-
-            //- Boundary assembly
-            switch(ibObj.boundaryType(field.name()))
+        for (const ImmersedBoundaryObject &ibObj: ibObjs)
+            for (const GhostCellStencil &stencil: ibObj.stencils())
             {
-            case ImmersedBoundaryObject::FIXED:
-                centralCoeff = 0.5;
-                for(Scalar &coeff: coeffs)
-                    coeff *= 0.5;
+                Scalar centralCoeff, l, lambda;
+                std::vector<Scalar> coeffs = stencil.ipCoeffs();
 
-                eqn.addBoundary(stencil.cell(), ibObj.getBoundaryRefValue<T>(field.name()));
+                //- Boundary assembly
+                switch (ibObj.boundaryType(field.name()))
+                {
+                    case ImmersedBoundaryObject::FIXED:
+                        centralCoeff = 0.5;
+                        for (Scalar &coeff: coeffs)
+                            coeff *= 0.5;
 
-                break;
+                        eqn.addBoundary(stencil.cell(), ibObj.getBoundaryRefValue<T>(field.name()));
 
-            case ImmersedBoundaryObject::NORMAL_GRADIENT:
-                centralCoeff = -1.;
-                break;
+                        break;
 
-            case ImmersedBoundaryObject::CONTACT_ANGLE:
-                centralCoeff = -1;
-                break;
+                    case ImmersedBoundaryObject::NORMAL_GRADIENT:
+                        centralCoeff = -1.;
+                        break;
 
-            case ImmersedBoundaryObject::PARTIAL_SLIP:
-                l = stencil.length();
-                lambda = ibObj.getBoundaryRefValue<Scalar>(field.name());
-                centralCoeff = 1. + 2.*lambda/l;
+                    case ImmersedBoundaryObject::CONTACT_ANGLE:
+                        centralCoeff = -1;
+                        break;
 
-                for(Scalar &coeff: coeffs)
-                    coeff *= 1. - 2.*lambda/l;
+                    case ImmersedBoundaryObject::PARTIAL_SLIP:
+                        l = stencil.length();
+                        lambda = ibObj.getBoundaryRefValue<Scalar>(field.name());
+                        centralCoeff = 1. + 2. * lambda / l;
 
-                break;
+                        for (Scalar &coeff: coeffs)
+                            coeff *= 1. - 2. * lambda / l;
 
-            default:
-                throw Exception("ib", "gc<ImmersedBoundaryObject_t, T>", "invalid boundary type.");
+                        break;
+
+                    default:
+                        throw Exception("ib", "gc<ImmersedBoundaryObject_t, T>", "invalid boundary type.");
+                }
+
+                eqn.add(stencil.cell(), stencil.cell(), centralCoeff);
+
+                int i = 0;
+                for (const Cell &ipCell: stencil.ipCells())
+                    eqn.add(stencil.cell(), ipCell, coeffs[i++]);
             }
 
-            eqn.add(stencil.cell(), stencil.cell(), centralCoeff);
-
-            int i = 0;
-            for(const Cell& ipCell: stencil.ipCells())
-                eqn.add(stencil.cell(), ipCell, coeffs[i++]);
-        }
-
-    return eqn;
-}
+        return eqn;
+    }
 
 }
 

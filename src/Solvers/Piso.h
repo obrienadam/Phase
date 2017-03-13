@@ -10,11 +10,12 @@ class Piso : public Solver
 {
 public:
 
-    Piso(const Input& input, const Communicator& comm, FiniteVolumeGrid2D &grid);
+    Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
 
     virtual Scalar solve(Scalar timeStep);
 
     Scalar maxCourantNumber(Scalar timeStep) const;
+
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u, &gradP, &gradPCorr;
@@ -23,12 +24,15 @@ public:
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
+
     virtual Scalar solvePCorrEqn();
 
     virtual void rhieChowInterpolation();
 
     void correctAll();
+
     void correctPressure();
+
     void correctVelocity();
 
     Equation<Vector2D> uEqn_;

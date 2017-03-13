@@ -6,10 +6,13 @@
 
 namespace ib
 {
+    Equation<Vector2D>
+    ddt(const std::vector<Ref<const ImmersedBoundaryObject> > &ibObjs, const ScalarFiniteVolumeField &rho,
+        VectorFiniteVolumeField &u, Scalar timeStep);
 
-Equation<Vector2D> mv_gc(const std::vector< Ref<const ImmersedBoundaryObject> >& ibObjs, const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField& u, Scalar timeStep);
-Equation<Scalar> mv_gc(const std::vector< Ref<const ImmersedBoundaryObject> >& ibObjs, const VectorFiniteVolumeField& u, ScalarFiniteVolumeField &dp);
-
+    Equation<Vector2D>
+    div(const std::vector<Ref<const ImmersedBoundaryObject> > &ibObjs, const ScalarFiniteVolumeField &rho,
+        VectorFiniteVolumeField &u, Scalar timeStep);
 }
 
 #endif
