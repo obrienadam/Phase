@@ -5,6 +5,7 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &
         :
         name(name),
         field_(field),
+        nActiveCells_(field.grid.nLocalActiveCells()),
         coeffs_(2 * nActiveCells_),
         boundaries_(2 * nActiveCells_),
         sources_(2 * nActiveCells_)
@@ -89,6 +90,8 @@ void Equation<Vector2D>::addBoundary(const Cell &cell, Vector2D val)
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
+    nActiveCells_ = field_.grid.nLocalActiveCells();
+
     for (const Cell &cell: field_.grid.localActiveCells())
     {
         Scalar &coeffX = coeffRef(cell.index(0), cell.index(2));

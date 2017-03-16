@@ -22,8 +22,8 @@ namespace cn
 
             for (const InteriorLink &nb: cell.neighbours())
             {
-                Scalar faceFlux0 = rho0(cell) * dot(u0(nb.face()), nb.outwardNorm());
-                Scalar faceFlux = rho(cell) * dot(u(nb.face()), nb.outwardNorm());
+                Scalar faceFlux0 = rho0(nb.face()) * dot(u0(nb.face()), nb.outwardNorm());
+                Scalar faceFlux = rho(nb.face()) * dot(u(nb.face()), nb.outwardNorm());
 
                 Scalar coeff0 = std::min(faceFlux0, 0.);
                 Scalar coeff = std::min(faceFlux, 0.);
@@ -37,8 +37,8 @@ namespace cn
 
             for (const BoundaryLink &bd: cell.boundaries())
             {
-                const Scalar faceFlux = rho(cell) * dot(u(bd.face()), bd.outwardNorm());
-                const Scalar faceFlux0 = rho0(cell) * dot(u0(bd.face()), bd.outwardNorm());
+                const Scalar faceFlux = rho(bd.face()) * dot(u(bd.face()), bd.outwardNorm());
+                const Scalar faceFlux0 = rho0(bd.face()) * dot(u0(bd.face()), bd.outwardNorm());
 
                 switch (field.boundaryType(bd.face()))
                 {

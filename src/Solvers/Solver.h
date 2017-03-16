@@ -80,6 +80,8 @@ public:
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const
     { return ibObjManager_.ibObjs(); }
 
+    virtual void initialize() {}
+
     //- Integrators
     const std::vector<VolumeIntegrator> &volumeIntegrators() const
     { return volumeIntegrators_; }

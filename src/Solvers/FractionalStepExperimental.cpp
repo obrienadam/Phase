@@ -84,7 +84,7 @@ Scalar FractionalStepExperimental::computeMaxTimeStep(Scalar maxCo, Scalar prevT
 Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u) == cn::laplacian(mu, u, 0.5));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.) + ib::gc(ibObjs(), u) == cn::laplacian(mu, u, 0.));
 
     Scalar error = uEqn_.solve();
 
@@ -98,12 +98,12 @@ Scalar FractionalStepExperimental::solveUEqn(Scalar timeStep)
 Scalar FractionalStepExperimental::solvePEqn(Scalar timeStep)
 {
     pEqn_ = (fv::laplacian(timeStep/rho, p) + ib::gc(ibObjs(), p) == source::div(u));
-    Scalar error = pEqn_.solveWithGuess();
+    Scalar error = pEqn_.solve();
 
     grid_.sendMessages(comm_, p);
 
     p.setBoundaryFaces();
-    fv::computeInverseWeightedGradient(rho, p, gradP);
+    fv::computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, p, gradP);
 
     grid_.sendMessages(comm_, gradP);
 
@@ -143,6 +143,9 @@ void FractionalStepExperimental::correctVelocity(Scalar timeStep)
 
 void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
 {
+    const ScalarFiniteVolumeField& rhon = rho.prev(0);
+    const VectorFiniteVolumeField& un = u.prev(0);
+
     for(const Face& face: u.grid.interiorFaces())
     {
         const Cell &lCell = face.lCell();
@@ -150,6 +153,9 @@ void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
         const Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
 
         u(face) = g*u(lCell) + (1. - g)*u(rCell);
+                //- g*rhon(lCell)/rho(lCell)*un(lCell)
+                //- (1. - g)*rhon(rCell)/rho(rCell)*un(rCell)
+                //+ rhon(face)/rho(face)*un(face);
     }
 
     for(const Face& face: u.grid.boundaryFaces())
@@ -163,6 +169,7 @@ void FractionalStepExperimental::computeFaceVelocities(Scalar timeStep)
 
         case VectorFiniteVolumeField::NORMAL_GRADIENT:
             u(face) = u(cell);
+                    //- rhon(cell)/rho(cell)*un(cell) + rhon(face)/rho(face)*un(face);
             break;
 
         case VectorFiniteVolumeField::SYMMETRY:

@@ -398,7 +398,7 @@ std::vector<std::vector<Ref<const Cell>>> FiniteVolumeGrid2D::constructSmoothing
     std::vector<std::vector<Ref<const Cell>>> kernels(nCells());
     const CellGroup &group = globalActiveCells();
 
-    for (Cell &cell: group)
+    for (const Cell &cell: group)
     {
         Circle base = Circle(cell.centroid(), width);
         std::vector<Ref<const Cell>> kernel = group.cellCentersWithin(base);

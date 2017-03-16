@@ -99,7 +99,7 @@ public:
     //- name
     std::string name;
 
-private:
+protected:
 
     Size getRank() const;
 

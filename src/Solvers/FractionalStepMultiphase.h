@@ -1,14 +1,16 @@
 #ifndef FRACTIONAL_STEP_MULTIPHASE_H
 #define FRACTIONAL_STEP_MULTIPHASE_H
 
-#include "FractionalStep.h"
+#include "FractionalStepExperimental.h"
 #include "Celeste.h"
 
-class FractionalStepMultiphase : public FractionalStep
+class FractionalStepMultiphase : public FractionalStepExperimental
 {
 public:
 
-    FractionalStepMultiphase(const Input& input, const Communicator &comm, FiniteVolumeGrid2D& grid);
+    FractionalStepMultiphase(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+
+    virtual void initialize();
 
     virtual Scalar solve(Scalar timeStep);
 
@@ -21,12 +23,15 @@ public:
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
+
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
     virtual void computeFaceVelocities(Scalar timeStep);
+
     virtual void correctVelocity(Scalar timeStep);
 
     void computeRho();
+
     void computeMu();
 
     Vector2D g_;

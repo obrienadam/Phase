@@ -20,6 +20,7 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
 
     //- Initial conditions
     solver.setInitialConditions(input);
+    solver.initialize();
 
     time_.start();
     for(

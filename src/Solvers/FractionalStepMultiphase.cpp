@@ -5,10 +5,11 @@
 #include "FaceInterpolation.h"
 #include "SourceEvaluation.h"
 #include "GhostCellImmersedBoundary.h"
+#include "TimeDerivative.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Communicator& comm, FiniteVolumeGrid2D& grid)
     :
-      FractionalStep(input, comm, grid),
+      FractionalStepExperimental(input, comm, grid),
       gamma(addScalarField(input, "gamma")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
@@ -25,11 +26,6 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Com
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
     //volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-
-    surfaceTensionForce_.compute();
-    computeRho();
-    computeMu();
-
     Scalar sigma = surfaceTensionForce_.sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
 
@@ -40,16 +36,25 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Com
     }
 
     capillaryTimeStep_ = comm.min(capillaryTimeStep_);
-
     comm.printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
+}
+
+void FractionalStepMultiphase::initialize()
+{
+    surfaceTensionForce_.compute();
+    computeRho();
+    computeMu();
+    computeRho();
+    computeMu();
 }
 
 Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 {
+    surfaceTensionForce_.compute();
+    solveGammaEqn(timeStep);
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-    solveGammaEqn(timeStep);
 
     comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
@@ -59,26 +64,21 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 Scalar FractionalStepMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 {
     return std::min( //- Both args have already been globalling minimized
-                     FractionalStep::computeMaxTimeStep(maxCo, prevTimeStep),
+                     FractionalStepExperimental::computeMaxTimeStep(maxCo, prevTimeStep),
                      capillaryTimeStep_
                      );
 }
 
 //- Protected methods
-
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
 
     ft.savePreviousTimeStep(timeStep, 1);
-
     ft = surfaceTensionForce_.compute();
 
-    computeRho();
-    computeMu();
-
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 1.5) + ib::gc(ibObjs(), u)
-             == cn::laplacian(mu, u, 0.5) - fv::source(gradP - ft.prev(0) - sg.prev(0)));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0) + ib::gc(ibObjs(), u)
+             == cn::laplacian(mu, u, 1.5) - fv::source(gradP));
 
     Scalar error = uEqn_.solve();
 
@@ -92,15 +92,16 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
-
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_.n(), gamma, timeStep) + ib::gc(ibObjs(), gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
-
     grid_.sendMessages(comm_, gamma);
 
     interpolateFaces(fv::INVERSE_VOLUME, gamma);
     gamma.setBoundaryFaces();
+
+    computeRho();
+    computeMu();
 
     fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
 
@@ -111,7 +112,8 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
 void FractionalStepMultiphase::computeFaceVelocities(Scalar timeStep)
 {
-    FractionalStep::computeFaceVelocities(timeStep);
+    FractionalStepExperimental::computeFaceVelocities(timeStep);
+    return;
 
     const ScalarFiniteVolumeField& rho0 = rho.prev(0);
     const VectorFiniteVolumeField& ft0 = ft.prev(0);
@@ -151,6 +153,9 @@ void FractionalStepMultiphase::computeFaceVelocities(Scalar timeStep)
 
 void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
 {
+    FractionalStepExperimental::correctVelocity(timeStep);
+    return;
+/*
     const ScalarFiniteVolumeField& rho0 = rho.prev(0);
     const VectorFiniteVolumeField& gradP0 = gradP.prev(0);
     const VectorFiniteVolumeField& ft0 = ft.prev(0);
@@ -185,7 +190,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
             u(face) -= timeStep/rho(face)*gradDp(face);
             break;
         };
-    }
+    } */
 }
 
 void FractionalStepMultiphase::computeRho()

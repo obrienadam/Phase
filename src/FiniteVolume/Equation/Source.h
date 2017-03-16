@@ -9,8 +9,9 @@ namespace source
 
     ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
 
-    VectorFiniteVolumeField grad(const ScalarFiniteVolumeField &field);
+    VectorFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField &field);
 
+    VectorFiniteVolumeField div(const ScalarFiniteVolumeField& rho, const VectorFiniteVolumeField& u, const VectorFiniteVolumeField& field);
 }
 
 #endif

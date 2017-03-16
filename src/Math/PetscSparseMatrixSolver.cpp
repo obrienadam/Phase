@@ -17,7 +17,6 @@ PetscSparseMatrixSolver::PetscSparseMatrixSolver(const Communicator &comm, const
     error_ = VecSetType(x_, VECMPI);
 
     KSPCreate(comm_.communicator(), &solver_);
-    KSPGetPC(solver_, &precon_); // will be destroyed
     setPreconditioner(preconditioner);
     KSPSetOperators(solver_, A_, A_);
     KSPSetReusePreconditioner(solver_, PETSC_TRUE);
@@ -114,7 +113,6 @@ void PetscSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 
 void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditioner)
 {
-    PCDestroy(&precon_);
     PCCreate(comm_.communicator(), &precon_);
 
     if (preconditioner == "pilut")
@@ -142,6 +140,7 @@ void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditione
     else if (preconditioner == "lu")
     {
         PCSetType(precon_, PCLU);
+        KSPSetPC(solver_, precon_);
     }
     else
         throw Exception("PetscSparseMatrixSolver", "setPreconditioner",
