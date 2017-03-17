@@ -1,10 +1,10 @@
 #ifndef FRACTIONAL_STEP_MULTIPHASE_H
 #define FRACTIONAL_STEP_MULTIPHASE_H
 
-#include "FractionalStepExperimental.h"
+#include "FractionalStep.h"
 #include "Celeste.h"
 
-class FractionalStepMultiphase : public FractionalStepExperimental
+class FractionalStepMultiphase : public FractionalStep
 {
 public:
 
@@ -36,7 +36,7 @@ protected:
 
     Vector2D g_;
 
-    Scalar rho1_, rho2_, mu1_, mu2_;
+    Scalar cicsamBlending_, rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;
 
     Celeste surfaceTensionForce_;

@@ -3,8 +3,8 @@
 TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm,
                                                        const std::string &solver,
                                                        const std::string &preconType)
-        :
-        comm_(comm)
+    :
+      comm_(comm)
 {
     Tcomm_ = rcp(new TeuchosComm(comm.communicator()));
 
@@ -70,10 +70,10 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
         //preconditioner_ = preconditionerFactory_.create(preconType_, rcp_implicit_cast<const TpetraMatrix>(mat_));
         if (preconType_ == "RILUK")
             preconditioner_ = rcp(new Ifpack2::RILUK<Tpetra::RowMatrix<Scalar, Index, Index>>(
-                    rcp_implicit_cast<const TpetraMatrix>(mat_)));
+                                      rcp_implicit_cast<const TpetraMatrix>(mat_)));
         else if (preconType_ == "DIAGONAL")
             preconditioner_ = rcp(new Ifpack2::Diagonal<Tpetra::RowMatrix<Scalar, Index, Index>>(
-                    rcp_implicit_cast<const TpetraMatrix>(mat_)));
+                                      rcp_implicit_cast<const TpetraMatrix>(mat_)));
         else
             throw Exception("TrilinosSparseMatrixSolver", "set",
                             "invalid preconditioner type \"" + preconType_ + "\".");
@@ -91,6 +91,13 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
 
         solver_->setProblem(linearProblem_);
     }
+    else if(nPreconUses_ == maxPreconUses_)
+    {
+        preconditioner_->compute();
+        nPreconUses_ = 1;
+    }
+    else
+        nPreconUses_++;
 }
 
 void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)

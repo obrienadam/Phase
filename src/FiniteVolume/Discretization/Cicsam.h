@@ -6,11 +6,18 @@
 namespace cicsam
 {
 
-    Equation<Scalar> cn(const VectorFiniteVolumeField &u,
-                        const VectorFiniteVolumeField &gradGamma,
-                        const VectorFiniteVolumeField &m,
-                        ScalarFiniteVolumeField &gamma,
-                        Scalar timeStep);
+void interpolateFaces(const VectorFiniteVolumeField &u,
+                      const VectorFiniteVolumeField &gradGamma,
+                      const VectorFiniteVolumeField &m,
+                      ScalarFiniteVolumeField &gamma,
+                      Scalar timeStep, Scalar k = 1.);
+
+Equation<Scalar> cn(const VectorFiniteVolumeField &u,
+                    const VectorFiniteVolumeField &gradGamma,
+                    const VectorFiniteVolumeField &m,
+                    ScalarFiniteVolumeField &gamma,
+                    Scalar timeStep,
+                    Scalar alpha = 0.5, Scalar k = 1.);
 
 }
 

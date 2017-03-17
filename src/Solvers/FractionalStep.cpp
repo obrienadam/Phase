@@ -17,7 +17,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
         uEqn_(input, comm, u, "uEqn"),
         pEqn_(input, comm, p, "pEqn")
 {
-    alphaAdv_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonAdvection", 1.5);
+    alphaAdv_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonAdvection", 0.5);
     alphaDiff_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonDiffusion", 0.5);
 
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
@@ -100,8 +100,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
     pEqn_ = (fv::laplacian(timeStep / rho, p) + ib::gc(ibObjs(), p) ==
-             source::div(u + timeStep/rho*(gradP + alphaDiff_*source::laplacian(mu, u)
-                                           - alphaAdv_*source::div(rho, u.prev(0), u))));
+             source::div(u + timeStep/rho*(gradP)));
     Scalar error = pEqn_.solve();
 
     grid_.sendMessages(comm_, p);
