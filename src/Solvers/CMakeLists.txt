@@ -2,7 +2,6 @@ set(HEADERS Solver.h
             Poisson.h
             Piso.h
             FractionalStep.h
-            FractionalStepExperimental.h
             Coupled.h
             CoupledEquation.h
             PisoMultiphase.h
@@ -15,7 +14,6 @@ set(SOURCES Solver.cpp
             Poisson.cpp
             Piso.cpp
             FractionalStep.cpp
-            FractionalStepExperimental.cpp
             Coupled.cpp
             CoupledEquation.cpp
             PisoMultiphase.cpp

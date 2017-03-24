@@ -75,6 +75,8 @@ public:
 
     Equation<T> &operator*=(const ScalarFiniteVolumeField &rhs);
 
+    Equation<T> &operator/=(const ScalarFiniteVolumeField& rhs);
+
     Equation<T> &operator==(Scalar rhs);
 
     Equation<T> &operator==(const Equation<T> &rhs);
@@ -146,6 +148,12 @@ Equation<T> operator*(Equation<T> lhs, Scalar rhs);
 
 template<class T>
 Equation<T> operator*(Scalar lhs, Equation<T> rhs);
+
+template<class T>
+Equation<T> operator/(Equation<T> lhs, const ScalarFiniteVolumeField& rhs)
+{
+    return lhs /= rhs;
+}
 
 #include "Equation.tpp"
 

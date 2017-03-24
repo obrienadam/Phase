@@ -162,7 +162,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     {
         case CICSAM:
             gammaEqn_ = (
-                    fv::ddt(gamma, timeStep) + cicsam::cn(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep) +
+                    fv::ddt(gamma, timeStep) + cicsam::div(u, gamma) +
                     ib::gc(ibObjs(), gamma) == 0.);
     }
 
@@ -174,6 +174,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     gamma.setBoundaryFaces();
 
     fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
+    cicsam::interpolateFaces(u, gradGamma, surfaceTensionForce_->n(), gamma, timeStep, 1.);
 
     grid_.sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 

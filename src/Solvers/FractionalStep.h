@@ -1,6 +1,8 @@
 #ifndef FRACTIONAL_STEP_H
 #define FRACTIONAL_STEP_H
 
+#include <fstream>
+
 #include "Solver.h"
 #include "Communicator.h"
 #include "FiniteVolumeEquation.h"
@@ -11,6 +13,9 @@ class FractionalStep : public Solver
 public:
 
     FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+    ~FractionalStep() {log.close();}
+
+    virtual void initialize();
 
     virtual std::string info() const;
 
@@ -33,10 +38,18 @@ protected:
 
     virtual void computeFaceVelocities(Scalar timeStep);
 
+    Vector2D maxVelocity() const;
+
+    Vector2D maxFaceVelocity() const;
+
+    Scalar maxDivergenceError() const;
+
     Scalar alphaAdv_, alphaDiff_;
 
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;
+
+    std::ofstream log;
 };
 
 #endif

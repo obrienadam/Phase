@@ -14,8 +14,5 @@ target_link_libraries(phasePisoMultiphase System FiniteVolumeGrid2D Viewers Solv
 add_executable(phaseFractionalStep phaseFractionalStep.cpp)
 target_link_libraries(phaseFractionalStep System FiniteVolumeGrid2D Viewers Solvers)
 
-add_executable(phaseFractionalStepExperimental phaseFractionalStepExperimental.cpp)
-target_link_libraries(phaseFractionalStepExperimental System FiniteVolumeGrid2D Viewers Solvers)
-
 add_executable(phaseFractionalStepMultiphase phaseFractionalStepMultiphase.cpp)
 target_link_libraries(phaseFractionalStepMultiphase System FiniteVolumeGrid2D Viewers Solvers)

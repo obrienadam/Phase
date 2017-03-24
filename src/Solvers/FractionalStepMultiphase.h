@@ -24,15 +24,21 @@ protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
 
+    virtual Scalar solvePEqn(Scalar timeStep);
+
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
     virtual void computeFaceVelocities(Scalar timeStep);
 
     virtual void correctVelocity(Scalar timeStep);
 
+    virtual void checkMassFluxConsistency(Scalar timeStep);
+
     void computeRho();
 
     void computeMu();
+
+    void computeMassTransferError();
 
     Vector2D g_;
 

@@ -65,6 +65,28 @@ namespace fv
     }
 
     template<class T>
+    void upwindInterpolateFaces(const FiniteVolumeField<Vector2D>& u, FiniteVolumeField<T> &field)
+    {
+        for(const Face &face: field.grid.interiorFaces())
+        {
+            Scalar flux = dot(u(face), face.outwardNorm(face.lCell().centroid()));
+            field(face) = flux > 0. ? field(face.lCell()) : field(face.rCell());
+        }
+
+        for (const Face &face: field.grid.boundaryFaces())
+        {
+            switch (field.boundaryType(face))
+            {
+                case FiniteVolumeField<T>::FIXED:
+                    break;
+
+                default:
+                    field(face) = field(face.lCell());
+            }
+        }
+    }
+
+    template<class T>
     void harmonicInterpolateFaces(InterpolationMethod method, FiniteVolumeField<T> &field)
     {
         std::function<Scalar(const Face &)> alpha;

@@ -96,6 +96,21 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 }
 
 template<class T>
+Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
+{
+    for(int i = 0, end = rhs.size(); i < end; ++i)
+    {
+        for(auto& coeff: coeffs_[i])
+            coeff.second /= rhs[i];
+
+        boundaries_[i] /= rhs[i];
+        sources_[i] /= rhs[i];
+    }
+
+    return *this;
+}
+
+template<class T>
 Equation<T> &Equation<T>::operator==(Scalar rhs)
 {
     for (int i = 0, end = boundaries_.size(); i < end; ++i)

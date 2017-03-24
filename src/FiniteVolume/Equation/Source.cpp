@@ -10,11 +10,15 @@ namespace source
 
         for (const Cell &cell: field.grid.cellZone("fluid"))
         {
+            Scalar div = 0.;
+
             for (const InteriorLink &nb: cell.neighbours())
-                divF(cell) += dot(field(nb.face()), nb.outwardNorm());
+                div += dot(field(nb.face()), nb.outwardNorm());
 
             for (const BoundaryLink &bd: cell.boundaries())
-                divF(cell) += dot(field(bd.face()), bd.outwardNorm());
+                div += dot(field(bd.face()), bd.outwardNorm());
+
+            divF(cell) = div;
         }
 
         return divF;
