@@ -16,7 +16,6 @@ Scalar uq(Scalar gammaTildeD, Scalar coD)
 
 void interpolateFaces(const VectorFiniteVolumeField &u,
                       const VectorFiniteVolumeField &gradGamma,
-                      const VectorFiniteVolumeField &m,
                       ScalarFiniteVolumeField &gamma,
                       Scalar timeStep,
                       Scalar k)
@@ -28,14 +27,15 @@ void interpolateFaces(const VectorFiniteVolumeField &u,
 
         const Cell& donor = flux >= 0. ? face.lCell() : face.rCell();
         const Cell& acceptor = flux >= 0. ? face.rCell() : face.lCell();
+        Vector2D rc = acceptor.centroid() - donor.centroid();
 
         Scalar gammaD = gamma(donor);
         Scalar gammaA = gamma(acceptor);
-        Scalar gammaU = std::max(std::min(gammaA + 2.*dot(donor.centroid() - acceptor.centroid(), gradGamma(donor)), 1.), 0.);
+        Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
         Scalar coD = fabs(dot(u(face), sf) / dot(acceptor.centroid() - donor.centroid(), sf) * timeStep);
         Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
-        Scalar thetaF = acos(fabs(dot(m(face).unitVec(), (acceptor.centroid() - donor.centroid()).unitVec())));
+        Scalar thetaF = acos(dot(gradGamma(donor), rc)*dot(gradGamma(donor), rc)/(gradGamma(donor).magSqr()*rc.magSqr()));
         Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
         Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
         Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
@@ -73,8 +73,6 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
 
     for (const Cell &cell: gamma.grid.cellZone("fluid"))
     {
-        Scalar centralCoeff = 0.;
-
         for (const InteriorLink &nb: cell.neighbours())
         {
             Scalar flux = dot(u(nb.face()), nb.outwardNorm());
@@ -108,7 +106,6 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
 
 Equation<Scalar> div(const VectorFiniteVolumeField &u,
                      const VectorFiniteVolumeField &gradGamma,
-                     const VectorFiniteVolumeField &m,
                      ScalarFiniteVolumeField &gamma,
                      Scalar timeStep,
                      Scalar k)
@@ -126,14 +123,15 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
 
             const Cell& donor = cell;
             const Cell& acceptor = nb.cell();
+            Vector2D rc = acceptor.centroid() - donor.centroid();
 
             Scalar gammaD = gamma(donor);
             Scalar gammaA = gamma(acceptor);
-            Scalar gammaU = std::max(std::min(gammaA + 2.*dot(donor.centroid() - acceptor.centroid(), gradGamma(donor)), 1.), 0.);
+            Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
             Scalar coD = fabs(flux / dot(acceptor.centroid() - donor.centroid(), nb.outwardNorm()) * timeStep);
             Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
-            Scalar thetaF = acos(fabs(dot(m(nb.face()).unitVec(), (acceptor.centroid() - donor.centroid()).unitVec())));
+            Scalar thetaF = acos(dot(gradGamma(donor), rc)*dot(gradGamma(donor), rc)/(gradGamma(donor).magSqr()*rc.magSqr()));
             Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
             Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
             Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);

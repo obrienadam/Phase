@@ -98,13 +98,16 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 template<class T>
 Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
 {
-    for(int i = 0, end = rhs.size(); i < end; ++i)
+    for(const Cell& cell: rhs.grid.localActiveCells())
     {
-        for(auto& coeff: coeffs_[i])
-            coeff.second /= rhs[i];
+        Index i = cell.index(0);
+        Scalar val = rhs(cell);
 
-        boundaries_[i] /= rhs[i];
-        sources_[i] /= rhs[i];
+        for(auto& coeff: coeffs_[i])
+            coeff.second /= val;
+
+        boundaries_[i] /= val;
+        sources_[i] /= val;
     }
 
     return *this;

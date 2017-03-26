@@ -8,7 +8,6 @@ namespace cicsam
 
 void interpolateFaces(const VectorFiniteVolumeField &u,
                       const VectorFiniteVolumeField &gradGamma,
-                      const VectorFiniteVolumeField &m,
                       ScalarFiniteVolumeField &gamma,
                       Scalar timeStep,
                       Scalar k = 1.);
@@ -18,7 +17,6 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
 
 Equation<Scalar> div(const VectorFiniteVolumeField &u,
                      const VectorFiniteVolumeField &gradGamma,
-                     const VectorFiniteVolumeField &m,
                      ScalarFiniteVolumeField &gamma,
                      Scalar timeStep,
                      Scalar k = 1.);
