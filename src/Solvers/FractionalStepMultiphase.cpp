@@ -100,6 +100,8 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
     grid_.sendMessages(comm_, u);
+
+    fv::interpolateFaces(fv::INVERSE_VOLUME, rho);
     computeFaceVelocities(timeStep);
 
     return error;
@@ -107,7 +109,6 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 {
-    fv::interpolateFaces(fv::INVERSE_VOLUME, rho);
     pEqn_ = (fv::laplacian(timeStep/rho, p) + ib::gc(ibObjs(), p) ==
              source::div(u));
 
@@ -138,15 +139,16 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
     grid_.sendMessages(comm_, gamma);
 
+    computeRho();
+
     gamma.setBoundaryFaces();
-    fv::computeGradient(fv::FACE_TO_CELL, gamma, gradGamma, true);
+    fv::computeGradient(fv::FACE_TO_CELL, gamma, gradGamma, false);
 
     ft.savePreviousTimeStep(timeStep, 1);
     ft = surfaceTensionForce_.compute();
 
     grid_.sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly (donor cells may be on other processes)
 
-    computeRho();
     computeMu();
 
     return error;
