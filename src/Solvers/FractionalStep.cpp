@@ -231,6 +231,6 @@ Scalar FractionalStep::maxDivergenceError() const
             maxError = fabs(div);
     }
 
-    return maxError;
+    return comm_.max(maxError);
 }
 

@@ -94,7 +94,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {   
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib::gc(ibObjs(), u)
-             == cn::laplacian(mu, u, 1.) - fv::source(gradP));
+             == cn::laplacian(mu, u, 1.) - fv::source(gradP - sg.prev(0)));
 
     checkMassFluxConsistency(timeStep);
 
@@ -244,21 +244,22 @@ void FractionalStepMultiphase::computeRho()
 
     grid_.sendMessages(comm_, rho);
 
-    for(const Face& face: grid_.faces())
-    {
-        Scalar g = std::max(0., std::min(1., w(face)));
-        rho(face) = (1. - g)*rho1_ + g*rho2_;
-    }
-
-    fv::computeInverseWeightedGradient(fv::FACE_TO_CELL, rho, gradRho);
+    //fv::computeGradient(fv::GREEN_GAUSS_CELL_CENTERED, rho, gradRho, false);
+    fv::computeInverseWeightedGradient(rho, rho, gradRho);
 
     //- Update the gravitational source term
-    sg.savePreviousTimeStep(timeStep, 1);
+    sg.savePreviousTimeStep(0., 1);
     for(const Cell& cell: sg.grid.cellZone("fluid"))
         sg(cell) = dot(g_, -cell.centroid())*gradRho(cell);
 
     for(const Face& face: sg.grid.faces())
         sg(face) = dot(g_, -face.centroid())*gradRho(face);
+
+    for(const Face& face: grid_.faces())
+    {
+        Scalar g = std::max(0., std::min(1., w(face)));
+        rho(face) = (1. - g)*rho1_ + g*rho2_;
+    }
 }
 
 void FractionalStepMultiphase::computeMu()
