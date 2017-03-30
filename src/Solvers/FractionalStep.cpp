@@ -36,6 +36,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
 void FractionalStep::initialize()
 {
     //- Ensure computations start with a valid pressure field
+    solvePEqn(1.);
     computeFaceVelocities(1.);
     solvePEqn(1.);
 
