@@ -12,6 +12,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const Com
     :
       FractionalStep(input, comm, grid),
       gamma(addScalarField(input, "gamma")),
+      gammaFlux(addScalarField("gammaFlux")),
       gradGamma(addVectorField("gradGamma")),
       ft(addVectorField("ft")),
       sg(addVectorField("sg")),
@@ -62,14 +63,9 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     solveGammaEqn(timeStep); //- Solve a sharp gamma equation
     solveUEqn(timeStep); //- Solve a momentum prediction
 
-    comm_.printf("Max u* = %lf\n", maxVelocity());
-    comm_.printf("Max u*_f = %lf\n", maxFaceVelocity());
-
     solvePEqn(timeStep); //- Solve the pressure equation, using sharp value of rho
     correctVelocity(timeStep);
 
-    comm_.printf("Max u^(n+1) = %lf\n", maxVelocity());
-    comm_.printf("Max u^(n+1)_f = %lf\n", maxFaceVelocity());
     comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
     comm_.printf("Max absolute velocity divergence error = %.4e\n", maxDivergenceError());
 
@@ -89,9 +85,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {   
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u) + ib::gc(ibObjs(), u)
-             == cn::laplacian(mu, u, 1.) - fv::source(gradP - sg.prev(0) - ft.prev(0)));
-
-    checkMassFluxConsistency(timeStep);
+             == cn::laplacian(mu, u, 1) - fv::source(gradP - sg.prev(0) - ft.prev(0)));
 
     Scalar error = uEqn_.solve();
     grid_.sendMessages(comm_, u);
@@ -121,13 +115,14 @@ Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
-    cicsam::interpolateFaces(u, gradGamma, gamma, timeStep, cicsamBlending_);
 
+    cicsam::interpolateFaces(u, gradGamma, gamma, timeStep, cicsamBlending_);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, gamma) + ib::gc(ibObjs(), gamma) == 0.);
 
     Scalar error = gammaEqn_.solve();
 
-    for(const Cell& cell: grid_.cells())
+    //- While this may affect mass conservation, it prevents issues at high density ratios
+    for(const Cell& cell: grid_.localActiveCells())
         gamma(cell) = std::max(std::min(gamma(cell), 1.), 0.);
 
     grid_.sendMessages(comm_, gamma);
@@ -135,11 +130,11 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     for(const Face& face: grid_.faces())
         rhoU(face) = ((1. - gamma(face))*rho1_ + gamma(face)*rho2_)*u(face);
 
-    fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
+    // gradient now computed in ft.compute()
     ft.savePreviousTimeStep(timeStep, 1);
     ft = surfaceTensionForce_.compute();
-    grid_.sendMessages(comm_, ft);
 
+    //- Recompute gradGamma for next cicsam iteration
     fv::computeGradient(fv::FACE_TO_CELL, gamma, gradGamma, false);
     grid_.sendMessages(comm_, gradGamma); //- In case donor cell is on another proc
 
@@ -205,6 +200,10 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
 
     for (const Cell &cell: grid_.cellZone("fluid"))
         u(cell) -= timeStep * ((gradP(cell) - sg(cell) - ft(cell))/rho(cell) - (gradP0(cell) - sg0(cell) - ft0(cell))/rho0(cell));
+
+    for(const ImmersedBoundaryObject& ibObj: ibObjs())
+        for(const GhostCellStencil& gc: ibObj.stencils())
+            u(gc.cell()) = -gc.ipValue(u);
 
     grid_.sendMessages(comm_, u);
 
@@ -297,4 +296,18 @@ void FractionalStepMultiphase::checkMassFluxConsistency(Scalar timeStep)
     }
 
     comm_.printf("Max mass flux error = %.2lf.\n", max);
+}
+
+void FractionalStepMultiphase::computeGammaFux(Scalar timeStep)
+{
+    const auto& fluid = grid_.cellZone("fluid");
+    gammaFlux.fill(0.);
+
+    for(const Cell& cell: fluid)
+    {
+        for(const InteriorLink& nb: cell.neighbours())
+        {
+            gammaFlux(cell) -= gamma(nb.face())*dot(u(nb.face()), nb.outwardNorm())*timeStep/cell.volume();
+        }
+    }
 }

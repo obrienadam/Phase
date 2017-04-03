@@ -31,6 +31,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
 
     //- Create ib zones if any. Will also update local/global indices
     ibObjManager_.initCellZones();
+    ibObjManager_.cutFaces();
 }
 
 void FractionalStep::initialize()
@@ -54,12 +55,12 @@ std::string FractionalStep::info() const
 
 Scalar FractionalStep::solve(Scalar timeStep)
 {
-    ibObjManager_.update(timeStep);
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
     comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    comm_.printf("Max divergence error = %.4e\n", maxDivergenceError());
 
     return 0.;
 }

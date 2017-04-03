@@ -27,6 +27,8 @@ public:
 
     bool isIbCell(const Cell &cell) const;
 
+    void cutFaces();
+
 protected:
 
     void setCellStatus();

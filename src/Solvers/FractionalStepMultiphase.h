@@ -17,7 +17,7 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
 
-    ScalarFiniteVolumeField &gamma;
+    ScalarFiniteVolumeField &gamma, &gammaFlux;
     VectorFiniteVolumeField &gradGamma, &ft, &sg, &gradRho, &rhoU;
 
 protected:
@@ -33,6 +33,8 @@ protected:
     virtual void correctVelocity(Scalar timeStep);
 
     virtual void checkMassFluxConsistency(Scalar timeStep);
+
+    virtual void computeGammaFux(Scalar timeStep);
 
     void computeRho();
 

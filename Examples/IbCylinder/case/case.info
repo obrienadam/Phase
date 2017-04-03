@@ -25,23 +25,16 @@ LinearAlgebra
 		solver BiCGSTAB
 		iluFill 1
 		maxPreconditionerUses 15
-		tolerance 0.01
+		tolerance 1e-6
 	}
 
 	pEqn
 	{
 		lib trilinos
-		solver GMRES
+		solver BiCGSTAB
 		iluFill 4
 		maxPreconditionerUses 100
-		tolerance 0.1
-	}
-
-	pCorrEqn
-	{
-		lib hypre
-		iluFill 6
-		maxPreconditionerUses 5
+		tolerance 1e-10
 	}
 }
 

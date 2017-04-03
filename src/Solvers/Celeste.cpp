@@ -20,10 +20,15 @@ VectorFiniteVolumeField Celeste::compute()
 
     VectorFiniteVolumeField ft(gamma_.grid, "ft");
 
-    for(const Face &face: gamma_.grid.faces())
-        ft(face) = sigma_*kappa_(face)*gradGamma_(face);
+    const CellZone& fluid = gamma_.grid.cellZone("fluid");
 
-    for(const Cell& cell: gamma_.grid.cellZone("fluid"))
+    for(const Face &face: gamma_.grid.interiorFaces())
+    {
+        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+        ft(face) = sigma_*kappa_(face)*(gamma_(face.rCell()) - gamma_(face.lCell()))*rc/dot(rc, rc);
+    }
+
+    for(const Cell& cell: fluid)
     {
         Scalar sumSfx = 0., sumSfy = 0.;
         ft(cell) = Vector2D(0., 0.);
@@ -50,6 +55,8 @@ VectorFiniteVolumeField Celeste::compute()
 
         ft(cell) = rho_(cell)*Vector2D(ft(cell).x/sumSfx, ft(cell).y/sumSfy);
     }
+
+    solver().grid().sendMessages(solver().comm(), ft);
 
     return ft;
 }
@@ -116,13 +123,13 @@ void Celeste::constructKappaMatrices()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
-                if(ibObj.ibCells().isInGroup(nb.cell()))
+                if(ibObj.isInIb(nb.cell().centroid()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
+                    //sSqr = std::max(1e-8, r.magSqr());
 
-                    sSqr = std::max(1e-8, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -147,13 +154,13 @@ void Celeste::constructKappaMatrices()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
-                if(ibObj.ibCells().isInGroup(dg.cell()))
+                if(ibObj.isInIb(dg.cell().centroid()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
                     Vector2D r = stencil.first - cell.centroid();
+                    //sSqr = std::max(1e-8, r.magSqr());
 
-                    sSqr = std::max(1e-8, r.magSqr());
                     dx = r.x;
                     dy = r.y;
 
@@ -229,21 +236,6 @@ void Celeste::computeInterfaceNormals()
         n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
 
     solver().grid().sendMessages(solver().comm(), n_);
-
-    for(const Face &face: n_.grid.interiorFaces()) // Not super important how this is computed, it's just for the cicsam scheme
-    {
-        const Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
-        n_(face) = -(gammaTilde_(face.rCell()) - gammaTilde_(face.lCell()))*rc/rc.magSqr();
-        n_(face) = n_(face).magSqr() < 1e-15 ? Vector2D(0., 0.) : n_(face).unitVec();
-    }
-
-    for(const Face &face: n_.grid.boundaryFaces())
-    {
-        if(isContactLinePatch(face.patch()))
-            n_(face) = computeContactLineNormal(gradGammaTilde_(face.lCell()), face.outwardNorm(face.lCell().centroid()), u_(face.lCell()));
-        else
-            n_(face) = n_(face.lCell());
-    }
 }
 
 void Celeste::computeCurvature()
@@ -268,13 +260,15 @@ void Celeste::computeCurvature()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
-                if(ibObj.ibCells().isInGroup(nb.cell()))
+                if(ibObj.isInIb(nb.cell().centroid()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), nb.cell().centroid());
 
-                    Vector2D r = stencil.first - cell.centroid();
-                    sSqr = std::max(1e-8, r.magSqr());
-                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    //Vector2D r = stencil.first - cell.centroid();
+                    //sSqr = std::max(1e-8, r.magSqr());
+
+                    n = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    n_(nb.cell()) = n + n_(cell);
 
                     break;
                 }
@@ -293,14 +287,16 @@ void Celeste::computeCurvature()
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
-                if(ibObj.ibCells().isInGroup(dg.cell()))
+                if(ibObj.isInIb(dg.cell().centroid()))
                 {
                     auto stencil = ibObj.intersectionStencil(cell.centroid(), dg.cell().centroid());
 
-                    Vector2D r = stencil.first - cell.centroid();
-                    sSqr = std::max(1e-8, r.magSqr());
+                    //Vector2D r = stencil.first - cell.centroid();
+                    //sSqr = std::max(1e-8, r.magSqr());
 
-                    n = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    n = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    n_(dg.cell()) = n + n_(cell);
+
                     break;
                 }
             }
@@ -328,9 +324,9 @@ void Celeste::computeCurvature()
         kappa_(cell) = bx(0, 0) + by(1, 0);
     }
 
-    solver().grid().sendMessages(solver().comm(), kappa_);
-
     //weightCurvatures();
+
+    solver().grid().sendMessages(solver().comm(), kappa_);
     interpolateCurvatureFaces();
 }
 
@@ -368,6 +364,7 @@ void Celeste::weightCurvatures()
     }
 
     solver().grid().sendMessages(solver().comm(), kappa_);
+    return;
 
     kappa_.savePreviousIteration();
 
@@ -406,4 +403,4 @@ void Celeste::weightCurvatures()
     }
 
     solver().grid().sendMessages(solver().comm(), kappa_);
- }
+}

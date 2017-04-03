@@ -52,8 +52,11 @@ std::vector<Point2D> Circle::intersections(const Line2D &line) const
         return std::vector<Point2D>();
     else
     {
-        const Scalar tmp = sqrt(disc);
-        const Scalar t1 = (-b + tmp) / (2. * a), t2 = (-b - tmp) / (2. * a);
+        Scalar tmp = sqrt(disc);
+        Scalar t1 = (-b + tmp) / (2. * a), t2 = (-b - tmp) / (2. * a);
+
+        if(fabs(t1) > fabs(t2))
+            std::swap(t1, t2);
 
         return std::vector<Point2D>({
                                             line(t1),

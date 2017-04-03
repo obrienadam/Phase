@@ -221,6 +221,44 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
     return false;
 }
 
+void ImmersedBoundary::cutFaces()
+{
+    for(Face& face: solver_.grid().faces())
+    {
+        LineSegment2D ln(face.lNode(), face.rNode());
+
+        for(const ImmersedBoundaryObject& ibObj: ibObjs())
+        {
+            std::vector<Point2D> intersections = ibObj.shape().intersections(ln);
+
+            if(intersections.size() == 0)
+                continue;
+
+            std::vector<Point2D> pts = {ln.ptA()};
+            pts.insert(pts.end(), intersections.begin(), intersections.end());
+            pts.push_back(ln.ptB());
+
+            Vector2D fFace(0, 0);
+            for(int i = 0; i < pts.size() - 1; ++i)
+            {
+                if(!ibObj.shape().isInside(0.5*(pts[i] + pts[i + 1])))
+                    fFace += pts[i + 1] - pts[i];
+            }
+
+            face.scaleNorm(sqrt(fFace.magSqr()/ln.lengthSqr()));
+        }
+    }
+
+    for(Cell& cell: solver_.grid().cells())
+    {
+        for(InteriorLink& nb: cell.neighbours())
+            nb.init();
+
+        for(BoundaryLink& bd: cell.boundaries())
+            bd.init();
+    }
+}
+
 //- Protected
 
 void ImmersedBoundary::setCellStatus()

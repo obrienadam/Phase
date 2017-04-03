@@ -91,7 +91,7 @@ void ImmersedBoundaryObject::updateCells()
     freshlyClearedCells_->clear();
 
     for (Cell &cell: *cells_)
-        if (!shapePtr_->isBoundedBy(cell.centroid(), 1e-10))
+        if (!isInIb(cell.centroid()))
         {
             freshlyClearedCells_->push_back(cell); //- Freshly cleared cells need a time step correction
             fluidCells.moveToGroup(cell); //- This will remove the cell from the ib cell zone
@@ -102,16 +102,16 @@ void ImmersedBoundaryObject::updateCells()
     ibCells_->clear();
     solidCells_->clear();
 
-    for (Cell &cell: fluidCells.cellCentersWithin(*shapePtr_, 1e-10))
+    for (Cell &cell: fluidCells.cellCentersWithin(*(Circle*)shapePtr_.get(), 1e-10))
         cells_->moveToGroup(cell);
 
     auto isIbCell = [this](const Cell &cell) {
         for (const InteriorLink &nb: cell.neighbours())
-            if (!shapePtr_->isBoundedBy(nb.cell().centroid(), 1e-10))
+            if (!isInIb(nb.cell().centroid()))
                 return true;
 
         for (const DiagonalCellLink &dg: cell.diagonals())
-            if (!shapePtr_->isBoundedBy(dg.cell().centroid(), 1e-10))
+            if (!isInIb(dg.cell().centroid()))
                 return true;
 
         return false;

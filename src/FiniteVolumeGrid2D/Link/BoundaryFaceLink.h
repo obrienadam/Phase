@@ -13,7 +13,7 @@ public:
 
     explicit BoundaryLink(const BoundaryLink &other);
 
-    //BoundaryLink& operator=(const BoundaryLink& rhs);
+    virtual void init();
 
     const Face &face() const;
 

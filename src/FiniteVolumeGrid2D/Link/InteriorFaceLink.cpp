@@ -18,6 +18,12 @@ InteriorLink::InteriorLink(const InteriorLink &other)
 
 }
 
+void InteriorLink::init()
+{
+    BoundaryLink::init();
+    rCellVec_ = cell_.centroid() - self_.centroid();
+}
+
 const Cell &InteriorLink::cell() const
 {
     return cell_;

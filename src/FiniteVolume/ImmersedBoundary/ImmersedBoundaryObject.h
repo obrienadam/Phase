@@ -29,6 +29,8 @@ public:
 
     void initPolygon(const std::vector<Point2D> &vertices);
 
+    bool isInIb(const Point2D& pt) const { return shapePtr_->isBoundedBy(pt, 1e-10); }
+
     Shape2D &shape()
     { return *shapePtr_; }
 

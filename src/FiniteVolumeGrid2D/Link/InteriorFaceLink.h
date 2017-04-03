@@ -13,6 +13,8 @@ public:
 
     explicit InteriorLink(const InteriorLink &other);
 
+    virtual void init();
+
     InteriorLink &operator=(const InteriorLink &rhs);
 
     const Cell &cell() const;

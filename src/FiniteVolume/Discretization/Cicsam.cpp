@@ -20,6 +20,8 @@ void interpolateFaces(const VectorFiniteVolumeField &u,
                       Scalar timeStep,
                       Scalar k)
 {
+    const CellZone& fluid = gamma.grid.cellZone("fluid");
+
     for(const Face& face: gamma.grid.interiorFaces())
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());

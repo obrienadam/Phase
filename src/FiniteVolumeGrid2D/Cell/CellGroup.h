@@ -56,6 +56,8 @@ public:
 
     std::vector<Ref<Cell> > cellCentersWithin(const Shape2D &shape, Scalar toler);
 
+    std::vector<Ref<Cell> > cellCentersWithin(const Circle &shape, Scalar toler);
+
     std::vector<Ref<Cell> > cellsOverlapping(const Shape2D &shape);
 
     std::vector<Ref<Cell> > cellNearestNeighbours(const Point2D &pt, size_t k);
@@ -65,6 +67,8 @@ public:
     std::vector<Ref<const Cell> > cellCentersWithin(const Circle& circle) const;
 
     std::vector<Ref<const Cell> > cellCentersWithin(const Shape2D &shape, Scalar toler) const;
+
+    std::vector<Ref<const Cell> > cellCentersWithin(const Circle &shape, Scalar toler) const;
 
     std::vector<Ref<const Cell> > cellsOverlapping(const Shape2D &shape) const;
 

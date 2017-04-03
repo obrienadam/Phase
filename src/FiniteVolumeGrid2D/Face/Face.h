@@ -45,6 +45,9 @@ public:
     bool belongsToPatch() const
     { return patchPtr_ != nullptr; }
 
+    void scaleNorm(Scalar alpha)
+    { normal_ *= alpha; }
+
     Label id() const
     { return id_; }
 

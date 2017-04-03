@@ -62,6 +62,15 @@ public:
 
     void addInteriorLink(const Face &face, const Cell &cell);
 
+    std::vector<InteriorLink> &neighbours()
+    { return interiorLinks_; }
+
+    std::vector<BoundaryLink> &boundaries()
+    { return boundaryLinks_; }
+
+    std::vector<DiagonalCellLink> &diagonals()
+    { return diagonalLinks_; }
+
     const std::vector<InteriorLink> &neighbours() const
     { return interiorLinks_; }
 

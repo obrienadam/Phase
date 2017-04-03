@@ -66,6 +66,10 @@ public:
     void assignNodeIds();
 
     //- Cell related methods
+
+    std::vector<Cell> &cells()
+    { return cells_; }
+
     const std::vector<Cell> &cells() const
     { return cells_; }
 
@@ -117,6 +121,10 @@ public:
     void assignCellIds();
 
     //- Face related methods
+
+    std::vector<Face> &faces()
+    { return faces_; }
+
     const std::vector<Face> &faces() const
     { return faces_; }
 

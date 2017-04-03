@@ -79,6 +79,12 @@ std::vector<Point2D> Polygon::intersections(const Line2D &line) const
         }
     }
 
+    std::sort(intersections.begin(), intersections.end(),
+              [&line](const Point2D& lhs, const Point2D& rhs)->bool
+    {
+        return (lhs - line.r0()).magSqr() < (rhs - line.r0()).magSqr();
+    });
+
     return intersections;
 }
 
