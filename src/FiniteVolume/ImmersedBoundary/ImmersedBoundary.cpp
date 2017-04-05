@@ -214,7 +214,7 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 {
     for (const auto &ibObj: ibObjs_)
     {
-        if (ibObj->ibCells().isInGroup(cell))
+        if (ibObj->isInIb(cell.centroid()))
             return true;
     }
 

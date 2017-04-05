@@ -51,11 +51,20 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
         std::vector<Scalar> vals;
         std::vector<Index> cols;
 
+        bool centerval = false;
+
         for (const auto &entry: eqn[localRow])
         {
             cols.push_back(entry.first);
+
+            if(localRow + minGlobalIndex == entry.first)
+                centerval = true;
+
             vals.push_back(entry.second);
         }
+
+        if(!centerval)
+            throw Exception("", "", "problem.");
 
         if (newMatrix)
             mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());

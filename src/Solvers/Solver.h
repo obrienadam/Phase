@@ -77,6 +77,8 @@ public:
     //- ICs/IBs
     void setInitialConditions(const Input &input);
 
+    const ImmersedBoundary& ibObjManager() const { return ibObjManager_; }
+
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const
     { return ibObjManager_.ibObjs(); }
 

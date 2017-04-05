@@ -31,8 +31,8 @@ void ImmersedBoundaryObject::initPolygon(const std::vector<Point2D> &vertices)
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
 {
-    const Point2D xc = shape().intersections(LineSegment2D(ptA, ptB))[0];
-    const std::pair<Point2D, Point2D> edge = shapePtr_->nearestEdge(xc);
+    Point2D xc = shape().intersections(LineSegment2D(ptA, ptB))[0];
+    std::pair<Point2D, Point2D> edge = shapePtr_->nearestEdge(xc);
 
     return std::make_pair(
             xc, -(edge.second - edge.first).normalVec()

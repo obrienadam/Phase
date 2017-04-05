@@ -25,7 +25,10 @@ VectorFiniteVolumeField Celeste::compute()
     for(const Face &face: gamma_.grid.interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
-        ft(face) = sigma_*kappa_(face)*(gamma_(face.rCell()) - gamma_(face.lCell()))*rc/dot(rc, rc);
+        if(!solver_.ibObjManager().isIbCell(face.lCell()) && !solver_.ibObjManager().isIbCell(face.rCell()))
+            ft(face) = sigma_*kappa_(face)*(gamma_(face.rCell()) - gamma_(face.lCell()))*rc/dot(rc, rc);
+        else
+            ft(face) = Vector2D(0., 0.);
     }
 
     for(const Cell& cell: fluid)
@@ -74,21 +77,48 @@ void Celeste::constructGammaTildeMatrices()
     Matrix A(8, 5);
 
     gradGammaTildeMatrices_.resize(gradGammaTilde_.size());
-    gradGammaTildeStencils_.resize(gradGammaTilde_.size());
-    for(const Cell &cell: gammaTilde_.grid.cellZone("fluid"))
+
+    for(const Cell &cell: gradGamma_.grid.cells())
     {
-        gradGammaTildeStencils_[cell.id()] = gradGammaTilde_.grid.globalActiveCells().cellNearestNeighbours(cell.centroid(), 9);
+        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
+        A.resize(stencilSize, 5);
 
-        A.resize(8, 5);
         int i = 0;
-        for(const Cell &kCell: gradGammaTildeStencils_[cell.id()])
+        for(const InteriorLink& nb: cell.neighbours())
         {
-            if(&cell == &kCell)
-                continue;
+            Scalar sSqr = nb.rCellVec().magSqr();
+            Scalar dx = nb.rCellVec().x;
+            Scalar dy = nb.rCellVec().y;
 
-            const Scalar sSqr = (kCell.centroid() - cell.centroid()).magSqr();
-            const Scalar dx = kCell.centroid().x - cell.centroid().x;
-            const Scalar dy = kCell.centroid().y - cell.centroid().y;
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        for(const DiagonalCellLink& dg: cell.diagonals())
+        {
+            Scalar sSqr = dg.rCellVec().magSqr();
+            Scalar dx = dg.rCellVec().x;
+            Scalar dy = dg.rCellVec().y;
+
+            A(i, 0) = dx/sSqr;
+            A(i, 1) = dy/sSqr;
+            A(i, 2) = dx*dx/(2.*sSqr);
+            A(i, 3) = dy*dy/(2.*sSqr);
+            A(i, 4) = dx*dy/sSqr;
+
+            ++i;
+        }
+
+        for(const BoundaryLink& bd: cell.boundaries())
+        {
+            Scalar sSqr = bd.rFaceVec().magSqr();
+            Scalar dx = bd.rFaceVec().x;
+            Scalar dy = bd.rFaceVec().y;
 
             A(i, 0) = dx/sSqr;
             A(i, 1) = dy/sSqr;
@@ -107,11 +137,10 @@ void Celeste::constructKappaMatrices()
 {
     Matrix A(8, 5);
 
-    kappaMatrices_.resize(gamma_.size());
-    for(const Cell &cell: gamma_.grid.cellZone("fluid"))
+    kappaMatrices_.resize(kappa_.size());
+    for(const Cell &cell: kappa_.grid.cellZone("fluid"))
     {
-        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-
+        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
         A.resize(stencilSize, 5);
 
         int i = 0;
@@ -199,27 +228,36 @@ void Celeste::constructKappaMatrices()
 void Celeste::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-
     solver().grid().sendMessages(solver().comm(), gammaTilde_);
 
     gradGammaTilde_.fill(Vector2D(0., 0.));
 
     Matrix b(8, 1);
 
-    for(const Cell &cell: gradGammaTilde_.grid.cellZone("fluid"))
+    for(const Cell &cell: gradGamma_.grid.cells())
     {
-        const auto &nb = gradGammaTildeStencils_[cell.id()];
-
-        b.resize(8, 1);
+        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
+        b.resize(stencilSize, 1);
 
         int i = 0;
-        for(const Cell &kCell: nb)
+        for(const InteriorLink& nb: cell.neighbours())
         {
-            if(&cell == &kCell)
-                continue;
+            Scalar sSqr = nb.rCellVec().magSqr();
+            b(i, 0) = (gammaTilde_(nb.cell()) - gammaTilde_(cell))/sSqr;
+            ++i;
+        }
 
-            b(i, 0) = (gammaTilde_(kCell) - gammaTilde_(cell))/(kCell.centroid() - cell.centroid()).magSqr();
+        for(const DiagonalCellLink& dg: cell.diagonals())
+        {
+            Scalar sSqr = dg.rCellVec().magSqr();
+            b(i, 0) = (gammaTilde_(dg.cell()) - gammaTilde_(cell))/sSqr;
+            ++i;
+        }
 
+        for(const BoundaryLink& bd: cell.boundaries())
+        {
+            Scalar sSqr = bd.rFaceVec().magSqr();
+            b(i, 0) = (gammaTilde_(bd.face()) - gammaTilde_(cell))/sSqr;
             ++i;
         }
 
@@ -232,7 +270,10 @@ void Celeste::computeGradGammaTilde()
 
 void Celeste::computeInterfaceNormals()
 {
-    for(const Cell &cell: n_.grid.cellZone("fluid"))
+    //for(const Cell &cell: n_.grid.cells())
+    //    n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec().unitVec();
+
+    for(const Cell &cell: n_.grid.cells())
         n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
 
     solver().grid().sendMessages(solver().comm(), n_);
@@ -245,7 +286,7 @@ void Celeste::computeCurvature()
 
     for(const Cell &cell: kappa_.grid.cellZone("fluid"))
     {
-        if(gradGamma_(cell).magSqr() < curvatureCutoffTolerance_)
+        if(gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_)
             continue;
 
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
@@ -255,7 +296,7 @@ void Celeste::computeCurvature()
 
         for(const InteriorLink &nb: cell.neighbours())
         {
-            Vector2D n = n_(nb.cell()) - n_(cell);
+            Vector2D dn = n_(nb.cell()) - n_(cell);
             Scalar sSqr = (nb.cell().centroid() - cell.centroid()).magSqr();
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
@@ -267,22 +308,22 @@ void Celeste::computeCurvature()
                     //Vector2D r = stencil.first - cell.centroid();
                     //sSqr = std::max(1e-8, r.magSqr());
 
-                    n = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
-                    n_(nb.cell()) = n + n_(cell);
+                    dn = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    n_(nb.cell()) = n_(cell) + dn;
 
                     break;
                 }
             }
 
-            bx(i, 0) = n.x/sSqr;
-            by(i, 0) = n.y/sSqr;
+            bx(i, 0) = dn.x/sSqr;
+            by(i, 0) = dn.y/sSqr;
 
             ++i;
         }
 
         for(const DiagonalCellLink &dg: cell.diagonals())
         {
-            Vector2D n = n_(dg.cell()) - n_(cell);
+            Vector2D dn = n_(dg.cell()) - n_(cell);
             Scalar sSqr = (dg.cell().centroid() - cell.centroid()).magSqr();
 
             for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
@@ -294,15 +335,15 @@ void Celeste::computeCurvature()
                     //Vector2D r = stencil.first - cell.centroid();
                     //sSqr = std::max(1e-8, r.magSqr());
 
-                    n = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
-                    n_(dg.cell()) = n + n_(cell);
+                    dn = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) - n_(cell);
+                    n_(dg.cell()) = n_(cell) + dn;
 
                     break;
                 }
             }
 
-            bx(i, 0) = n.x/sSqr;
-            by(i, 0) = n.y/sSqr;
+            bx(i, 0) = dn.x/sSqr;
+            by(i, 0) = dn.y/sSqr;
 
             ++i;
         }
@@ -364,7 +405,6 @@ void Celeste::weightCurvatures()
     }
 
     solver().grid().sendMessages(solver().comm(), kappa_);
-    return;
 
     kappa_.savePreviousIteration();
 

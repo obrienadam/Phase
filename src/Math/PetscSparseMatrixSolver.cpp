@@ -123,16 +123,6 @@ void PetscSparseMatrixSolver::setPreconditioner(const std::string &preconditione
         PetscOptionsSetValue(NULL, "-pc_hypre_pilut_tol", "0.001");
         PCSetFromOptions(precon_);
     }
-    else if (preconditioner == "boomeramg")
-    {
-        PCSetType(precon_, PCHYPRE);
-        PCHYPRESetType(precon_, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_relax_type_down", "sequential-Gauss-Seidel");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_relax_type_up", "sequential-Gauss-Seidel");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_relax_type_coarse", "Gaussian-elimination");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_max_iter", "5");
-        PCSetFromOptions(precon_);
-    }
     else if (preconditioner == "sor")
     {
         PCSetType(precon_, PCSOR);
