@@ -722,6 +722,7 @@ void FiniteVolumeGrid2D::initCells()
 
     //- Initialize diagonal links
     for (Cell &cell: cells_)
+    {
         for (const Node &node: cell.nodes())
             for (const Cell &kCell: node.cells())
             {
@@ -730,19 +731,6 @@ void FiniteVolumeGrid2D::initCells()
                 else if (!cellsShareFace(cell, kCell))
                     cell.addDiagonalLink(kCell);
             }
-
-    for (Cell &cell: cells_)
-    {
-        for (const Node &node: cell.nodes())
-        {
-            for (const Cell &nbCell: node.cells())
-            {
-                if (cell.id() == nbCell.id())
-                    continue;
-                else if (!cellsShareFace(cell, nbCell))
-                    cell.addDiagonalLink(nbCell);
-            }
-        }
     }
 
     setAllCellsActive();

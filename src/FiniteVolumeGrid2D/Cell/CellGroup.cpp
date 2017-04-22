@@ -77,35 +77,10 @@ std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Circle &circle)
     return getRefs(result);
 }
 
-std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Shape2D &shape, Scalar toler)
-{
-    auto insideShape = [&shape, toler](const Value &val) {
-        return shape.isBoundedBy(val.first, toler);
-    };
-
-    std::vector<Value> result;
-
-    boost::geometry::model::box<Point2D> box = shape.boundingBox();
-
-    rTree_.query(boost::geometry::index::within(box)
-                 && boost::geometry::index::satisfies(insideShape),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
-
-std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Circle &shape, Scalar toler)
+std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Box& box)
 {
     std::vector<Value> result;
-    Circle circle(shape.centroid(), shape.radius() + toler);
-
-    auto isInCircle = [&circle](const Value& val)
-    {
-        return circle.isInside(val.first);
-    };
-
-    rTree_.query(boost::geometry::index::covered_by(circle.boundingBox()) &&
-                 boost::geometry::index::satisfies(isInCircle),
+    rTree_.query(boost::geometry::index::covered_by(box.boundingBox()),
                  std::back_inserter(result));
 
     return getRefs(result);
@@ -158,28 +133,10 @@ std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Circle &circle)
     return getRefs(result);
 }
 
-std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Shape2D &shape, Scalar toler) const
+std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Box &box) const
 {
     std::vector<Value> result;
-
-    rTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
-
-std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Circle &shape, Scalar toler) const
-{
-    std::vector<Value> result;
-    Circle circle(shape.centroid(), shape.radius() + toler);
-
-    auto isInCircle = [&circle](const Value& val)
-    {
-        return circle.isInside(val.first);
-    };
-
-    rTree_.query(boost::geometry::index::covered_by(circle.boundingBox()) &&
-                 boost::geometry::index::satisfies(isInCircle),
+    rTree_.query(boost::geometry::index::covered_by(box.boundingBox()),
                  std::back_inserter(result));
 
     return getRefs(result);

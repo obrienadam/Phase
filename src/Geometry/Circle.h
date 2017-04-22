@@ -13,6 +13,9 @@ public:
 
     Circle(Point2D center, Scalar radius);
 
+    Type type() const
+    { return CIRCLE; }
+
     void init(const Point2D &center, Scalar radius);
 
     //- Circle parameters
@@ -37,9 +40,12 @@ public:
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;
 
+    std::vector<Point2D> intersections(const LineSegment2D &line) const;
+
     Point2D nearestIntersect(const Point2D &point) const;
 
-    std::pair<Point2D, Point2D> nearestEdge(const Point2D &point) const; // returns a unit tangent edge instead
+    LineSegment2D nearestEdge(const Point2D &point) const; // returns a unit tangent edge instead
+
     bool intersects(const Shape2D &shape) const;
 
     //- Transformations

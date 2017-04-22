@@ -31,7 +31,7 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
 
     //- Create ib zones if any. Will also update local/global indices
     ibObjManager_.initCellZones();
-    ibObjManager_.cutFaces();
+    //ibObjManager_.cutFaces();
 }
 
 void FractionalStep::initialize()

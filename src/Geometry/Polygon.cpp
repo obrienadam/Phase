@@ -10,11 +10,10 @@ Polygon::Polygon()
 }
 
 Polygon::Polygon(const std::vector<Point2D> &vertices)
+        :
+        Polygon(vertices.begin(), vertices.end())
 {
-    for (const Point2D &vtx: vertices)
-        boost::geometry::append(poly_, vtx);
 
-    init();
 }
 
 Polygon::Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn)
@@ -58,129 +57,93 @@ bool Polygon::isEmpty() const
 //- Intersections
 std::vector<Point2D> Polygon::intersections(const Line2D &line) const
 {
-    auto vtx0 = vertices().begin();
-    auto vtx1 = vtx0 + 1;
     std::vector<Point2D> intersections;
 
-    for (; vtx1 != vertices().end(); ++vtx1, ++vtx0)
+    for (const LineSegment2D &edge: edges())
     {
-        //- check for vertex intersections
-        if (line.isApproximatelyOnLine(*vtx1))
-            intersections.push_back(*vtx1);
-        else if (line.isApproximatelyOnLine(*vtx0))
-            continue;
-        else // check for edge intersection
-        {
-            const Line2D edge(*vtx0, (*vtx1 - *vtx0).tangentVec());
-            const Point2D xc = Line2D::intersection(edge, line).first;
+        Vector2D r2 = edge.ptB() - edge.ptA();
+        Vector2D dr0 = edge.ptA() - line.r0();
 
-            if ((xc - *vtx0).magSqr() < (*vtx1 - *vtx0).magSqr() && dot(*vtx1 - *vtx0, xc - *vtx0) > 0.)
-                intersections.push_back(xc);
-        }
+        Scalar t2 = cross(line.d(), dr0) / cross(line.d(), -r2);
+
+        if (edge.isBounded(edge.ptA() + t2 * r2))
+            intersections.push_back(edge.ptA() + t2 * r2);
     }
 
-    std::sort(intersections.begin(), intersections.end(),
-              [&line](const Point2D& lhs, const Point2D& rhs)->bool
+    return intersections;
+}
+
+std::vector<Point2D> Polygon::intersections(const LineSegment2D &line) const
+{
+    Vector2D r1 = line.ptB() - line.ptA();
+    std::vector<Point2D> intersections;
+
+    for (const LineSegment2D &edge: edges())
     {
-        return (lhs - line.r0()).magSqr() < (rhs - line.r0()).magSqr();
-    });
+        Vector2D r2 = edge.ptB() - edge.ptA();
+        Vector2D dr0 = edge.ptA() - line.ptA();
+
+        Scalar t1 = cross(dr0, -r2) / cross(r1, -r2);
+        Scalar t2 = cross(r1, dr0) / cross(r1, -r2);
+
+        if (line.isBounded(line.ptA() + t1 * r1) && edge.isBounded(edge.ptA() + t2 * r2))
+            intersections.push_back(line.ptA() + t1 * r1);
+    }
 
     return intersections;
 }
 
 Point2D Polygon::nearestIntersect(const Point2D &point) const
 {
-    auto vtx0 = vertices().begin();
-    auto vtx1 = vtx0 + 1;
-    Scalar minDistSqr = (*vtx0 - point).magSqr();
-    Vector2D nearestPoint = *vtx0;
+    Point2D xc;
+    Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
 
-    for (; vtx1 != vertices().end(); ++vtx0, ++vtx1)
+    for (const LineSegment2D &edge: edges())
     {
-        auto edge = std::make_pair(*vtx0, *vtx1);
-        const Vector2D edgeVec = edge.second - edge.first;
-
-        Vector2D rel = point - edge.first;
-        Vector2D tan = dot(rel, edgeVec) * edgeVec / edgeVec.magSqr();
-        Vector2D norm = rel - tan;
-
-        Scalar distSqr = norm.magSqr();
-        const Point2D xc = edge.first + tan;
-
-        const Scalar t = dot(xc - edge.first, tan.unitVec());
-        const Scalar tmax = edgeVec.mag();
-
-        if (fabs(distSqr - minDistSqr) < Point2D::epsilon()) // Two similar distances, default to a vertex
-        {
-            Scalar distSqrV0 = (point - edge.first).magSqr();
-            Scalar distSqrV1 = (point - edge.second).magSqr();
-
-            if (distSqrV0 < distSqrV1)
-            {
-                minDistSqr = distSqrV0;
-                nearestPoint = edge.first;
-            }
-            else
-            {
-                minDistSqr = distSqrV1;
-                nearestPoint = edge.second;
-            }
-
+        if (!edge.isBounded(point))
             continue;
-        }
 
-        if (distSqr < minDistSqr && t >= 0 && t < tmax)
-        {
-            minDistSqr = distSqr;
-            nearestPoint = edge.first + tan;
-        }
+        Vector2D t = edge.ptB() - edge.ptA();
+        t = dot(point - edge.ptA(), t) * t / t.magSqr();
 
-        //- Checke for a neares vertex
-        distSqr = (edge.first - point).magSqr();
-        if (distSqr < minDistSqr)
+        Vector2D n = point - edge.ptA() - t;
+
+        if (n.magSqr() < minDistSqr)
         {
-            minDistSqr = distSqr;
-            nearestPoint = edge.first;
+            minDistSqr = n.magSqr();
+            xc = edge.ptA() + t;
         }
     }
 
-    return nearestPoint;
-}
-
-std::pair<Point2D, Point2D> Polygon::nearestEdge(const Point2D &point) const
-{
-    auto vtx0 = vertices().begin();
-    auto vtx1 = vtx0 + 1;
-    Scalar minDistSqr = (*vtx0 - point).magSqr();
-    std::pair<Point2D, Point2D> nearestEdge = std::make_pair(*vtx0, *vtx1);
-
-    for (; vtx1 != vertices().end(); ++vtx0, ++vtx1)
-    {
-        auto edge = std::make_pair(*vtx0, *vtx1);
-        const Vector2D edgeVec = edge.second - edge.first;
-
-        Vector2D rel = point - edge.first;
-        Vector2D tan = dot(rel, edgeVec) * edgeVec / edgeVec.magSqr();
-        Vector2D norm = rel - tan;
-
-        Scalar distSqr = norm.magSqr();
-        const Point2D xc = edge.first + tan;
-
-        const Scalar t = dot(xc - edge.first, tan.unitVec());
-        const Scalar tmax = edgeVec.mag();
-
-        if (distSqr < minDistSqr && t >= 0 && t < tmax)
+    for (const Point2D &vertex: vertices())
+        if ((point - vertex).magSqr() < minDistSqr)
         {
-            minDistSqr = distSqr;
-            nearestEdge = edge;
+            minDistSqr = (point - vertex).magSqr();
+            xc = vertex;
         }
 
-        distSqr = (edge.first - point).magSqr();
+    return xc;
+}
 
-        if (distSqr < minDistSqr)
+LineSegment2D Polygon::nearestEdge(const Point2D &point) const
+{
+    LineSegment2D nearestEdge;
+    Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
+
+    for (const LineSegment2D &edge: edges())
+    {
+        if (!edge.isBounded(point))
+            continue;
+
+        Vector2D t = edge.ptB() - edge.ptA();
+        t = dot(point - edge.ptA(), t) * t / t.magSqr();
+
+        Vector2D n = point - edge.ptA() - t;
+
+        if (n.magSqr() < minDistSqr)
         {
-            minDistSqr = distSqr;
             nearestEdge = edge;
+            minDistSqr = n.magSqr();
         }
     }
 
@@ -241,6 +204,19 @@ boost::geometry::model::box<Point2D> Polygon::boundingBox() const
     boost::geometry::envelope(boostPolygon(), box);
 
     return box;
+}
+
+std::vector<LineSegment2D> Polygon::edges() const
+{
+    std::vector<LineSegment2D> edges;
+
+    auto vtxA = vertices().begin();
+    auto vtxB = vtxA + 1;
+
+    for (; vtxB != vertices().end(); ++vtxA, ++vtxB)
+        edges.push_back(LineSegment2D(*vtxA, *vtxB));
+
+    return edges;
 }
 
 //- Protected methods

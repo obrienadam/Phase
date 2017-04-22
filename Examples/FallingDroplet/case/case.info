@@ -15,7 +15,7 @@ Solver
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.00005
+	smoothingKernelRadius 0.0001
 	surfaceTensionModel CELESTE
 }
 
@@ -67,15 +67,15 @@ Properties
 	sigma 0.0262
 	g (0,-9.8065)
 
-	advancingContactAngle 135
-	recedingContactAngle 135
+	advancingContactAngle 90
+	recedingContactAngle 90
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 200
-	nCellsY 100
+	nCellsX 100
+	nCellsY 50
 	width 0.005
 	height 0.0025
 	partitionBufferWidth 2

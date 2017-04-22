@@ -14,10 +14,6 @@ public:
     {
         FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP
     };
-    enum FlaggingCriterion
-    {
-        CELL_CENTER_WITHIN, CELL_OVERLAPPING
-    };
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
@@ -27,9 +23,16 @@ public:
     //- The shape
     void initCircle(const Point2D &center, Scalar radius);
 
-    void initPolygon(const std::vector<Point2D> &vertices);
+    void initBox(const Point2D& center, Scalar width, Scalar height);
 
-    bool isInIb(const Point2D& pt) const { return shapePtr_->isBoundedBy(pt, 1e-10); }
+    template <class const_iterator>
+    void initPolygon(const_iterator begin, const_iterator end)
+    {
+        shapePtr_ = std::shared_ptr<Polygon>(new Polygon(begin, end));
+    }
+
+    bool isInIb(const Point2D &pt) const
+    { return shapePtr_->isCovered(pt); }
 
     Shape2D &shape()
     { return *shapePtr_; }

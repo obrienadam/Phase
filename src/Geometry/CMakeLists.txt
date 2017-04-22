@@ -7,7 +7,8 @@ set(HEADERS Vector2D.h
             Circle.h
             Polygon.h
             BoundingBox.h
-            Search.h)
+            Search.h
+            Box.h)
 
 set(SOURCES Vector2D.cpp
             Tensor2D.cpp
@@ -17,7 +18,8 @@ set(SOURCES Vector2D.cpp
             Circle.cpp
             Polygon.cpp
             BoundingBox.cpp
-            Search.cpp)
+            Search.cpp
+            Box.cpp)
 
 add_library(Geometry ${HEADERS} ${SOURCES})
 target_link_libraries(Geometry System Equation)

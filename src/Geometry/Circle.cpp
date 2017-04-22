@@ -23,46 +23,47 @@ bool Circle::isInside(const Point2D &testPoint) const
 
 bool Circle::isOnEdge(const Point2D &point) const
 {
-    return fabs((point - center_).magSqr() - radius_ * radius_) <= Point2D::epsilon();
+    return (point - center_).magSqr() == radius_ * radius_;
 }
 
 bool Circle::isCovered(const Point2D &point) const
 {
-    return (point - center_).magSqr() - radius_ * radius_ <= 0.;
+    return (point - center_).magSqr() <= radius_ * radius_;
 }
 
 bool Circle::isBoundedBy(const Point2D &point, Scalar toler) const
 {
-    return (point - center_).magSqr() - radius_ * radius_ <= -toler;
+    return (point - center_).magSqr() - radius_ * radius_ <= -toler*toler;
 }
 
 //- Intersections
 std::vector<Point2D> Circle::intersections(const Line2D &line) const
 {
-    Vector2D origin = line.r0() - center_;
+    Vector2D r = line.r0() - center_;
 
-    const Scalar dx = line.d().x, dy = line.d().y;
-    const Scalar a = dx * dx + dy * dy;
-    const Scalar b = 2. * (origin.x * dx + origin.y * dy);
-    const Scalar c = origin.x * origin.x + origin.y * origin.y - radius_ * radius_;
+    Scalar a = line.d().magSqr();
+    Scalar b = 2*dot(r, line.d());
+    Scalar c = r.magSqr() - radius_*radius_;
+    Scalar disc = b*b - 4*a*c;
 
-    const Scalar disc = b * b - 4. * a * c;
-
-    if (disc < 0.)
+    if(disc < 0.)
         return std::vector<Point2D>();
-    else
-    {
-        Scalar tmp = sqrt(disc);
-        Scalar t1 = (-b + tmp) / (2. * a), t2 = (-b - tmp) / (2. * a);
 
-        if(fabs(t1) > fabs(t2))
-            std::swap(t1, t2);
+    Scalar t1 = (-b - sqrt(disc))/(2*a);
+    Scalar t2 = (-b + sqrt(disc))/(2*a);
 
-        return std::vector<Point2D>({
-                                            line(t1),
-                                            line(t2)
-                                    });
-    }
+    return std::vector<Point2D>({line(t1), line(t2)});
+}
+
+std::vector<Point2D> Circle::intersections(const LineSegment2D &line) const
+{
+    std::vector<Point2D> xc;
+
+    for(const Point2D& pt: intersections(Line2D(line.ptA(), (line.ptB() - line.ptA()).normalVec())))
+        if(line.isBounded(pt))
+            xc.push_back(pt);
+
+    return xc;
 }
 
 Point2D Circle::nearestIntersect(const Point2D &point) const
@@ -70,12 +71,12 @@ Point2D Circle::nearestIntersect(const Point2D &point) const
     return (point - center_).unitVec() * radius_ + center_;
 }
 
-std::pair<Point2D, Point2D> Circle::nearestEdge(const Point2D &point) const
+LineSegment2D Circle::nearestEdge(const Point2D &point) const
 {
     const Point2D xc = nearestIntersect(point);
-    const Vector2D utan = (center_ - xc).tangentVec();
+    const Vector2D utan = (center_ - xc).tangentVec().unitVec();
 
-    return std::make_pair(
+    return LineSegment2D(
             xc + 0.5 * utan,
             xc - 0.5 * utan
     );
@@ -83,7 +84,7 @@ std::pair<Point2D, Point2D> Circle::nearestEdge(const Point2D &point) const
 
 bool Circle::intersects(const Shape2D &shape) const
 {
-    return (shape.nearestIntersect(center_) - center_).magSqr() < radius_ * radius_;
+    return isCovered(shape.nearestIntersect(center_));
 }
 
 //- Transformations

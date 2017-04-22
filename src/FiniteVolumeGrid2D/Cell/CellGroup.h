@@ -9,6 +9,7 @@
 #include "Cell.h"
 #include "Shape2D.h"
 #include "Circle.h"
+#include "Box.h"
 
 typedef std::set<Ref<const Cell> > CellSet;
 
@@ -52,11 +53,9 @@ public:
     //- Searching
     std::vector<Ref<Cell> > cellCentersWithin(const Shape2D &shape);
 
-    std::vector<Ref<Cell> > cellCentersWithin(const Circle& circle);
+    std::vector<Ref<Cell> > cellCentersWithin(const Circle &circle);
 
-    std::vector<Ref<Cell> > cellCentersWithin(const Shape2D &shape, Scalar toler);
-
-    std::vector<Ref<Cell> > cellCentersWithin(const Circle &shape, Scalar toler);
+    std::vector<Ref<Cell> > cellCentersWithin(const Box &box);
 
     std::vector<Ref<Cell> > cellsOverlapping(const Shape2D &shape);
 
@@ -64,11 +63,9 @@ public:
 
     std::vector<Ref<const Cell> > cellCentersWithin(const Shape2D &shape) const;
 
-    std::vector<Ref<const Cell> > cellCentersWithin(const Circle& circle) const;
+    std::vector<Ref<const Cell> > cellCentersWithin(const Circle &circle) const;
 
-    std::vector<Ref<const Cell> > cellCentersWithin(const Shape2D &shape, Scalar toler) const;
-
-    std::vector<Ref<const Cell> > cellCentersWithin(const Circle &shape, Scalar toler) const;
+    std::vector<Ref<const Cell> > cellCentersWithin(const Box &box) const;
 
     std::vector<Ref<const Cell> > cellsOverlapping(const Shape2D &shape) const;
 

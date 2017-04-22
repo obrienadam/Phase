@@ -1,8 +1,7 @@
 #include <memory>
 
 #include "ImmersedBoundaryObject.h"
-#include "LineSegment2D.h"
-#include "QuadraticNormalInterpolation.h"
+#include "Box.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
                                                Label id,
@@ -21,21 +20,40 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
 
 void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
 {
-    shapePtr_ = std::shared_ptr<Shape2D>(new Circle(center, radius));
+    shapePtr_ = std::shared_ptr<Circle>(new Circle(center, radius));
 }
 
-void ImmersedBoundaryObject::initPolygon(const std::vector<Point2D> &vertices)
+
+void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar height)
 {
-    shapePtr_ = std::shared_ptr<Shape2D>(new Polygon(vertices));
+    shapePtr_ = std::shared_ptr<Box>(new Box(
+            Point2D(center.x - width / 2., center.y - height / 2.),
+            Point2D(center.x + width / 2., center.y + height / 2.)
+    ));
 }
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
 {
-    Point2D xc = shape().intersections(LineSegment2D(ptA, ptB))[0];
-    std::pair<Point2D, Point2D> edge = shapePtr_->nearestEdge(xc);
+    auto intersections = shape().intersections(LineSegment2D(ptA, ptB));
+
+    Point2D xc;
+    if (intersections.empty()) //- fail safe, in case a point is on an ib
+    {
+        Point2D nPtA = shape().nearestIntersect(ptA);
+        Point2D nPtB = shape().nearestIntersect(ptB);
+
+        if ((nPtA - ptA).magSqr() < (nPtB - ptB).magSqr())
+            xc = ptA;
+        else
+            xc = ptB;
+    }
+    else
+        xc = intersections[0];
+
+    LineSegment2D edge = shapePtr_->nearestEdge(xc);
 
     return std::make_pair(
-            xc, -(edge.second - edge.first).normalVec()
+            xc, -(edge.ptB() - edge.ptA()).normalVec()
     );
 }
 
@@ -102,8 +120,22 @@ void ImmersedBoundaryObject::updateCells()
     ibCells_->clear();
     solidCells_->clear();
 
-    for (Cell &cell: fluidCells.cellCentersWithin(*(Circle*)shapePtr_.get(), 1e-10))
-        cells_->moveToGroup(cell);
+    switch (shapePtr_->type())
+    {
+        case Shape2D::CIRCLE:
+            for (Cell &cell: fluidCells.cellCentersWithin(
+                    *(Circle *) shapePtr_.get())) //- The circle method is much more efficient
+                cells_->moveToGroup(cell);
+            break;
+        case Shape2D::BOX:
+            for (Cell &cell: fluidCells.cellCentersWithin(
+                    *(Box *) shapePtr_.get())) //- The box method is much more efficient
+                cells_->moveToGroup(cell);
+            break;
+        default:
+            for (Cell &cell: fluidCells.cellCentersWithin(*shapePtr_))
+                cells_->moveToGroup(cell);
+    }
 
     auto isIbCell = [this](const Cell &cell) {
         for (const InteriorLink &nb: cell.neighbours())

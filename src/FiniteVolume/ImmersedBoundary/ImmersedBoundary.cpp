@@ -70,17 +70,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
         }
         else if (shape == "box")
         {
-            Scalar halfWidth = ibObjectInput.second.get<Scalar>("geometry.width") / 2.,
-                    halfHeight = ibObjectInput.second.get<Scalar>("geometry.height") / 2.;
-
-            std::vector<Point2D> box = {
-                    center + Vector2D(-halfWidth, -halfHeight),
-                    center + Vector2D(halfWidth, -halfHeight),
-                    center + Vector2D(halfWidth, halfHeight),
-                    center + Vector2D(-halfWidth, halfHeight)
-            };
-
-            ibObject->initPolygon(box);
+            ibObject->initBox(center, ibObjectInput.second.get<Scalar>("geometry.width"),
+                              ibObjectInput.second.get<Scalar>("geometry.height"));
         }
         else if (shape == "polygon")
         {
@@ -112,7 +103,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
             for (Point2D &vert: verts)
                 vert += translation;
 
-            ibObject->initPolygon(verts);
+            ibObject->initPolygon(verts.begin(), verts.end());
         }
         else
             throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject",
@@ -132,6 +123,15 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
         {
             comm.printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObjectInput.first.c_str(),
                         rotationAngle.get());
+
+            if (ibObject->shape().type() == Shape2D::BOX)
+            {
+                Box* box = (Box*)&ibObject->shape();
+                auto verts = box->vertices();
+
+                ibObject->initPolygon(verts.begin(), verts.end());
+            }
+
             ibObject->shape().rotate(rotationAngle.get() * M_PI / 180.);
         }
 
@@ -223,15 +223,15 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
 
 void ImmersedBoundary::cutFaces()
 {
-    for(Face& face: solver_.grid().faces())
+    for (Face &face: solver_.grid().faces())
     {
         LineSegment2D ln(face.lNode(), face.rNode());
 
-        for(const ImmersedBoundaryObject& ibObj: ibObjs())
+        for (const ImmersedBoundaryObject &ibObj: ibObjs())
         {
             std::vector<Point2D> intersections = ibObj.shape().intersections(ln);
 
-            if(intersections.size() == 0)
+            if (intersections.size() == 0)
                 continue;
 
             std::vector<Point2D> pts = {ln.ptA()};
@@ -239,22 +239,22 @@ void ImmersedBoundary::cutFaces()
             pts.push_back(ln.ptB());
 
             Vector2D fFace(0, 0);
-            for(int i = 0; i < pts.size() - 1; ++i)
+            for (int i = 0; i < pts.size() - 1; ++i)
             {
-                if(!ibObj.shape().isInside(0.5*(pts[i] + pts[i + 1])))
+                if (!ibObj.shape().isInside(0.5 * (pts[i] + pts[i + 1])))
                     fFace += pts[i + 1] - pts[i];
             }
 
-            face.scaleNorm(sqrt(fFace.magSqr()/ln.lengthSqr()));
+            face.scaleNorm(sqrt(fFace.magSqr() / ln.lengthSqr()));
         }
     }
 
-    for(Cell& cell: solver_.grid().cells())
+    for (Cell &cell: solver_.grid().cells())
     {
-        for(InteriorLink& nb: cell.neighbours())
+        for (InteriorLink &nb: cell.neighbours())
             nb.init();
 
-        for(BoundaryLink& bd: cell.boundaries())
+        for (BoundaryLink &bd: cell.boundaries())
             bd.init();
     }
 }

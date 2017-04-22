@@ -25,6 +25,8 @@ protected:
     virtual void computeCurvature();
     void weightCurvatures();
 
+    const Scalar eps_ = 1e-9;
+
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
     ScalarFiniteVolumeField &w_;
 

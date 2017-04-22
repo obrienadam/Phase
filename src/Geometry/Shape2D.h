@@ -11,8 +11,13 @@ class Shape2D
 {
 public:
 
+    enum Type{POLYGON, CIRCLE, BOX};
+
     virtual ~Shape2D()
     {}
+
+    //- Type
+    virtual Type type() const = 0;
 
     //- Shape parameters
     virtual const Point2D &centroid() const = 0;
@@ -34,11 +39,11 @@ public:
     //- Intersections
     virtual std::vector<Point2D> intersections(const Line2D &line) const = 0;
 
-    virtual std::vector<Point2D> intersections(const LineSegment2D &line) const;
+    virtual std::vector<Point2D> intersections(const LineSegment2D &line) const = 0;
 
     virtual Point2D nearestIntersect(const Point2D &point) const = 0;
 
-    virtual std::pair<Point2D, Point2D> nearestEdge(const Point2D &point) const = 0;
+    virtual LineSegment2D nearestEdge(const Point2D &point) const = 0;
 
     virtual bool intersects(const Shape2D &shape) const = 0;
 

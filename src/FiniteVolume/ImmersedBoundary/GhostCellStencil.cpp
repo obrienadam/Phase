@@ -37,3 +37,21 @@ Vector2D GhostCellStencil::ipValue(const VectorFiniteVolumeField &field) const
 
     return (*interpolator_)(vals, ip_);
 }
+
+Vector2D GhostCellStencil::ipGrad(const ScalarFiniteVolumeField &field) const
+{
+    Matrix mat(4, 3), b(4, 1);
+
+    int i = 0;
+    Scalar ipVal = ipValue(field);
+    for (const Cell &cell: ipCells_)
+    {
+        mat(i, 0) = cell.centroid().x - ip_.x;
+        mat(i, 1) = cell.centroid().y - ip_.y;
+        b(i, 0) = field(cell) - ipVal;
+        ++i;
+    }
+
+    mat.solve(b);
+    return Vector2D(b(0, 0), b(0, 1));
+}

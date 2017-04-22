@@ -26,9 +26,13 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
     int rank = comm.rank();
 
     FiniteVolumeField<int> &proc = addIntegerField("proc");
+    FiniteVolumeField<int> &cellId = addIntegerField("cellId");
 
     for (const Cell &cell: grid_.cells())
+    {
         proc(cell) = rank;
+        cellId(cell) = cell.id();
+    }
 }
 
 std::string Solver::info() const

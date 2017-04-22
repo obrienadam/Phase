@@ -2,7 +2,6 @@
 #include "Interpolation.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
-#include "EigenSparseMatrixSolver.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
                                              Solver &solver)
@@ -137,7 +136,7 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
             kappa_(face) = 0.;
         else
         {
-            const Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
+            Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
             kappa_(face) = g*kappa_(lCell) + (1. - g)*kappa_(rCell);
         }
     }
@@ -145,9 +144,9 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
     for(const Face &face: kappa_.grid.boundaryFaces())
     {
         const Cell& cell = face.lCell();
-        const Vector2D rf = face.centroid() - cell.centroid();
+        Vector2D rf = face.centroid() - cell.centroid();
 
-        const Scalar gradGammaMagSqr = ((gamma_(face) - gamma_(cell))*rf/dot(rf, rf)).magSqr();
+        Scalar gradGammaMagSqr = ((gamma_(face) - gamma_(cell))*rf/dot(rf, rf)).magSqr();
 
         if(gradGammaMagSqr < curvatureCutoffTolerance_)
             kappa_(face) = 0.;

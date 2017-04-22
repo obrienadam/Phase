@@ -31,6 +31,8 @@ public:
 
     Vector2D ipValue(const VectorFiniteVolumeField &field) const;
 
+    Vector2D ipGrad(const ScalarFiniteVolumeField &field) const;
+
     const std::vector<Scalar> &ipCoeffs() const
     { return ipCoeffs_; }
 
