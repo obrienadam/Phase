@@ -107,6 +107,9 @@ public:
     const CellGroup &inactiveCells() const
     { return inactiveCells_; }
 
+    const std::vector<CellZone> &bufferZones() const
+    { return bufferCellZones_; }
+
     void setAllCellsActive();
 
     const Cell &findContainingCell(const Point2D &point, const Cell &guess) const;

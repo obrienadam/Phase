@@ -154,6 +154,7 @@ void Celeste::constructKappaMatrices()
             Scalar dx = nb.rCellVec().x;
             Scalar dy = nb.rCellVec().y;
             Scalar sSqr = pow(nb.rCellVec().mag() + eps_, 2);
+            sSqr = 1.;
 
             for (const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
@@ -185,6 +186,7 @@ void Celeste::constructKappaMatrices()
             Scalar dx = dg.rCellVec().x;
             Scalar dy = dg.rCellVec().y;
             Scalar sSqr = pow(dg.rCellVec().mag() + eps_, 2);
+            sSqr = 1;
 
             for (const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
@@ -216,6 +218,7 @@ void Celeste::constructKappaMatrices()
             Scalar dx = bd.rFaceVec().x;
             Scalar dy = bd.rFaceVec().y;
             Scalar sSqr = pow(bd.rFaceVec().mag() + eps_, 2);
+            sSqr = 1;
 
             A(i, 0) = dx / sSqr;
             A(i, 1) = dy / sSqr;
@@ -318,6 +321,7 @@ void Celeste::computeCurvature()
         {
             Vector2D dn = n_(nb.cell()) - n_(cell);
             Scalar sSqr = pow(nb.rFaceVec().mag() + eps_, 2);
+            sSqr = 1;
 
             for (const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
@@ -347,6 +351,7 @@ void Celeste::computeCurvature()
         {
             Vector2D dn = n_(dg.cell()) - n_(cell);
             Scalar sSqr = pow(dg.rCellVec().mag() + eps_, 2);
+            sSqr = 1;
 
             for (const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
             {
@@ -376,7 +381,7 @@ void Celeste::computeCurvature()
         {
             Vector2D dn = n_(bd.face()) - n_(cell);
             Scalar sSqr = pow(bd.rFaceVec().mag() + eps_, 2);
-            sSqr = 1.;
+            sSqr = 1;
 
             bx(i, 0) = dn.x / sSqr;
             by(i, 0) = dn.y / sSqr;

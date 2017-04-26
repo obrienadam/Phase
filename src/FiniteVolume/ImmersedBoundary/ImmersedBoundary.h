@@ -11,7 +11,7 @@ public:
 
     enum
     {
-        FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4
+        FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4, BUFFER=5
     };
 
     ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver);

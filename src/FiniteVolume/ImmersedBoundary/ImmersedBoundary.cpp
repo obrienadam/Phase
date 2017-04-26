@@ -263,9 +263,12 @@ void ImmersedBoundary::cutFaces()
 
 void ImmersedBoundary::setCellStatus()
 {
-
     for (const Cell &cell: solver_.grid().cellZone("fluid"))
         cellStatus_(cell) = FLUID;
+
+    for(const CellZone& bufferZone: solver_.grid().bufferZones())
+        for(const Cell& cell: bufferZone)
+            cellStatus_(cell) = BUFFER;
 
     for (const auto &ibObj: ibObjs_)
     {
@@ -278,6 +281,4 @@ void ImmersedBoundary::setCellStatus()
         for (const Cell &cell: ibObj->freshlyClearedCells())
             cellStatus_(cell) = FRESHLY_CLEARED;
     }
-
-    cellStatus_.grid.sendMessages(comm_, cellStatus_);
 }
