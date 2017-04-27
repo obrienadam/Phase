@@ -28,9 +28,9 @@ public:
     bool isBoundedBy(const Point2D &point, Scalar toler) const;
 
     //- Intersections
-    std::vector <Point2D> intersections(const Line2D &line) const;
+    std::vector<Point2D> intersections(const Line2D &line) const;
 
-    std::vector <Point2D> intersections(const LineSegment2D &line) const;
+    std::vector<Point2D> intersections(const LineSegment2D &line) const;
 
     Point2D nearestIntersect(const Point2D &point) const;
 
@@ -49,7 +49,7 @@ public:
     Shape2D &operator-=(const Vector2D &vec);
 
     //- Bounding box
-    boost::geometry::model::box <Point2D> boundingBox() const;
+    boost::geometry::model::box<Point2D> boundingBox() const;
 
     //- Convenience
     Polygon polygonize() const;
@@ -58,6 +58,12 @@ public:
     std::array<Point2D, 4> vertices() const;
 
     std::array<LineSegment2D, 4> edges() const;
+
+    const Vector2D &lower() const
+    { return lower_; }
+
+    const Vector2D &upper() const
+    { return upper_; }
 
 private:
     Point2D centroid_, lower_, upper_;

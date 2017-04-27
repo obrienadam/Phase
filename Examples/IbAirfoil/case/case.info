@@ -21,20 +21,24 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib hypre
+		lib trilinos
+		solver BiCGSTAB
+		preconditioner RILUK
 		maxIteratons 10
-		tolerance 1e-5
-		iluFill 0
-		maxPreconditionerUses 30
+		tolerance 1e-8
+		iluFill 1
+		maxPreconditionerUses 1
 	}
 
 	pEqn
 	{
-		lib hypre
+		lib trilinos
+		solver BiCGSTAB
+		preconditioner RILUK
 		maxIterations 500
-		tolerance 1e-4
+		tolerance 1e-8
 		iluFill 4
-		maxPreconditionerUses 30
+		maxPreconditionerUses 5
 	}
 }
 

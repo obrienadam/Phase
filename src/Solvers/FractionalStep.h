@@ -7,6 +7,7 @@
 #include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
+#include "TecplotViewer.h"
 
 class FractionalStep : public Solver
 {
