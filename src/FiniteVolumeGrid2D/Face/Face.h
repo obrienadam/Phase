@@ -45,9 +45,6 @@ public:
     bool belongsToPatch() const
     { return patchPtr_ != nullptr; }
 
-    void scaleNorm(Scalar alpha)
-    { normal_ *= alpha; }
-
     Label id() const
     { return id_; }
 
@@ -71,6 +68,8 @@ public:
 
     const Cell &rCell() const
     { return cells_[cellIds_[1]]; }
+
+    std::vector<Ref<const Cell>> cells() const;
 
     void addCell(const Cell &cell);
 

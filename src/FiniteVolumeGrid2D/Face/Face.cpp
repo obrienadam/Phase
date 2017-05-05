@@ -25,6 +25,23 @@ Vector2D Face::outwardNorm(const Point2D &point) const
     return dot(centroid_ - point, normal_) > 0. ? normal_ : -normal_;
 }
 
+std::vector<Ref<const Cell> > Face::cells() const
+{
+    std::set<Label> ids;
+    for(Label id: lNode().cellIds())
+        ids.insert(id);
+
+    for(Label id: rNode().cellIds())
+        ids.insert(id);
+
+    std::vector<Ref<const Cell>> cells;
+
+    for(Label id: ids)
+        cells.push_back(std::cref(cells_[id]));
+
+    return cells;
+}
+
 void Face::addCell(const Cell &cell)
 {
     if (type_ == INTERIOR)

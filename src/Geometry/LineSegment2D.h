@@ -35,6 +35,8 @@ public:
 
     bool isBounded(const Point2D &pt) const;
 
+    std::pair<Point2D, bool> intersection(const LineSegment2D& other);
+
 private:
 
     Point2D ptA_, ptB_;

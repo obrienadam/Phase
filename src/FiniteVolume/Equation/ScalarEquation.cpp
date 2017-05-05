@@ -38,6 +38,13 @@ Scalar Equation<Scalar>::get(const Cell &cell, const Cell &nb)
     return 0.;
 }
 
+template<>
+void Equation<Scalar>::remove(const Cell& cell)
+{
+    coeffs_[cell.index(0)].clear();
+    boundaries_[cell.index(0)] = 0.;
+    sources_[cell.index(0)] = 0.;
+}
 
 template<>
 void Equation<Scalar>::addBoundary(const Cell &cell, Scalar val)

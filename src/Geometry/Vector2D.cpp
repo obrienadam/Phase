@@ -145,13 +145,7 @@ Vector2D &Vector2D::operator/=(Scalar other)
     return *this;
 }
 
-bool Vector2D::operator==(const Vector2D &rhs) const
-{
-    return fabs(x - rhs.x) < EPSILON_
-           && fabs(y - rhs.y) < EPSILON_;
-}
-
-bool Vector2D::operator<(const Vector2D &rhs)
+bool Vector2D::operator<(const Vector2D &rhs) const
 {
     return x < rhs.x || (x == rhs.x && y < rhs.y) ? true : false;
 }

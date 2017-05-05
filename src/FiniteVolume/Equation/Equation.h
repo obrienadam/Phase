@@ -36,6 +36,8 @@ public:
 
     T get(const Cell &cell, const Cell &nb);
 
+    void remove(const Cell &cell);
+
     //- Get a coefficient adjacency list, used only for assembling systems
     const CoefficientList &coeffs() const
     { return coeffs_; }

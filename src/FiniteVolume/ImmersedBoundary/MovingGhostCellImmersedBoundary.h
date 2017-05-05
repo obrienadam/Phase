@@ -2,17 +2,21 @@
 #define MOVING_GHOST_CELL_IMMERSED_BOUNDARY_H
 
 #include "Equation.h"
-#include "ImmersedBoundaryObject.h"
+#include "ImmersedBoundary.h"
 
 namespace ib
 {
     Equation<Vector2D>
-    ddt(const std::vector<Ref<const ImmersedBoundaryObject> > &ibObjs, const ScalarFiniteVolumeField &rho,
-        VectorFiniteVolumeField &u, Scalar timeStep);
+    momentumEqn(const ImmersedBoundary& ib, const ScalarFiniteVolumeField &rho,
+                const ScalarFiniteVolumeField &mu, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &u,
+                Scalar timeStep);
 
-    Equation<Vector2D>
-    div(const std::vector<Ref<const ImmersedBoundaryObject> > &ibObjs, const ScalarFiniteVolumeField &rho,
-        VectorFiniteVolumeField &u, Scalar timeStep);
+    Equation<Scalar>
+    pressureEqn(const ImmersedBoundary& ib, const ScalarFiniteVolumeField &rho,
+                const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p, Scalar timeStep);
+
+    void correctVelocity(const ImmersedBoundary& ib, const ScalarFiniteVolumeField &rho,
+                         ScalarFiniteVolumeField &p, VectorFiniteVolumeField& gradP, VectorFiniteVolumeField& u, Scalar timeStep);
 }
 
 #endif

@@ -41,7 +41,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
         {
             ibObject = std::make_shared<TranslatingImmersedBoundaryObject>(
                     TranslatingImmersedBoundaryObject(ibObjectInput.first,
-                                                      ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)"),
+                                                      ibObjectInput.second.get<std::string>("motion.velocity"),
                                                       ibObjectInput.second.get<Scalar>("motion.omega", 0),
                                                       id++,
                                                       solver.grid())
@@ -51,8 +51,11 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
         {
             ibObject = std::make_shared<OscillatingImmersedBoundaryObject>(
                     OscillatingImmersedBoundaryObject(ibObjectInput.first,
-                                                      ibObjectInput.second.get<Scalar>("motion.amplitude", 1.),
-                                                      ibObjectInput.second.get<Scalar>("motion.frequency", 0.),
+                                                      ibObjectInput.second.get<std::string>("motion.amplitude"),
+                                                      ibObjectInput.second.get<std::string>("motion.frequency"),
+                                                      ibObjectInput.second.get<std::string>("motion.phaseShift",
+                                                                                            "(0,0)"),
+                                                      ibObjectInput.second.get<std::string>("geometry.center"),
                                                       id++,
                                                       solver.grid())
             );
@@ -126,7 +129,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
 
             if (ibObject->shape().type() == Shape2D::BOX)
             {
-                Box* box = (Box*)&ibObject->shape();
+                Box *box = (Box *) &ibObject->shape();
                 auto verts = box->vertices();
 
                 ibObject->initPolygon(verts.begin(), verts.end());
@@ -200,6 +203,29 @@ void ImmersedBoundary::update(Scalar timeStep)
     solver_.grid().computeGlobalOrdering(comm_);
 }
 
+std::vector<CutCell> ImmersedBoundary::constructCutCells(const CellGroup &cellGroup) const
+{
+    std::vector<CutCell> cutCells;
+
+    auto intersectsIbObj = [](const Cell &cell, const ImmersedBoundaryObject &ibObj) {
+        for (const Node &node: cell.nodes())
+            if (ibObj.shape().isInside(node))
+                return true;
+        return false;
+    };
+
+    for (const Cell &cell: cellGroup)
+    {
+        for (const ImmersedBoundaryObject &ibObj: ibObjs())
+            if (intersectsIbObj(cell, ibObj))
+                cutCells.push_back(CutCell(cell, ibObj));
+            else
+                cutCells.push_back(CutCell(cell));
+    }
+
+    return cutCells;
+}
+
 std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
 {
     std::vector<Ref<const ImmersedBoundaryObject>> refs;
@@ -221,41 +247,12 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
     return false;
 }
 
-void ImmersedBoundary::cutFaces()
+void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField &u, const ScalarFiniteVolumeField &p)
 {
-    for (Face &face: solver_.grid().faces())
+    for(auto &ibObj: ibObjs_)
     {
-        LineSegment2D ln(face.lNode(), face.rNode());
-
-        for (const ImmersedBoundaryObject &ibObj: ibObjs())
-        {
-            std::vector<Point2D> intersections = ibObj.shape().intersections(ln);
-
-            if (intersections.size() == 0)
-                continue;
-
-            std::vector<Point2D> pts = {ln.ptA()};
-            pts.insert(pts.end(), intersections.begin(), intersections.end());
-            pts.push_back(ln.ptB());
-
-            Vector2D fFace(0, 0);
-            for (int i = 0; i < pts.size() - 1; ++i)
-            {
-                if (!ibObj.shape().isInside(0.5 * (pts[i] + pts[i + 1])))
-                    fFace += pts[i + 1] - pts[i];
-            }
-
-            face.scaleNorm(sqrt(fFace.magSqr() / ln.lengthSqr()));
-        }
-    }
-
-    for (Cell &cell: solver_.grid().cells())
-    {
-        for (InteriorLink &nb: cell.neighbours())
-            nb.init();
-
-        for (BoundaryLink &bd: cell.boundaries())
-            bd.init();
+        ibObj->computeNormalForce(rho, u, p);
+        ibObj->computeShearForce(mu, u);
     }
 }
 
@@ -266,8 +263,8 @@ void ImmersedBoundary::setCellStatus()
     for (const Cell &cell: solver_.grid().cellZone("fluid"))
         cellStatus_(cell) = FLUID;
 
-    for(const CellZone& bufferZone: solver_.grid().bufferZones())
-        for(const Cell& cell: bufferZone)
+    for (const CellZone &bufferZone: solver_.grid().bufferZones())
+        for (const Cell &cell: bufferZone)
             cellStatus_(cell) = BUFFER;
 
     for (const auto &ibObj: ibObjs_)

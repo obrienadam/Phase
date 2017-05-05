@@ -16,11 +16,20 @@ public:
     void update(Scalar timeStep);
 
     //- Motion info
-    Vector2D velocity(const Point2D &point) const
-    { return velocity_ + omega_ * (point - shapePtr_->centroid()).tangentVec(); }
+    Vector2D acceleration() const
+    { return Vector2D(0., 0.); }
 
-    Vector2D trajectory() const
+    Vector2D acceleration(const Point2D &point) const
+    { return Vector2D(0., 0.); }
+
+    Vector2D velocity() const
     { return velocity_; }
+
+    Vector2D velocity(const Point2D &point) const
+    { return velocity_; }
+
+    Scalar angularVelocity() const
+    { return 0.; }
 
 private:
 

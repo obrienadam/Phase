@@ -15,7 +15,6 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
     ibCells_ = &grid_.createCellGroup(name_ + "IbCells");
     solidCells_ = &grid_.createCellGroup(name_ + "SolidCells");
     freshlyClearedCells_ = &grid.createCellGroup(name_ + "FreshlyClearedCells");
-    cutCells_ = &grid.createCellGroup(name_ + "CutCells");
 }
 
 void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
@@ -29,7 +28,7 @@ void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar
     shapePtr_ = std::shared_ptr<Box>(new Box(
             Point2D(center.x - width / 2., center.y - height / 2.),
             Point2D(center.x + width / 2., center.y + height / 2.)
-    ));
+                                         ));
 }
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
@@ -103,6 +102,44 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, const 
     }
 }
 
+void ImmersedBoundaryObject::computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField &u, const ScalarFiniteVolumeField &p)
+{
+    std::vector<std::pair<Point2D, Scalar>> bps;
+
+    for(const GhostCellStencil& st: stencils_)
+        bps.push_back(std::make_pair(st.boundaryPoint(), p(st.cell())));
+
+    std::sort(bps.begin(), bps.end(), [this](const std::pair<Point2D, Scalar>& pt1, const std::pair<Point2D, Scalar>& pt2){
+        Vector2D rVec1 = pt1.first - this->shape().centroid();
+        Vector2D rVec2 = pt2.first - this->shape().centroid();
+
+        Scalar theta1 = atan2(rVec1.y, rVec1.x);
+        Scalar theta2 = atan2(rVec2.y, rVec2.x);
+
+        return (theta1 < 0. ? theta1 + 2.*M_PI: theta1) < (theta2 < 0. ? theta2 + 2.*M_PI: theta2);
+    });
+
+    normalForce_ = Vector2D(0., 0.);
+
+    for(int i = 0, end = bps.size(); i < end; ++i)
+    {
+        const Point2D &a = bps[i].first;
+        const Point2D &b = bps[(i + 1)%end].first;
+
+        Scalar pa = bps[i].second;
+        Scalar pb = bps[(i + 1)%end].second;
+
+        Scalar pc = (pa + pb)/2;
+        Vector2D norm = (b - a).normalVec();
+        normalForce_ -= pc*norm;
+    }
+}
+
+void ImmersedBoundaryObject::computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField &u)
+{
+    shearForce_ = Vector2D(0., 0.);
+}
+
 void ImmersedBoundaryObject::updateCells()
 {
     CellZone &fluidCells = grid_.cellZone("fluid");
@@ -142,9 +179,9 @@ void ImmersedBoundaryObject::updateCells()
             if (!isInIb(nb.cell().centroid()))
                 return true;
 
-        for (const DiagonalCellLink &dg: cell.diagonals())
-            if (!isInIb(dg.cell().centroid()))
-                return true;
+        //for (const DiagonalCellLink &dg: cell.diagonals())
+        //    if (!isInIb(dg.cell().centroid()))
+        //        return true;
 
         return false;
     };
@@ -154,11 +191,6 @@ void ImmersedBoundaryObject::updateCells()
             ibCells_->push_back(cell);
         else
             solidCells_->push_back(cell);
-
-    //- Flag cut cells, used for some IB methods
-    cutCells_->clear();
-    for (Cell &cell: fluidCells.cellsOverlapping(shape()))
-        cutCells_->push_back(cell);
 
     grid_.setCellsActive(*ibCells_);
     grid_.setCellsInactive(*solidCells_);

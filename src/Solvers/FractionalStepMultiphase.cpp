@@ -212,10 +212,6 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         u(cell) -= timeStep * ((gradP(cell) - sg(cell) - ft(cell)) / rho(cell) -
                                (gradP0(cell) - sg0(cell) - ft0(cell)) / rho0(cell));
 
-    for (const ImmersedBoundaryObject &ibObj: ibObjs())
-        for (const GhostCellStencil &gc: ibObj.stencils())
-            u(gc.cell()) = -gc.ipValue(u);
-
     grid_.sendMessages(comm_, u);
 
     for (const Face &face: grid_.interiorFaces())

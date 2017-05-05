@@ -57,8 +57,6 @@ public:
 
     std::vector<Ref<Cell> > cellCentersWithin(const Box &box);
 
-    std::vector<Ref<Cell> > cellsOverlapping(const Shape2D &shape);
-
     std::vector<Ref<Cell> > cellNearestNeighbours(const Point2D &pt, size_t k);
 
     std::vector<Ref<const Cell> > cellCentersWithin(const Shape2D &shape) const;
@@ -66,8 +64,6 @@ public:
     std::vector<Ref<const Cell> > cellCentersWithin(const Circle &circle) const;
 
     std::vector<Ref<const Cell> > cellCentersWithin(const Box &box) const;
-
-    std::vector<Ref<const Cell> > cellsOverlapping(const Shape2D &shape) const;
 
     std::vector<Ref<const Cell> > cellNearestNeighbours(const Point2D &pt, size_t k) const;
 

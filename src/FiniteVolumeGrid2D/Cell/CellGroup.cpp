@@ -86,19 +86,6 @@ std::vector<Ref<Cell> > CellGroup::cellCentersWithin(const Box& box)
     return getRefs(result);
 }
 
-std::vector<Ref<Cell> > CellGroup::cellsOverlapping(const Shape2D &shape)
-{
-    std::vector<std::pair<boost::geometry::model::box<Point2D>, Label>> result;
-
-    geomRTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()), std::back_inserter(result));
-
-    std::vector<Label> ids;
-    for (const auto &val: result)
-        ids.push_back(val.second);
-
-    return grid_.getCells(ids); //- Will be ok for cartesian cases
-}
-
 std::vector<Ref<Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt, size_t k)
 {
     std::vector<Value> result;
@@ -112,7 +99,7 @@ std::vector<Ref<Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt, size
 std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Shape2D &shape) const
 {
     std::vector<Value> result;
-    rTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()),
+    rTree_.query(boost::geometry::index::within(shape.polygonize().boostPolygon()),
                  std::back_inserter(result));
 
     return getRefs(result);
@@ -126,7 +113,7 @@ std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Circle &circle)
     };
 
     std::vector<Value> result;
-    rTree_.query(boost::geometry::index::covered_by(circle.boundingBox()) &&
+    rTree_.query(boost::geometry::index::within(circle.boundingBox()) &&
                  boost::geometry::index::satisfies(isInCircle),
                  std::back_inserter(result));
 
@@ -136,24 +123,10 @@ std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Circle &circle)
 std::vector<Ref<const Cell> > CellGroup::cellCentersWithin(const Box &box) const
 {
     std::vector<Value> result;
-    rTree_.query(boost::geometry::index::covered_by(box.boundingBox()),
+    rTree_.query(boost::geometry::index::within(box.boundingBox()),
                  std::back_inserter(result));
 
     return getRefs(result);
-}
-
-std::vector<Ref<const Cell> > CellGroup::cellsOverlapping(const Shape2D &shape) const
-{
-    std::vector<std::pair<boost::geometry::model::box<Point2D>, Label>> result;
-
-    geomRTree_.query(boost::geometry::index::intersects(shape.polygonize().boostPolygon()), std::back_inserter(result));
-
-    std::vector<Label> ids;
-    for (const auto &val: result)
-        ids.push_back(val.second);
-
-    const auto &grid = grid_; // Stupid, but required to call the const version of this method
-    return grid.getCells(ids); //- Will be ok for cartesian cases
 }
 
 std::vector<Ref<const Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt, size_t k) const
@@ -168,8 +141,7 @@ std::vector<Ref<const Cell> > CellGroup::cellNearestNeighbours(const Point2D &pt
 
 bool CellGroup::isInGroup(const Cell &cell) const
 {
-    auto it = cellSet_.find(cell.id());
-    return it == cellSet_.end() ? false : true;
+    return cellSet_.find(cell.id()) != cellSet_.end();
 }
 
 //- Protected

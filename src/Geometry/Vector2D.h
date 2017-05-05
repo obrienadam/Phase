@@ -56,9 +56,9 @@ public:
 
     Vector2D &operator/=(Scalar other);
 
-    bool operator==(const Vector2D &rhs) const;
+    bool operator==(const Vector2D& rhs) const { return x == rhs.x && y == rhs.y; }
 
-    bool operator<(const Vector2D &rhs);
+    bool operator<(const Vector2D &rhs) const;
 
     Scalar x, y;
 

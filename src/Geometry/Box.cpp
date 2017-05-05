@@ -33,14 +33,6 @@ bool Box::isCovered(const Point2D &point) const
     return point.x <= upper_.x && point.x >= lower_.x && point.y <= upper_.y && point.y >= lower_.y;
 }
 
-bool Box::isBoundedBy(const Point2D &point, Scalar toler) const
-{
-    Point2D upper = Point2D(upper_.x + toler, upper_.y + toler);
-    Point2D lower = Point2D(lower_.x - toler, lower_.y - toler);
-
-    return point.x <= upper.x && point.x >= lower.x && point.y <= upper.y && point.y >= lower.y;
-}
-
 //- Intersections
 std::vector<Point2D> Box::intersections(const Line2D &line) const
 {
@@ -155,13 +147,21 @@ void Box::rotate(Scalar theta)
     return;
 }
 
-Shape2D &Box::operator+=(const Vector2D &vec)
+Box &Box::move(const Point2D &pos)
+{
+    lower_ += (pos - centroid_);
+    upper_ += (pos - centroid_);
+    centroid_ = pos;
+    return *this;
+}
+
+Box &Box::operator+=(const Vector2D &vec)
 {
     centroid_ += vec;
     return *this;
 }
 
-Shape2D &Box::operator-=(const Vector2D &vec)
+Box &Box::operator-=(const Vector2D &vec)
 {
     centroid_ -= vec;
     return *this;

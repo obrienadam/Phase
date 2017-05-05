@@ -25,8 +25,6 @@ public:
 
     bool isCovered(const Point2D &point) const;
 
-    bool isBoundedBy(const Point2D &point, Scalar toler) const;
-
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;
 
@@ -44,9 +42,11 @@ public:
     void rotate(Scalar theta);
 
     //- Translations
-    Shape2D &operator+=(const Vector2D &vec);
+    Box &move(const Point2D &pos);
 
-    Shape2D &operator-=(const Vector2D &vec);
+    Box &operator+=(const Vector2D &vec);
+
+    Box &operator-=(const Vector2D &vec);
 
     //- Bounding box
     boost::geometry::model::box<Point2D> boundingBox() const;

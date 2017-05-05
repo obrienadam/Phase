@@ -51,8 +51,8 @@ const Cell &Cell::faceNeighbour(const Node &lNode, const Node &rNode) const
     {
         const Face &face = nb.face();
 
-        if (lNode.id() == face.lNode().id() && rNode.id() == face.rNode().id() ||
-            lNode.id() == face.rNode().id() && rNode.id() == face.lNode().id())
+        if ((lNode.id() == face.lNode().id() && rNode.id() == face.rNode().id()) ||
+            (lNode.id() == face.rNode().id() && rNode.id() == face.lNode().id()))
         {
             return nb.cell();
         }

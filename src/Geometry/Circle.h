@@ -35,8 +35,6 @@ public:
 
     bool isCovered(const Point2D &point) const;
 
-    bool isBoundedBy(const Point2D &point, Scalar toler) const;
-
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;
 
@@ -55,6 +53,8 @@ public:
     {}
 
     //- Translations
+    Circle &move(const Point2D& pos);
+
     Circle &operator+=(const Vector2D &translationVec);
 
     Circle &operator-=(const Vector2D &translationVec);

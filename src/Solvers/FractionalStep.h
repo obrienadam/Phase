@@ -7,14 +7,15 @@
 #include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
-#include "TecplotViewer.h"
 
 class FractionalStep : public Solver
 {
 public:
 
     FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
-    ~FractionalStep() {log.close();}
+
+    ~FractionalStep()
+    { log.close(); }
 
     virtual void initialize();
 

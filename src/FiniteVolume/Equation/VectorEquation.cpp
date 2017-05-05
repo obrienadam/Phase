@@ -69,15 +69,38 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &v
 template<>
 Vector2D Equation<Vector2D>::get(const Cell &cell, const Cell &nb)
 {
-    int i = 0;
+    Vector2D u;
+
     for (const auto &entry: coeffs_[cell.index(0)])
     {
         if (entry.first == nb.index(2))
-            return Vector2D(entry.second, coeffs_[cell.index(0) + nActiveCells_][i].second);
-        ++i;
+        {
+            u.x = entry.second;
+            break;
+        }
     }
 
-    return Vector2D(0., 0.);
+    for (const auto &entry: coeffs_[cell.index(0) + nActiveCells_])
+    {
+        if (entry.first == nb.index(3))
+        {
+            u.y = entry.second;
+            break;
+        }
+    }
+
+    return u;
+}
+
+template<>
+void Equation<Vector2D>::remove(const Cell &cell)
+{
+    coeffs_[cell.index(0)].clear();
+    coeffs_[cell.index(0) + nActiveCells_].clear();
+    boundaries_[cell.index(0)] = 0.;
+    boundaries_[cell.index(0) + nActiveCells_] = 0.;
+    sources_[cell.index(0)] = 0.;
+    sources_[cell.index(0) + nActiveCells_] = 0.;
 }
 
 template<>

@@ -14,7 +14,7 @@ public:
 
     Polygon();
 
-    template <class const_iterator>
+    template<class const_iterator>
     Polygon(const_iterator begin, const_iterator end)
     {
         for (const_iterator vtx = begin; vtx != end; ++vtx)
@@ -27,7 +27,8 @@ public:
 
     Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn);
 
-    Type type() const { return POLYGON; }
+    Type type() const
+    { return POLYGON; }
 
     //- Polygon parameters
     const Point2D &centroid() const
@@ -46,8 +47,6 @@ public:
 
     virtual bool isCovered(const Point2D &point) const;
 
-    virtual bool isBoundedBy(const Point2D &point, Scalar toler) const;
-
     bool isValid() const;
 
     bool isEmpty() const;
@@ -55,7 +54,7 @@ public:
     //- Intersections
     std::vector<Point2D> intersections(const Line2D &line) const;
 
-    std::vector<Point2D> intersections(const LineSegment2D& line) const;
+    std::vector<Point2D> intersections(const LineSegment2D &line) const;
 
     Point2D nearestIntersect(const Point2D &point) const;
 
@@ -71,6 +70,8 @@ public:
     Polygon scale(Scalar factor) const;
 
     //- Translations
+    Polygon &move(const Point2D& pos);
+
     Polygon &operator+=(const Vector2D &translationVec);
 
     Polygon &operator-=(const Vector2D &translationVec);
@@ -102,7 +103,5 @@ protected:
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB);
 
 Polygon difference(const Polygon &pgnA, const Polygon &pgnB);
-
-Polygon clipPolygon(const Polygon &pgn, const Line2D &line);
 
 #endif

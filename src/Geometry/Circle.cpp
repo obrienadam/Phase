@@ -31,11 +31,6 @@ bool Circle::isCovered(const Point2D &point) const
     return (point - center_).magSqr() <= radius_ * radius_;
 }
 
-bool Circle::isBoundedBy(const Point2D &point, Scalar toler) const
-{
-    return (point - center_).magSqr() - radius_ * radius_ <= -toler*toler;
-}
-
 //- Intersections
 std::vector<Point2D> Circle::intersections(const Line2D &line) const
 {
@@ -48,6 +43,8 @@ std::vector<Point2D> Circle::intersections(const Line2D &line) const
 
     if(disc < 0.)
         return std::vector<Point2D>();
+    else if(disc == 0.)
+        return std::vector<Point2D>({line(-b/(2.*a))});
 
     Scalar t1 = (-b - sqrt(disc))/(2*a);
     Scalar t2 = (-b + sqrt(disc))/(2*a);
@@ -95,6 +92,12 @@ void Circle::scale(Scalar factor)
 }
 
 //- Translations
+Circle &Circle::move(const Point2D& pos)
+{
+    center_ = pos;
+    return *this;
+}
+
 Circle &Circle::operator+=(const Vector2D &translationVec)
 {
     center_ += translationVec;

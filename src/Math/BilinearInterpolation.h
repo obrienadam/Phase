@@ -22,6 +22,8 @@ private:
 
     void constructMatrix(const std::vector<Point2D> &pts);
 
+    Point2D o_;
+
 };
 
 #endif

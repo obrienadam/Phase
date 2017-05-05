@@ -34,8 +34,6 @@ public:
 
     virtual bool isCovered(const Point2D &point) const = 0;
 
-    virtual bool isBoundedBy(const Point2D &point, Scalar toler) const = 0;
-
     //- Intersections
     virtual std::vector<Point2D> intersections(const Line2D &line) const = 0;
 
@@ -53,6 +51,9 @@ public:
     virtual void rotate(Scalar theta) = 0;
 
     //- Translations
+
+    virtual Shape2D &move(const Point2D& pos) = 0;
+
     virtual Shape2D &operator+=(const Vector2D &vec) = 0;
 
     virtual Shape2D &operator-=(const Vector2D &vec) = 0;

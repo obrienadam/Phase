@@ -1,5 +1,4 @@
 #include "RunControl.h"
-#include "TecplotViewer.h"
 
 void RunControl::run(const Input &input, const Communicator &comm, Solver &solver, Viewer &viewer)
 {
@@ -24,7 +23,7 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
     solver.initialize();
 
     //- Tecplot viewer
-    TecplotViewer tecplotViewer(input, comm, solver);
+    IbViewer ibViewer(input, comm, solver);
 
     time_.start();
     for(
@@ -36,7 +35,7 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
         if(iterNo%fileWriteFrequency == 0)
         {
             viewer.write(time, comm);
-            tecplotViewer.write(time, comm);
+            ibViewer.write(time, comm);
 
           //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
           //      vi.integrate();

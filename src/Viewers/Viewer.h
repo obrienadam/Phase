@@ -26,6 +26,6 @@ protected:
 };
 
 #include "CgnsViewer.h"
-#include "TecplotViewer.h"
+#include "IbViewer.h"
 
 #endif

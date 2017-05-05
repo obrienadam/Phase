@@ -48,7 +48,7 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
 
     coeffs_ = std::move(rhs.coeffs_);
     boundaries_ = std::move(rhs.boundaries_);
-    sources_ = std::move(sources_);
+    sources_ = std::move(rhs.sources_);
 
     if (rhs.spSolver_)
         spSolver_ = rhs.spSolver_;

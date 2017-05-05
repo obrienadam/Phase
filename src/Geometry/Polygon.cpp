@@ -39,11 +39,6 @@ bool Polygon::isCovered(const Point2D &point) const
     return boost::geometry::covered_by(point, poly_);
 }
 
-bool Polygon::isBoundedBy(const Point2D &point, Scalar toler) const
-{
-    return isCovered(point);
-}
-
 bool Polygon::isValid() const
 {
     return boost::geometry::is_valid(poly_);
@@ -182,6 +177,16 @@ Polygon Polygon::scale(Scalar factor) const
 }
 
 //- Translations
+Polygon &Polygon::move(const Point2D& pos)
+{
+    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+        vtx += (pos - centroid_);
+
+    centroid_ = pos;
+
+    return *this;
+}
+
 Polygon &Polygon::operator+=(const Vector2D &translationVec)
 {
     for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
@@ -225,6 +230,7 @@ void Polygon::init()
 {
     if (boost::geometry::exterior_ring(poly_).size() > 0)
     {
+        boost::geometry::unique(poly_);
         boost::geometry::correct(poly_);
         area_ = boost::geometry::area(poly_);
         boost::geometry::centroid(poly_, centroid_);
@@ -262,37 +268,4 @@ Polygon difference(const Polygon &pgnA, const Polygon &pgnB)
         throw Exception("Polygon", "difference", "there is more than one output polygon!");
 
     return Polygon(pgn.front());
-}
-
-Polygon clipPolygon(const Polygon &pgn, const Line2D &line)
-{
-    std::vector<Point2D> verts;
-
-    for (auto vertIt = pgn.vertices().begin(); vertIt != pgn.vertices().end() - 1; ++vertIt)
-    {
-        const Vector2D &vtx = *vertIt;
-        const Vector2D &nextVtx = *(vertIt + 1);
-        Line2D edgeLine = Line2D(vtx, (nextVtx - vtx).normalVec());
-
-        if (line.isApproximatelyOnLine(vtx))
-        {
-            verts.push_back(vtx); // special case
-            continue;
-        }
-        else if (line.isBelowLine(vtx))
-            verts.push_back(vtx);
-
-        std::pair<Point2D, bool> xc = Line2D::intersection(line, edgeLine);
-
-        if (xc.second) // the lines are not paralell, ie xc is valid
-        {
-            Scalar l = (nextVtx - vtx).magSqr();
-            Scalar x = dot(nextVtx - vtx, xc.first - vtx);
-
-            if (x < l && x > 0 && !(xc.first == vtx || xc.first == nextVtx)) // intersection is on the segment
-                verts.push_back(xc.first);
-        }
-    }
-
-    return Polygon(verts);
 }

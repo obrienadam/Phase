@@ -2,6 +2,7 @@
 #define IMMERSED_BOUNDARY_H
 
 #include "ImmersedBoundaryObject.h"
+#include "CutCell.h"
 
 class Solver;
 
@@ -20,14 +21,13 @@ public:
 
     void update(Scalar timeStep);
 
-    Size nIbObjects() const
-    { return ibObjs_.size(); }
+    std::vector<CutCell> constructCutCells(const CellGroup& cellGroup) const;
 
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
 
     bool isIbCell(const Cell &cell) const;
 
-    void cutFaces();
+    void computeForce(const ScalarFiniteVolumeField& rho, const ScalarFiniteVolumeField& mu, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
 
 protected:
 

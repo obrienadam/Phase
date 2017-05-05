@@ -1,5 +1,5 @@
-#ifndef LINE_2D
-#define LINE_2D
+#ifndef LINE_2D_H
+#define LINE_2D_H
 
 #include "Vector2D.h"
 #include "Point2D.h"
@@ -7,8 +7,6 @@
 class Line2D
 {
 public:
-
-    static std::pair<Point2D, bool> intersection(const Line2D &lineA, const Line2D &lineB);
 
     Line2D();
 
@@ -21,6 +19,8 @@ public:
     bool isAboveLine(const Point2D &pt) const;
 
     bool isBelowLine(const Point2D &pt) const;
+
+    Point2D intersection(const Line2D& other) const;
 
     const Point2D &r0() const
     { return r0_; }

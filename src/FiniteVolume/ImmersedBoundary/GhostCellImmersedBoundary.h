@@ -62,30 +62,6 @@ namespace ib
 
         return eqn;
     }
-
-    template<class ImmersedBoundaryObject_t>
-    // Allow for use of reference wrappers as well
-    Equation<Scalar> cl(const std::vector<ImmersedBoundaryObject_t> &ibObjs, const VectorFiniteVolumeField& gradGamma,
-                           ScalarFiniteVolumeField &gamma, Scalar theta)
-    {
-        Equation<Scalar> eqn(gamma);
-
-        for (const ImmersedBoundaryObject &ibObj: ibObjs)
-            for (const GhostCellStencil &stencil: ibObj.stencils())
-            {
-                std::vector<Scalar> coeffs = stencil.ipCoeffs();
-
-                eqn.add(stencil.cell(), stencil.cell(), -1./stencil.length());
-                eqn.addBoundary(stencil.cell(), -stencil.ipValue(gradGamma).mag()*cos(theta));
-
-                int i = 0;
-                for (const Cell &ipCell: stencil.ipCells())
-                    eqn.add(stencil.cell(), ipCell, coeffs[i++]/stencil.length());
-            }
-
-        return eqn;
-    }
-
 }
 
 #endif
