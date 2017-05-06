@@ -14,7 +14,7 @@ Equation<Vector2D> ib::momentumEqn(const ImmersedBoundary& ib,
     for (const Cell &cell: u.grid.cellZone("fluid"))
     {
         uEqn.add(cell, cell, cell.volume() * rho(cell) / timeStep);
-        uEqn.addBoundary(cell, cell.volume() * rho0(cell) * u0(cell) / timeStep);
+        uEqn.addSource(cell, cell.volume() * rho0(cell) * u0(cell) / timeStep);
 
         Scalar ac = 0.;
         for (const InteriorLink &nb: cell.neighbours())
@@ -44,7 +44,7 @@ Equation<Vector2D> ib::momentumEqn(const ImmersedBoundary& ib,
             switch (u.boundaryType(bd.face()))
             {
             case VectorFiniteVolumeField::FIXED:
-                uEqn.addBoundary(cell, - (rhoU - diff) * u(f));
+                uEqn.addSource(cell, (rhoU - diff) * u(f));
                 ac += diff;
                 break;
 
@@ -103,12 +103,11 @@ Equation<Vector2D> ib::momentumEqn(const ImmersedBoundary& ib,
             std::vector<Scalar> coeffs = bi(cell.centroid());
 
             uEqn.add(cell, cell, 1.);
-
             for(int i = 0; i < fluidCells.size(); ++i)
                 uEqn.add(cell, fluidCells[i], -coeffs[i]);
 
             for(int i = 0; i < solidVels.size(); ++i)
-                uEqn.addBoundary(cell, coeffs[i + fluidCells.size()]*solidVels[i]);
+                uEqn.addSource(cell, -coeffs[i + fluidCells.size()]*solidVels[i]);
         }
 
         for (const GhostCellStencil &stencil: ibObj.stencils())
@@ -124,7 +123,7 @@ Equation<Vector2D> ib::momentumEqn(const ImmersedBoundary& ib,
                 for (Scalar &coeff: coeffs)
                     coeff *= 0.5;
 
-                uEqn.addBoundary(stencil.cell(), ibObj.velocity(stencil.boundaryPoint()));
+                uEqn.addSource(stencil.cell(), -ibObj.velocity(stencil.boundaryPoint()));
                 break;
 
             default:
@@ -179,7 +178,7 @@ Equation<Scalar> ib::pressureEqn(const ImmersedBoundary& ib,
             switch (p.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                pEqn.addBoundary(cell.cell(), -diff * p(f));
+                pEqn.addSource(cell.cell(), diff * p(f));
                 ac -= diff;
                 break;
 
@@ -196,9 +195,14 @@ Equation<Scalar> ib::pressureEqn(const ImmersedBoundary& ib,
 
         if(cell.intersectsIbObj())
             divU += dot(cell.ibObj().velocity(cell.bFace().center()), -cell.solidFaceNorm());
+        else
+        {
+            if(cell.solidVolume() != 0)
+                throw Exception("ib", "pressureEqn", "bad.");
+        }
 
         pEqn.add(cell.cell(), cell.cell(), ac);
-        pEqn.addSource(cell.cell(), divU);
+        pEqn.addSource(cell.cell(), -divU);
     }
 
     for (const ImmersedBoundaryObject &ibObj: ib.ibObjs())
@@ -228,7 +232,7 @@ Equation<Scalar> ib::pressureEqn(const ImmersedBoundary& ib,
                         Vector2D n = cutCell.solidFaceNorm().unitVec();
 
                         Scalar beta = fabs(dot(nb.fluidNorm(), n))/sumA;
-                        pEqn.addSource(nb.cell(), beta*divU);
+                        pEqn.addSource(nb.cell(), -beta*divU);
                     }
             }
             else

@@ -89,7 +89,7 @@ Equation<T> div(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeFiel
             centralCoeff += std::max(faceFlux, 0.)*rho(cell);
 
             eqn.add(cell, nb.cell(), theta * coeff);
-            eqn.addBoundary(cell, -(1. - theta) * coeff0 * field(nb.cell()));
+            eqn.addSource(cell, (1. - theta) * coeff0 * field(nb.cell()));
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
@@ -100,8 +100,8 @@ Equation<T> div(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeFiel
             switch (field.boundaryType(bd.face()))
             {
             case FiniteVolumeField<T>::FIXED:
-                eqn.addBoundary(cell, -theta * faceFlux * rho(bd.face()) * field(bd.face()));
-                eqn.addBoundary(cell, -(1. - theta) * faceFlux0 * rho0(bd.face()) * field(bd.face()));
+                eqn.addSource(cell, theta * faceFlux * rho(bd.face()) * field(bd.face()));
+                eqn.addSource(cell, (1. - theta) * faceFlux0 * rho0(bd.face()) * field(bd.face()));
                 break;
 
             case FiniteVolumeField<T>::NORMAL_GRADIENT:
@@ -118,7 +118,7 @@ Equation<T> div(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeFiel
         }
 
         eqn.add(cell, cell, theta * centralCoeff);
-        eqn.addBoundary(cell, -(1. - theta) * centralCoeff0 * field(cell));
+        eqn.addSource(cell, (1. - theta) * centralCoeff0 * field(cell));
     }
 
     return eqn;
@@ -147,7 +147,7 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
             centralCoeff -= coeff;
 
             eqn.add(cell, nb.cell(), theta * coeff);
-            eqn.addBoundary(cell, -(1. - theta) * coeff0 * field(nb.cell()));
+            eqn.addSource(cell, (1. - theta) * coeff0 * field(nb.cell()));
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
@@ -163,8 +163,8 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
             case FiniteVolumeField<T>::FIXED:
                 centralCoeff -= coeff;
                 centralCoeff0 -= coeff;
-                eqn.addBoundary(cell, -theta * coeff * field(bd.face()));
-                eqn.addBoundary(cell, -(1. - theta) * coeff0 * field(bd.face()));
+                eqn.addSource(cell, theta * coeff * field(bd.face()));
+                eqn.addSource(cell, (1. - theta) * coeff0 * field(bd.face()));
                 break;
 
             case FiniteVolumeField<T>::NORMAL_GRADIENT:
@@ -176,7 +176,7 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
         }
 
         eqn.add(cell, cell, theta * centralCoeff);
-        eqn.addBoundary(cell, -(1. - theta) * centralCoeff0 * field(cell));
+        eqn.addSource(cell, (1. - theta) * centralCoeff0 * field(cell));
     }
 
     return eqn;

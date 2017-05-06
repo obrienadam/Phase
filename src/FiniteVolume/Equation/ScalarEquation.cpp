@@ -7,7 +7,6 @@ Equation<Scalar>::Equation(ScalarFiniteVolumeField &field, const std::string &na
         field_(field),
         nActiveCells_(field.grid.nLocalActiveCells()),
         coeffs_(nActiveCells_),
-        boundaries_(nActiveCells_),
         sources_(nActiveCells_)
 {
     for (auto &coeff: coeffs_)
@@ -42,20 +41,7 @@ template<>
 void Equation<Scalar>::remove(const Cell& cell)
 {
     coeffs_[cell.index(0)].clear();
-    boundaries_[cell.index(0)] = 0.;
     sources_[cell.index(0)] = 0.;
-}
-
-template<>
-void Equation<Scalar>::addBoundary(const Cell &cell, Scalar val)
-{
-    boundaries_[cell.index(0)] += val;
-}
-
-template<>
-void Equation<Scalar>::setBoundary(const Cell &cell, Scalar val)
-{
-    boundaries_[cell.index(0)] = val;
 }
 
 template<>
@@ -79,7 +65,7 @@ void Equation<Scalar>::relax(Scalar relaxationFactor)
         Scalar &coeff = coeffRef(row, row);
 
         coeff /= relaxationFactor;
-        boundaries_(row) += (1. - relaxationFactor) * coeff * field_(cell);
+        sources_(row) += (1. - relaxationFactor) * coeff * field_(cell);
     }
 }
 

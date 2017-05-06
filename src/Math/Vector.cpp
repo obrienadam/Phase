@@ -26,6 +26,13 @@ Vector &Vector::operator*=(Scalar rhs)
     return *this;
 }
 
+Vector Vector::operator-() const
+{
+    Vector newVector(this->size());
+    std::transform(begin(), end(), newVector.begin(), [](Scalar val){ return -val; });
+    return newVector;
+}
+
 //- External functions
 Vector operator+(Vector lhs, const Vector &rhs)
 {

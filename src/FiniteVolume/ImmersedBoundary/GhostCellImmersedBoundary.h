@@ -27,7 +27,7 @@ namespace ib
                         for (Scalar &coeff: coeffs)
                             coeff *= 0.5;
 
-                        eqn.addBoundary(stencil.cell(), ibObj.getBoundaryRefValue<T>(field.name()));
+                        eqn.addSource(stencil.cell(), -ibObj.getBoundaryRefValue<T>(field.name()));
 
                         break;
 

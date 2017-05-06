@@ -57,8 +57,8 @@ Scalar FractionalStep::solve(Scalar timeStep)
 {
     solveUEqn(timeStep);
     solvePEqn(timeStep);
-    correctVelocity(timeStep);
-    //ib::correctVelocity(ibObjManager_, rho, p, gradP, u, timeStep);
+    //correctVelocity(timeStep);
+    ib::correctVelocity(ibObjManager_, rho, p, gradP, u, timeStep);
 
     ibObjManager_.computeForce(rho, mu, u, p);
     ibObjManager_.update(timeStep);
@@ -114,16 +114,16 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, p) + ib::gc(ibObjs(), p) ==
-             source::div(u));
+    //pEqn_ = (fv::laplacian(timeStep / rho, p) + ib::gc(ibObjs(), p) ==
+    //         source::div(u));
 
-    //pEqn_ = ib::pressureEqn(ibObjManager_, rho, u, p, timeStep);
+    pEqn_ = ib::pressureEqn(ibObjManager_, rho, u, p, timeStep);
     Scalar error = pEqn_.solve();
     grid_.sendMessages(comm_, p);
 
     //- Compute pressure gradient
-    gradP.savePreviousTimeStep(timeStep, 1);
-    fv::computeGradient(fv::FACE_TO_CELL, p, gradP, false);
+    //gradP.savePreviousTimeStep(timeStep, 1);
+    //fv::computeGradient(fv::FACE_TO_CELL, p, gradP, false);
     grid_.sendMessages(comm_, gradP);
 
     return error;
@@ -237,4 +237,3 @@ Scalar FractionalStep::maxDivergenceError() const
 
     return comm_.max(maxError);
 }
-

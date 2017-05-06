@@ -31,7 +31,7 @@ namespace fv
                 switch (field.boundaryType(bd.face()))
                 {
                     case FiniteVolumeField<T>::FIXED:
-                        eqn.addBoundary(cell, -faceFlux * field(bd.face()));
+                        eqn.addSource(cell, faceFlux * field(bd.face()));
                         break;
 
                     case FiniteVolumeField<T>::NORMAL_GRADIENT:
@@ -78,7 +78,7 @@ namespace fv
                 switch (field.boundaryType(bd.face()))
                 {
                     case FiniteVolumeField<T>::FIXED:
-                        eqn.addBoundary(cell, -rho(bd.face()) * faceFlux * field(bd.face()));
+                        eqn.addSource(cell, rho(bd.face()) * faceFlux * field(bd.face()));
                         break;
 
                     case FiniteVolumeField<T>::NORMAL_GRADIENT:

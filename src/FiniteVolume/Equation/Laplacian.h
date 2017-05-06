@@ -31,7 +31,7 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
             {
             case FiniteVolumeField<T>::FIXED:
                 centralCoeff -= coeff;
-                eqn.addBoundary(cell, -coeff * field(bd.face()));
+                eqn.addSource(cell, coeff * field(bd.face()));
                 break;
 
             case FiniteVolumeField<T>::NORMAL_GRADIENT:
@@ -73,7 +73,7 @@ Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &field)
             {
             case FiniteVolumeField<T>::FIXED:
                 centralCoeff -= coeff;
-                eqn.addBoundary(cell, -coeff * field(bd.face()));
+                eqn.addSource(cell, coeff * field(bd.face()));
                 break;
 
             case FiniteVolumeField<T>::NORMAL_GRADIENT:

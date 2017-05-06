@@ -20,6 +20,8 @@ void Equation<T>::clear()
 {
     for (auto &coeff: coeffs_)
         coeff.clear();
+
+    sources_.zero();
 }
 
 template<class T>
@@ -30,8 +32,8 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
     else if (&field_ != &rhs.field_)
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
+    nActiveCells_ = rhs.nActiveCells_;
     coeffs_ = rhs.coeffs_;
-    boundaries_ = rhs.boundaries_;
     sources_ = rhs.sources_;
 
     if (rhs.spSolver_) // Prevent a sparse solver from being accidently destroyed if the rhs solver doesn't exist
@@ -46,8 +48,8 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
     if (&field_ != &rhs.field_)
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
+    nActiveCells_ = rhs.nActiveCells_;
     coeffs_ = std::move(rhs.coeffs_);
-    boundaries_ = std::move(rhs.boundaries_);
     sources_ = std::move(rhs.sources_);
 
     if (rhs.spSolver_)
@@ -63,7 +65,6 @@ Equation<T> &Equation<T>::operator+=(const Equation<T> &rhs)
         for (const auto &entry: rhs.coeffs_[i])
             addValue(i, entry.first, entry.second);
 
-    boundaries_ += rhs.boundaries_;
     sources_ += rhs.sources_;
 
     return *this;
@@ -76,7 +77,6 @@ Equation<T> &Equation<T>::operator-=(const Equation<T> &rhs)
         for (const auto &entry: rhs.coeffs_[i])
             add(i, entry.first, -entry.second);
 
-    boundaries_ -= rhs.boundaries_;
     sources_ -= rhs.sources_;
 
     return *this;
@@ -89,7 +89,6 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
         for (const auto &entry: coeffs_[i])
             set(i, entry.first, rhs * entry.second);
 
-    boundaries_ *= rhs;
     sources_ *= rhs;
 
     return *this;
@@ -106,7 +105,6 @@ Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
         for(auto& coeff: coeffs_[i])
             coeff.second /= val;
 
-        boundaries_[i] /= val;
         sources_[i] /= val;
     }
 
@@ -116,8 +114,11 @@ Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(Scalar rhs)
 {
-    for (int i = 0, end = boundaries_.size(); i < end; ++i)
-        sources_(i) += rhs;
+    if(rhs == 0.) // for efficiency
+        return *this;
+
+    for (Scalar &src: sources_)
+        src -= rhs;
 
     return *this;
 }
@@ -125,12 +126,12 @@ Equation<T> &Equation<T>::operator==(Scalar rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(const Equation<T> &rhs)
 {
-    for (int i = 0; i < rhs.coeffs_.size(); ++i)
+    for (int i = 0; i < coeffs_.size(); ++i)
         for (const auto &entry: rhs.coeffs_[i])
             addValue(i, entry.first, -entry.second);
 
-    boundaries_ -= rhs.boundaries_;
-    sources_ = rhs.sources_ - sources_;
+    sources_ -= rhs.sources_;
+
     return *this;
 }
 
@@ -138,7 +139,7 @@ template<class T>
 Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 {
     for (const Cell &cell: rhs.grid.localActiveCells())
-        sources_(cell.index(0)) += rhs(cell);
+        sources_(cell.index(0)) -= rhs(cell);
 
     return *this;
 }
@@ -214,7 +215,7 @@ Scalar Equation<T>::solve()
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
-    spSolver_->setRhs(boundaries_ + sources_);
+    spSolver_->setRhs(-sources_);
     spSolver_->solve();
     spSolver_->mapSolution(field_);
 
@@ -234,7 +235,7 @@ Scalar Equation<T>::solveWithGuess()
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
-    spSolver_->setRhs(boundaries_ + sources_);
+    spSolver_->setRhs(-sources_);
     spSolver_->solve(field_.vectorize());
     spSolver_->mapSolution(field_);
 

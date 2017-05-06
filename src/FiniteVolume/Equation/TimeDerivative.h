@@ -17,7 +17,7 @@ namespace fv
         for (const Cell &cell: field.grid.cellZone("fluid"))
         {
             eqn.add(cell, cell, rho(cell) * cell.volume() / timeStep);
-            eqn.addBoundary(cell, rho0(cell) * cell.volume() * prevField(cell) / timeStep);
+            eqn.addSource(cell, -rho0(cell) * cell.volume() * prevField(cell) / timeStep);
         }
 
         return eqn;
@@ -32,7 +32,7 @@ namespace fv
         for (const Cell &cell: field.grid.cellZone("fluid"))
         {
             eqn.add(cell, cell, cell.volume() / timeStep);
-            eqn.addBoundary(cell, cell.volume() * prevField(cell) / timeStep);
+            eqn.addSource(cell, -cell.volume() * prevField(cell) / timeStep);
         }
 
         return eqn;

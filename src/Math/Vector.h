@@ -28,6 +28,10 @@ public:
     Vector &operator-=(const Vector &rhs);
 
     Vector &operator*=(Scalar rhs);
+
+    Vector operator-() const;
+
+    void zero() { std::fill(begin(), end(), 0.); }
 };
 
 Vector operator+(Vector lhs, const Vector &rhs);

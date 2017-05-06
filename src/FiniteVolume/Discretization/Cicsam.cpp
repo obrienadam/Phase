@@ -76,7 +76,7 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
         for (const InteriorLink &nb: cell.neighbours())
         {
             Scalar flux = dot(u(nb.face()), nb.outwardNorm());
-            eqn.addBoundary(cell, -flux*gamma(nb.face()));
+            eqn.addSource(cell, flux*gamma(nb.face()));
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
@@ -85,7 +85,7 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
             switch (gamma.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.addBoundary(cell, -flux * gamma(bd.face()));
+                eqn.addSource(cell, flux * gamma(bd.face()));
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
@@ -156,7 +156,7 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
             switch (gamma.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.addBoundary(cell, -flux * gamma(bd.face()));
+                eqn.addSource(cell, flux * gamma(bd.face()));
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:

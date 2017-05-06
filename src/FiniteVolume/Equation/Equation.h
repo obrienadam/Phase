@@ -42,17 +42,10 @@ public:
     const CoefficientList &coeffs() const
     { return coeffs_; }
 
-    //- Set/get boundary/source vectors
-    void addBoundary(const Cell &cell, T val);
-
-    void setBoundary(const Cell &cell, T val);
-
+    //- Set/get source vectors
     void addSource(const Cell &cell, T val);
 
     void setSource(const Cell &cell, T val);
-
-    const Vector &boundaries() const
-    { return boundaries_; }
 
     const Vector &sources() const
     { return sources_; }
@@ -116,7 +109,7 @@ protected:
     Size nActiveCells_; // Cached for efficiency
 
     CoefficientList coeffs_;
-    Vector boundaries_, sources_;
+    Vector sources_;
 
     std::shared_ptr<SparseMatrixSolver> spSolver_;
 
