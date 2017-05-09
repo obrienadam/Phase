@@ -9,18 +9,23 @@ Polygon::Polygon()
     centroid_ = Point2D(0., 0.);
 }
 
-Polygon::Polygon(const std::vector<Point2D> &vertices)
-        :
-        Polygon(vertices.begin(), vertices.end())
+Polygon::Polygon(const std::initializer_list<Point2D> &vertices)
+    :
+      Polygon(vertices.begin(), vertices.end())
 {
 
 }
 
-Polygon::Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn)
+Polygon::Polygon(const boost::geometry::model::ring<Point2D, false, true> &boostRing)
         :
-        poly_(boostPgn)
+        poly_(boostRing)
 {
     init();
+}
+
+Scalar Polygon::perimeter() const
+{
+    return boost::geometry::perimeter(poly_);
 }
 
 //- Tests
@@ -147,13 +152,13 @@ LineSegment2D Polygon::nearestEdge(const Point2D &point) const
 
 bool Polygon::intersects(const Shape2D &shape) const
 {
-    return boost::geometry::intersects(poly_, shape.polygonize().boostPolygon());
+    return boost::geometry::intersects(poly_, shape.polygonize().boostRing());
 }
 
 //- Transformations
 void Polygon::scale(Scalar factor)
 {
-    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: poly_)
         vtx = factor * (vtx - centroid_) + centroid_;
 
     init();
@@ -161,7 +166,7 @@ void Polygon::scale(Scalar factor)
 
 void Polygon::rotate(Scalar theta)
 {
-    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: poly_)
         vtx = (vtx - centroid_).rotate(theta) + centroid_;
 }
 
@@ -170,16 +175,16 @@ Polygon Polygon::scale(Scalar factor) const
     std::vector<Point2D> verts;
     verts.reserve(vertices().size());
 
-    for (const Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (const Point2D &vtx: poly_)
         verts.push_back(factor * (vtx - centroid_) + centroid_);
 
-    return Polygon(verts);
+    return Polygon(verts.begin(), verts.end());
 }
 
 //- Translations
 Polygon &Polygon::move(const Point2D& pos)
 {
-    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: poly_)
         vtx += (pos - centroid_);
 
     centroid_ = pos;
@@ -189,7 +194,7 @@ Polygon &Polygon::move(const Point2D& pos)
 
 Polygon &Polygon::operator+=(const Vector2D &translationVec)
 {
-    for (Point2D &vtx: boost::geometry::exterior_ring(poly_))
+    for (Point2D &vtx: poly_)
         vtx += translationVec;
 
     centroid_ += translationVec;
@@ -206,7 +211,7 @@ Polygon &Polygon::operator-=(const Vector2D &translationVec)
 boost::geometry::model::box<Point2D> Polygon::boundingBox() const
 {
     boost::geometry::model::box<Point2D> box;
-    boost::geometry::envelope(boostPolygon(), box);
+    boost::geometry::envelope(poly_, box);
 
     return box;
 }
@@ -215,7 +220,7 @@ std::vector<LineSegment2D> Polygon::edges() const
 {
     std::vector<LineSegment2D> edges;
 
-    auto vtxA = vertices().begin();
+    auto vtxA = poly_.begin();
     auto vtxB = vtxA + 1;
 
     for (; vtxB != vertices().end(); ++vtxA, ++vtxB)
@@ -228,7 +233,7 @@ std::vector<LineSegment2D> Polygon::edges() const
 
 void Polygon::init()
 {
-    if (boost::geometry::exterior_ring(poly_).size() > 0)
+    if (poly_.size() > 0)
     {
         boost::geometry::unique(poly_);
         boost::geometry::correct(poly_);
@@ -240,14 +245,17 @@ void Polygon::init()
         area_ = 0.;
         centroid_ = Point2D(0., 0.);
     }
+
+    valid_ = isValid();
+    simple_ = boost::geometry::is_simple(poly_);
 }
 
 //- External functions
 Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector<boost::geometry::model::polygon<Point2D, false, true> > pgn;
+    std::vector<boost::geometry::model::ring<Point2D, false, true> > pgn;
 
-    boost::geometry::intersection(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
+    boost::geometry::intersection(pgnA.boostRing(), pgnB.boostRing(), pgn);
 
     if (pgn.size() == 0)
         return Polygon();
@@ -259,8 +267,8 @@ Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
 
 Polygon difference(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector<boost::geometry::model::polygon<Point2D, false, true> > pgn;
-    boost::geometry::difference(pgnA.boostPolygon(), pgnB.boostPolygon(), pgn);
+    std::vector<boost::geometry::model::ring<Point2D, false, true> > pgn;
+    boost::geometry::difference(pgnA.boostRing(), pgnB.boostRing(), pgn);
 
     if (pgn.size() == 0)
         return Polygon();

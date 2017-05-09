@@ -8,7 +8,7 @@ namespace ib
 {
     Equation<Vector2D>
     momentumEqn(const ImmersedBoundary& ib, const ScalarFiniteVolumeField &rho,
-                const ScalarFiniteVolumeField &mu, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &u,
+                const ScalarFiniteVolumeField &mu, ScalarFiniteVolumeField &p, VectorFiniteVolumeField &u,
                 Scalar timeStep);
 
     Equation<Scalar>

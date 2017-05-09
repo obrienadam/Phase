@@ -50,56 +50,56 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
 {
-    Equation<Vector2D> eqn(n_, "IB contact line normal");
-    const Scalar centralCoeff = 1.;
+//    Equation<Vector2D> eqn(n_, "IB contact line normal");
+//    const Scalar centralCoeff = 1.;
 
-    throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
+//    throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
 
-    for(const Cell &cell: n_.grid.cellZone("fluid"))
-    {
-        eqn.set(cell, cell, 1.);
+//    for(const Cell &cell: n_.grid.cellZone("fluid"))
+//    {
+//        eqn.set(cell, cell, 1.);
 
-        Vector2D n = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
-        eqn.setSource(cell, n);
-    }
+//        Vector2D n = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
+//        eqn.setSource(cell, n);
+//    }
 
-    for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
-        for(const GhostCellStencil &stencil: ibObj.stencils())
-        {
-            std::vector<Scalar> coeffs = stencil.ipCoeffs();
+//    for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
+//        for(const GhostCellStencil &stencil: ibObj.stencils())
+//        {
+//            std::vector<Scalar> coeffs = stencil.ipCoeffs();
 
-            //- From previous values, workout the direction and orientation of the contact line
+//            //- From previous values, workout the direction and orientation of the contact line
 
-            Vector2D uIp = stencil.ipValue(u_);
-            Vector2D gradGammaIp = stencil.ipValue(gradGamma_);
+//            Vector2D uIp = stencil.ipValue(u_);
+//            Vector2D gradGammaIp = stencil.ipValue(gradGamma_);
 
-            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, stencil.cell().centroid() - stencil.imagePoint(), uIp);
-            eqn.set(stencil.cell(), stencil.cell(), centralCoeff/2.);
+//            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, stencil.cell().centroid() - stencil.imagePoint(), uIp);
+//            eqn.set(stencil.cell(), stencil.cell(), centralCoeff/2.);
 
-            int i = 0;
-            for(const Cell& nbCell: stencil.ipCells())
-                eqn.set(stencil.cell(), nbCell, coeffs[i++]/2.);
+//            int i = 0;
+//            for(const Cell& nbCell: stencil.ipCells())
+//                eqn.set(stencil.cell(), nbCell, coeffs[i++]/2.);
 
-            eqn.setSource(stencil.cell(), bpNormal);
-        }
+//            eqn.setSource(stencil.cell(), bpNormal);
+//        }
 
-    //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());
-    Scalar error = 0;
+//    //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());
+//    Scalar error = 0;
 
-    if(std::isnan(error))
-    {
-        printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
-        ContinuumSurfaceForce::computeInterfaceNormals();
-        return;
-    }
+//    if(std::isnan(error))
+//    {
+//        printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
+//        ContinuumSurfaceForce::computeInterfaceNormals();
+//        return;
+//    }
 
-    interpolateFaces(fv::INVERSE_VOLUME, n_);
+//    interpolateFaces(fv::INVERSE_VOLUME, n_);
 
-    for(const Cell &cell: n_.grid.localActiveCells())
-        n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
+//    for(const Cell &cell: n_.grid.localActiveCells())
+//        n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
 
-    for(Vector2D &n: n_.faces())
-        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
+//    for(Vector2D &n: n_.faces())
+//        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
 }
 
 void ContinuumSurfaceForce::computeCurvature()

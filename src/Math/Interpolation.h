@@ -25,6 +25,7 @@ protected:
 
 };
 
+#include "LinearInterpolation.h"
 #include "BilinearInterpolation.h"
 #include "QuadraticNormalInterpolation.h"
 

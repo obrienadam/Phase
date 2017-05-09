@@ -13,7 +13,7 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
     for (Label id: nodeIds_)
         vertices.push_back(nodes_[id]);
 
-    cellShape_ = Polygon(vertices);
+    cellShape_ = Polygon(vertices.begin(), vertices.end());
 
     volume_ = cellShape_.area();
     centroid_ = cellShape_.centroid();

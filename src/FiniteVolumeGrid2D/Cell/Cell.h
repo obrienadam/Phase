@@ -100,10 +100,6 @@ public:
     Size nNeighbours() const
     { return interiorLinks_.size(); }
 
-    //- Cell group
-    const CellGroup &cellGroup() const
-    { return *cellGroupPtr_; }
-
     bool isInCell(const Point2D &point) const;
 
 private:
@@ -122,8 +118,6 @@ private:
     std::vector<InteriorLink> interiorLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
     std::vector<DiagonalCellLink> diagonalLinks_;
-
-    const CellGroup *cellGroupPtr_;
 };
 
 bool cellsShareFace(const Cell &cellA, const Cell &cellB);

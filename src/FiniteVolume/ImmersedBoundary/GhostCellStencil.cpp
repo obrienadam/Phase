@@ -3,7 +3,7 @@
 
 GhostCellStencil::GhostCellStencil(const Cell &cell, const Shape2D &shape, const FiniteVolumeGrid2D &grid)
         :
-        cell_(cell)
+          ImmersedBoundaryStencil(cell)
 {
     bp_ = shape.nearestIntersect(cell_.centroid());
     ip_ = 2. * bp_ - cell.centroid();

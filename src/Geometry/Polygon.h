@@ -23,9 +23,9 @@ public:
         init();
     }
 
-    Polygon(const std::vector<Point2D> &vertices);
+    Polygon(const std::initializer_list<Point2D> &vertices);
 
-    Polygon(const boost::geometry::model::polygon<Point2D, false, true> &boostPgn);
+    Polygon(const boost::geometry::model::ring<Point2D, false, true> &boostRing);
 
     Type type() const
     { return POLYGON; }
@@ -37,7 +37,9 @@ public:
     Scalar area() const
     { return area_; }
 
-    const boost::geometry::model::polygon<Point2D, false, true> &boostPolygon() const
+    Scalar perimeter() const;
+
+    const boost::geometry::model::ring<Point2D, false, true> &boostRing() const
     { return poly_; }
 
     //- Tests
@@ -84,8 +86,8 @@ public:
     { return *this; }
 
     //- Vertices
-    const std::vector<Point2D> &vertices() const
-    { return boost::geometry::exterior_ring(poly_); }
+    const std::vector<Point2D>& vertices() const
+    { return poly_; }
 
     std::vector<LineSegment2D> edges() const;
 
@@ -93,10 +95,12 @@ protected:
 
     void init();
 
-    boost::geometry::model::polygon<Point2D, false, true> poly_;
+    boost::geometry::model::ring<Point2D, false, true> poly_;
 
     Point2D centroid_;
     Scalar area_;
+
+    bool valid_, simple_;
 };
 
 //- External functions

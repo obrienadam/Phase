@@ -25,6 +25,9 @@ public:
     Scalar area() const
     { return area_; }
 
+    Scalar perimeter() const
+    { return 2.*M_PI*radius_; }
+
     Scalar radius() const
     { return radius_; }
 

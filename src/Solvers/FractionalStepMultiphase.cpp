@@ -133,13 +133,6 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     for (const Face &face: grid_.faces())
         rhoU(face) = ((1. - gamma(face)) * rho1_ + gamma(face) * rho2_) * u(face);
 
-    for (const ImmersedBoundaryObject &ibObj: ibObjs())
-        for (const GhostCellStencil &st: ibObj.stencils())
-            gamma(st.cell()) = st.ipValue(gamma) + dot(st.ipGrad(gamma), st.cell().centroid() - st.imagePoint());
-
-    for (const Cell &cell: grid_.localActiveCells())
-        gamma(cell) = std::max(std::min(gamma(cell), 1.), 0.);
-
     //- Recompute gradGamma for next cicsam iteration
     fv::computeGradient(fv::FACE_TO_CELL, gamma, gradGamma, false);
     grid_.sendMessages(comm_, gradGamma); //- In case donor cell is on another proc

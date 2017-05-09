@@ -88,8 +88,7 @@ Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma
 
 void SurfaceTensionForce::computeGhostCellVals(const ImmersedBoundaryObject &ibObj, Scalar theta)
 {
-    for(const GhostCellStencil& st: ibObj.stencils())
-        gamma_(st.cell()) = st.ipValue(gamma_) + st.length()*st.ipValue(gradGamma_).mag()*cos(theta);
+    throw Exception("SurfaceTensionForce", "computeGhostCellVals", "deprecated.");
 }
 
 bool SurfaceTensionForce::isContactLinePatch(const Patch &patch) const

@@ -23,6 +23,7 @@ Scalar BilinearInterpolation::operator()(const std::vector<Scalar> &vals, const 
             vals[3],
     };
 
+    //- (AB)^T = B^TA^T
     return (phi * mat_ * x)(0, 0);
 }
 
@@ -77,9 +78,9 @@ std::vector<Scalar> BilinearInterpolation::operator()(const Point2D &ip) const
 
 void BilinearInterpolation::constructMatrix(const std::vector<Point2D> &pts)
 {
-    mat_.resize(pts.size(), 4);
+    mat_.resize(4, 4);
 
-    for (int i = 0; i < pts.size(); ++i)
+    for (int i = 0; i < 4; ++i)
     {
         mat_(i, 0) = pts[i].x;
         mat_(i, 1) = pts[i].y;

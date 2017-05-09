@@ -3,8 +3,6 @@
 
 #include "Shape2D.h"
 #include "Equation.h"
-#include "Interpolation.h"
-#include "GhostCellStencil.h"
 
 class ImmersedBoundaryObject
 {
@@ -12,7 +10,7 @@ public:
 
     enum BoundaryType
     {
-        FIXED, NORMAL_GRADIENT, CONTACT_ANGLE, PARTIAL_SLIP
+        FIXED, NORMAL_GRADIENT
     };
 
     //- Constructors, one for circles, another for polygons
@@ -32,7 +30,7 @@ public:
     }
 
     bool isInIb(const Point2D &pt) const
-    { return shapePtr_->isCovered(pt); }
+    { return shapePtr_->isInside(pt); }
 
     Shape2D &shape()
     { return *shapePtr_; }
@@ -40,16 +38,9 @@ public:
     const Shape2D &shape() const
     { return *shapePtr_; }
 
-    //- Stencils
-    const std::vector<GhostCellStencil> &stencils() const
-    { return stencils_; }
-
     //- Operations
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
-
-    //- Internal cells and boundaries
-    void setInternalCells();
 
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
@@ -80,8 +71,7 @@ public:
     template<typename T>
     T getBoundaryRefValue(const std::string &name) const;
 
-    //- Motion info
-
+    //- Motion info if applicable
     const Vector2D& position() const { return shape().centroid(); }
 
     virtual Vector2D acceleration() const
@@ -96,38 +86,34 @@ public:
     virtual Vector2D velocity(const Point2D &point) const
     { return Vector2D(0., 0.); }
 
-    virtual Scalar angularVelocity() const
-    { return 0.; }
+    virtual Vector2D normalForce() const
+    { return Vector2D(0., 0.); }
 
-    const Vector2D& normalForce() const { return normalForce_; }
+    virtual Vector2D shearForce() const
+    { return Vector2D(0., 0.); }
 
-    const Vector2D& shearForce() const { return shearForce_; }
+    virtual Vector2D force() const { return normalForce() + shearForce(); }
 
-    Vector2D force() const { return normalForce_ + shearForce_; }
+    virtual void computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
 
-    Scalar mass() const { return density_*shapePtr_->area(); }
+    virtual void computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField& u);
 
-    void computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
+    //- Update (must to be overriden)
+    virtual void update(Scalar timeStep) = 0;
 
-    void computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField& u);
+    virtual void updateCells() = 0;
 
-    //- Update (meant to be overriden
-    virtual void update(Scalar timeStep)
-    {} //- By default, do nothing
-    virtual void updateCells();
+    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const = 0;
+
+    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
 
     const std::string &name() const
     { return name_; }
-
-    void assignId(Label id)
-    { id_ = id; }
 
     Label id() const
     { return id_; }
 
 protected:
-
-    void constructStencils();
 
     std::string name_;
     Label id_;
@@ -136,17 +122,15 @@ protected:
 
     CellGroup *ibCells_, *solidCells_, *freshlyClearedCells_;
     CellZone *cells_;
-    std::shared_ptr<Shape2D> shapePtr_;
 
-    std::vector<GhostCellStencil> stencils_;
+    std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefScalars_;
     std::map<std::string, Vector2D> boundaryRefVectors_;
-
-    //- Forces
-    Scalar density_;
-    Vector2D normalForce_, shearForce_;
 };
+
+#include "GhostCellImmersedBoundaryObject.h"
+#include "ForcingCellImmersedBoundaryObject.h"
 
 #endif

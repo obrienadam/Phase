@@ -177,12 +177,12 @@ boost::geometry::model::box<Point2D> Box::boundingBox() const
 
 Polygon Box::polygonize() const
 {
-    return Polygon(std::vector<Point2D>({
+    return Polygon({
             lower_,
             Point2D(upper_.x, lower_.y),
             upper_,
             Point2D(lower_.x, upper_.y)
-                                        }));
+                                        });
 }
 
 std::array<Point2D, 4> Box::vertices() const

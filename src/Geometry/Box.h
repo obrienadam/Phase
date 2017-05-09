@@ -18,6 +18,9 @@ public:
     Scalar area() const
     { return area_; }
 
+    Scalar perimeter() const
+    { return 2*(upper_.x - lower_.x) + 2*(upper_.y - lower_.y); }
+
     //- Tests
     bool isInside(const Point2D &point) const;
 

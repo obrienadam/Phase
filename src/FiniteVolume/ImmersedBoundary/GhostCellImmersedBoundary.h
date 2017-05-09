@@ -3,6 +3,7 @@
 
 #include "Equation.h"
 #include "ImmersedBoundaryObject.h"
+#include "ForcingCellStencil.h"
 
 namespace ib
 {
@@ -13,52 +14,63 @@ namespace ib
     {
         Equation <T> eqn(field);
 
-        for (const ImmersedBoundaryObject &ibObj: ibObjs)
-            for (const GhostCellStencil &stencil: ibObj.stencils())
-            {
-                Scalar centralCoeff, l, lambda;
-                std::vector<Scalar> coeffs = stencil.ipCoeffs();
+//        for (const ImmersedBoundaryObject &ibObj: ibObjs)
 
-                //- Boundary assembly
-                switch (ibObj.boundaryType(field.name()))
-                {
-                    case ImmersedBoundaryObject::FIXED:
-                        centralCoeff = 0.5;
-                        for (Scalar &coeff: coeffs)
-                            coeff *= 0.5;
+//            for (const GhostCellStencil &stencil: ibObj.ghostCellStencils())
+//            {
+//                Scalar centralCoeff, l, lambda;
+//                std::vector<Scalar> coeffs = stencil.ipCoeffs();
 
-                        eqn.addSource(stencil.cell(), -ibObj.getBoundaryRefValue<T>(field.name()));
+//                //- Boundary assembly
+//                switch (ibObj.boundaryType(field.name()))
+//                {
+//                    case ImmersedBoundaryObject::FIXED:
+//                        centralCoeff = 0.5;
+//                        for (Scalar &coeff: coeffs)
+//                            coeff *= 0.5;
 
-                        break;
+//                        eqn.addSource(stencil.cell(), -ibObj.getBoundaryRefValue<T>(field.name()));
 
-                    case ImmersedBoundaryObject::NORMAL_GRADIENT:
-                        centralCoeff = -1.;
-                        break;
+//                        break;
 
-                    case ImmersedBoundaryObject::CONTACT_ANGLE:
-                        centralCoeff = -1;
-                        break;
+//                    case ImmersedBoundaryObject::NORMAL_GRADIENT:
+//                        centralCoeff = -1.;
+//                        break;
 
-                    case ImmersedBoundaryObject::PARTIAL_SLIP:
-                        l = stencil.length();
-                        lambda = ibObj.getBoundaryRefValue<Scalar>(field.name());
-                        centralCoeff = 1. + 2. * lambda / l;
+//                    case ImmersedBoundaryObject::CONTACT_ANGLE:
+//                        centralCoeff = -1;
+//                        break;
 
-                        for (Scalar &coeff: coeffs)
-                            coeff *= 1. - 2. * lambda / l;
+//                    case ImmersedBoundaryObject::PARTIAL_SLIP:
+//                        l = stencil.length();
+//                        lambda = ibObj.getBoundaryRefValue<Scalar>(field.name());
+//                        centralCoeff = 1. + 2. * lambda / l;
 
-                        break;
+//                        for (Scalar &coeff: coeffs)
+//                            coeff *= 1. - 2. * lambda / l;
 
-                    default:
-                        throw Exception("ib", "gc<ImmersedBoundaryObject_t, T>", "invalid boundary type.");
-                }
+//                        break;
 
-                eqn.add(stencil.cell(), stencil.cell(), centralCoeff);
+//                    default:
+//                        throw Exception("ib", "gc<ImmersedBoundaryObject_t, T>", "invalid boundary type.");
+//                }
 
-                int i = 0;
-                for (const Cell &ipCell: stencil.ipCells())
-                    eqn.add(stencil.cell(), ipCell, coeffs[i++]);
-            }
+//                eqn.add(stencil.cell(), stencil.cell(), centralCoeff);
+
+//                int i = 0;
+//                for (const Cell &ipCell: stencil.ipCells())
+//                    eqn.add(stencil.cell(), ipCell, coeffs[i++]);
+
+//                for(const Cell& cell: ibObj.freshlyClearedCells())
+//                {
+//                    ForcingCellStencil st(cell, ibObj.shape(), field.grid.cellZone("fluid"));
+
+//                    eqn.add(cell, cell, 1.);
+//                    eqn.add(cell, st.iCells()[0], -st.iCoeffs()[0]);
+//                    eqn.add(cell, st.iCells()[1], -st.iCoeffs()[1]);
+//                    eqn.addSource(cell, -st.bCoeff()*ibObj.getBoundaryRefValue<T>(field.name()));
+//                }
+//            }
 
         return eqn;
     }

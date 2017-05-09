@@ -10,13 +10,13 @@ CellZone::~CellZone()
     clear();
 }
 
-void CellZone::push_back(Cell &cell)
+void CellZone::push_back(const Cell &cell)
 {
     if (registry_.insert(std::make_pair(cell.id(), std::ref(*this))).second)
         CellGroup::push_back(cell);
 }
 
-void CellZone::moveToGroup(Cell &cell)
+void CellZone::moveToGroup(const Cell &cell)
 {
     auto insertion = registry_.insert(std::make_pair(cell.id(), std::ref(*this)));
 
@@ -45,7 +45,7 @@ void CellZone::remove(const Cell &cell)
 
 void CellZone::merge(CellZone &other)
 {
-    for (Cell &cell: other.cells())
+    for (const Cell &cell: other.cells())
         moveToGroup(cell);
 }
 

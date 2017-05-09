@@ -56,8 +56,8 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,gradP
-	scalarFields p,pCorr,m
+	vectorFields u,us
+	scalarFields p,phi
 }
 
 Integrators

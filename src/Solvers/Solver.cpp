@@ -134,14 +134,14 @@ void Solver::setInitialConditions(const Input &input)
                     Scalar w = icTree.get<Scalar>("width") / 2;
                     Scalar h = icTree.get<Scalar>("height") / 2;
 
-                    std::vector<Point2D> vertices = {
+                    Polygon pgn = {
                             Point2D(center.x - w, center.y - h),
                             Point2D(center.x + w, center.y - h),
                             Point2D(center.x + w, center.y + h),
                             Point2D(center.x - w, center.y + h)
                     };
 
-                    setBox(Polygon(vertices), icTree.get<Scalar>("value"), field);
+                    setBox(pgn, icTree.get<Scalar>("value"), field);
                 }
                 else if (type == "uniform")
                     field.fillInterior(icTree.get<Scalar>("value"));
@@ -185,14 +185,14 @@ void Solver::setInitialConditions(const Input &input)
                     Scalar w = icTree.get<Scalar>("width") / 2;
                     Scalar h = icTree.get<Scalar>("height") / 2;
 
-                    std::vector<Point2D> vertices = {
+                    Polygon pgn = {
                             Point2D(center.x - w, center.y - h),
                             Point2D(center.x + w, center.y - h),
                             Point2D(center.x + w, center.y + h),
                             Point2D(center.x - w, center.y + h)
                     };
 
-                    setBox(Polygon(vertices), Vector2D(icTree.get<string>("value")), field);
+                    setBox(pgn, Vector2D(icTree.get<string>("value")), field);
                 }
                 else if (type == "uniform")
                     field.fillInterior(Vector2D(icTree.get<string>("value")));
@@ -281,7 +281,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
         vtx.push_back(circle.centroid() + rVec);
     }
 
-    const Polygon pgn(vtx);
+    Polygon pgn(vtx.begin(), vtx.end());
 
     for (const Cell &cell: field.grid.cells())
     {

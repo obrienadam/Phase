@@ -4,6 +4,7 @@ set(HEADERS Matrix.h
     BisectionSearch.h
     SecantSearch.h
     Interpolation.h
+    LinearInterpolation.h
     BilinearInterpolation.h
     QuadraticNormalInterpolation.h
     InterpolationFunction.h)
@@ -13,6 +14,7 @@ set(SOURCES Matrix.cpp
     Vector.cpp
     BisectionSearch.cpp
     SecantSearch.cpp
+    LinearInterpolation.cpp
     BilinearInterpolation.cpp
     QuadraticNormalInterpolation.cpp
     InterpolationFunction.cpp)

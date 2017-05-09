@@ -1,22 +1,29 @@
 set(HEADERS ImmersedBoundary.h
             ImmersedBoundaryObject.h
-            TranslatingImmersedBoundaryObject.h
-            OscillatingImmersedBoundaryObject.h
+            GhostCellImmersedBoundaryObject.h
+            ForcingCellImmersedBoundaryObject.h
+            LeastSquaresImmersedBoundaryObject.h
             GhostCellStencil.h
             CutCell.h
             CutCellLink.h
-            CutCellImmersedBoundary.h
+            ImmersedBoundaryStencil.h
+            ForcingCellStencil.h
+            LeastSquaresStencil.h
             GhostCellImmersedBoundary.h
+            ForcingCellImmersedBoundary.h
             MovingGhostCellImmersedBoundary.h)
 
 set(SOURCES ImmersedBoundary.cpp
             ImmersedBoundaryObject.cpp
-            TranslatingImmersedBoundaryObject.cpp
-            OscillatingImmersedBoundaryObject.cpp
+            GhostCellImmersedBoundaryObject.cpp
+            ForcingCellImmersedBoundaryObject.cpp
+            LeastSquaresImmersedBoundaryObject.cpp
+            ImmersedBoundaryStencil.cpp
+            ForcingCellStencil.cpp
+            LeastSquaresStencil.cpp
             GhostCellStencil.cpp
             CutCell.cpp
             CutCellLink.cpp
-            CutCellImmersedBoundary.cpp
             GhostCellImmersedBoundary.cpp
             MovingGhostCellImmersedBoundary.cpp)
 

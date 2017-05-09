@@ -70,16 +70,13 @@ ImmersedBoundaries
 {
   Cylinder1
   {
+    method forcing-cell	
+
     geometry
     {
       type circle
       center (2,2.5)
       radius 0.5
-    }
-
-    interpolation
-    {
-      type bilinear
     }
 
     u
@@ -92,6 +89,12 @@ ImmersedBoundaries
     {
       type normal_gradient
       value 0
+    }
+
+    phi
+    {
+	type normal_gradient
+	value 0
     }
   }
 }

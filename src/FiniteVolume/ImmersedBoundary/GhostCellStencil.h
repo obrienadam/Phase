@@ -5,8 +5,9 @@
 #include "Interpolation.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "ImmersedBoundaryStencil.h"
 
-class GhostCellStencil
+class GhostCellStencil: public ImmersedBoundaryStencil
 {
 public:
 
@@ -37,8 +38,6 @@ public:
     { return ipCoeffs_; }
 
 private:
-
-    const Cell &cell_;
 
     Point2D ip_, bp_;
     std::vector<Ref<const Cell>> ipCells_;

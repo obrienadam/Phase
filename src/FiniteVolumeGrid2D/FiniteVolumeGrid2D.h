@@ -80,11 +80,11 @@ public:
 
     void setCellsActive(const std::vector<Label> &ids);
 
-    void setCellsActive(CellGroup &cellGroup);
+    void setCellsActive(const CellGroup &cellGroup);
 
     void setCellsInactive(const std::vector<Label> &ids);
 
-    void setCellsInactive(CellGroup &cellGroup);
+    void setCellsInactive(const CellGroup &cellGroup);
 
     void setCellsLocallyInactive(const std::vector<Label> &ids);
 

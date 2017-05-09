@@ -128,7 +128,7 @@ Polygon Circle::polygonize(int nVerts) const
         verts[i] = center_ + Point2D(radius_ * cos(theta), radius_ * sin(theta));
     }
 
-    return Polygon(verts);
+    return Polygon(verts.begin(), verts.end());
 }
 
 Polygon Circle::polygonize() const

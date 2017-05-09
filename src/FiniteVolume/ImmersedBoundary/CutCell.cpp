@@ -63,8 +63,8 @@ CutCell::CutCell(const Cell &cell, const ImmersedBoundaryObject &ibObj)
         }
     }
 
-    solid_ = Polygon(solidVerts);
-    fluid_ = Polygon(fluidVerts);
+    solid_ = Polygon(solidVerts.begin(), solidVerts.end());
+    fluid_ = Polygon(fluidVerts.begin(), fluidVerts.end());
 
     if (xcs.size() == 2) // Only a boundary face if at least two intersections were found
     {

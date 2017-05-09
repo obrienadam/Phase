@@ -14,7 +14,7 @@ IbViewer::IbViewer(const Input &input, const Communicator &comm, const Solver &s
 
             ibForces_.push_back(std::ofstream((ibObj.name() + "Forces.dat").c_str()));
             ibForces_.back() << "Title = \"" << ibObj.name() << " Forces\"\n"
-                             << "Variables = \"time\", \"x\", \"y\", \"acc_x\", \"acc_y\", \"vel_x\", \"vel_y\", \"omega\", \"f_norm_x\", \"f_norm_y\", \"f_shear_x\", \"f_shear_y\", \"num_fresh_cells\"\n";
+                             << "Variables = \"time\", \"x\", \"y\", \"acc_x\", \"acc_y\", \"vel_x\", \"vel_y\", \"f_norm_x\", \"f_norm_y\", \"f_shear_x\", \"f_shear_y\", \"num_fresh_cells\"\n";
         }
 
         cutCellFile_.open("CutCells.dat");
@@ -91,7 +91,6 @@ void IbViewer::write(Scalar solutionTime, const Communicator &comm)
             *forceFileItr << solutionTime << " " << ibObj.position().x << " " << ibObj.position().y << " "
                           << ibObj.acceleration().x << " " << ibObj.acceleration().y << " "
                           << ibObj.velocity().x << " " << ibObj.velocity().y << " "
-                          << ibObj.angularVelocity() << " "
                           << ibObj.normalForce().x << " " << ibObj.normalForce().y << " "
                           << ibObj.shearForce().x << " " << ibObj.shearForce().y << " "
                           << ibObj.freshlyClearedCells().size() << std::endl;
