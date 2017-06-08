@@ -6,14 +6,14 @@ Solver
 {
 	timeDependent Off
 	maxIterations 100
-	timeStep 0.1
+	timeStep 1e-3
 	maxTime 1
 	maxCo 0.8
 
 	numInnerIterations 1
 	numPressureCorrections 2
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.7
+	momentumRelaxation 0.5
+	pressureCorrectionRelaxation 0.5
 }
 
 LinearAlgebra
@@ -52,8 +52,6 @@ Grid
 	; Rectilinear parameters
 	width 0.8
 	height 0.4
-
-	refineX (0,0.25) ; Some refinement near the entrance
 }
 
 Viewer

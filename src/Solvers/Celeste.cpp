@@ -5,9 +5,9 @@
 
 Celeste::Celeste(const Input &input,
                  Solver &solver)
-        :
-        ContinuumSurfaceForce(input, solver),
-        w_(solver.addScalarField("w"))
+    :
+      ContinuumSurfaceForce(input, solver),
+      w_(solver.addScalarField("w"))
 {
     constructMatrices();
 }
@@ -25,8 +25,8 @@ VectorFiniteVolumeField Celeste::compute()
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradGamma_(face) = (gamma_(face.rCell()) - gamma_(face.lCell())) * rc / rc.magSqr();
 
-        bool lCellIsInIb = solver_.ibObjManager().isIbCell(face.lCell());
-        bool rCellIsInIb = solver_.ibObjManager().isIbCell(face.rCell());
+        bool lCellIsInIb = solver_.ib().isIbCell(face.lCell());
+        bool rCellIsInIb = solver_.ib().isIbCell(face.rCell());
 
         if (!(lCellIsInIb || rCellIsInIb))
             ft(face) = sigma_ * kappa_(face) * gradGamma_(face);
@@ -44,7 +44,7 @@ VectorFiniteVolumeField Celeste::compute()
             const Vector2D &sf = nb.outwardNorm();
 
             ft(cell) += Vector2D(ft(nb.face()).x * fabs(sf.x), ft(nb.face()).y * fabs(sf.y)) /
-                        rho_(nb.face());
+                    rho_(nb.face());
 
             sumSfx += fabs(sf.x);
             sumSfy += fabs(sf.y);
@@ -55,7 +55,7 @@ VectorFiniteVolumeField Celeste::compute()
             const Vector2D &sf = bd.outwardNorm();
 
             ft(cell) += Vector2D(ft(bd.face()).x * fabs(sf.x), ft(bd.face()).y * fabs(sf.y)) /
-                        rho_(bd.face());
+                    rho_(bd.face());
 
             sumSfx += fabs(sf.x);
             sumSfy += fabs(sf.y);
@@ -285,20 +285,26 @@ void Celeste::computeInterfaceNormals()
 
     for (const Cell &cell: n_.grid.cells())
         n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(
-                cell).unitVec();
+                                                                                    cell).unitVec();
 
     solver().grid().sendMessages(solver().comm(), n_);
 
-    for (const Face &face: n_.grid.boundaryFaces())
+
+    for(const Patch& patch: n_.grid.patches())
     {
-        const Cell &cell = face.lCell();
-        if (isContactLinePatch(face.patch()))
+        if(isContactLinePatch(patch))
         {
-            Vector2D sf = face.outwardNorm(cell.centroid());
-            n_(face) = computeContactLineNormal(gradGammaTilde_(cell), sf, u_(cell), theta());
+            for(const Face& face: patch)
+            {
+                Vector2D sf = face.outwardNorm(face.lCell().centroid());
+                n_(face) = computeContactLineNormal(gradGammaTilde_(face.lCell()), sf, u_(face.lCell()), theta());
+            }
         }
         else
-            n_(face) = n_(face.lCell());
+        {
+            for(const Face& face: patch)
+                n_(face) = n_(face.lCell());
+        }
     }
 }
 
@@ -333,7 +339,7 @@ void Celeste::computeCurvature()
                     //sSqr = pow(r.mag() + eps_, 2);
 
                     dn = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), ibTheta(ibObj)) -
-                         n_(cell);
+                            n_(cell);
 
                     n_(nb.cell()) = n_(cell) + dn;
 
@@ -363,7 +369,7 @@ void Celeste::computeCurvature()
                     //sSqr = pow(r.mag() + eps_, 2);
 
                     dn = computeContactLineNormal(gradGammaTilde_(cell), stencil.second, u_(cell), ibTheta(ibObj)) -
-                         n_(cell);
+                            n_(cell);
 
                     n_(dg.cell()) = n_(cell) + dn;
 
@@ -413,17 +419,17 @@ void Celeste::weightCurvatures()
 
     for (const Cell &cell: kappa_.grid.cellZone("fluid"))
     {
-        Scalar sumKappaW = kappa_.prevIter()(cell) * w_(cell), sumW = w_(cell);
+        Scalar sumKappaW = kappa_.savePreviousIteration()(cell) * w_(cell), sumW = w_(cell);
 
         for (const InteriorLink &nb: cell.neighbours())
         {
-            sumKappaW += kappa_.prevIter()(nb.cell()) * w_(nb.cell());
+            sumKappaW += kappa_.prevIteration()(nb.cell()) * w_(nb.cell());
             sumW += w_(nb.cell());
         }
 
         for (const DiagonalCellLink &dg: cell.diagonals())
         {
-            sumKappaW += kappa_.prevIter()(dg.cell()) * w_(dg.cell());
+            sumKappaW += kappa_.prevIteration()(dg.cell()) * w_(dg.cell());
             sumW += w_(dg.cell());
         }
 
@@ -440,7 +446,7 @@ void Celeste::weightCurvatures()
 
     for (const Cell &cell: kappa_.grid.cellZone("fluid"))
     {
-        const ScalarFiniteVolumeField &kappaPrev = kappa_.prevIter();
+        const ScalarFiniteVolumeField &kappaPrev = kappa_.prevIteration();
 
         Scalar num = kappaPrev(cell) * w_(cell), den = w_(cell);
 

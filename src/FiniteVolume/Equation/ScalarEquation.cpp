@@ -65,7 +65,7 @@ void Equation<Scalar>::relax(Scalar relaxationFactor)
         Scalar &coeff = coeffRef(row, row);
 
         coeff /= relaxationFactor;
-        sources_(row) += (1. - relaxationFactor) * coeff * field_(cell);
+        sources_(row) -= (1. - relaxationFactor) * coeff * field_(cell);
     }
 }
 

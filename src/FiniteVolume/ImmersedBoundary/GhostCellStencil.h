@@ -13,14 +13,14 @@ public:
 
     GhostCellStencil(const Cell &cell, const Shape2D &shape, const FiniteVolumeGrid2D &grid);
 
-    const Cell &cell() const
-    { return cell_; }
-
     const Point2D &imagePoint() const
     { return ip_; }
 
     const Point2D &boundaryPoint() const
     { return bp_; }
+
+    Vector2D unitNormal() const
+    { return (bp_ - ip_).unitVec(); }
 
     Scalar length() const
     { return (ip_ - cell_.centroid()).mag(); }

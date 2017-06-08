@@ -9,37 +9,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 find_package(Boost REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(MPI REQUIRED)
+find_package(Trilinos REQUIRED)
 
-option(PHASE_USE_MPI "Compile with MPI support" ON)
-if(PHASE_USE_MPI)
-    find_package(MPI REQUIRED)
-    #set(CMAKE_CXX_COMPILER "mpic++")
-    #set(CMAKE_C_COMPILER "mpicc")
-    add_definitions(-DPHASE_USE_MPI)
-endif()
+# Compiler configuration
 
-option(PHASE_USE_EIGEN "Use the Eigen3 linear solvers library" ON)
-if(PHASE_USE_EIGEN)
-    add_definitions(-DPHASE_USE_EIGEN)
-endif()
-
-option(PHASE_USE_HYPRE "Use the HYPRE linear solvers library" ON)
-if(PHASE_USE_HYPRE)
-    add_definitions(-DPHASE_USE_HYPRE)
-endif()
-
-option(PHASE_USE_PETSC "Use the HYPRE linear solvers library" ON)
-if(PHASE_USE_PETSC)
-    add_definitions(-DPHASE_USE_PETSC)
-endif()
-
-option(PHASE_USE_TRILINOS "Use the Trilinos (Belos) linear solvers library." ON)
-if(PHASE_USE_TRILINOS)
-    add_definitions(-DPHASE_USE_TRILINOS)
-endif()
-
-# Compiler flag setup
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_STANDARD 11)
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
@@ -78,14 +53,18 @@ set(INCLUDE_DIR src/Types
 include_directories(${INCLUDE_DIR})
 
 message(STATUS "Build configuration: " ${CMAKE_BUILD_TYPE})
-get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
-message(STATUS "Languages: ${languages}")
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CXX compiler command: ${CMAKE_CXX_COMPILER}")
 message(STATUS "C compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "C compiler command: ${CMAKE_C_COMPILER}")
 message(STATUS "C compiler flags: ${CMAKE_C_FLAGS}")
 message(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
+message(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
+message(STATUS "BLAS library: " ${BLAS_LIBRARIES})
+message(STATUS "LAPACK library: " ${LAPACK_LIBRARIES})
+message(STATUS "MPI include directory: " ${MPI_INCLUDE_PATH})
+message(STATUS "Trilinos directory: " ${Trilinos_DIR})
 
 add_subdirectory(src)
 add_subdirectory(modules)

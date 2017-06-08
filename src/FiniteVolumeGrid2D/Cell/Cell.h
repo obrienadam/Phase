@@ -12,8 +12,6 @@
 #include "InteriorFaceLink.h"
 #include "DiagonalCellLink.h"
 
-class CellGroup;
-
 class FiniteVolumeGrid2D;
 
 class Cell

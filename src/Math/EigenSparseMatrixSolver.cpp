@@ -22,6 +22,7 @@ void EigenSparseMatrixSolver::set(const CoefficientList &coeffs)
             triplets.push_back(Triplet(i, entry.first, entry.second));
 
     mat_.setFromTriplets(triplets.begin(), triplets.end());
+    mat_.makeCompressed();
 }
 
 void EigenSparseMatrixSolver::setGuess(const Vector &x0)
@@ -38,33 +39,14 @@ void EigenSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar EigenSparseMatrixSolver::solve()
 {
-    if (nPreconUses_ == maxPreconUses_)
-    {
-        solver_.compute(mat_);
-        nPreconUses_ = 0;
-    }
-    else
-        ++nPreconUses_;
-
+    solver_.compute(mat_);
     x_ = solver_.solve(rhs_);
-    return solver_.error();
+    return 0.;
 }
 
 Scalar EigenSparseMatrixSolver::solve(const Vector &x0)
 {
-    if (nPreconUses_ >= maxPreconUses_)
-    {
-        solver_.compute(mat_);
-        nPreconUses_ = 1;
-    }
-    else
-        ++nPreconUses_;
-
-    for (int i = 0, end = x0.size(); i < end; ++i)
-        x_(i) = x0(i);
-
-    x_ = solver_.solveWithGuess(rhs_, x_);
-    return solver_.error();
+    return solve();
 }
 
 void EigenSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
@@ -75,7 +57,7 @@ void EigenSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 
 void EigenSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
-    const Size nActiveCells = field.grid.nLocalActiveCells();
+    Size nActiveCells = field.grid.nLocalActiveCells();
     for (const Cell &cell: field.grid.localActiveCells())
     {
         Vector2D &vec = field(cell);

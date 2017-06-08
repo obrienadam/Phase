@@ -1,10 +1,7 @@
 #include "Piso.h"
-#include "Exception.h"
-#include "CrankNicolson.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
-#include "GhostCellImmersedBoundary.h"
 
 Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
         :
@@ -19,7 +16,8 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &gri
         m(addScalarField("m")),
         d(addScalarField("d")),
         uEqn_(input, comm, u, "uEqn"),
-        pCorrEqn_(input, comm, pCorr, "pCorrEqn")
+        pCorrEqn_(input, comm, pCorr, "pCorrEqn"),
+        fluid_(grid.createCellZone("fluid"))
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -33,18 +31,19 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &gri
     momentumOmega_ = input.caseInput().get<Scalar>("Solver.momentumRelaxation");
     pCorrOmega_ = input.caseInput().get<Scalar>("Solver.pressureCorrectionRelaxation");
 
+    //- Copy relevant boundary types
     pCorr.copyBoundaryTypes(p);
+    ib_.copyBoundaryTypes(p, pCorr);
 
     //- All active cells to fluid cells
-    grid_.createCellZone("fluid", grid_.getCellIds(grid_.localActiveCells()));
+    fluid_.add(grid_.localActiveCells());
 
     //- Create ib zones if any
-    ibObjManager_.initCellZones();
+    ib_.initCellZones(fluid_);
 }
 
 Scalar Piso::solve(Scalar timeStep)
 {
-    ibObjManager_.update(timeStep);
     u.savePreviousTimeStep(timeStep, 1);
 
     for (size_t innerIter = 0; innerIter < nInnerIterations_; ++innerIter)
@@ -55,7 +54,6 @@ Scalar Piso::solve(Scalar timeStep)
         for (size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
         {
             solvePCorrEqn();
-            correctPressure();
             correctVelocity();
         }
     }
@@ -96,8 +94,8 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u) ==
-             cn::laplacian(mu, u, 1.5) - fv::source(gradP));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u) ==
+             fv::laplacian(mu, u) - fv::source(gradP));
 
     uEqn_.relax(momentumOmega_);
 
@@ -112,10 +110,10 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 
 Scalar Piso::solvePCorrEqn()
 {
-    for (const Cell &cell: m.grid.cellZone("fluid"))
-    {
-        m(cell) = 0.;
+    m.fill(0);
 
+    for (const Cell &cell: fluid_)
+    {
         for (const InteriorLink &nb: cell.neighbours())
             m(cell) += dot(u(nb.face()), nb.outwardNorm());
 
@@ -123,23 +121,33 @@ Scalar Piso::solvePCorrEqn()
             m(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 
-    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib::gc(ibObjs(), pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.bcs(pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
     grid_.sendMessages(comm_, pCorr);
 
     pCorr.setBoundaryFaces();
-    fv::computeInverseWeightedGradient(rho, pCorr, gradPCorr);
+    fv::computeGradient(fv::FACE_TO_CELL, fluid_, pCorr, gradPCorr);
+
+    for(const Cell &cell: grid_.localActiveCells())
+        p(cell) += pCorrOmega_*pCorr(cell);
+
+    grid_.sendMessages(comm_, p);
+
+    p.setBoundaryFaces();
+    fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
+
+    grid_.sendMessages(comm_, gradP);
 
     return error;
 }
 
 void Piso::rhieChowInterpolation()
 {
-    VectorFiniteVolumeField &uStar = u.prevIter();
-    VectorFiniteVolumeField &uPrev = u.prev(0);
-    ScalarFiniteVolumeField &rhoPrev = rho.prev(0);
-    const Scalar dt = u.prevTimeStep(0);
+    VectorFiniteVolumeField &uStar = u.prevIteration();
+    VectorFiniteVolumeField &uPrev = u.oldField(0);
+    ScalarFiniteVolumeField &rhoPrev = rho.oldField(0);
+    Scalar dt = u.oldTimeStep(0);
 
     d.fill(0.);
     for (const Cell &cell: d.grid.cellZone("fluid"))
@@ -147,6 +155,7 @@ void Piso::rhieChowInterpolation()
         Vector2D coeff = uEqn_.get(cell, cell);
         d(cell) = cell.volume() / (0.5 * (coeff.x + coeff.y));
     }
+
     grid_.sendMessages(comm_, d);
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
@@ -156,15 +165,15 @@ void Piso::rhieChowInterpolation()
         const Cell &cellP = face.lCell();
         const Cell &cellQ = face.rCell();
 
-        const Scalar dP = d(cellP);
-        const Scalar dQ = d(cellQ);
-        const Scalar df = d(face);
+        Scalar dP = d(cellP);
+        Scalar dQ = d(cellQ);
+        Scalar df = d(face);
 
-        const Scalar rhoP0 = rhoPrev(cellP);
-        const Scalar rhoQ0 = rhoPrev(cellQ);
-        const Scalar rhof0 = rhoPrev(face);
+        Scalar rhoP0 = rhoPrev(cellP);
+        Scalar rhoQ0 = rhoPrev(cellQ);
+        Scalar rhof0 = rhoPrev(face);
 
-        const Scalar g = cellQ.volume() / (cellP.volume() + cellQ.volume());
+        Scalar g = cellQ.volume() / (cellP.volume() + cellQ.volume());
 
 
         u(face) = g * u(cellP) + (1. - g) * u(cellQ)
@@ -177,9 +186,9 @@ void Piso::rhieChowInterpolation()
 
     for (const Face &face: u.grid.boundaryFaces())
     {
-        const Scalar df = d(face);
-        const Scalar rhoP0 = rhoPrev(face.lCell());
-        const Scalar rhof0 = rhoPrev(face);
+        Scalar df = d(face);
+        Scalar rhoP0 = rhoPrev(face.lCell());
+        Scalar rhof0 = rhoPrev(face);
 
         switch (u.boundaryType(face))
         {
@@ -204,17 +213,6 @@ void Piso::rhieChowInterpolation()
                 //    throw Exception("Piso", "rhieChowInterpolation", "unrecognized boundary condition type.");
         }
     }
-}
-
-void Piso::correctPressure()
-{
-    for (const Cell &cell: p.grid.localActiveCells())
-        p(cell) += pCorrOmega_ * pCorr(cell);
-
-    grid_.sendMessages(comm_, p);
-
-    p.setBoundaryFaces();
-    fv::computeInverseWeightedGradient(rho, p, gradP);
 }
 
 void Piso::correctVelocity()

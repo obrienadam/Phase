@@ -3,6 +3,7 @@
 
 #include "InteriorFaceLink.h"
 #include "Shape2D.h"
+#include "Cell.h"
 
 class CutCellLink : public InteriorLink
 {
@@ -26,6 +27,12 @@ public:
 
     const Vector2D &solidRFaceVec() const
     { return solidRFaceVec_; }
+
+    Vector2D solidFaceCentroid() const
+    { return solidFace_.center(); }
+
+    Vector2D fluidFaceCentroid() const
+    { return fluidFace_.center(); }
 
 private:
 

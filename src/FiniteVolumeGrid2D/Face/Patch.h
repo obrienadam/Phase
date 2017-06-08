@@ -1,42 +1,40 @@
 #ifndef PATCH_H
 #define PATCH_H
 
-#include <string>
-#include <vector>
-#include <stdio.h>
+#include "FaceGroup.h"
 
-#include "Types.h"
-
-class Face;
-
-class Patch
+class Patch: public FaceGroup
 {
 public:
 
-    Patch(const std::string &name, Label id) : name(name), id_(id)
-    {}
+    typedef std::unordered_map<Label, Ref<Patch>> PatchRegistry;
 
-    Patch(const Patch &other);
+    Patch(const std::string &name, Label id, const std::shared_ptr<PatchRegistry> &registry);
+
+    ~Patch()
+    {
+        clear(); //- Make sure that the registry is updated
+    }
+
+    void add(const Face &face);
+
+    void remove(const Face &face);
+
+    void clear();
 
     Label id() const
     { return id_; }
 
-    void addFace(const Face &face);
+    void setRegistry(std::shared_ptr<PatchRegistry>& registry);
 
-    void addFaces(const std::vector<Ref<Face> > &faces);
-
-    const std::vector<Ref<const Face> > &faces() const
-    { return faces_; }
-
-    std::string name;
+    std::shared_ptr<PatchRegistry> registry()
+    { return registry_; }
 
 private:
 
     Label id_;
 
-    std::vector<Ref<const Face> > faces_;
-
-    friend class FiniteVolumeGrid2D;
+    std::shared_ptr<PatchRegistry> registry_;
 };
 
 #endif

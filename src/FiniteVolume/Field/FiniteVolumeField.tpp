@@ -38,6 +38,14 @@ FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeField &other)
 
 }
 
+template<class T>
+FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name, const T &val)
+        :
+        FiniteVolumeField(grid, name)
+{
+    fill(val);
+}
+
 //- Public methods
 
 template<class T>
@@ -62,45 +70,53 @@ void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 }
 
 template<class T>
+typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Patch &patch) const
+{
+    return patchBoundaries_.find(patch.id())->second.first;
+}
+
+template<class T>
 typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Face &face) const
 {
-    if (patchBoundaries_.size() == 0)
-        return NORMAL_GRADIENT;
-
-    return (patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second).first;
+    return boundaryType(grid.patch(face));
 }
 
 template<class T>
-T FiniteVolumeField<T>::boundaryRefValue(const Face &face) const
+T FiniteVolumeField<T>::boundaryRefValue(const Patch &patch) const
 {
-    if (patchBoundaries_.size() == 0)
-        return T();
-
-    return (patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second).second;
+    return patchBoundaries_.find(patch.id())->second.second;
 }
 
 template<class T>
-std::pair<typename FiniteVolumeField<T>::BoundaryType, T> FiniteVolumeField<T>::boundaryInfo(const Face &face) const
+void FiniteVolumeField<T>::interpolateFaces(const std::function<Scalar(const Face &)> &alpha)
 {
-    if (patchBoundaries_.size() == 0)
-        return std::make_pair(NORMAL_GRADIENT, T());
+    auto &self = *this;
 
-    return patchBoundaries_.find(grid.faces()[face.id()].patch().id())->second;
+    for(const Face& face: grid.interiorFaces())
+    {
+        Scalar g = alpha(face);
+        self(face) = g*self(face.lCell()) + (1. - g)*self(face.rCell());
+    }
+
+    setBoundaryFaces();
 }
 
 template<class T>
 void FiniteVolumeField<T>::setBoundaryFaces()
 {
-    for (const Face &face: grid.boundaryFaces())
+    auto &self = *this;
+
+    for(const Patch& patch: grid.patches())
     {
-        switch (boundaryType(face))
+        switch (boundaryType(patch))
         {
-            case FIXED:
-                break;
-            case NORMAL_GRADIENT:
-            case SYMMETRY:
-                faces_[face.id()] = std::vector<T>::operator[](face.lCell().id());
-                break;
+        case FIXED:
+            break;
+        case NORMAL_GRADIENT:
+        case SYMMETRY:
+            for(const Face& face: patch)
+                self(face) = self(face.lCell());
+            break;
         }
     }
 }
@@ -108,12 +124,16 @@ void FiniteVolumeField<T>::setBoundaryFaces()
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    previousTimeSteps_.push_front(std::make_pair(timeStep, FiniteVolumeField<T>(*this)));
+    auto prevTimeStep = std::shared_ptr<PreviousField>(
+            new PreviousField(timeStep, FiniteVolumeField<T>(*this))
+    );
+
+    previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
 
     while (previousTimeSteps_.size() > nPreviousFields)
         previousTimeSteps_.pop_back();
 
-    return previousTimeSteps_.front().second;
+    return previousTimeSteps_.front()->second;
 }
 
 template<class T>
@@ -122,9 +142,9 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousIteration()
     if (previousIteration_.size() >= 1)
         previousIteration_.clear();
 
-    previousIteration_.push_back(FiniteVolumeField<T>(*this));
+    previousIteration_.push_back(std::shared_ptr<FiniteVolumeField<T>>(new FiniteVolumeField<T>(*this)));
 
-    return previousIteration_.front();
+    return *previousIteration_.front();
 }
 
 template<class T>
@@ -265,15 +285,15 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        for (const auto &entry: grid.patches())
+        for (const Patch& patch: grid.patches())
         {
-            patchBoundaries_[entry.second.id()] = std::make_pair(boundaryType, T());
+            patchBoundaries_[patch.id()] = std::make_pair(boundaryType, T());
         }
     }
 
-    for (const auto &entry: grid.patches())
+    for (const Patch& patch: grid.patches())
     {
-        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name() + "." + entry.first + ".type",
+        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
                                                          "");
 
         if (typeStr.empty())
@@ -290,7 +310,7 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        patchBoundaries_[entry.second.id()] = std::make_pair(boundaryType, T());
+        patchBoundaries_[patch.id()] = std::make_pair(boundaryType, T());
     }
 }
 
@@ -348,20 +368,21 @@ void interpolateNodes(FiniteVolumeField<T> &field)
     for (const Face &face: field.grid.interiorFaces())
         field(face) = 0.5 * (field(face.lNode()) + field(face.rNode()));
 
-    for (const Face &face: field.grid.boundaryFaces())
+    for(const Patch& patch: field.grid.patches())
     {
-        switch (field.boundaryType(face))
+        switch (field.boundaryType(patch))
         {
             case FiniteVolumeField<T>::FIXED:
-                break;
+            break;
 
-            case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            case FiniteVolumeField<T>::SYMMETRY:
+        case FiniteVolumeField<T>::NORMAL_GRADIENT:
+        case FiniteVolumeField<T>::SYMMETRY:
+            for(const Face& face: patch)
                 field(face) = field(face.lCell());
-                break;
+            break;
 
-            default:
-                throw Exception("FiniteVolumeField<T>", "interpolateNodes", "unrecongnized boundary condition type.");
+        default:
+            throw Exception("FiniteVolumeField<T>", "interpolateNodes", "unrecongnized boundary condition type.");
         }
     }
 }

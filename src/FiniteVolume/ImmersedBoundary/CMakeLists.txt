@@ -9,9 +9,10 @@ set(HEADERS ImmersedBoundary.h
             ImmersedBoundaryStencil.h
             ForcingCellStencil.h
             LeastSquaresStencil.h
-            GhostCellImmersedBoundary.h
-            ForcingCellImmersedBoundary.h
-            MovingGhostCellImmersedBoundary.h)
+            Motion.h
+            TranslatingMotion.h
+            OscillatingMotion.h
+            SeoMittal.h)
 
 set(SOURCES ImmersedBoundary.cpp
             ImmersedBoundaryObject.cpp
@@ -24,8 +25,10 @@ set(SOURCES ImmersedBoundary.cpp
             GhostCellStencil.cpp
             CutCell.cpp
             CutCellLink.cpp
-            GhostCellImmersedBoundary.cpp
-            MovingGhostCellImmersedBoundary.cpp)
+            Motion.cpp
+            TranslatingMotion.cpp
+            OscillatingMotion.cpp
+            SeoMittal.cpp)
 
 add_library(ImmersedBoundary ${HEADERS} ${SOURCES})
 target_link_libraries(ImmersedBoundary Math Equation)

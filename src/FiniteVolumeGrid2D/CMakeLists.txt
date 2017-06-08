@@ -3,15 +3,18 @@ set(HEADERS FiniteVolumeGrid2D.h
         CgnsUnstructuredGrid.h
         ConstructGrid.h
         Node/Node.h
+        Group.h
         Face/Face.h
         Face/Patch.h
+        Face/FaceGroup.h
         Cell/Cell.h
         Cell/CellGroup.h
         Cell/CellZone.h
         Link/Link.h
         Link/BoundaryFaceLink.h
         Link/InteriorFaceLink.h
-        Link/DiagonalCellLink.h)
+        Link/DiagonalCellLink.h
+        FiniteVolumeZone.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
         FiniteVolumeGrid2D.tpp
@@ -19,15 +22,16 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         CgnsUnstructuredGrid.cpp
         ConstructGrid.cpp
         Node/Node.cpp
+        Group.tpp
         Face/Face.cpp
         Face/Patch.cpp
         Cell/Cell.cpp
-        Cell/CellGroup.cpp
         Cell/CellZone.cpp
         Link/Link.cpp
         Link/BoundaryFaceLink.cpp
         Link/InteriorFaceLink.cpp
-        Link/DiagonalCellLink.cpp)
+        Link/DiagonalCellLink.cpp
+        FiniteVolumeZone.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolumeGrid2D System Communicator metis Geometry)

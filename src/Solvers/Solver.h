@@ -14,12 +14,6 @@
 class Solver
 {
 public:
-
-    enum TimeDependent
-    {
-        ON, OFF
-    };
-
     //- Constructors
     Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
 
@@ -77,10 +71,10 @@ public:
     //- ICs/IBs
     void setInitialConditions(const Input &input);
 
-    const ImmersedBoundary& ibObjManager() const { return ibObjManager_; }
+    const ImmersedBoundary& ib() const { return ib_; }
 
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const
-    { return ibObjManager_.ibObjs(); }
+    { return ib_.ibObjs(); }
 
     virtual void initialize() {}
 
@@ -125,10 +119,9 @@ protected:
     mutable std::map<std::string, VectorFiniteVolumeField> vectorFields_;
     mutable std::map<std::string, std::vector<Polygon> > geometries_;
 
-    TimeDependent timeDependent_;
     Scalar timeStepRelaxation_, maxTimeStep_;
 
-    ImmersedBoundary ibObjManager_;
+    ImmersedBoundary ib_;
 
     std::vector<VolumeIntegrator> volumeIntegrators_;
     std::vector<ForceIntegrator> forceIntegrators_;

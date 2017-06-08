@@ -27,7 +27,7 @@ std::vector<ForceIntegrator> ForceIntegrator::initForceIntegrators(const Input &
         printf("Initializing a force integrator on patch \"%s\".\n", patchName.c_str());
 
         forceIntegrators.push_back(
-                    ForceIntegrator(p.grid.patches().find(patchName)->second, p, rho, mu, u)
+                    ForceIntegrator(p.grid.patch(patchName), p, rho, mu, u)
                     );
     }
 
@@ -56,7 +56,7 @@ Vector2D ForceIntegrator::integrate()
 
     const auto sqr = [](Scalar x) { return x*x; };
 
-    for(const Face &face: patch_.faces())
+    for(const Face &face: patch_)
     {
         const Cell &cell = face.lCell();
         const Vector2D sfn = face.outwardNorm(cell.centroid());
@@ -66,9 +66,9 @@ Vector2D ForceIntegrator::integrate()
         ft += mu_(cell)*dot(u_(cell) - u_(face), sft.unitVec())*sft;
     }
 
-    printf("Net normal force on patch \"%s\": %s\n", patch_.name.c_str(), to_string(fn).c_str());
-    printf("Net tangential force on patch \"%s\": %s\n", patch_.name.c_str(), to_string(ft).c_str());
-    printf("Net force on patch \"%s\": %s\n", patch_.name.c_str(), to_string(fn + ft).c_str());
+    printf("Net normal force on patch \"%s\": %s\n", patch_.name().c_str(), to_string(fn).c_str());
+    printf("Net tangential force on patch \"%s\": %s\n", patch_.name().c_str(), to_string(ft).c_str());
+    printf("Net force on patch \"%s\": %s\n", patch_.name().c_str(), to_string(fn + ft).c_str());
 
     data_.push_back(fn + ft);
 

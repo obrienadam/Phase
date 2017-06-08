@@ -29,10 +29,6 @@ protected:
 
     virtual void rhieChowInterpolation();
 
-    void correctAll();
-
-    void correctPressure();
-
     void correctVelocity();
 
     Equation<Vector2D> uEqn_;
@@ -40,6 +36,8 @@ protected:
 
     size_t nInnerIterations_, nPCorrections_;
     Scalar momentumOmega_, pCorrOmega_;
+
+    CellZone &fluid_;
 };
 
 #endif

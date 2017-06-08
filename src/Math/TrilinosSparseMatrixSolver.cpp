@@ -1,55 +1,48 @@
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+
 #include "TrilinosSparseMatrixSolver.h"
 
-TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm,
-                                                       const std::string &solver,
-                                                       const std::string &preconType)
-    :
-      comm_(comm)
+TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm)
+        :
+        comm_(comm)
 {
     Tcomm_ = rcp(new TeuchosComm(comm.communicator()));
-
     belosParameters_ = rcp(new Teuchos::ParameterList());
     ifpackParameters_ = rcp(new Teuchos::ParameterList());
-
-    linearProblem_ = rcp(new LinearProblem());
-
-    solverType_ = solver;
-
-    solver_ = solverFactory_.create(solverType_, belosParameters_);
-    solver_->setProblem(linearProblem_);
-    preconType_ = preconType;
+    solver_ = rcp(new Solver(rcp(new LinearProblem()), belosParameters_));
 }
 
 void TrilinosSparseMatrixSolver::setRank(int rank)
 {
-    auto map = rcp(new TpetraMap(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
+    using namespace Teuchos;
 
-    if (map_.is_null() || !map_->isSameAs(*map)) //- Check if the map has changed
+    auto map = rcp(new TpetraMap(OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
+
+    if(map_.is_null() || !map_->isSameAs(*map))
     {
         map_ = map;
-        mat_ = Teuchos::null;
+        mat_ = rcp(new TpetraCrsMatrix(map_, 5, Tpetra::DynamicProfile));
         x_ = rcp(new TpetraVector(map_, true));
-        b_ = rcp(new TpetraVector(map_, false));
+        b_ = rcp(new TpetraVector(map_, true));
+        precon_ = rcp(new Preconditioner(rcp_static_cast<const TpetraRowMatrix>(mat_)));
+        precon_->setParameters(*ifpackParameters_);
+        nPreconUses_ = maxPreconUses_; //- Ensure preconditioner gets recomputed
+        linearProblem_ = rcp(new LinearProblem(mat_, x_, b_));
+        linearProblem_->setRightPrec(precon_);
+        solver_->setProblem(linearProblem_);
     }
 }
 
 void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
 {
-    using namespace Teuchos;
-
-    bool newMatrix = mat_.is_null();
-
-    if (newMatrix)
-        mat_ = rcp(new TpetraMatrix(map_, 5, Tpetra::DynamicProfile));
-    else
-        mat_->resumeFill();
-
     Index minGlobalIndex = map_->getMinGlobalIndex();
 
+    mat_->resumeFill();
+    mat_->setAllToScalar(0);
     for (Index localRow = 0, nLocalRows = eqn.size(); localRow < nLocalRows; ++localRow)
     {
-        std::vector<Scalar> vals;
         std::vector<Index> cols;
+        std::vector<Scalar> vals;
 
         for (const auto &entry: eqn[localRow])
         {
@@ -57,47 +50,18 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
             vals.push_back(entry.second);
         }
 
-        if (newMatrix)
-            mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
-        else
+        if(mat_->getProfileType() == Tpetra::StaticProfile)
             mat_->replaceGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
+        else
+            mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
     }
+
+    bool initPrecon = mat_->getProfileType() == Tpetra::DynamicProfile;
 
     mat_->fillComplete();
 
-    if (newMatrix)
-    {
-        //preconditioner_ = preconditionerFactory_.create(preconType_, rcp_implicit_cast<const TpetraMatrix>(mat_));
-        if (preconType_ == "RILUK")
-            preconditioner_ = rcp(new Ifpack2::RILUK<Tpetra::RowMatrix<Scalar, Index, Index>>(
-                                      rcp_implicit_cast<const TpetraMatrix>(mat_)));
-        else if (preconType_ == "DIAGONAL")
-            preconditioner_ = rcp(new Ifpack2::Diagonal<Tpetra::RowMatrix<Scalar, Index, Index>>(
-                                      rcp_implicit_cast<const TpetraMatrix>(mat_)));
-        else
-            throw Exception("TrilinosSparseMatrixSolver", "set",
-                            "invalid preconditioner type \"" + preconType_ + "\".");
-
-        preconditioner_->setParameters(*ifpackParameters_);
-        preconditioner_->initialize();
-        preconditioner_->compute();
-
-        linearProblem_ = rcp(new LinearProblem(mat_, x_, b_));
-
-        if (solverType_ == "BiCGSTAB")
-            linearProblem_->setRightPrec(preconditioner_);
-        else
-            linearProblem_->setLeftPrec(preconditioner_);
-
-        solver_->setProblem(linearProblem_);
-    }
-    else if(nPreconUses_ >= maxPreconUses_)
-    {
-        preconditioner_->compute();
-        nPreconUses_ = 1;
-    }
-    else
-        nPreconUses_++;
+    if(initPrecon)
+        precon_->initialize();
 }
 
 void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)
@@ -112,6 +76,12 @@ void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar TrilinosSparseMatrixSolver::solve()
 {
+    if(nPreconUses_++ == maxPreconUses_)
+    {
+        precon_->compute();
+        nPreconUses_ = 1;
+    }
+
     linearProblem_->setProblem();
     solver_->solve();
 
@@ -159,11 +129,6 @@ void TrilinosSparseMatrixSolver::setFillFactor(int fill)
     ifpackParameters_->set("fact: iluk level-of-fill", fill);
 }
 
-void TrilinosSparseMatrixSolver::setMaxPreconditionerUses(int maxPreconditionerUses)
-{
-
-}
-
 int TrilinosSparseMatrixSolver::nIters() const
 {
     return solver_->getNumIters();
@@ -176,5 +141,5 @@ Scalar TrilinosSparseMatrixSolver::error() const
 
 void TrilinosSparseMatrixSolver::printStatus(const std::string &msg) const
 {
-    comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), solverType_.c_str(), nIters(), error());
+    comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), "BiCGSTAB", nIters(), error());
 }

@@ -2,6 +2,9 @@
 
 #include "ImmersedBoundary.h"
 #include "Solver.h"
+#include "GhostCellImmersedBoundaryObject.h"
+#include "ForcingCellImmersedBoundaryObject.h"
+#include "LeastSquaresImmersedBoundaryObject.h"
 
 ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver)
         :
@@ -35,6 +38,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
             ibObject = std::shared_ptr<GhostCellImmersedBoundaryObject>(new GhostCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
         else if(method == "forcing-cell")
             ibObject = std::shared_ptr<ForcingCellImmersedBoundaryObject>(new ForcingCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
+        else if(method == "least-squares")
+            ibObject = std::shared_ptr<LeastSquaresImmersedBoundaryObject>(new LeastSquaresImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
         else
             throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid immersed boundary method \"" + method + "\".");
 
@@ -139,14 +144,38 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
             ibObject->addBoundaryType(child.first, boundaryType);
         }
 
+        //- Set the motion type
+        std::map<std::string, std::string> motion = {
+            {"type", ibObjectInput.second.get<std::string>("motion.type", "none")}
+        };
+
+        if(motion["type"] == "translating")
+        {
+            motion["velocity"] = ibObjectInput.second.get<std::string>("motion.velocity");
+            motion["acceleration"] = ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)");
+        }
+        else if(motion["type"] == "oscillating")
+        {
+            motion["frequency"] = ibObjectInput.second.get<std::string>("motion.frequency");
+            motion["amplitude"] = ibObjectInput.second.get<std::string>("motion.amplitude");
+            motion["phase"] = ibObjectInput.second.get<std::string>("motion.phase");
+        }
+
+        ibObject->setMotionType(motion);
+
         ibObjs_.push_back(ibObject);
     }
 }
 
-void ImmersedBoundary::initCellZones()
+void ImmersedBoundary::initCellZones(CellZone& zone)
 {
+    zone_ = &zone;
+
     for (auto &ibObj: ibObjs_)
+    {
+        ibObj->setZone(zone);
         ibObj->updateCells();
+    }
 
     setCellStatus();
     solver_.grid().computeGlobalOrdering(solver_.comm());
@@ -161,13 +190,27 @@ void ImmersedBoundary::update(Scalar timeStep)
     solver_.grid().computeGlobalOrdering(comm_);
 }
 
+void ImmersedBoundary::clearFreshCells()
+{
+    for(auto &ibObj: ibObjs_)
+        ibObj->clearFreshCells();
+}
+
 std::vector<CutCell> ImmersedBoundary::constructCutCells(const CellGroup &cellGroup) const
 {
     std::vector<CutCell> cutCells;
 
+    if(ibObjs_.empty())
+    {
+        for (const Cell &cell: cellGroup)
+            cutCells.push_back(CutCell(cell));
+
+        return cutCells;
+    }
+
     auto intersectsIbObj = [](const Cell &cell, const ImmersedBoundaryObject &ibObj) {
         for (const Node &node: cell.nodes())
-            if (ibObj.shape().isInside(node))
+            if (ibObj.isInIb(node))
                 return true;
         return false;
     };
@@ -189,7 +232,7 @@ std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
     std::vector<Ref<const ImmersedBoundaryObject>> refs;
 
     std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
-                   [](const std::shared_ptr<ImmersedBoundaryObject> &ptr) -> const ImmersedBoundaryObject & { return *ptr; });
+                   [](const std::shared_ptr<ImmersedBoundaryObject> &ptr) { return std::cref(*ptr); });
 
     return refs;
 }
@@ -219,21 +262,24 @@ void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho, const Sc
 void ImmersedBoundary::setCellStatus()
 {
     for (const Cell &cell: solver_.grid().cellZone("fluid"))
-        cellStatus_(cell) = FLUID;
+        cellStatus_(cell) = FLUID_CELLS;
 
-    for (const CellZone &bufferZone: solver_.grid().bufferZones())
-        for (const Cell &cell: bufferZone)
-            cellStatus_(cell) = BUFFER;
+    for (const std::shared_ptr<CellZone> &bufferZone: solver_.grid().bufferZones())
+        for (const Cell &cell: *bufferZone)
+            cellStatus_(cell) = BUFFER_CELLS;
 
     for (const auto &ibObj: ibObjs_)
     {
         for (const Cell &cell: ibObj->ibCells())
-            cellStatus_(cell) = IB;
+            cellStatus_(cell) = IB_CELLS;
 
         for (const Cell &cell: ibObj->solidCells())
-            cellStatus_(cell) = SOLID;
+            cellStatus_(cell) = SOLID_CELLS;
 
-        for (const Cell &cell: ibObj->freshlyClearedCells())
-            cellStatus_(cell) = FRESHLY_CLEARED;
+        for (const Cell &cell: ibObj->freshCells())
+            cellStatus_(cell) = FRESH_CELLS;
+
+        for(const Cell& cell: ibObj->deadCells())
+            cellStatus_(cell) = DEAD_CELLS;
     }
 }

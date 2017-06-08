@@ -137,16 +137,14 @@ void CgnsViewer::writeBoundaryConnectivity(int fid, int bid, int zid, const Fini
 {
     //- Now write the boundary mesh elements
     cgsize_t start = grid.nCells() + 1;
-    for(const auto& patchEntry: grid.patches())
+    for(const Patch& patch: grid.patches())
     {
-        const Patch& patch = patchEntry.second;
-
-        cgsize_t end = start + patch.faces().size() - 1;
+        cgsize_t end = start + patch.size() - 1;
         std::vector<cgsize_t> connectivity;
 
         std::vector<cgsize_t> elemIds;
         cgsize_t elemId = start;
-        for(const Face &face: patch.faces())
+        for(const Face &face: patch)
         {
             connectivity.push_back(face.lNode().id() + 1);
             connectivity.push_back(face.rNode().id() + 1);
@@ -154,10 +152,10 @@ void CgnsViewer::writeBoundaryConnectivity(int fid, int bid, int zid, const Fini
         }
 
         int secId;
-        cg_section_write(fid, bid, zid, (patch.name + "Elements").c_str(), CGNS_ENUMV(BAR_2), start, end, 0, connectivity.data(), &secId);
+        cg_section_write(fid, bid, zid, (patch.name() + "Elements").c_str(), CGNS_ENUMV(BAR_2), start, end, 0, connectivity.data(), &secId);
 
         int bcId;
-        cg_boco_write(fid, bid, zid, patch.name.c_str(), CGNS_ENUMV(BCGeneral), CGNS_ENUMV(PointList), elemIds.size(), elemIds.data(), &bcId);
+        cg_boco_write(fid, bid, zid, patch.name().c_str(), CGNS_ENUMV(BCGeneral), CGNS_ENUMV(PointList), elemIds.size(), elemIds.data(), &bcId);
         cg_boco_gridlocation_write(fid, bid, zid, bcId, CGNS_ENUMV(EdgeCenter));
 
         start = end + 1;
@@ -214,9 +212,9 @@ void CgnsViewer::linkGrid(int fid, int bid, int zid, const Communicator& comm)
     cg_link_write("GridElements", filename, ("/" + filename_ + "/Cells/GridElements").c_str());
     cg_link_write("ZoneBC", filename, ("/" + filename_ + "/Cells/ZoneBC").c_str());
 
-    for(const auto& patch: solver_.grid().patches())
+    for(const Patch& patch: solver_.grid().patches())
     {
-        std::string name(patch.first);
+        std::string name(patch.name());
         cg_link_write((name + "Elements").c_str(), filename, ("/" + filename_ + "/Cells/" + name + "Elements").c_str());
     }
 }

@@ -5,9 +5,7 @@
 #include <memory>
 
 #include "Node.h"
-#include "Patch.h"
-
-class Cell;
+#include "Cell.h"
 
 class FiniteVolumeGrid2D;
 
@@ -38,12 +36,6 @@ public:
     { return tangent_; }
 
     Vector2D outwardNorm(const Point2D &point) const;
-
-    const Patch &patch() const
-    { return *patchPtr_; }
-
-    bool belongsToPatch() const
-    { return patchPtr_ != nullptr; }
 
     Label id() const
     { return id_; }
@@ -76,17 +68,10 @@ public:
     std::string info() const;
 
 private:
-
-    void addToPatch(const Patch &patch) const;
-
-    void changePatch(const Patch &patch) const;
-
     Type type_;
 
     Point2D centroid_;
     Vector2D normal_, tangent_;
-
-    mutable const Patch *patchPtr_;
 
     Label id_;
 
@@ -95,8 +80,6 @@ private:
 
     const std::vector<Node> &nodes_;
     const std::vector<Cell> &cells_;
-
-    friend class Patch;
 };
 
 #endif

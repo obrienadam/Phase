@@ -4,60 +4,46 @@ CaseName FlowAroundBox
 
 Solver
 {
-	timeDependent Off
-	maxIterations 100
-	timeStep 0.0015
-	maxTime 15
-	maxCo 0.8
+  timeStep 0.0015
+  maxTime 15
+  maxCo 0.8
 
-	numInnerIterations 1
-	numPressureCorrections 2
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
+  numInnerIterations 1
+  numPressureCorrections 2
+  momentumRelaxation 1
+  pressureCorrectionRelaxation 0.5
 }
 
 LinearAlgebra
 {
   uEqn
   {
-    lib trilinos
-    solver BiCGSTAB
-    preconditioner RILUK
-    iluFill 1
-    maxIterations 50
-    tolerance 1e-6
+    lib eigen3
   }
 
   pEqn
   {
-    lib trilinos
-    solver BiCGSTAB
-    preconditioner RILUK
-    iluFill 1
-    maxIterations 300
-    tolerance 1e-6
+    lib eigen3
   }
 }
 
 Properties
 {
-	rho 1
-	mu 8.94e-4
-	g (0,0)
-	gamma 0.001
+  rho 998
+  mu 8.94e-4
 }
 
 Grid
 {
-	type cgns
-	filename "case/BoxMesh.cgns"
+  type cgns
+  filename "case/BoxMesh.cgns"
 }
 
 Viewer
 {
-	type tecplot
-	vectorFields u,us
-	scalarFields p,phi
+  type tecplot
+  vectorFields u
+  scalarFields p
 }
 
 Integrators

@@ -410,6 +410,6 @@ void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
             faces.push_back(findFace(n1, n2));
         }
 
-        applyPatch(name, faces);
+        createPatch(name, faces);
     }
 }

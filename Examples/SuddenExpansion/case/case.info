@@ -18,30 +18,20 @@ Solver
 
 LinearAlgebra
 {
-	uEqn
-	{
-		lib trilinos
-		solver BiCGSTAB
-		preconditioner DIAGONAL
-		iluFill 0
-		maxPreconditionerUses 10
-		tolerance 1e-3
-	}
+  uEqn
+  {
+    lib eigen
+  }
 
-	pEqn
-	{
-		lib trilinos
-		solver BiCGSTAB
-		preconditioner RILUK
-		iluFill 3
-		maxPreconditionerUses 10
-	}
+  pEqn
+  {
+    lib eigen
+  }
 
-	pCorrEqn
-	{
-		lib trilinos
-		iluFill 2
-	}
+  pCorrEqn
+  {
+    lib eigen
+  }
 }
 
 Properties

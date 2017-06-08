@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 5e-3
+	timeStep 1e-2
 	maxCo 0.6
 	maxTime 200
 
@@ -22,19 +22,15 @@ LinearAlgebra
 	uEqn
 	{
 		lib trilinos
-		solver BiCGSTAB
-		iluFill 1
-		maxPreconditionerUses 1
-		tolerance 1e-12
+		iluFill 0
+		tolerance 1e-10
 	}
 
 	pEqn
 	{
-		lib trilinos
-		solver BiCGSTAB
+		lib eigen
 		iluFill 4
-		maxPreconditionerUses 1
-		tolerance 1e-12
+		tolerance 1e-10
 	}
 }
 
@@ -69,6 +65,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 30
   consoleOutputFrequency 1
 }

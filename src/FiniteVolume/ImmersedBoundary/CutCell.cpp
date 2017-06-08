@@ -71,7 +71,7 @@ CutCell::CutCell(const Cell &cell, const ImmersedBoundaryObject &ibObj)
         bFace_ = LineSegment2D(xcs[0], xcs[1]);
         bFaceNorm_ = (xcs[1] - xcs[0]).normalVec();
 
-        if(dot(bFace_.center() - solid_.centroid(), bFaceNorm_) < 0)
+        if(dot(bFace_.center() - fluid_.centroid(), bFaceNorm_) < 0) //- Should point away from fluid
         {
             bFace_ = LineSegment2D(bFace_.ptB(), bFace_.ptA());
             bFaceNorm_ = -bFaceNorm_;

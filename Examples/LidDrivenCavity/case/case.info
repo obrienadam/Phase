@@ -7,33 +7,31 @@ Solver
 	timeDependent On
 	maxIterations 100
 	timeStep 10
-	maxTime 1000
-	maxCo 1000
+	maxTime 2000
+	maxCo 1e16
 	numInnerIterations 1
 	numPressureCorrections 1
-	momentumRelaxation 0.7
-	pressureCorrectionRelaxation 0.3
+	momentumRelaxation 0.8
+	pressureCorrectionRelaxation 0.2
 }
 
 LinearAlgebra
 {
   uEqn
   {
-    lib petsc
-    preconditioner sor
+    lib eigen
   }
 
   pCorrEqn
   {
-    lib petsc
-    preconditioner sor
+    lib eigen
   }
 }
 
 Properties
 {
 	rho 1
-	mu 1e-2
+	mu 1e-1
 }
 
 Grid

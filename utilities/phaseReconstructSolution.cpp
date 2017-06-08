@@ -94,11 +94,17 @@ int main(int argc, char *argv[])
     //- Load transient solution data
     re = regex("[0-9]+\\.[0-9]+");
 
-    set<path> solutionDirs;
-
+    std::vector<path> solutionDirs;
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
         if (regex_match(dir->path().filename().c_str(), re))
-            solutionDirs.insert(dir->path());
+            solutionDirs.push_back(dir->path());
+
+    std::sort(solutionDirs.begin(), solutionDirs.end(), [](const path& p1, const path& p2){
+        double t1 = stod(p1.filename().c_str());
+        double t2 = stod(p2.filename().c_str());
+
+        return t1 < t2;
+    });
 
     vector<double> timeSteps;
     vector<vector<Solution>> procSolutions(procGrids.size());

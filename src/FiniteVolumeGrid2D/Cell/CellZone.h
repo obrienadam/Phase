@@ -7,24 +7,29 @@ class CellZone : public CellGroup
 {
 public:
 
-    CellZone(const std::string &name, FiniteVolumeGrid2D &grid) : CellGroup(name, grid)
-    {}
+    typedef std::unordered_map<Label, Ref<CellZone>> ZoneRegistry;
+
+    CellZone(const std::string &name = "N/A",
+             const std::shared_ptr<ZoneRegistry>& registry = nullptr);
 
     ~CellZone();
 
-    void push_back(const Cell &cell); // does not insert if the cell is found in the registry
-    void moveToGroup(const Cell &cell); // inserts or moves the cell to this group
-    void moveToGroup(const std::vector<Ref<Cell>> &cells);
+    void add(const Cell &cell);
+
+    void add(const CellGroup& cells);
 
     void remove(const Cell &cell);
 
-    void merge(CellZone &other);
-
     void clear();
+
+    void setRegistry(std::shared_ptr<ZoneRegistry>& registry);
+
+    std::shared_ptr<ZoneRegistry> registry() const
+    { return registry_; }
 
 private:
 
-    static std::map<Label, Ref<CellZone> > registry_;
+    std::shared_ptr<ZoneRegistry> registry_;
 };
 
 #endif

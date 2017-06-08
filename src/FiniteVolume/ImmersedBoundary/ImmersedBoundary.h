@@ -10,16 +10,16 @@ class ImmersedBoundary
 {
 public:
 
-    enum
-    {
-        FLUID = 1, IB = 2, SOLID = 3, FRESHLY_CLEARED = 4, BUFFER=5
-    };
+    enum {FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4, DEAD_CELLS = 5, BUFFER_CELLS = 6};
 
     enum StencilType{GHOST_CELL_BILINEAR, FORCING_POINT_LINEAR};
 
     ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver);
 
-    void initCellZones();
+    void initCellZones(CellZone &zone);
+
+    const CellZone& zone() const
+    { return *zone_; }
 
     void update(Scalar timeStep);
 
@@ -41,6 +41,8 @@ public:
         return eqn;
     }
 
+    void clearFreshCells();
+
     std::vector<CutCell> constructCutCells(const CellGroup& cellGroup) const;
 
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
@@ -52,6 +54,8 @@ public:
 protected:
 
     void setCellStatus();
+
+    const CellZone *zone_ = nullptr;
 
     Solver &solver_;
     const Communicator &comm_;

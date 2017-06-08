@@ -8,15 +8,11 @@
 
 Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
         :
-        ibObjManager_(input, comm, *this),
+        ib_(input, comm, *this),
         comm_(comm),
         grid_(grid)
 {
     //- Set simulation time options
-    std::string timeDependentOpt = input.caseInput().get<std::string>("Solver.timeDependent");
-    boost::to_lower(timeDependentOpt);
-
-    timeDependent_ = timeDependentOpt == "on" ? ON : OFF;
     timeStepRelaxation_ = input.caseInput().get<Scalar>("Solver.timeStepRelaxation", 1.);
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 
@@ -37,8 +33,7 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
 
 std::string Solver::info() const
 {
-    return "SOLVER INFO\n"
-                   "Time dependent: " + std::string((timeDependent_ == ON) ? "On" : "Off") + "\n";
+    return "SOLVER INFO\n";
 }
 
 FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)

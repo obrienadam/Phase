@@ -5,72 +5,14 @@
 
 namespace cn
 {
-template<typename T>
-Equation<T> div(const VectorFiniteVolumeField &u, FiniteVolumeField<T> &field,
-                Scalar theta = 0.5)
-{
-    Equation<T> eqn(field);
-    const VectorFiniteVolumeField &u0 = u.prev(0);
-
-    for (const Cell &cell: field.grid.cellZone("fluid"))
-    {
-        Scalar centralCoeff0 = 0.;
-        Scalar centralCoeff = 0.;
-
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar faceFlux0 = dot(u0(nb.face()), nb.outwardNorm());
-            Scalar faceFlux = dot(u(nb.face()), nb.outwardNorm());
-
-            Scalar coeff0 = std::min(faceFlux0, 0.);
-            Scalar coeff = std::min(faceFlux, 0.);
-
-            centralCoeff0 += std::max(faceFlux0, 0.);
-            centralCoeff += std::max(faceFlux, 0.);
-
-            eqn.add(cell, nb.cell(), theta * coeff);
-            eqn.addBoundary(cell, -(1. - theta) * coeff0 * field(nb.cell()));
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            const Scalar faceFlux = dot(u(bd.face()), bd.outwardNorm());
-            const Scalar faceFlux0 = dot(u0(bd.face()), bd.outwardNorm());
-
-            switch (field.boundaryType(bd.face()))
-            {
-            case FiniteVolumeField<T>::FIXED:
-                eqn.addBoundary(cell, -theta * faceFlux * field(bd.face()));
-                eqn.addBoundary(cell, -(1. - theta) * faceFlux0 * field(bd.face()));
-                break;
-
-            case FiniteVolumeField<T>::NORMAL_GRADIENT:
-                centralCoeff += faceFlux;
-                centralCoeff0 += faceFlux0;
-                break;
-
-            case FiniteVolumeField<T>::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("cn", "div<T>", "unrecognized or unspecified boundary type.");
-            }
-        }
-
-        eqn.add(cell, cell, theta * centralCoeff);
-        eqn.addBoundary(cell, -(1. - theta) * centralCoeff0 * field(cell));
-    }
-
-    return eqn;
-}
 
 template<typename T>
 Equation<T> div(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField &u, FiniteVolumeField<T> &field,
                 Scalar theta = 0.5)
 {
     Equation<T> eqn(field);
-    const ScalarFiniteVolumeField &rho0 = rho.prev(0);
-    const VectorFiniteVolumeField &u0 = u.prev(0);
+    const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
+    const VectorFiniteVolumeField &u0 = u.oldField(0);
 
     for (const Cell &cell: field.grid.cellZone("fluid"))
     {
@@ -128,7 +70,7 @@ template<typename T>
 Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T> &field, Scalar theta = 0.5)
 {
     Equation<T> eqn(field);
-    const ScalarFiniteVolumeField &gamma0 = gamma.prev(0);
+    const ScalarFiniteVolumeField &gamma0 = gamma.oldField(0);
 
     for (const Cell &cell: field.grid.cellZone("fluid"))
     {

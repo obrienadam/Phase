@@ -2,11 +2,9 @@
 #include "Cicsam.h"
 #include "Plic.h"
 #include "Celeste.h"
-#include "CrankNicolson.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
-#include "GhostCellImmersedBoundary.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
         :
@@ -69,7 +67,6 @@ Scalar PisoMultiphase::solve(Scalar timeStep)
         for (size_t pCorrIter = 0; pCorrIter < nPCorrections_; ++pCorrIter)
         {
             solvePCorrEqn();
-            correctPressure();
             correctVelocity();
         }
     }
@@ -142,8 +139,8 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + cn::div(rho, u, u, 0.5) + ib::gc(ibObjs(), u)
-             == cn::laplacian(mu, u, 0.5) + fv::source(ft - gradP - sg));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u)
+             == fv::laplacian(mu, u) + fv::source(ft - gradP - sg));
 
     Scalar error = uEqn_.solve();
 
@@ -163,7 +160,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
         case CICSAM:
             gammaEqn_ = (
                     fv::ddt(gamma, timeStep) + cicsam::div(u, gamma) +
-                    ib::gc(ibObjs(), gamma) == 0.);
+                    ib_.bcs(gamma) == 0.);
     }
 
     Scalar error = gammaEqn_.solve();

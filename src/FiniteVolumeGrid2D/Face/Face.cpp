@@ -1,14 +1,12 @@
 #include <algorithm>
 
 #include "Face.h"
-#include "Cell.h"
 #include "Exception.h"
 #include "FiniteVolumeGrid2D.h"
 
 Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type type)
         :
         type_(type),
-        patchPtr_(nullptr),
         nodes_(grid.nodes()),
         cells_(grid.cells()),
         nodeIds_(lNodeId, rNodeId)
@@ -72,16 +70,3 @@ std::string Face::info() const
 }
 
 //- Private methods
-
-void Face::addToPatch(const Patch &patch) const
-{
-    if (patchPtr_ != nullptr)
-        throw Exception("Face", "addToPatch", "face already belongs to a patch.");
-
-    patchPtr_ = &patch;
-}
-
-void Face::changePatch(const Patch &patch) const
-{
-    patchPtr_ = &patch;
-}

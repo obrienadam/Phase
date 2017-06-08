@@ -32,7 +32,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 
         if (status == "on")
         {
-            contactAnglePatches_.push_back(std::cref(gamma_.grid.patches().find(boundaryInput.first)->second));
+            contactAnglePatches_.push_back(gamma_.grid.patch(boundaryInput.first));
             printf("Contact angles will be applied to patch \"%s\".\n", boundaryInput.first.c_str());
         }
         else if (status == "off")

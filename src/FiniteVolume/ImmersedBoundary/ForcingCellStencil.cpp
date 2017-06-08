@@ -6,41 +6,89 @@ ForcingCellStencil::ForcingCellStencil(const Cell &cell, const Shape2D &shape, c
       ImmersedBoundaryStencil(cell)
 {
     xc_ = shape.nearestIntersect(cell_.centroid());
-    auto cells = cellGroup.cellNearestNeighbours(cell_.centroid(), 4);
+    auto cells = cellGroup.nearestItems(cell_.centroid(), 3);
 
-    //- Remove the stencil cell from the nearest neighbour result
-    cells.erase(std::remove_if(cells.begin(), cells.end(), [&cell](const Cell& nb){
-        return nb.id() == cell.id();
-    }), cells.end());
+    Polygon stencils[3] = {
+        Polygon({xc_, cells[0].get().centroid(), cells[1].get().centroid()}),
+        Polygon({xc_, cells[0].get().centroid(), cells[2].get().centroid()}),
+        Polygon({xc_, cells[1].get().centroid(), cells[2].get().centroid()})
+    };
 
-    std::vector<std::vector<Ref<const Cell>>> candidates;
+    Scalar minPerimeter = std::numeric_limits<Scalar>::infinity();
+    int best = -1;
 
-    candidates.push_back({cells[0], cells[1]});
-    candidates.push_back({cells[1], cells[2]});
-    candidates.push_back({cells[0], cells[2]});
-
-    iCells_ = candidates.front();
-    Polygon bestStencil = {xc_, iCells_[0].get().centroid(), iCells_[1].get().centroid()};
-
-    for(const auto& candidate: candidates)
+    for(int i = 0; i < 3; ++i)
     {
-        Polygon stencil = {xc_, candidate[0].get().centroid(), candidate[1].get().centroid()};
+        Scalar perimeter = stencils[i].perimeter();
 
-        if(stencil.isInside(cell.centroid()) && stencil.perimeter() < bestStencil.perimeter())
+        if(stencils[i].isInside(cell.centroid()) && perimeter < minPerimeter)
         {
-            iCells_ = candidate;
-            bestStencil = stencil;
+            best = i;
+            minPerimeter = stencils[i].perimeter();
         }
     }
 
-    interpolator_ = LinearInterpolation({xc_, iCells_[0].get().centroid(), iCells_[1].get().centroid()});
-    std::vector<Scalar> coeffs = interpolator_(cell.centroid());
+    switch(best)
+    {
+    case 0:
+        nbCells_ = {cells[0], cells[1]};
+        break;
+    case 1:
+        nbCells_ = {cells[0], cells[2]};
+        break;
+    case 2:
+        nbCells_ = {cells[1], cells[2]};
+        break;
+    default:
+        nbCells_ = {cells[0], cells[1]};;
+    }
 
-    bCoeff_ = coeffs[0];
-    iCoeffs_ = {coeffs[1], coeffs[2]};
+    Matrix dMat(3, 3);
+    Matrix nMat(3, 3);
 
-    coeffs = interpolator_.derivative(cell.centroid(), (xc_ - cell.centroid()).unitVec(), {iCells_[0].get().centroid(), iCells_[1].get().centroid()});
+    Vector2D n = (cell.centroid() - xc_).unitVec();
 
-    bnCoeff_ = coeffs[0];
-    nCoeffs_ = {coeffs[1], coeffs[2]};
+    dMat(0, 0) = 0.;
+    dMat(0, 1) = 0.;
+    dMat(0, 2) = 1.;
+
+    nMat(0, 0) = n.x;
+    nMat(0, 1) = n.y;
+    nMat(0, 2) = 0.;
+
+    for(int i = 1; i < 3; ++i)
+    {
+        Point2D pt = nbCells_[i - 1].get().centroid() - xc_;
+
+        dMat(i, 0) = pt.x;
+        dMat(i, 1) = pt.y;
+        dMat(i, 2) = 1.;
+
+        nMat(i, 0) = pt.x;
+        nMat(i, 1) = pt.y;
+        nMat(i, 2) = 1.;
+    }
+
+    dMat.invert().transpose();
+    nMat.invert().transpose();
+
+    Matrix x(3, 1);
+
+    Point2D pt = cell.centroid() - xc_;
+
+    x = {
+        pt.x,
+        pt.y,
+        1.
+    };
+
+    auto coeffs = dMat*x;
+
+    dirichletBoundaryCoeff_ = coeffs(0, 0);
+    dirichletCellCoeffs_ = {coeffs(1, 0), coeffs(2, 0)};
+
+    coeffs = nMat*x;
+
+    neumannBoundaryCoeff_ = coeffs(0, 0);
+    neumannCellCoeffs_ = {coeffs(1, 0), coeffs(2, 0)};
 }

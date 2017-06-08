@@ -127,7 +127,8 @@ void Equation<Vector2D>::relax(Scalar relaxationFactor)
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
 
-        sources_(cell.index(0) + nActiveCells_) += (1. - relaxationFactor) * coeffY * field_(cell).y;
+        sources_(cell.index(0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
+        sources_(cell.index(0) + nActiveCells_) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
     }
 }
 

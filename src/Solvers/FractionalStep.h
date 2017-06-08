@@ -27,7 +27,7 @@ public:
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &gradP, &us;
+    VectorFiniteVolumeField &u, &gradP;
     ScalarFiniteVolumeField &phi, &p, &rho, &mu;
 
 protected:
@@ -36,13 +36,9 @@ protected:
 
     virtual Scalar solvePEqn(Scalar timeStep);
 
-    virtual void correctVelocity(Scalar timeStep);
-
     virtual void computeFaceVelocities(Scalar timeStep);
 
-    Vector2D maxVelocity() const;
-
-    Vector2D maxFaceVelocity() const;
+    virtual void correctVelocity(Scalar timeStep);
 
     Scalar maxDivergenceError() const;
 
@@ -50,6 +46,8 @@ protected:
 
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;
+
+    CellZone& fluid_;
 
     std::ofstream log;
 };

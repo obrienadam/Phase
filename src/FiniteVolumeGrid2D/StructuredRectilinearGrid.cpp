@@ -73,8 +73,8 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
                 findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())
         );
     }
-    applyPatch("x-", xm);
-    applyPatch("x+", xp);
+    createPatch("x-", xm);
+    createPatch("x+", xp);
 
     //- y patches
     for (Label i = 0; i < nCellsX_; ++i)
@@ -86,8 +86,8 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
                 findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())
         );
     }
-    applyPatch("y-", ym);
-    applyPatch("y+", yp);
+    createPatch("y-", ym);
+    createPatch("y+", yp);
 }
 
 Cell &StructuredRectilinearGrid::operator()(Label i, Label j)

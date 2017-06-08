@@ -1,33 +1,51 @@
 #include "Patch.h"
-#include "FiniteVolumeGrid2D.h"
 
-Patch::Patch(const Patch &other)
-        :
-        Patch(other.name, other.id_)
+Patch::Patch(const std::string &name, Label id, const std::shared_ptr<PatchRegistry> &registry)
+    :
+      Group(name)
 {
-    faces_ = other.faces_;
+    id_ = id;
 
-    for (const Face &face: faces_)
-        face.changePatch(*this);
+    if(registry)
+        registry_ = registry;
+    else
+        registry_ = std::shared_ptr<PatchRegistry>(new PatchRegistry());
 }
 
-void Patch::addFace(const Face &face)
+void Patch::add(const Face &face)
 {
-    if (face.isBoundary())
+    auto insertion = registry_->insert(std::make_pair(face.id(), std::ref(*this)));
+
+    if(insertion.second)
+        FaceGroup::add(face);
+    else
     {
-        faces_.push_back(Ref<const Face>(face));
-        face.addToPatch(*this);
+        insertion.first->second.get().remove(face);
+        add(face);
     }
 }
 
-void Patch::addFaces(const std::vector<Ref<Face> > &faces)
+void Patch::remove(const Face &face)
 {
-    for (Face &face: faces)
+    if(isInGroup(face))
     {
-        if (face.isBoundary())
-        {
-            faces_.push_back(Ref<const Face>(face));
-            face.addToPatch(*this);
-        }
+        registry_->erase(face.id());
+        FaceGroup::remove(face);
     }
+}
+
+void Patch::clear()
+{
+    for(const Face& face: *this)
+        registry_->erase(face.id());
+
+    FaceGroup::clear();
+}
+
+void Patch::setRegistry(std::shared_ptr<Patch::PatchRegistry> &registry)
+{
+    std::vector<Ref<const Face>> items = this->items();
+    clear();
+    registry_ = registry;
+    FaceGroup::add(items.begin(), items.end());
 }

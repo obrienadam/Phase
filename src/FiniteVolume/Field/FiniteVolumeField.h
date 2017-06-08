@@ -24,6 +24,8 @@ public:
 
     FiniteVolumeField(const FiniteVolumeField &other);
 
+    FiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name, const T& val);
+
     //- Initialization
     void fill(const T &val);
 
@@ -32,11 +34,15 @@ public:
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
 
-    BoundaryType boundaryType(const Face &face) const;
+    BoundaryType boundaryType(const Patch &patch) const;
 
-    T boundaryRefValue(const Face &face) const;
+    BoundaryType boundaryType(const Face& face) const;
+
+    T boundaryRefValue(const Patch &patch) const;
 
     std::pair<BoundaryType, T> boundaryInfo(const Face &face) const;
+
+    void interpolateFaces(const std::function<Scalar(const Face& face)>& alpha);
 
     void setBoundaryFaces();
 
@@ -84,20 +90,20 @@ public:
 
     FiniteVolumeField &savePreviousIteration();
 
-    FiniteVolumeField &prev(int i = 0)
-    { return previousTimeSteps_[i].second; }
+    FiniteVolumeField &oldField(int i)
+    { return previousTimeSteps_[i]->second; }
 
-    const FiniteVolumeField &prev(int i = 0) const
-    { return previousTimeSteps_[i].second; }
+    const FiniteVolumeField &oldField(int i) const
+    { return previousTimeSteps_[i]->second; }
 
-    Scalar prevTimeStep(int i = 0)
-    { return previousTimeSteps_[i].first; }
+    Scalar oldTimeStep(int i)
+    { return previousTimeSteps_[i]->first; }
 
-    FiniteVolumeField &prevIter()
-    { return previousIteration_.front(); }
+    FiniteVolumeField &prevIteration()
+    { return *previousIteration_.front(); }
 
-    const FiniteVolumeField &prev() const
-    { return previousIteration_.front(); }
+    const FiniteVolumeField &prevIteration() const
+    { return *previousIteration_.front(); }
 
     //- Vectorization
     Vector vectorize() const;
@@ -123,16 +129,18 @@ public:
 
 protected:
 
+    typedef std::pair<Scalar, FiniteVolumeField<T>> PreviousField;
+
     void setBoundaryTypes(const Input &input);
 
     void setBoundaryRefValues(const Input &input);
 
-    std::map<size_t, std::pair<BoundaryType, T> > patchBoundaries_;
+    std::map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
 
     std::vector<T> faces_, nodes_;
 
-    std::deque<std::pair<Scalar, FiniteVolumeField<T> > > previousTimeSteps_;
-    std::deque<FiniteVolumeField<T> > previousIteration_;
+    std::vector<std::shared_ptr<PreviousField>> previousTimeSteps_;
+    std::vector<std::shared_ptr<FiniteVolumeField<T>>> previousIteration_;
 };
 
 template<class T>

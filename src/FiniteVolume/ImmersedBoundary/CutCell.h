@@ -45,11 +45,17 @@ public:
 
     const std::vector<CutCellLink>& neighbours() const { return cutCellLinks_; }
 
+    const std::vector<BoundaryLink>& boundaries() const { return cell_.boundaries(); }
+
     const std::vector<Ref<const CutCellLink>> neighbours(const CellGroup& cellGroup) const;
 
     bool intersectsIbObj() const { return ibObj_; }
 
     const ImmersedBoundaryObject& ibObj() const { return *ibObj_; }
+
+    //- Operators
+    operator const Cell&() const
+    { return cell_; }
 
 private:
 

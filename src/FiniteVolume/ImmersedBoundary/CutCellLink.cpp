@@ -1,6 +1,4 @@
 #include "CutCellLink.h"
-#include "Cell.h"
-#include "Face.h"
 #include "Exception.h"
 
 CutCellLink::CutCellLink(const Cell &self, const Face &face, const Cell &cell)

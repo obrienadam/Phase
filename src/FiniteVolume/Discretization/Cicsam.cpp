@@ -48,22 +48,21 @@ void interpolateFaces(const VectorFiniteVolumeField &u,
         gamma(face) = (1. - betaFace)*gamma(donor) + betaFace*gamma(acceptor);
     }
 
-    for (const Face& face: gamma.grid.boundaryFaces())
-    {
-        switch (gamma.boundaryType(face))
+    for(const Patch& patch: gamma.grid.patches())
+        switch(gamma.boundaryType(patch))
         {
         case ScalarFiniteVolumeField::FIXED:
             break;
 
         case ScalarFiniteVolumeField::NORMAL_GRADIENT:
         case ScalarFiniteVolumeField::SYMMETRY:
-            gamma(face) = gamma(face.lCell());
+            for(const Face& face: patch)
+                gamma(face) = gamma(face.lCell());
             break;
 
         default:
             throw Exception("cicsam", "interpolateFaces", "unrecognized or unspecified boundary type.");
         }
-    }
 }
 
 Equation<Scalar> div(const VectorFiniteVolumeField &u,

@@ -19,7 +19,7 @@ void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &
     //- Post recvs first (non-blocking)
     for (int i = 0; i < neighbouringProcs_.size(); ++i)
     {
-        recvBuffers[i].resize(bufferCellZones_[i].size());
+        recvBuffers[i].resize(bufferCellZones_[i]->size());
         comm.irecv(neighbouringProcs_[i], recvBuffers[i], comm.rank());
     }
 
@@ -28,8 +28,8 @@ void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &
     for (int i = 0; i < neighbouringProcs_.size(); ++i)
     {
 
-        sendBuffer.resize(sendCellGroups_[i].size());
-        std::transform(sendCellGroups_[i].begin(), sendCellGroups_[i].end(),
+        sendBuffer.resize(sendCellGroups_[i]->size());
+        std::transform(sendCellGroups_[i]->begin(), sendCellGroups_[i]->end(),
                        sendBuffer.begin(), [&data](const Cell &cell) { return data[cell.id()]; });
 
         comm.ssend(neighbouringProcs_[i], sendBuffer, neighbouringProcs_[i]);
@@ -41,7 +41,7 @@ void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &
     for (int i = 0; i < neighbouringProcs_.size(); ++i)
     {
         int j = 0;
-        for (const Cell &cell: bufferCellZones_[i])
+        for (const Cell &cell: *bufferCellZones_[i])
             data[cell.id()] = recvBuffers[i][j++];
     }
 }

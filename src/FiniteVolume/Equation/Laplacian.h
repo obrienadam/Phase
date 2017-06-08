@@ -24,8 +24,7 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
 
         for (const BoundaryLink &bd: cell.boundaries())
         {
-            const Scalar coeff =
-                    gamma(bd.face()) * dot(bd.rFaceVec(), bd.outwardNorm()) / dot(bd.rFaceVec(), bd.rFaceVec());
+            Scalar coeff = gamma(bd.face()) * dot(bd.rFaceVec(), bd.outwardNorm()) / dot(bd.rFaceVec(), bd.rFaceVec());
 
             switch (field.boundaryType(bd.face()))
             {

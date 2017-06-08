@@ -3,15 +3,15 @@
 
 #include "Shape2D.h"
 #include "Equation.h"
+#include "Motion.h"
 
 class ImmersedBoundaryObject
 {
 public:
 
-    enum BoundaryType
-    {
-        FIXED, NORMAL_GRADIENT
-    };
+    enum BoundaryType{FIXED, NORMAL_GRADIENT};
+
+    enum MotionType{NONE, TRANSLATING, OSCILLATING, FREE};
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
@@ -29,6 +29,9 @@ public:
         shapePtr_ = std::shared_ptr<Polygon>(new Polygon(begin, end));
     }
 
+    //- Motion
+    virtual void setMotionType(const std::map<std::string, std::string>& properties);
+
     bool isInIb(const Point2D &pt) const
     { return shapePtr_->isInside(pt); }
 
@@ -37,6 +40,15 @@ public:
 
     const Shape2D &shape() const
     { return *shapePtr_; }
+
+    //- Set/get primary cell zone
+    void setZone(CellZone& zone);
+
+    CellZone& cellZone()
+    { return *fluid_; }
+
+    const CellZone& cellZone() const
+    { return *fluid_; }
 
     //- Operations
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
@@ -53,16 +65,19 @@ public:
     //- Reference to cell zone for iterating
 
     const CellZone &cells() const
-    { return *cells_; }
+    { return cells_; }
 
-    const CellGroup &ibCells() const
-    { return *ibCells_; }
+    const CellZone &ibCells() const
+    { return ibCells_; }
 
-    const CellGroup &solidCells() const
-    { return *solidCells_; }
+    const CellZone &solidCells() const
+    { return solidCells_; }
 
-    const CellGroup &freshlyClearedCells() const
-    { return *freshlyClearedCells_; }
+    const CellZone &freshCells() const
+    { return freshCells_; }
+
+    const CellZone &deadCells() const
+    { return deadCells_; }
 
     //- Boundary info
     BoundaryType boundaryType(const std::string &name) const
@@ -74,29 +89,25 @@ public:
     //- Motion info if applicable
     const Vector2D& position() const { return shape().centroid(); }
 
-    virtual Vector2D acceleration() const
-    { return Vector2D(0., 0.); }
+    virtual Vector2D acceleration() const;
 
-    virtual Vector2D acceleration(const Point2D &point) const
-    { return Vector2D(0., 0.); }
+    virtual Vector2D acceleration(const Point2D &point) const;
 
-    virtual Vector2D velocity() const
-    { return Vector2D(0., 0.); }
+    virtual Vector2D velocity() const;
 
-    virtual Vector2D velocity(const Point2D &point) const
-    { return Vector2D(0., 0.); }
+    virtual Vector2D velocity(const Point2D &point) const;
 
     virtual Vector2D normalForce() const
-    { return Vector2D(0., 0.); }
+    { return Vector2D(0, 0); }
 
     virtual Vector2D shearForce() const
-    { return Vector2D(0., 0.); }
+    { return Vector2D(0, 0); }
 
-    virtual Vector2D force() const { return normalForce() + shearForce(); }
+    virtual void computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p)
+    {}
 
-    virtual void computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
-
-    virtual void computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField& u);
+    virtual void computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField& u)
+    {}
 
     //- Update (must to be overriden)
     virtual void update(Scalar timeStep) = 0;
@@ -106,6 +117,8 @@ public:
     virtual Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const = 0;
 
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
+
+    void clearFreshCells();
 
     const std::string &name() const
     { return name_; }
@@ -120,17 +133,17 @@ protected:
 
     FiniteVolumeGrid2D &grid_;
 
-    CellGroup *ibCells_, *solidCells_, *freshlyClearedCells_;
-    CellZone *cells_;
+    std::shared_ptr<CellZone::ZoneRegistry> zoneRegistry_; //- Registry for these IB cells only
+    CellZone cells_, ibCells_, solidCells_, freshCells_, deadCells_;
+    CellZone *fluid_ = nullptr;
 
     std::shared_ptr<Shape2D> shapePtr_;
 
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefScalars_;
     std::map<std::string, Vector2D> boundaryRefVectors_;
-};
 
-#include "GhostCellImmersedBoundaryObject.h"
-#include "ForcingCellImmersedBoundaryObject.h"
+    std::shared_ptr<Motion> motion_;
+};
 
 #endif

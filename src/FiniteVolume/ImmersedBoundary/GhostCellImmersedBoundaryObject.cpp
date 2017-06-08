@@ -1,4 +1,5 @@
 #include "GhostCellImmersedBoundaryObject.h"
+#include "ForcingCellStencil.h"
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id, FiniteVolumeGrid2D &grid)
     :
@@ -9,53 +10,66 @@ GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::stri
 
 void GhostCellImmersedBoundaryObject::update(Scalar timeStep)
 {
-    //- Doesn't move, stationary
+    if(motion_)
+    {
+        motion_->update(*this, timeStep);
+        updateCells();
+    }
 }
 
 void GhostCellImmersedBoundaryObject::updateCells()
 {
-    CellZone &fluidCells = grid_.cellZone("fluid");
+    fluid_->add(freshCells_);
+    freshCells_.clear();
+    for(const Cell& cell: cells_) //- New fresh cells
+        if(!isInIb(cell.centroid()))
+            freshCells_.add(cell);
 
-    ibCells_->clear();
-    solidCells_->clear();
+    ibCells_.clear();
+    solidCells_.clear();
 
     switch (shapePtr_->type())
     {
-        case Shape2D::CIRCLE:
-            for (const Cell &cell: fluidCells.cellCentersWithin(
-                    *(Circle *) shapePtr_.get())) //- The circle method is much more efficient
-                cells_->moveToGroup(cell);
-            break;
-        case Shape2D::BOX:
-            for (const Cell &cell: fluidCells.cellCentersWithin(
-                    *(Box *) shapePtr_.get())) //- The box method is much more efficient
-                cells_->moveToGroup(cell);
-            break;
-        default:
-            for (const Cell &cell: fluidCells.cellCentersWithin(*shapePtr_))
-                cells_->moveToGroup(cell);
+    case Shape2D::CIRCLE:
+        for (const Cell &cell: fluid_->itemsWithin(
+                 *static_cast<Circle*>(shapePtr_.get()))) //- The circle method is much more efficient
+            cells_.add(cell);
+        break;
+    case Shape2D::BOX:
+        for (const Cell &cell: fluid_->itemsWithin(
+                 *static_cast<Box*>(shapePtr_.get()))) //- The box method is much more efficient
+            cells_.add(cell);
+        break;
+    default:
+        for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
+            cells_.add(cell);
     }
 
     auto isIbCell = [this](const Cell &cell) {
+        if(!isInIb(cell.centroid()))
+            return false;
+
         for (const InteriorLink &nb: cell.neighbours())
             if (!isInIb(nb.cell().centroid()))
                 return true;
 
-        //for (const DiagonalCellLink &dg: cell.diagonals())
-        //    if (!isInIb(dg.cell().centroid()))
-        //        return true;
+        for (const DiagonalCellLink &dg: cell.diagonals())
+            if (!isInIb(dg.cell().centroid()))
+                return true;
 
         return false;
     };
 
-    for (const Cell &cell: *cells_)
+    for (const Cell &cell: cells_)
         if (isIbCell(cell))
-            ibCells_->push_back(cell);
-        else
-            solidCells_->push_back(cell);
+            ibCells_.add(cell);
+        else if(isInIb(cell.centroid()))
+            solidCells_.add(cell);
 
-    grid_.setCellsActive(*ibCells_);
-    grid_.setCellsInactive(*solidCells_);
+    grid_.setCellsActive(*fluid_);
+    grid_.setCellsActive(ibCells_);
+    grid_.setCellsActive(freshCells_);
+    grid_.setCellsInactive(solidCells_);
     constructStencils();
 }
 
@@ -103,7 +117,6 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
 {
     Equation<Vector2D> eqn(field);
     BoundaryType bType = boundaryType(field.name());
-    Vector2D bRefValue = getBoundaryRefValue<Vector2D>(field.name());
 
     for (const GhostCellStencil &st: stencils_)
     {
@@ -118,7 +131,7 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
             for (Scalar &coeff: coeffs)
                 coeff *= 0.5;
 
-            eqn.addSource(st.cell(), -bRefValue);
+            eqn.addSource(st.cell(), -velocity());
             break;
 
         case ImmersedBoundaryObject::NORMAL_GRADIENT:
@@ -136,7 +149,65 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
             eqn.add(st.cell(), ipCell, coeffs[i++]);
     }
 
+    for(const Cell& cell: freshCells_)
+    {
+        ForcingCellStencil st(cell, shape(), *fluid_);
+
+        eqn.add(cell, cell, 1.);
+
+        for(int i = 0; i < 2; ++i)
+            eqn.add(cell, st.nbCells()[i], -st.dirichletCellCoeffs()[i]);
+
+        eqn.addSource(cell, -st.dirichletBoundaryCoeff()*velocity());
+    }
+
     return eqn;
+}
+
+void GhostCellImmersedBoundaryObject::computeNormalForce(const ScalarFiniteVolumeField &rho,
+                                                         const VectorFiniteVolumeField &u,
+                                                         const ScalarFiniteVolumeField &p)
+{
+    normalForce_ = Vector2D(0, 0);
+    std::vector<std::pair<Point2D, Scalar>> forcePts;
+
+    for(const GhostCellStencil &st: stencils())
+    {
+        Scalar rhoB = (st.ipValue(rho) + rho(st.cell()))/2.;
+        Scalar uB = dot((st.ipValue(u) + u(st.cell()))/2., st.unitNormal());
+        Scalar pB = (st.ipValue(p) + p(st.cell()))/2.;
+
+        forcePts.push_back(std::make_pair(st.boundaryPoint(), rhoB*uB*uB/2 + pB));
+    }
+
+    //- Sort the force points
+    std::sort(forcePts.begin(), forcePts.end(), [this](const std::pair<Point2D, Scalar>& lhs, const std::pair<Point2D, Scalar>& rhs){
+        Vector2D rVecL = lhs.first - shapePtr_->centroid();
+        Vector2D rVecR = rhs.first - shapePtr_->centroid();
+
+        Scalar thetaL = atan2(rVecL.y, rVecL.x);
+        Scalar thetaR = atan2(rVecR.y, rVecR.x);
+
+        return (thetaL < 0 ? thetaL + 2*M_PI: thetaL) < (thetaR < 0 ? thetaR + 2*M_PI: thetaR);
+    });
+
+    //- Integrate
+    for(int i = 0, end = forcePts.size(); i < end; ++i)
+    {
+        Point2D ptA = forcePts[i].first;
+        Point2D ptB = forcePts[(i + 1)%end].first;
+        Scalar fA = forcePts[i].second;
+        Scalar fB = forcePts[(i + 1)%end].second;
+        Point2D sb = (ptB - ptA).normalVec();
+
+        normalForce_ += (fA + fB)/2.*sb;
+    }
+}
+
+void GhostCellImmersedBoundaryObject::computeShearForce(const ScalarFiniteVolumeField &mu,
+                                                        const VectorFiniteVolumeField &u)
+{
+    shearForce_ = Vector2D(0, 0);
 }
 
 //- Protected methods
@@ -144,6 +215,6 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
 void GhostCellImmersedBoundaryObject::constructStencils()
 {
     stencils_.clear();
-    for (const Cell &cell: *ibCells_)
+    for (const Cell &cell: ibCells_)
         stencils_.push_back(GhostCellStencil(cell, *shapePtr_, grid_));
 }

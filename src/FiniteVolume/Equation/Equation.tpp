@@ -157,42 +157,15 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     boost::algorithm::to_lower(lib);
 
     if (lib == "eigen" || lib == "eigen3")
-#ifdef PHASE_USE_EIGEN
         spSolver_ = std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver());
-#else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Eigen support. Recompile with \"-DPHASE_USE_EIGEN=ON\".");
-#endif
-    else if (lib == "hypre")
-#ifdef PHASE_USE_HYPRE
-        spSolver_ = std::shared_ptr<HypreSparseMatrixSolver>(new HypreSparseMatrixSolver(comm));
-#else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without HYPRE support. Recompile with \"-DPHASE_USE_HYPRE=ON\".");
-#endif
-    else if (lib == "petsc")
-    {
-#ifdef PHASE_USE_PETSC
-        std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "sor");
-        spSolver_ = std::shared_ptr<PetscSparseMatrixSolver>(new PetscSparseMatrixSolver(comm, precon));
-#else
-        throw Exception("Equation<T>", "configureSparseMatrixSolver", "Phase was built without Petsc support. Recompile with \"-DPHASE_USE_PETSC=ON\".");
-#endif
-    }
-    else if (lib == "trilinos")
-    {
-#ifdef PHASE_USE_TRILINOS
-        std::string solver = input.caseInput().get<std::string>("LinearAlgebra." + name + ".solver", "BiCGSTAB");
-        std::string precon = input.caseInput().get<std::string>("LinearAlgebra." + name + ".preconditioner", "RILUK");
-        spSolver_ = std::shared_ptr<TrilinosSparseMatrixSolver>(new TrilinosSparseMatrixSolver(comm, solver, precon));
-#else
-        throw Exception("Equation<T>", "configuerSparseMatrixSolver", "Phase was build without Trilinos support. Recompile with \"-DPHASE_USE_TRILINOS=ON\".");
-#endif
-    }
+    else if(lib == "trilinos")
+        spSolver_ = std::shared_ptr<TrilinosSparseMatrixSolver>(new TrilinosSparseMatrixSolver(comm));
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
     if (comm.nProcs() > 1 && !spSolver_->supportsMPI())
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
-                                                                "\" does not support multiple processes in its current configuration.");
+                        "\" does not support multiple processes in its current configuration.");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-6));

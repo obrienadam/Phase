@@ -1,66 +1,71 @@
+#include <fstream>
+
 #include "ForcingCellImmersedBoundaryObject.h"
 
 ForcingCellImmersedBoundaryObject::ForcingCellImmersedBoundaryObject(const std::string &name, Label id, FiniteVolumeGrid2D &grid)
     :
       ImmersedBoundaryObject(name, id, grid)
 {
-
+    pseudoFluidPoints_ = CellZone("PseudoFluidPoints", zoneRegistry_);
 }
 
 void ForcingCellImmersedBoundaryObject::update(Scalar timeStep)
 {
-    //- Does nothing, stationary
+    if(motion_)
+    {
+        motion_->update(*this, timeStep);
+        updateCells();
+    }
 }
 
 void ForcingCellImmersedBoundaryObject::updateCells()
 {
-    if(updateCellsCalled_)
-        throw Exception("ForcingImmersedBoundaryObject", "updateCells", "cannot call updateCells more than once.");
+    ibCells_.clear();
+    solidCells_.clear();
+    pseudoFluidPoints_.clear();
 
-    CellZone &fluidCells = grid_.cellZone("fluid");
+    fluid_->add(cells_);
 
-    ibCells_->clear();
-    solidCells_->clear();
-
-    //- Find the solid cells
     switch (shapePtr_->type())
     {
     case Shape2D::CIRCLE:
-        for (const Cell &cell: fluidCells.cellCentersWithin(
+        for (const Cell &cell: fluid_->itemsWithin(
                  *(Circle *) shapePtr_.get())) //- The circle method is much more efficient
-        {
-            cells_->moveToGroup(cell);
-            solidCells_->push_back(cell);
-        }
+            cells_.add(cell);
         break;
     case Shape2D::BOX:
-        for (const Cell &cell: fluidCells.cellCentersWithin(
+        for (const Cell &cell: fluid_->itemsWithin(
                  *(Box *) shapePtr_.get())) //- The box method is much more efficient
-        {
-            cells_->moveToGroup(cell);
-            solidCells_->push_back(cell);
-        }
+            cells_.add(cell);
         break;
     default:
-        for (const Cell &cell: fluidCells.cellCentersWithin(*shapePtr_))
-        {
-            cells_->moveToGroup(cell);
-            solidCells_->push_back(cell);
-        }
+        for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
+            cells_.add(cell);
     }
 
-    for(const Cell& cell: *solidCells_)
+    solidCells_.add(cells_);
+
+    for(const Cell& cell: cells_.items())
         for(const InteriorLink& nb: cell.neighbours())
-            if(fluidCells.isInGroup(nb.cell()))
+            if(!shapePtr_->isInside(nb.cell().centroid()))
             {
-                cells_->moveToGroup(nb.cell());
-                ibCells_->push_back(nb.cell());
+                cells_.add(nb.cell());
+                ibCells_.add(nb.cell());
             }
 
-    grid_.setCellsActive(*ibCells_);
-    grid_.setCellsInactive(*solidCells_);
+    for(const Cell& cell: solidCells_.items()) //- Must make copy since container will be modified
+        for(const InteriorLink& nb: cell.neighbours())
+            if(ibCells_.isInGroup(nb.cell()))
+            {
+                pseudoFluidPoints_.add(cell);
+                break;
+            }
+
+    grid_.setCellsActive(*fluid_);
+    grid_.setCellsActive(ibCells_);
+    grid_.setCellsActive(pseudoFluidPoints_);
+    grid_.setCellsInactive(solidCells_);
     constructStencils();
-    updateCellsCalled_ = true;
 }
 
 Equation<Scalar> ForcingCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
@@ -76,16 +81,16 @@ Equation<Scalar> ForcingCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField 
         {
         case FIXED:
             eqn.add(st.cell(), st.cell(), 1.);
-            eqn.add(st.cell(), st.iCells()[0], -st.iCoeffs()[0]);
-            eqn.add(st.cell(), st.iCells()[1], -st.iCoeffs()[1]);
-            eqn.addSource(st.cell(), -bRefValue*st.bCoeff());
+            eqn.add(st.cell(), st.nbCells()[0], -st.dirichletCellCoeffs()[0]);
+            eqn.add(st.cell(), st.nbCells()[1], -st.dirichletCellCoeffs()[1]);
+            eqn.addSource(st.cell(), -st.dirichletBoundaryCoeff()*bRefValue);
             break;
 
         case NORMAL_GRADIENT:
             eqn.add(st.cell(), st.cell(), 1.);
-            eqn.add(st.cell(), st.iCells()[0], -st.nCoeffs()[0]);
-            eqn.add(st.cell(), st.iCells()[1], -st.nCoeffs()[1]);
-            eqn.addSource(st.cell(), -bRefValue*st.bnCoeff()); //- Just to remind me how this works
+            eqn.add(st.cell(), st.nbCells()[0], -st.neumannCellCoeffs()[0]);
+            eqn.add(st.cell(), st.nbCells()[1], -st.neumannCellCoeffs()[1]);
+            eqn.addSource(st.cell(), -st.neumannBoundaryCoeff()*bRefValue); //- Just to remind me how this works
             break;
 
         default:
@@ -100,25 +105,26 @@ Equation<Vector2D> ForcingCellImmersedBoundaryObject::bcs(VectorFiniteVolumeFiel
 {
     Equation<Vector2D> eqn(field);
     BoundaryType bType = boundaryType(field.name());
-    Vector2D bRefValue = getBoundaryRefValue<Vector2D>(field.name());
 
     for (const ForcingCellStencil &st: stencils_)
     {
+        Vector2D vel = velocity(st.xc());
+
         //- Boundary assembly
         switch (bType)
         {
         case FIXED:
             eqn.add(st.cell(), st.cell(), 1.);
-            eqn.add(st.cell(), st.iCells()[0], -st.iCoeffs()[0]);
-            eqn.add(st.cell(), st.iCells()[1], -st.iCoeffs()[1]);
-            eqn.addSource(st.cell(), -bRefValue*st.bCoeff());
+            eqn.add(st.cell(), st.nbCells()[0], -st.dirichletCellCoeffs()[0]);
+            eqn.add(st.cell(), st.nbCells()[1], -st.dirichletCellCoeffs()[1]);
+            eqn.addSource(st.cell(), -st.dirichletBoundaryCoeff()*vel);
             break;
 
         case NORMAL_GRADIENT:
             eqn.add(st.cell(), st.cell(), 1.);
-            eqn.add(st.cell(), st.iCells()[0], -st.nCoeffs()[0]);
-            eqn.add(st.cell(), st.iCells()[1], -st.nCoeffs()[1]);
-            eqn.addSource(st.cell(), -bRefValue*st.bnCoeff()); //- Just to remind me how this works
+            eqn.add(st.cell(), st.nbCells()[0], -st.neumannCellCoeffs()[0]);
+            eqn.add(st.cell(), st.nbCells()[1], -st.neumannCellCoeffs()[1]);
+            eqn.addSource(st.cell(), -st.neumannBoundaryCoeff()*vel); //- Just to remind me how this works
             break;
 
         default:
@@ -132,6 +138,24 @@ Equation<Vector2D> ForcingCellImmersedBoundaryObject::bcs(VectorFiniteVolumeFiel
 void ForcingCellImmersedBoundaryObject::constructStencils()
 {
     stencils_.clear();
-    for (const Cell &cell: *ibCells_)
-        stencils_.push_back(ForcingCellStencil(cell, *shapePtr_, grid_.cellZone("fluid")));
+    for (const Cell &cell: ibCells_)
+        stencils_.push_back(ForcingCellStencil(cell, *shapePtr_, *fluid_));
+
+    for(const Cell &cell: pseudoFluidPoints_)
+        stencils_.push_back(ForcingCellStencil(cell, *shapePtr_, ibCells_));
+
+    std::ofstream fout("stencils.dat");
+
+    for(const ForcingCellStencil& st: stencils_)
+    {
+        fout << "Geometry x=0 y=0 T=LINE C=BLACK LT=0.2 CS=GRID\n"
+             << "1\n"
+             << "4\n"
+             << st.xc().x << " " << st.xc().y << "\n"
+             << st.nbCells()[0].get().centroid().x << " " << st.nbCells()[0].get().centroid().y << "\n"
+             << st.nbCells()[1].get().centroid().x << " " << st.nbCells()[1].get().centroid().y << "\n"
+             << st.xc().x << " " << st.xc().y << "\n";
+    }
+
+    fout.close();
 }

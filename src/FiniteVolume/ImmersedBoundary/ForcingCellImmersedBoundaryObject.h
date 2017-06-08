@@ -9,8 +9,8 @@ class ForcingCellImmersedBoundaryObject: public ImmersedBoundaryObject
 public:
 
     ForcingCellImmersedBoundaryObject(const std::string &name,
-                                    Label id,
-                                    FiniteVolumeGrid2D &grid);
+                                      Label id,
+                                      FiniteVolumeGrid2D &grid);
 
     void update(Scalar timeStep);
 
@@ -24,8 +24,9 @@ protected:
 
     void constructStencils();
 
+    CellZone pseudoFluidPoints_;
+
     std::vector<ForcingCellStencil> stencils_;
-    bool updateCellsCalled_ = false;
 };
 
 #endif

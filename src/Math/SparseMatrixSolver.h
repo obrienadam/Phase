@@ -54,28 +54,7 @@ protected:
     int nPreconUses_ = 1, maxPreconUses_ = 1;
 };
 
-#ifdef PHASE_USE_EIGEN
-
 #include "EigenSparseMatrixSolver.h"
-
-#endif
-
-#ifdef PHASE_USE_HYPRE
-
-#include "HypreSparseMatrixSolver.h"
-
-#endif
-
-#ifdef PHASE_USE_PETSC
-
-#include "PetscSparseMatrixSolver.h"
-
-#endif
-
-#ifdef PHASE_USE_TRILINOS
-
 #include "TrilinosSparseMatrixSolver.h"
-
-#endif
 
 #endif

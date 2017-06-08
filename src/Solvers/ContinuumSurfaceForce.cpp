@@ -18,7 +18,7 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
 
 VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 {
-    computeGradient(fv::FACE_TO_CELL, gamma_, gradGamma_);
+    computeGradient(fv::FACE_TO_CELL, gamma_.grid.cellZone("fluid"), gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
@@ -45,7 +45,7 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     solver().grid().sendMessages(solver().comm(), gammaTilde_);
-    computeGradient(fv::FACE_TO_CELL, gammaTilde_, gradGammaTilde_);
+    computeGradient(fv::FACE_TO_CELL, gammaTilde_.grid.cellZone("fluid"), gammaTilde_, gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
