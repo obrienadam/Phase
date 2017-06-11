@@ -10,7 +10,6 @@ computeGradient(GradientEvaluationMethod method, const CellGroup &group, ScalarF
 {
     gradPhi.fill(Vector2D(0., 0.));
 
-
     for (const Face &face: phi.grid.interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();

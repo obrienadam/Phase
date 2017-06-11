@@ -17,13 +17,6 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     thetaRec_ = input.caseInput().get<Scalar>("Properties.recedingContactAngle") * M_PI / 180.;
 
     std::string contactAngleType = input.caseInput().get<std::string>("Solver.contactAngleType", "static");
-    //std::transform(contactAngleType.begin(), contactAngleType.end(), contactAngleType.begin(), std::tolower);
-
-    if (contactAngleType == "fixed")
-        contactAngleType_ = STATIC;
-    else if (contactAngleType == "afkhami")
-        contactAngleType_ = AFKHAMI;
-
 
     //- Must figure out which patches to enforce the contact angle on
     for (const auto &boundaryInput: input.boundaryInput().get_child("Boundaries.gamma"))
@@ -56,19 +49,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 
 Scalar SurfaceTensionForce::theta(const Cell& cell)
 {
-    switch (contactAngleType_)
-    {
-        case STATIC:
-            return thetaAdv_;
-        case AFKHAMI:
-        {
-            Scalar K = 0.2;
-            Scalar Ca = 0.03;
-            Scalar delta = 0.01;
-
-            return acos(cos(thetaAdv_) + 5.63*Ca*log(2*K/delta));
-        }
-    }
+    return thetaAdv_;
 }
 
 Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma, const Vector2D &wallNormal,

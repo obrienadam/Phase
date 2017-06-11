@@ -23,7 +23,7 @@ public:
     VectorFiniteVolumeField &u, &gradP;
     ScalarFiniteVolumeField &p;
 
-private:
+protected:
 
     Scalar solveUEqn(Scalar timeStep);
 

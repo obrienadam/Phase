@@ -31,6 +31,27 @@ public:
 
     void fillInterior(const T &val);
 
+    void compute(const std::function<T(const Cell& cell)> &fcn) {
+        for(const Cell& cell: grid.cells())
+            (*this)(cell) = fcn(cell);
+    }
+
+    void compute(const std::function<T(const Face& face)> &fcn) {
+        for(const Face& face: grid.faces())
+            (*this)(face) = fcn(face);
+    }
+
+    void computeBoundaryFaces(const std::function<T(const Face& face)> &fcn) {
+        for(const Face& face: grid.boundaryFaces())
+            (*this)(face) = fcn(face);
+    }
+
+    void compute(const std::function<T(const Cell& cell)>& cfcn,
+                 const std::function<T(const Face& face)>& ffcn) {
+        compute(cfcn);
+        compute(ffcn);
+    }
+
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
 

@@ -29,7 +29,7 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
 {
     if (this == &rhs)
         return *this;
-    else if (&field_ != &rhs.field_)
+    else if (&field_.grid != &rhs.field_.grid)
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
     nActiveCells_ = rhs.nActiveCells_;

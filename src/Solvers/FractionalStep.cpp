@@ -11,8 +11,6 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
         gradP(addVectorField("gradP")),
         phi(addScalarField("phi")),
         p(addScalarField(input, "p")),
-        rho(addScalarField("rho")),
-        mu(addScalarField("mu")),
         uEqn_(input, comm, u, "uEqn"),
         pEqn_(input, comm, phi, "pEqn"),
         fluid_(grid_.createCellZone("fluid"))
@@ -20,14 +18,11 @@ FractionalStep::FractionalStep(const Input &input, const Communicator &comm, Fin
     alphaAdv_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonAdvection", 0.5);
     alphaDiff_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonDiffusion", 0.5);
 
-    rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
-    mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
+    rho_ = input.caseInput().get<Scalar>("Properties.rho", 1.);
+    mu_ = input.caseInput().get<Scalar>("Properties.mu", 1.);
 
     phi.copyBoundaryTypes(p);
     ib_.copyBoundaryTypes(p, phi);
-
-    rho.savePreviousTimeStep(0., 1);
-    mu.savePreviousTimeStep(0., 1);
 
     //- All active cells to fluid cells
     fluid_.add(grid_.localActiveCells());
@@ -77,8 +72,8 @@ Scalar FractionalStep::solve(Scalar timeStep)
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho, u, u) + ib_.bcs(u) ==
-             fv::laplacian(mu, u) - fv::source(fluid_, gradP));
+    uEqn_ = (fv::ddt(rho_, u, timeStep) + fv::div(rho_*u, u) + ib_.bcs(u) ==
+             fv::laplacian(mu_, u) - fv::source(fluid_, gradP));
 
     Scalar error = uEqn_.solve();
     grid_.sendMessages(comm_, u);
@@ -90,7 +85,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, phi) + ib_.bcs(phi) ==
+    pEqn_ = (fv::laplacian(timeStep / rho_, phi) + ib_.bcs(phi) ==
              source::div(u));
 
     Scalar error = pEqn_.solve();
@@ -123,16 +118,16 @@ void FractionalStep::computeFaceVelocities(Scalar timeStep)
         return l2 / (l1 + l2);
     };
 
-    u.interpolateFaces(alpha);
-
     for (const Face &face: u.grid.interiorFaces())
     {
         Scalar g = alpha(face);
 
-        u(face) += g * timeStep / rho(face.lCell()) * gradP(face.lCell())
-                   + (1. - g) * timeStep / rho(face.rCell()) * gradP(face.rCell())
-                   - timeStep / rho(face) * gradP(face);
+        u(face) += g * (u(face.lCell()) + timeStep / rho_ * gradP(face.lCell()))
+                   + (1. - g) * (u(face.rCell()) + timeStep / rho_ * gradP(face.rCell()))
+                   - timeStep / rho_ * gradP(face);
     }
+
+    u.setBoundaryFaces();
 }
 
 void FractionalStep::correctVelocity(Scalar timeStep)
@@ -140,12 +135,12 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     const VectorFiniteVolumeField &gradP0 = gradP.oldField(0);
 
     for (const Cell &cell: fluid_)
-        u(cell) -= timeStep / rho(cell) * (gradP(cell) - gradP0(cell));
+        u(cell) -= timeStep / rho_ * (gradP(cell) - gradP0(cell));
 
     grid_.sendMessages(comm_, u);
 
     for (const Face &face: grid_.interiorFaces())
-        u(face) -= timeStep / rho(face) * (gradP(face) - gradP0(face));
+        u(face) -= timeStep / rho_ * (gradP(face) - gradP0(face));
 
     u.setBoundaryFaces();
 }

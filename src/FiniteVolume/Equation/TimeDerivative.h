@@ -5,6 +5,19 @@
 
 namespace fv
 {
+    template<typename T>
+    Equation<T> ddt(Scalar rho, FiniteVolumeField<T>& field, Scalar timeStep)
+    {
+        Equation<T> eqn(field);
+
+        for (const Cell &cell: field.grid.cellZone("fluid"))
+        {
+            eqn.add(cell, cell, rho * cell.volume() / timeStep);
+            eqn.addSource(cell, -rho * cell.volume() * field(cell) / timeStep);
+        }
+
+        return eqn;
+    }
 
     template<typename T>
     Equation<T> ddt(const ScalarFiniteVolumeField &rho, FiniteVolumeField<T> &field, Scalar timeStep)

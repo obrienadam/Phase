@@ -28,7 +28,7 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u, &gradP;
-    ScalarFiniteVolumeField &phi, &p, &rho, &mu;
+    ScalarFiniteVolumeField &phi, &p;
 
 protected:
 
@@ -41,6 +41,8 @@ protected:
     virtual void correctVelocity(Scalar timeStep);
 
     Scalar maxDivergenceError() const;
+
+    Scalar rho_, mu_;
 
     Scalar alphaAdv_, alphaDiff_;
 

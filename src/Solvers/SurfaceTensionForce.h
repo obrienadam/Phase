@@ -9,8 +9,6 @@ class SurfaceTensionForce
 {
 public:
 
-    enum ContactAngleType{STATIC, AFKHAMI};
-
     //- Constructor
     SurfaceTensionForce(const Input &input,
                         Solver &solver);
@@ -63,7 +61,6 @@ protected:
 
     Scalar sigma_, thetaAdv_, thetaRec_;
     std::map<Label, Scalar> ibContactAngles_;
-    ContactAngleType contactAngleType_;
 
     ScalarFiniteVolumeField &gamma_;
     const ScalarFiniteVolumeField &rho_;

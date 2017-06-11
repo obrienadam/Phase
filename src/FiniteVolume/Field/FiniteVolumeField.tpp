@@ -129,9 +129,8 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep
     );
 
     previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
-
-    while (previousTimeSteps_.size() > nPreviousFields)
-        previousTimeSteps_.pop_back();
+    previousTimeSteps_.erase(previousTimeSteps_.end() - (previousTimeSteps_.size() - nPreviousFields),
+                             previousTimeSteps_.end());
 
     return previousTimeSteps_.front()->second;
 }
