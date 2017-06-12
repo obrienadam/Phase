@@ -12,7 +12,9 @@ class FractionalStep : public Solver
 {
 public:
 
-    FractionalStep(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+    FractionalStep(const Input &input,
+                   const Communicator &comm,
+                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     ~FractionalStep()
     { log.close(); }

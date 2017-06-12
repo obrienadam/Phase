@@ -6,7 +6,9 @@
 class FractionalStepSimpleMultiphase: public FractionalStepSimple
 {
 public:
-    FractionalStepSimpleMultiphase(const Input& input, const Communicator& comm, FiniteVolumeGrid2D& grid);
+    FractionalStepSimpleMultiphase(const Input& input,
+                                   const Communicator& comm,
+                                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     void initialize();
 
@@ -24,6 +26,8 @@ private:
     Scalar solvePEqn(Scalar timeStep);
 
     void correctVelocity(Scalar timeStep);
+
+    void updateProperties(Scalar timeStep);
 
     Scalar rho1_, rho2_, mu1_, mu2_;
 

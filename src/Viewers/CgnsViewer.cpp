@@ -62,7 +62,7 @@ void CgnsViewer::write(Scalar solutionTime, const Communicator &comm)
 
     for(const VectorFiniteVolumeField& field: vectorFields_)
     {
-        std::vector<Scalar> x(field.grid.nCells()), y(field.grid.nCells());
+        std::vector<Scalar> x(field.grid().nCells()), y(field.grid().nCells());
         std::transform(field.begin(), field.end(), x.begin(), [](const Vector2D& vec){ return vec.x; });
         std::transform(field.begin(), field.end(), y.begin(), [](const Vector2D& vec){ return vec.y; });
 

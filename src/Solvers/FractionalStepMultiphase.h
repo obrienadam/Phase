@@ -8,7 +8,9 @@ class FractionalStepMultiphase : public FractionalStep
 {
 public:
 
-    FractionalStepMultiphase(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+    FractionalStepMultiphase(const Input &input,
+                             const Communicator &comm,
+                             std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     virtual void initialize();
 
@@ -22,11 +24,11 @@ public:
 
 protected:
 
+    virtual Scalar solveGammaEqn(Scalar timeStep);
+
     virtual Scalar solveUEqn(Scalar timeStep);
 
     virtual Scalar solvePEqn(Scalar timeStep);
-
-    virtual Scalar solveGammaEqn(Scalar timeStep);
 
     virtual void computeFaceVelocities(Scalar timeStep);
 

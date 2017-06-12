@@ -55,6 +55,8 @@ void FiniteVolumeGrid2D::reset()
     cellZones_.clear();
 
     nodes_.clear();
+    interiorNodes_.clear();
+    boundaryNodes_.clear();
     nodeSearch_.clear();
     cells_.clear();
     faces_.clear();
@@ -729,6 +731,8 @@ void FiniteVolumeGrid2D::initCells()
             cell.addBoundaryLink(face);
 
             boundaryFaces_.add(face);
+            boundaryNodes_.add(face.lNode());
+            boundaryNodes_.add(face.rNode());
         }
         else
         {
@@ -740,6 +744,14 @@ void FiniteVolumeGrid2D::initCells()
 
             interiorFaces_.add(face);
         }
+    }
+
+    for(const Face& face: interiorFaces_)
+    {
+        if (!boundaryNodes_.isInGroup(face.lNode()))
+            interiorNodes_.add(face.lNode());
+        else if (!boundaryNodes_.isInGroup(face.rNode()))
+            interiorNodes_.add(face.rNode());
     }
 
     //- Initialize diagonal links

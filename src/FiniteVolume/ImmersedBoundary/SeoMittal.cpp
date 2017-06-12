@@ -82,7 +82,7 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
 
 ScalarFiniteVolumeField seo::div(const ImmersedBoundary &ib, const VectorFiniteVolumeField &u)
 {
-    ScalarFiniteVolumeField divU(u.grid, "divU", 0);
+    ScalarFiniteVolumeField divU(u.grid(), "divU", 0);
 
     for (const CutCell &cell: ib.constructCutCells(ib.zone()))
     {
@@ -136,20 +136,40 @@ void seo::correct(const ImmersedBoundary &ib, Scalar rho, const ScalarFiniteVolu
                   VectorFiniteVolumeField &u, Scalar timeStep)
 {
     //- Correct faces
-    for (const Face &face: u.grid.interiorFaces())
+    for (const Face &face: u.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradP(face) = (p(face.rCell()) - p(face.lCell())) * rc / dot(rc, rc);
         u(face) -= timeStep / rho * gradP(face);
     }
 
-    for (const Face &face: gradP.grid.boundaryFaces())
+    for(const Face& face: u.grid().boundaryFaces())
     {
         Vector2D rf = face.centroid() - face.lCell().centroid();
         gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
     }
 
-    u.setBoundaryFaces();
+    for(const Patch& patch: u.grid().patches())
+    {
+        switch(u.boundaryType(patch))
+        {
+            case VectorFiniteVolumeField::FIXED:
+                break;
+
+            case VectorFiniteVolumeField::SYMMETRY:
+                for(const Face& face: patch)
+                {
+                    Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+                    u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall) * nWall / nWall.magSqr();
+                }
+                break;
+
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                for(const Face &face: patch)
+                    u(face) -= timeStep / rho * gradP(face);
+                break;
+        }
+    }
 
     //- Correct cell center
     for (const CutCell &cell: ib.constructCutCells(ib.zone()))
@@ -283,20 +303,40 @@ void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho
                   VectorFiniteVolumeField &gradP, VectorFiniteVolumeField &u, Scalar timeStep)
 {
     //- Correct faces
-    for (const Face &face: u.grid.interiorFaces())
+    for (const Face &face: u.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradP(face) = (p(face.rCell()) - p(face.lCell())) * rc / dot(rc, rc);
         u(face) -= timeStep / rho(face) * gradP(face);
     }
 
-    for (const Face &face: gradP.grid.boundaryFaces())
+    for(const Face& face: u.grid().boundaryFaces())
     {
         Vector2D rf = face.centroid() - face.lCell().centroid();
         gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
     }
 
-    u.setBoundaryFaces();
+    for(const Patch& patch: u.grid().patches())
+    {
+        switch(u.boundaryType(patch))
+        {
+            case VectorFiniteVolumeField::FIXED:
+                break;
+
+            case VectorFiniteVolumeField::SYMMETRY:
+                for(const Face& face: patch)
+                {
+                    Vector2D nWall = face.outwardNorm(face.lCell().centroid());
+                    u(face) = u(face.lCell()) - dot(u(face.lCell()), nWall) * nWall / nWall.magSqr();
+                }
+                break;
+
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                for(const Face &face: patch)
+                    u(face) -= timeStep / rho(face) * gradP(face);
+                break;
+        }
+    }
 
     //- Correct cell center
     for (const CutCell &cell: ib.constructCutCells(ib.zone()))

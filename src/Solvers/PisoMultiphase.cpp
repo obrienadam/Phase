@@ -6,7 +6,9 @@
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
-PisoMultiphase::PisoMultiphase(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
+PisoMultiphase::PisoMultiphase(const Input &input,
+                               const Communicator &comm,
+                               std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
         Piso(input, comm, grid),
         gamma(addScalarField(input, "gamma")),
@@ -43,7 +45,7 @@ PisoMultiphase::PisoMultiphase(const Input &input, const Communicator &comm, Fin
     Scalar sigma = surfaceTensionForce_->sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
 
-    for (const Face &face: grid_.interiorFaces())
+    for (const Face &face: grid_->interiorFaces())
     {
         Scalar delta = (face.rCell().centroid() - face.lCell().centroid()).mag();
         capillaryTimeStep_ = std::min(capillaryTimeStep_,
@@ -96,21 +98,21 @@ void PisoMultiphase::computeRho()
 
     rho.savePreviousTimeStep(0, 1);
 
-    for (const Cell &cell: rho.grid.cells())
+    for (const Cell &cell: rho.grid().cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         rho(cell) = (1 - w) * rho1_ + w * rho2_;
     }
 
-    grid_.sendMessages(comm_, rho);
+    grid_->sendMessages(comm_, rho);
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
     fv::computeInverseWeightedGradient(rho, rho, gradRho);
 
-    for (const Cell &cell: sg.grid.cellZone("fluid"))
+    for (const Cell &cell: sg.grid().cellZone("fluid"))
         sg(cell) = dot(g_, cell.centroid()) * gradRho(cell);
 
-    for (const Face &face: sg.grid.faces())
+    for (const Face &face: sg.grid().faces())
         sg(face) = dot(g_, face.centroid()) * gradRho(face);
 }
 
@@ -122,13 +124,13 @@ void PisoMultiphase::computeMu()
 
     mu.savePreviousTimeStep(0, 1);
 
-    for (const Cell &cell: mu.grid.cells())
+    for (const Cell &cell: mu.grid().cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         mu(cell) = (1 - w) * mu1_ + w * mu2_;
     }
 
-    grid_.sendMessages(comm_, mu);
+    grid_->sendMessages(comm_, mu);
 
     interpolateFaces(fv::INVERSE_VOLUME, mu);
 }
@@ -144,7 +146,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
 
-    grid_.sendMessages(comm_, u);
+    grid_->sendMessages(comm_, u);
 
     rhieChowInterpolation();
 
@@ -155,25 +157,27 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
 
+    auto beta = cicsam::computeBeta(u, gradGamma, gamma, timeStep, 0.5);
+
     switch (interfaceAdvectionMethod_)
     {
         case CICSAM:
             gammaEqn_ = (
-                    fv::ddt(gamma, timeStep) + cicsam::div(u, gamma) +
+                    fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma) +
                     ib_.bcs(gamma) == 0.);
     }
 
     Scalar error = gammaEqn_.solve();
 
-    grid_.sendMessages(comm_, gamma);
+    grid_->sendMessages(comm_, gamma);
 
-    interpolateFaces(fv::INVERSE_VOLUME, gamma);
-    gamma.setBoundaryFaces();
+    gamma.interpolateFaces([this, &beta](const Face& face){
+        return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
+    });
 
     fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
-    cicsam::interpolateFaces(u, gradGamma, gamma, timeStep, 1.);
 
-    grid_.sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
+    grid_->sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 
     return error;
 }
@@ -182,7 +186,7 @@ void PisoMultiphase::rhieChowInterpolation()
 {
     Piso::rhieChowInterpolation();
 
-    for (const Face &face: u.grid.interiorFaces())
+    for (const Face &face: u.grid().interiorFaces())
     {
         const Cell &lCell = face.lCell();
         const Cell &rCell = face.rCell();
@@ -197,7 +201,7 @@ void PisoMultiphase::rhieChowInterpolation()
                    + df * sg(face) - (g * d(lCell) * sg(lCell) + (1. - g) * d(rCell) * sg(rCell));
     }
 
-    for (const Face &face: u.grid.boundaryFaces())
+    for (const Face &face: u.grid().boundaryFaces())
     {
         const Cell &cellP = face.lCell();
         const Scalar df = d(face);

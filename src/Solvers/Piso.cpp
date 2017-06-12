@@ -3,7 +3,9 @@
 #include "GradientEvaluation.h"
 #include "SourceEvaluation.h"
 
-Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
+Piso::Piso(const Input &input,
+           const Communicator &comm,
+           std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
         Solver(input, comm, grid),
         u(addVectorField(input, "u")),
@@ -17,7 +19,7 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &gri
         d(addScalarField("d")),
         uEqn_(input, comm, u, "uEqn"),
         pCorrEqn_(input, comm, pCorr, "pCorrEqn"),
-        fluid_(grid.createCellZone("fluid"))
+        fluid_(grid->createCellZone("fluid"))
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
     mu.fill(input.caseInput().get<Scalar>("Properties.mu", 1.));
@@ -36,7 +38,7 @@ Piso::Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &gri
     ib_.copyBoundaryTypes(p, pCorr);
 
     //- All active cells to fluid cells
-    fluid_.add(grid_.localActiveCells());
+    fluid_.add(grid_->localActiveCells());
 
     //- Create ib zones if any
     ib_.initCellZones(fluid_);
@@ -67,7 +69,7 @@ Scalar Piso::maxCourantNumber(Scalar timeStep) const
 {
     Scalar maxCo = 0;
 
-    for (const Face &face: grid_.interiorFaces())
+    for (const Face &face: grid_->interiorFaces())
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
@@ -101,7 +103,7 @@ Scalar Piso::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
 
-    grid_.sendMessages(comm_, u);
+    grid_->sendMessages(comm_, u);
 
     rhieChowInterpolation();
 
@@ -124,20 +126,20 @@ Scalar Piso::solvePCorrEqn()
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.bcs(pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
-    grid_.sendMessages(comm_, pCorr);
+    grid_->sendMessages(comm_, pCorr);
 
     pCorr.setBoundaryFaces();
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, pCorr, gradPCorr);
 
-    for(const Cell &cell: grid_.localActiveCells())
+    for(const Cell &cell: grid_->localActiveCells())
         p(cell) += pCorrOmega_*pCorr(cell);
 
-    grid_.sendMessages(comm_, p);
+    grid_->sendMessages(comm_, p);
 
     p.setBoundaryFaces();
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
 
-    grid_.sendMessages(comm_, gradP);
+    grid_->sendMessages(comm_, gradP);
 
     return error;
 }
@@ -150,17 +152,17 @@ void Piso::rhieChowInterpolation()
     Scalar dt = u.oldTimeStep(0);
 
     d.fill(0.);
-    for (const Cell &cell: d.grid.cellZone("fluid"))
+    for (const Cell &cell: d.grid().cellZone("fluid"))
     {
         Vector2D coeff = uEqn_.get(cell, cell);
         d(cell) = cell.volume() / (0.5 * (coeff.x + coeff.y));
     }
 
-    grid_.sendMessages(comm_, d);
+    grid_->sendMessages(comm_, d);
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 
-    for (const Face &face: u.grid.interiorFaces())
+    for (const Face &face: u.grid().interiorFaces())
     {
         const Cell &cellP = face.lCell();
         const Cell &cellQ = face.rCell();
@@ -184,7 +186,7 @@ void Piso::rhieChowInterpolation()
                   - df * gradP(face) + (g * dP * gradP(cellP) + (1. - g) * dQ * gradP(cellQ));
     }
 
-    for (const Face &face: u.grid.boundaryFaces())
+    for (const Face &face: u.grid().boundaryFaces())
     {
         Scalar df = d(face);
         Scalar rhoP0 = rhoPrev(face.lCell());
@@ -217,15 +219,15 @@ void Piso::rhieChowInterpolation()
 
 void Piso::correctVelocity()
 {
-    for (const Cell &cell: u.grid.localActiveCells())
+    for (const Cell &cell: u.grid().localActiveCells())
         u(cell) -= d(cell) * gradPCorr(cell);
 
-    grid_.sendMessages(comm_, u); // gradPCorr may not be correct in buffer zones
+    grid_->sendMessages(comm_, u); // gradPCorr may not be correct in buffer zones
 
-    for (const Face &face: u.grid.interiorFaces())
+    for (const Face &face: u.grid().interiorFaces())
         u(face) -= d(face) * gradPCorr(face);
 
-    for (const Face &face: u.grid.boundaryFaces())
+    for (const Face &face: u.grid().boundaryFaces())
     {
         switch (u.boundaryType(face))
         {

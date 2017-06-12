@@ -18,13 +18,18 @@ public:
     };
 
     //- Constructors
-    FiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name);
+    FiniteVolumeField(const FiniteVolumeGrid2D &grid,
+                      const std::string &name,
+                      const T& val = T(),
+                      bool faces = true,
+                      bool nodes = false);
 
-    FiniteVolumeField(const Input &input, const FiniteVolumeGrid2D &grid, const std::string &name);
-
-    FiniteVolumeField(const FiniteVolumeField &other);
-
-    FiniteVolumeField(const FiniteVolumeGrid2D &grid, const std::string &name, const T& val);
+    FiniteVolumeField(const Input &input,
+                      const FiniteVolumeGrid2D &grid,
+                      const std::string &name,
+                      const T& val = T(),
+                      bool faces = true,
+                      bool nodes = false);
 
     //- Initialization
     void fill(const T &val);
@@ -32,17 +37,17 @@ public:
     void fillInterior(const T &val);
 
     void compute(const std::function<T(const Cell& cell)> &fcn) {
-        for(const Cell& cell: grid.cells())
+        for(const Cell& cell: grid().cells())
             (*this)(cell) = fcn(cell);
     }
 
     void compute(const std::function<T(const Face& face)> &fcn) {
-        for(const Face& face: grid.faces())
+        for(const Face& face: grid().faces())
             (*this)(face) = fcn(face);
     }
 
     void computeBoundaryFaces(const std::function<T(const Face& face)> &fcn) {
-        for(const Face& face: grid.boundaryFaces())
+        for(const Face& face: grid().boundaryFaces())
             (*this)(face) = fcn(face);
     }
 
@@ -67,6 +72,13 @@ public:
 
     void setBoundaryFaces();
 
+    //- Field info
+    bool hasFaces() const
+    { return !faces_.empty(); }
+
+    bool hasNodes() const
+    { return !nodes_.empty(); }
+
     //- Face-centered values
     const std::vector<T> &faces() const
     { return faces_; }
@@ -83,9 +95,6 @@ public:
 
     const std::vector<T> &nodes() const
     { return nodes_; }
-
-    bool hasNodalValues() const
-    { return !nodes_.empty(); }
 
     //- Access operators
     T &operator()(const Cell &cell)
@@ -140,13 +149,14 @@ public:
 
     FiniteVolumeField &operator*=(const FiniteVolumeField<Scalar> &rhs);
 
+    FiniteVolumeField &operator/=(const FiniteVolumeField<Scalar> &rhs);
+
     FiniteVolumeField &operator*=(Scalar rhs);
 
     FiniteVolumeField &operator/=(Scalar lhs);
 
-    FiniteVolumeField &operator/=(const FiniteVolumeField<Scalar> &rhs);
-
-    const FiniteVolumeGrid2D &grid;
+    const FiniteVolumeGrid2D& grid() const
+    { return grid_; }
 
 protected:
 
@@ -158,9 +168,15 @@ protected:
 
     std::map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
 
+    //- Grid
+    const FiniteVolumeGrid2D &grid_;
+
+    //- Misc data
     std::vector<T> faces_, nodes_;
 
+    //- Field history
     std::vector<std::shared_ptr<PreviousField>> previousTimeSteps_;
+
     std::vector<std::shared_ptr<FiniteVolumeField<T>>> previousIteration_;
 };
 

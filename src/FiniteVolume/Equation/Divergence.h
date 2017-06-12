@@ -10,7 +10,7 @@ namespace fv
     {
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
         {
             Scalar centralCoeff = 0.;
 
@@ -57,7 +57,7 @@ namespace fv
     {
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
         {
             Scalar centralCoeff = 0.;
 

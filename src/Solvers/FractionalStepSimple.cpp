@@ -4,7 +4,9 @@
 #include "Source.h"
 #include "SeoMittal.h"
 
-FractionalStepSimple::FractionalStepSimple(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
+FractionalStepSimple::FractionalStepSimple(const Input &input,
+                                           const Communicator &comm,
+                                           std::shared_ptr<FiniteVolumeGrid2D> &grid)
     :
       Solver(input, comm, grid),
       u(addVectorField(input, "u")),
@@ -12,13 +14,13 @@ FractionalStepSimple::FractionalStepSimple(const Input &input, const Communicato
       p(addScalarField(input, "p")),
       uEqn_(input, comm, u, "uEqn"),
       pEqn_(input, comm, p, "pEqn"),
-      fluid_(grid.createCellZone("fluid"))
+      fluid_(grid->createCellZone("fluid"))
 {
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);
 
     //- All active cells to fluid cells
-    fluid_.add(grid_.localActiveCells());
+    fluid_.add(grid_->localActiveCells());
 
     //- Create ib zones if any. Will also update local/global indices
     ib_.initCellZones(fluid_);
@@ -46,7 +48,9 @@ Scalar FractionalStepSimple::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_.computeForce(ScalarFiniteVolumeField(grid_, "rho", rho_), ScalarFiniteVolumeField(grid_, "mu", mu_), u, p);
+    ib_.computeForce(ScalarFiniteVolumeField(grid(), "rho", rho_),
+                     ScalarFiniteVolumeField(grid(), "mu", mu_), u, p);
+
     ib_.update(timeStep);
 
     comm_.printf("Max divergence error = %.4e\n", comm_.max(seo::maxDivergence(ib_, u)));
@@ -59,7 +63,7 @@ Scalar FractionalStepSimple::maxCourantNumber(Scalar timeStep) const
 {
     Scalar maxCo = 0;
 
-    for (const Face &face: grid_.interiorFaces())
+    for (const Face &face: grid_->interiorFaces())
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
@@ -123,7 +127,7 @@ void FractionalStepSimple::correctVelocity(Scalar timeStep)
     for(const Cell& cell: fluid_)
         u(cell) -= timeStep/rho_*gradP(cell);
 
-    for(const Face& face: grid_.interiorFaces())
+    for(const Face& face: grid_->interiorFaces())
         u(face) -= timeStep/rho_*gradP(face);
 
     u.setBoundaryFaces();

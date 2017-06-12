@@ -6,7 +6,7 @@
 #include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
 
-Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid)
+Solver::Solver(const Input &input, const Communicator &comm, std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
         ib_(input, comm, *this),
         comm_(comm),
@@ -24,7 +24,7 @@ Solver::Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D 
     FiniteVolumeField<int> &proc = addIntegerField("proc");
     FiniteVolumeField<int> &cellId = addIntegerField("cellId");
 
-    for (const Cell &cell: grid_.cells())
+    for (const Cell &cell: grid_->cells())
     {
         proc(cell) = rank;
         cellId(cell) = cell.id();
@@ -38,7 +38,7 @@ std::string Solver::info() const
 
 FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 {
-    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(grid_, name)));
+    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(*grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
@@ -48,7 +48,7 @@ FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 
 ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, *grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -59,7 +59,7 @@ ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::s
 
 ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(*grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -69,7 +69,7 @@ ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 
 VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, *grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
@@ -79,17 +79,12 @@ VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::s
 
 VectorFiniteVolumeField &Solver::addVectorField(const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(*grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
 
     return insert.first->second;
-}
-
-std::vector<Polygon> &Solver::addGeometries(const std::string &name)
-{
-    return (geometries_.insert(std::make_pair(name, std::vector<Polygon>(grid_.cells().size()))).first)->second;
 }
 
 void Solver::setInitialConditions(const Input &input)
@@ -216,7 +211,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
 {
     const Polygon pgn = circle.polygonize(1000);
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         const Polygon xc = intersectionPolygon(pgn, cell.shape());
 
@@ -233,7 +228,7 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
 {
     const Polygon pgn = circle.polygonize(400);
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         const Polygon xc = intersectionPolygon(pgn, cell.shape());
 
@@ -278,7 +273,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
 
     Polygon pgn(vtx.begin(), vtx.end());
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         const Polygon xc = intersectionPolygon(pgn, cell.shape());
 
@@ -293,7 +288,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
 
 void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         const Polygon xc = intersectionPolygon(box, cell.shape());
 
@@ -308,7 +303,7 @@ void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeFie
 
 void Solver::setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         const Polygon xc = intersectionPolygon(box, cell.shape());
 
@@ -333,7 +328,7 @@ void Solver::setRotating(const std::string &function, Scalar amplitude, const Ve
     else
         throw Exception("Input", "setRotating", "invalid rotation function.");
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         Vector2D rVec = cell.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -341,7 +336,7 @@ void Solver::setRotating(const std::string &function, Scalar amplitude, const Ve
         field[cell.id()] = amplitude * func(theta);
     }
 
-    for (const Face &face: field.grid.interiorFaces())
+    for (const Face &face: field.grid().interiorFaces())
     {
         Vector2D rVec = face.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -369,7 +364,7 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
     else
         throw Exception("Input", "setRotating", "invalid y rotation function.");
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         Vector2D rVec = cell.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -378,7 +373,7 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
         field[cell.id()].y = amplitude.y * yFunc(theta);
     }
 
-    for (const Face &face: field.grid.interiorFaces())
+    for (const Face &face: field.grid().interiorFaces())
     {
         Vector2D rVec = face.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);

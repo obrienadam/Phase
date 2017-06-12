@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    gridPtr->partition(input, comm);
+    shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
+    grid->partition(input, comm);
 
-    FractionalStepSimpleMultiphase solver(input, comm, *gridPtr);
+    FractionalStepSimpleMultiphase solver(input, comm, grid);
     CgnsViewer viewer(input, comm, solver);
 
     RunControl runControl;

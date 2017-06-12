@@ -18,17 +18,17 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
 
 VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 {
-    computeGradient(fv::FACE_TO_CELL, gamma_.grid.cellZone("fluid"), gamma_, gradGamma_);
+    computeGradient(fv::FACE_TO_CELL, gamma_.grid().cellZone("fluid"), gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
 
-    VectorFiniteVolumeField ft(gamma_.grid, "ft");
+    VectorFiniteVolumeField ft(gamma_.grid(), "ft");
 
-    for(const Cell &cell: gamma_.grid.cellZone("fluid"))
+    for(const Cell &cell: gamma_.grid().cellZone("fluid"))
         ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
-    for(const Face &face: gamma_.grid.faces())
+    for(const Face &face: gamma_.grid().faces())
         ft(face) = sigma_*kappa_(face)*gradGamma_(face);
 
     return ft;
@@ -36,7 +36,7 @@ VectorFiniteVolumeField ContinuumSurfaceForce::compute()
 
 void ContinuumSurfaceForce::constructSmoothingKernels()
 {
-    cellRangeSearch_ = gamma_.grid.constructSmoothingKernels(kernelWidth_);
+    cellRangeSearch_ = gamma_.grid().constructSmoothingKernels(kernelWidth_);
 }
 
 //- Private methods
@@ -45,7 +45,7 @@ void ContinuumSurfaceForce::computeGradGammaTilde()
 {
     gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
     solver().grid().sendMessages(solver().comm(), gammaTilde_);
-    computeGradient(fv::FACE_TO_CELL, gammaTilde_.grid.cellZone("fluid"), gammaTilde_, gradGammaTilde_);
+    computeGradient(fv::FACE_TO_CELL, gammaTilde_.grid().cellZone("fluid"), gammaTilde_, gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
@@ -104,7 +104,7 @@ void ContinuumSurfaceForce::computeInterfaceNormals()
 
 void ContinuumSurfaceForce::computeCurvature()
 {
-    for(const Cell &cell: kappa_.grid.cellZone("fluid"))
+    for(const Cell &cell: kappa_.grid().cellZone("fluid"))
     {
         Scalar &k = kappa_[cell.id()] = 0.;
 
@@ -124,7 +124,7 @@ void ContinuumSurfaceForce::computeCurvature()
 
 void ContinuumSurfaceForce::interpolateCurvatureFaces()
 {
-    for(const Face &face: kappa_.grid.interiorFaces())
+    for(const Face &face: kappa_.grid().interiorFaces())
     {
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
@@ -141,7 +141,7 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
         }
     }
 
-    for(const Face &face: kappa_.grid.boundaryFaces())
+    for(const Face &face: kappa_.grid().boundaryFaces())
     {
         const Cell& cell = face.lCell();
         Vector2D rf = face.centroid() - cell.centroid();

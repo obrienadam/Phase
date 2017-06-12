@@ -25,9 +25,13 @@ public:
 
     void addCell(const Cell &cell);
 
-    const std::vector<Label>& cellIds() const { return cellIds_; }
+    const std::vector<Label> &cellIds() const
+    { return cellIds_; }
 
     const std::vector<Ref<const Cell>> cells() const;
+
+    const Point2D &centroid() const //- For compatibility with Groups
+    { return *this; }
 
 protected:
 

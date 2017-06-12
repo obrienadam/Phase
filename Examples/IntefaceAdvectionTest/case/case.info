@@ -40,7 +40,7 @@ LinearAlgebra
 Properties
 {
 	rho1 1
-	rho2 1000
+	rho2 1
 	mu1 0.01
 	mu2 0.01
 	sigma 0

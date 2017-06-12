@@ -3,10 +3,11 @@ set(HEADERS FiniteVolumeGrid2D.h
         CgnsUnstructuredGrid.h
         ConstructGrid.h
         Node/Node.h
+        Node/NodeGroup.h
         Group.h
         Face/Face.h
-        Face/Patch.h
         Face/FaceGroup.h
+        Face/Patch.h
         Cell/Cell.h
         Cell/CellGroup.h
         Cell/CellZone.h

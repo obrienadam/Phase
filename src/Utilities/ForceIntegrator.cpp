@@ -27,7 +27,7 @@ std::vector<ForceIntegrator> ForceIntegrator::initForceIntegrators(const Input &
         printf("Initializing a force integrator on patch \"%s\".\n", patchName.c_str());
 
         forceIntegrators.push_back(
-                    ForceIntegrator(p.grid.patch(patchName), p, rho, mu, u)
+                    ForceIntegrator(p.grid().patch(patchName), p, rho, mu, u)
                     );
     }
 

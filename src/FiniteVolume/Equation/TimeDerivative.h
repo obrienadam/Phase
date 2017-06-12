@@ -10,7 +10,7 @@ namespace fv
     {
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
         {
             eqn.add(cell, cell, rho * cell.volume() / timeStep);
             eqn.addSource(cell, -rho * cell.volume() * field(cell) / timeStep);
@@ -26,7 +26,7 @@ namespace fv
 
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
         {
             eqn.add(cell, cell, rho(cell) * cell.volume() / timeStep);
             eqn.addSource(cell, -rho0(cell) * cell.volume() * field(cell) / timeStep);
@@ -40,7 +40,7 @@ namespace fv
     {
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
         {
             eqn.add(cell, cell, cell.volume() / timeStep);
             eqn.addSource(cell, -cell.volume() * field(cell) / timeStep);

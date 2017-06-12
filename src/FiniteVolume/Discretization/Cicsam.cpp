@@ -3,134 +3,41 @@
 namespace cicsam
 {
 
-Scalar hc(Scalar gammaTildeD, Scalar coD)
-{
-    return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(1., gammaTildeD / coD) : gammaTildeD;
-}
-
-Scalar uq(Scalar gammaTildeD, Scalar coD)
-{
-    return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(
-                                                      (8. * coD * gammaTildeD + (1. - coD) * (6. * gammaTildeD + 3.)) / 8., hc(gammaTildeD, coD)) : gammaTildeD;
-}
-
-void interpolateFaces(const VectorFiniteVolumeField &u,
-                      const VectorFiniteVolumeField &gradGamma,
-                      ScalarFiniteVolumeField &gamma,
-                      Scalar timeStep,
-                      Scalar k)
-{
-    for(const Face& face: gamma.grid.interiorFaces())
+    Scalar hc(Scalar gammaTildeD, Scalar coD)
     {
-        Vector2D sf = face.outwardNorm(face.lCell().centroid());
-        Scalar flux = dot(u(face), sf);
-
-        const Cell& donor = flux >= 0. ? face.lCell() : face.rCell();
-        const Cell& acceptor = flux >= 0. ? face.rCell() : face.lCell();
-        Vector2D rc = acceptor.centroid() - donor.centroid();
-
-        Scalar gammaD = gamma(donor);
-        Scalar gammaA = gamma(acceptor);
-        Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
-        Scalar coD = fabs(dot(u(face), sf) / dot(rc, sf) * timeStep);
-        Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
-
-        Scalar thetaF = acos(fabs(dot(gradGamma(face).unitVec(), rc.unitVec())));
-        Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
-        Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
-        Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
-
-        if (std::isnan(betaFace))
-            betaFace = 0.; // Default to upwind, the most stable option
-
-        //- Make sure the stencil is bounded
-        betaFace = std::max(std::min(betaFace, 1.), 0.);
-        gamma(face) = (1. - betaFace)*gamma(donor) + betaFace*gamma(acceptor);
+        return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(1., gammaTildeD / coD) : gammaTildeD;
     }
 
-    for(const Patch& patch: gamma.grid.patches())
-        switch(gamma.boundaryType(patch))
-        {
-        case ScalarFiniteVolumeField::FIXED:
-            break;
-
-        case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-        case ScalarFiniteVolumeField::SYMMETRY:
-            for(const Face& face: patch)
-                gamma(face) = gamma(face.lCell());
-            break;
-
-        default:
-            throw Exception("cicsam", "interpolateFaces", "unrecognized or unspecified boundary type.");
-        }
-}
-
-Equation<Scalar> div(const VectorFiniteVolumeField &u,
-                     ScalarFiniteVolumeField &gamma)
-{
-    Equation<Scalar> eqn(gamma);
-
-    for (const Cell &cell: gamma.grid.cellZone("fluid"))
+    Scalar uq(Scalar gammaTildeD, Scalar coD)
     {
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar flux = dot(u(nb.face()), nb.outwardNorm());
-            eqn.addSource(cell, flux*gamma(nb.face()));
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            Scalar flux = dot(u(bd.face()), bd.outwardNorm());
-            switch (gamma.boundaryType(bd.face()))
-            {
-            case ScalarFiniteVolumeField::FIXED:
-                eqn.addSource(cell, flux * gamma(bd.face()));
-                break;
-
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                eqn.add(cell, cell, flux);
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
-            }
-        }
+        return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(
+                (8. * coD * gammaTildeD + (1. - coD) * (6. * gammaTildeD + 3.)) / 8., hc(gammaTildeD, coD)) : gammaTildeD;
     }
 
-    return eqn;
-}
-
-Equation<Scalar> div(const VectorFiniteVolumeField &u,
-                     const VectorFiniteVolumeField &gradGamma,
-                     ScalarFiniteVolumeField &gamma,
-                     Scalar timeStep,
-                     Scalar k)
-{
-    Equation<Scalar> eqn(gamma);
-
-    for(const Cell& cell: gamma.grid.cellZone("fluid"))
+    ScalarFiniteVolumeField computeBeta(const VectorFiniteVolumeField &u,
+                                        const VectorFiniteVolumeField &gradGamma,
+                                        const ScalarFiniteVolumeField &gamma,
+                                        Scalar timeStep,
+                                        Scalar k)
     {
-        for(const InteriorLink& nb: cell.neighbours())
+        ScalarFiniteVolumeField beta(gamma.grid(), "beta");
+
+        for(const Face& face: gamma.grid().interiorFaces())
         {
-            Scalar flux = dot(u(nb.face()), nb.outwardNorm());
+            Vector2D sf = face.outwardNorm(face.lCell().centroid());
+            Scalar flux = dot(u(face), sf);
 
-            if(flux < 0.) //- Not a donor cell for this face
-                continue;
-
-            const Cell& donor = cell;
-            const Cell& acceptor = nb.cell();
+            const Cell& donor = flux >= 0. ? face.lCell() : face.rCell();
+            const Cell& acceptor = flux >= 0. ? face.rCell() : face.lCell();
             Vector2D rc = acceptor.centroid() - donor.centroid();
 
             Scalar gammaD = gamma(donor);
             Scalar gammaA = gamma(acceptor);
             Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
-            Scalar coD = fabs(flux / dot(acceptor.centroid() - donor.centroid(), nb.outwardNorm()) * timeStep);
             Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
+            Scalar coD = fabs(dot(u(face), sf) / dot(rc, sf) * timeStep);
 
-            Scalar thetaF = acos(dot(gradGamma(donor), rc)*dot(gradGamma(donor), rc)/(gradGamma(donor).magSqr()*rc.magSqr()));
+            Scalar thetaF = acos(fabs(dot(gradGamma(face).unitVec(), rc.unitVec())));
             Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
             Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
             Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
@@ -139,39 +46,55 @@ Equation<Scalar> div(const VectorFiniteVolumeField &u,
                 betaFace = 0.; // Default to upwind, the most stable option
 
             //- Make sure the stencil is bounded
-            betaFace = std::max(std::min(betaFace, 1.), 0.);
-
-            eqn.add(donor, donor, flux*(1. - betaFace));
-            eqn.add(donor, acceptor, flux*betaFace);
-
-            eqn.add(acceptor, acceptor, -flux*betaFace);
-            eqn.add(acceptor, donor, -flux*(1. - betaFace));
+            beta(face) = std::max(std::min(betaFace, 1.), 0.);
         }
 
-        for (const BoundaryLink& bd: cell.boundaries())
-        {
-            Scalar flux = dot(u(bd.face()), bd.outwardNorm());
-
-            switch (gamma.boundaryType(bd.face()))
-            {
-            case ScalarFiniteVolumeField::FIXED:
-                eqn.addSource(cell, flux * gamma(bd.face()));
-                break;
-
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                eqn.add(cell, cell, flux);
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
-            }
-        }
+        return beta;
     }
 
-    return eqn;
-}
+    Equation<Scalar> div(const VectorFiniteVolumeField &u,
+                         const ScalarFiniteVolumeField &beta,
+                         ScalarFiniteVolumeField &gamma,
+                         Scalar theta)
+    {
+        Equation<Scalar> eqn(gamma);
+
+        for (const Cell &cell: gamma.grid().cellZone("fluid"))
+        {
+            for (const InteriorLink &nb: cell.neighbours())
+            {
+                Scalar flux = dot(u(nb.face()), nb.outwardNorm());
+                Scalar alpha = flux > 0 ? 1. - beta(nb.face()): beta(nb.face());
+
+                eqn.add(cell, cell, theta*alpha*flux);
+                eqn.add(cell, nb.cell(), theta*(1. - alpha)*flux);
+                eqn.addSource(cell, (1. - theta)*flux*gamma(nb.face()));
+            }
+
+            for (const BoundaryLink &bd: cell.boundaries())
+            {
+                Scalar flux = dot(u(bd.face()), bd.outwardNorm());
+                switch (gamma.boundaryType(bd.face()))
+                {
+                    case ScalarFiniteVolumeField::FIXED:
+                        eqn.addSource(cell, flux * gamma(bd.face()));
+                        break;
+
+                    case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                        eqn.add(cell, cell, theta*flux);
+                        eqn.addSource(cell, (1. - theta)*flux*gamma(bd.face()));
+                        break;
+
+                    case ScalarFiniteVolumeField::SYMMETRY:
+                        break;
+
+                    default:
+                        throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
+                }
+            }
+        }
+
+        return eqn;
+    }
 
 } // end namespace cicsam

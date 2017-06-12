@@ -10,13 +10,13 @@ computeGradient(GradientEvaluationMethod method, const CellGroup &group, ScalarF
 {
     gradPhi.fill(Vector2D(0., 0.));
 
-    for (const Face &face: phi.grid.interiorFaces())
+    for (const Face &face: phi.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradPhi(face) = (phi(face.rCell()) - phi(face.lCell())) * rc / dot(rc, rc);
     }
 
-    for (const Face &face: phi.grid.boundaryFaces())
+    for (const Face &face: phi.grid().boundaryFaces())
     {
         Vector2D rf = face.centroid() - face.lCell().centroid();
         gradPhi(face) = (phi(face) - phi(face.lCell())) * rf / dot(rf, rf);
@@ -83,7 +83,7 @@ void computeInverseWeightedGradient(const ScalarFiniteVolumeField &w, ScalarFini
     gradField.fill(Vector2D(0., 0.));
     field.setBoundaryFaces();
 
-    for (const Cell &cell: field.grid.cells())
+    for (const Cell &cell: field.grid().cells())
     {
         Scalar sumSfx = 0., sumSfy = 0.;
         Vector2D grad(0., 0.);
@@ -115,13 +115,13 @@ void computeInverseWeightedGradient(const ScalarFiniteVolumeField &w, ScalarFini
         gradField(cell) = w(cell)*Vector2D(gradField(cell).x / sumSfx, gradField(cell).y / sumSfy);
     }
 
-    for (const Face &face: field.grid.interiorFaces())
+    for (const Face &face: field.grid().interiorFaces())
     {
         const Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradField(face) = (field(face.rCell()) - field(face.lCell())) * rc / dot(rc, rc);
     }
 
-    for (const Face &face: field.grid.boundaryFaces())
+    for (const Face &face: field.grid().boundaryFaces())
     {
         const Vector2D rf = face.centroid() - face.lCell().centroid();
         gradField(face) = (field(face) - field(face.lCell())) * rf / dot(rf, rf);

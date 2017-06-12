@@ -42,13 +42,13 @@ void interpolateFaces(InterpolationMethod method, VectorFiniteVolumeField &field
 
     };
 
-    for (const Face &face: field.grid.interiorFaces())
+    for (const Face &face: field.grid().interiorFaces())
     {
         Scalar tmp = alpha(face);
         field(face) = field(face.lCell()) * tmp + field(face.rCell()) * (1. - tmp);
     }
 
-    for(const Patch& patch: field.grid.patches())
+    for(const Patch& patch: field.grid().patches())
     {
         switch (field.boundaryType(patch))
         {

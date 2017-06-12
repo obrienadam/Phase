@@ -12,7 +12,7 @@ namespace fv
 
     VectorFiniteVolumeField source(VectorFiniteVolumeField field)
     {
-        for (const Cell &cell: field.grid.cellZone("fluid"))
+        for (const Cell &cell: field.grid().cellZone("fluid"))
             field(cell) *= cell.volume();
 
         return field;

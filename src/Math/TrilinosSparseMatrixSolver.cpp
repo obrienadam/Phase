@@ -91,16 +91,16 @@ Scalar TrilinosSparseMatrixSolver::solve()
 void TrilinosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-    for (const Cell &cell: field.grid.localActiveCells())
+    for (const Cell &cell: field.grid().localActiveCells())
         field(cell) = soln[cell.index(0)];
 }
 
 void TrilinosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-    Index nActiveCells = field.grid.localActiveCells().size();
+    Index nActiveCells = field.grid().localActiveCells().size();
 
-    for (const Cell &cell: field.grid.localActiveCells())
+    for (const Cell &cell: field.grid().localActiveCells())
     {
         field(cell).x = soln[cell.index(0)];
         field(cell).y = soln[cell.index(0) + nActiveCells];

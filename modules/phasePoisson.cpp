@@ -19,10 +19,10 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> gridPtr(constructGrid(input));
-    gridPtr->partition(input, comm);
+    shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
+    grid->partition(input, comm);
 
-    Poisson solver(input, comm, *gridPtr);
+    Poisson solver(input, comm, grid);
     CgnsViewer viewer(input, comm, solver);
 
     Time time;

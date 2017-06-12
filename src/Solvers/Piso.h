@@ -10,7 +10,9 @@ class Piso : public Solver
 {
 public:
 
-    Piso(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+    Piso(const Input &input,
+         const Communicator &comm,
+         std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     virtual Scalar solve(Scalar timeStep);
 

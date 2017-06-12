@@ -11,7 +11,7 @@ Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T>
 {
     Equation<T> eqn(field);
 
-    for (const Cell &cell: field.grid.cellZone("fluid"))
+    for (const Cell &cell: field.grid().cellZone("fluid"))
     {
         Scalar centralCoeff = 0.;
 
@@ -53,7 +53,7 @@ Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &field)
 {
     Equation<T> eqn(field);
 
-    for (const Cell &cell: field.grid.cellZone("fluid"))
+    for (const Cell &cell: field.grid().cellZone("fluid"))
     {
         Scalar centralCoeff = 0.;
 

@@ -8,7 +8,9 @@ class FractionalStepSimple: public Solver
 {
 public:
 
-    FractionalStepSimple(const Input& input, const Communicator& comm, FiniteVolumeGrid2D& grid);
+    FractionalStepSimple(const Input& input,
+                         const Communicator& comm,
+                         std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     void initialize();
 

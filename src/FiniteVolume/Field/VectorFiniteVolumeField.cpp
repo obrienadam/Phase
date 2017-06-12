@@ -5,9 +5,9 @@ template<>
 VectorFiniteVolumeField &VectorFiniteVolumeField::operator=(const Vector &rhs)
 {
     auto &self = *this;
-    const size_t nActiveCells = grid.nLocalActiveCells();
+    const size_t nActiveCells = grid().nLocalActiveCells();
 
-    for (const Cell &cell: grid.localActiveCells())
+    for (const Cell &cell: grid().localActiveCells())
     {
         self[cell.id()].x = rhs[cell.index(0)];
         self[cell.id()].y = rhs[cell.index(0) + nActiveCells];
@@ -20,10 +20,10 @@ template<>
 Vector VectorFiniteVolumeField::vectorize() const
 {
     const auto &self = *this;
-    const Size nActiveCells = grid.nLocalActiveCells();
+    const Size nActiveCells = grid().nLocalActiveCells();
     Vector vec(2 * nActiveCells, 0.);
 
-    for (const Cell &cell: grid.localActiveCells())
+    for (const Cell &cell: grid().localActiveCells())
     {
         vec[cell.index(0)] = self(cell).x;
         vec[nActiveCells + cell.index(0)] = self(cell).y;
@@ -45,14 +45,14 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     {
         Vector2D refVal = Vector2D(valStr);
 
-        for (const Patch& patch: grid.patches())
+        for (const Patch& patch: grid().patches())
         {
             BoundaryType type = patchBoundaries_[patch.id()].first;
             patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for (const Patch& patch: grid.patches())
+    for (const Patch& patch: grid().patches())
     {
         valStr = input.boundaryInput().get<string>("Boundaries." + name_ + "." + patch.name() + ".value", "");
 
@@ -66,7 +66,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     }
 
     auto &self = *this;
-    for(const Patch& patch: grid.patches())
+    for(const Patch& patch: grid().patches())
     {
         Vector2D bRefVal = boundaryRefValue(patch);
 
@@ -91,12 +91,12 @@ VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFinit
 
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, const Vector2D &rhs)
 {
-    VectorFiniteVolumeField result(lhs.grid, lhs.name());
+    VectorFiniteVolumeField result(lhs.grid(), lhs.name());
 
-    for (const Cell &cell: lhs.grid.cells())
+    for (const Cell &cell: lhs.grid().cells())
         result[cell.id()] = lhs[cell.id()] * rhs;
 
-    for (const Face &face: lhs.grid.faces())
+    for (const Face &face: lhs.grid().faces())
         result.faces()[face.id()] = lhs.faces()[face.id()] * rhs;
 
     return result;

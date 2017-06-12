@@ -18,9 +18,9 @@ VectorFiniteVolumeField Celeste::compute()
     computeInterfaceNormals();
     computeCurvature();
 
-    VectorFiniteVolumeField ft(gamma_.grid, "ft");
+    VectorFiniteVolumeField ft(gamma_.grid(), "ft");
 
-    for (const Face &face: gamma_.grid.interiorFaces())
+    for (const Face &face: gamma_.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
         gradGamma_(face) = (gamma_(face.rCell()) - gamma_(face.lCell())) * rc / rc.magSqr();
@@ -34,7 +34,7 @@ VectorFiniteVolumeField Celeste::compute()
             ft(face) = Vector2D(0., 0.);
     }
 
-    for (const Cell &cell: gamma_.grid.cellZone("fluid"))
+    for (const Cell &cell: gamma_.grid().cellZone("fluid"))
     {
         Scalar sumSfx = 0., sumSfy = 0.;
         ft(cell) = Vector2D(0., 0.);
@@ -83,7 +83,7 @@ void Celeste::constructGammaTildeMatrices()
 
     gradGammaTildeMatrices_.resize(gradGammaTilde_.size());
 
-    for (const Cell &cell: gradGamma_.grid.cells())
+    for (const Cell &cell: gradGamma_.grid().cells())
     {
         Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
         A.resize(stencilSize, 5);
@@ -143,7 +143,7 @@ void Celeste::constructKappaMatrices()
     Matrix A(8, 5);
 
     kappaMatrices_.resize(kappa_.size());
-    for (const Cell &cell: kappa_.grid.cellZone("fluid"))
+    for (const Cell &cell: kappa_.grid().cellZone("fluid"))
     {
         Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
         A.resize(stencilSize, 5);
@@ -244,7 +244,7 @@ void Celeste::computeGradGammaTilde()
     gradGammaTilde_.fill(Vector2D(0., 0.));
     Matrix b(8, 1);
 
-    for (const Cell &cell: gradGamma_.grid.localActiveCells())
+    for (const Cell &cell: gradGamma_.grid().localActiveCells())
     {
         Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
         b.resize(stencilSize, 1);
@@ -283,14 +283,14 @@ void Celeste::computeInterfaceNormals()
     //for(const Cell &cell: n_.grid.cells())
     //    n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec().unitVec();
 
-    for (const Cell &cell: n_.grid.cells())
+    for (const Cell &cell: n_.grid().cells())
         n_(cell) = gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_ ? Vector2D(0., 0.) : -gradGammaTilde_(
                                                                                     cell).unitVec();
 
     solver().grid().sendMessages(solver().comm(), n_);
 
 
-    for(const Patch& patch: n_.grid.patches())
+    for(const Patch& patch: n_.grid().patches())
     {
         if(isContactLinePatch(patch))
         {
@@ -313,7 +313,7 @@ void Celeste::computeCurvature()
     Matrix bx(8, 1), by(8, 1);
     kappa_.fill(0.);
 
-    for (const Cell &cell: kappa_.grid.cellZone("fluid"))
+    for (const Cell &cell: kappa_.grid().cellZone("fluid"))
     {
         if (gradGammaTilde_(cell).magSqr() < curvatureCutoffTolerance_)
             continue;
@@ -412,12 +412,12 @@ void Celeste::weightCurvatures()
 {
     Scalar cutoff = 1e-10;
 
-    for (const Cell &cell: w_.grid.cellZone("fluid"))
+    for (const Cell &cell: w_.grid().cellZone("fluid"))
         w_(cell) = pow(0.5 * (cos(M_PI * (2 * gamma_(cell) - 1)) + 1), 2);
 
     kappa_.savePreviousIteration();
 
-    for (const Cell &cell: kappa_.grid.cellZone("fluid"))
+    for (const Cell &cell: kappa_.grid().cellZone("fluid"))
     {
         Scalar sumKappaW = kappa_.savePreviousIteration()(cell) * w_(cell), sumW = w_(cell);
 
@@ -444,7 +444,7 @@ void Celeste::weightCurvatures()
 
     kappa_.savePreviousIteration();
 
-    for (const Cell &cell: kappa_.grid.cellZone("fluid"))
+    for (const Cell &cell: kappa_.grid().cellZone("fluid"))
     {
         const ScalarFiniteVolumeField &kappaPrev = kappa_.prevIteration();
 

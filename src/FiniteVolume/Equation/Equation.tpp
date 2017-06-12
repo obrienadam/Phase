@@ -29,7 +29,7 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
 {
     if (this == &rhs)
         return *this;
-    else if (&field_.grid != &rhs.field_.grid)
+    else if (&field_.grid() != &rhs.field_.grid())
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
     nActiveCells_ = rhs.nActiveCells_;
@@ -97,7 +97,7 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 template<class T>
 Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
 {
-    for(const Cell& cell: rhs.grid.localActiveCells())
+    for(const Cell& cell: rhs.grid().localActiveCells())
     {
         Index i = cell.index(0);
         Scalar val = rhs(cell);
@@ -138,7 +138,7 @@ Equation<T> &Equation<T>::operator==(const Equation<T> &rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 {
-    for (const Cell &cell: rhs.grid.localActiveCells())
+    for (const Cell &cell: rhs.grid().localActiveCells())
         sources_(cell.index(0)) -= rhs(cell);
 
     return *this;
@@ -184,7 +184,7 @@ Scalar Equation<T>::solve()
         throw Exception("Equation<T>", "solve",
                         "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nActiveCells_ = field_.grid.nLocalActiveCells();
+    nActiveCells_ = field_.grid().nLocalActiveCells();
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
@@ -204,7 +204,7 @@ Scalar Equation<T>::solveWithGuess()
         throw Exception("Equation<T>", "solve",
                         "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nActiveCells_ = field_.grid.nLocalActiveCells();
+    nActiveCells_ = field_.grid().nLocalActiveCells();
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);

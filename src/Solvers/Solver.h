@@ -15,7 +15,9 @@ class Solver
 {
 public:
     //- Constructors
-    Solver(const Input &input, const Communicator &comm, FiniteVolumeGrid2D &grid);
+    Solver(const Input &input,
+           const Communicator &comm,
+           std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     //- Info
     virtual std::string info() const;
@@ -43,8 +45,6 @@ public:
     FiniteVolumeField<int> &getIntegerField(const std::string &name)
     { return integerFields_.find(name)->second; }
 
-    std::vector<Polygon> &addGeometries(const std::string &name);
-
     std::map<std::string, FiniteVolumeField<int> > &integerFields() const
     { return integerFields_; }
 
@@ -59,10 +59,10 @@ public:
 
     //- Grid
     FiniteVolumeGrid2D &grid()
-    { return grid_; }
+    { return *grid_; }
 
     const FiniteVolumeGrid2D &grid() const
-    { return grid_; }
+    { return *grid_; }
 
     //- Comm
     const Communicator &comm() const
@@ -110,7 +110,7 @@ protected:
     void setRotating(const std::string &xFunction, const std::string &yFunction, const Vector2D &amplitude,
                      const Vector2D &center, VectorFiniteVolumeField &field);
 
-    FiniteVolumeGrid2D &grid_;
+    std::shared_ptr<FiniteVolumeGrid2D> grid_;
     const Communicator comm_;
 
     //- Fields and geometries

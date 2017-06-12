@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "Node.h"
+#include "NodeGroup.h"
 #include "Cell.h"
 #include "CellZone.h"
 #include "Face.h"
@@ -52,6 +53,12 @@ public:
     //- Node related methods
     const std::vector<Node> &nodes() const
     { return nodes_; }
+
+    const NodeGroup& interiorNodes() const
+    { return interiorNodes_; }
+
+    const NodeGroup& boundaryNodes() const
+    { return boundaryNodes_; }
 
     std::vector<Point2D> coords() const;
 
@@ -217,6 +224,8 @@ protected:
 
     //- Node related data
     std::vector<Node> nodes_;
+    NodeGroup interiorNodes_;
+    NodeGroup boundaryNodes_;
 
     //- Cell related data
     std::vector<Cell> cells_;
