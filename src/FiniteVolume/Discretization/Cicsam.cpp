@@ -32,10 +32,10 @@ void interpolateFaces(const VectorFiniteVolumeField &u,
         Scalar gammaD = gamma(donor);
         Scalar gammaA = gamma(acceptor);
         Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
-        Scalar coD = fabs(dot(u(face), sf) / dot(acceptor.centroid() - donor.centroid(), sf) * timeStep);
+        Scalar coD = fabs(dot(u(face), sf) / dot(rc, sf) * timeStep);
         Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
-        Scalar thetaF = acos(dot(gradGamma(donor), rc)*dot(gradGamma(donor), rc)/(gradGamma(donor).magSqr()*rc.magSqr()));
+        Scalar thetaF = acos(fabs(dot(gradGamma(face).unitVec(), rc.unitVec())));
         Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
         Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
         Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
