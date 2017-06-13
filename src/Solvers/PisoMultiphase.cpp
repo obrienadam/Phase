@@ -137,7 +137,7 @@ void PisoMultiphase::computeMu()
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft = surfaceTensionForce_->compute();
+    surfaceTensionForce_->compute(ft);
     computeRho();
     computeMu();
 

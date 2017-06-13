@@ -20,7 +20,7 @@ namespace cicsam
                                         Scalar timeStep,
                                         Scalar k)
     {
-        ScalarFiniteVolumeField beta(gamma.grid(), "beta");
+        ScalarFiniteVolumeField beta(gamma.gridPtr(), "beta");
 
         for(const Face& face: gamma.grid().interiorFaces())
         {

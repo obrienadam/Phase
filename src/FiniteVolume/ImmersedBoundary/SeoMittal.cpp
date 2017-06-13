@@ -82,7 +82,7 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
 
 ScalarFiniteVolumeField seo::div(const ImmersedBoundary &ib, const VectorFiniteVolumeField &u)
 {
-    ScalarFiniteVolumeField divU(u.grid(), "divU", 0);
+    ScalarFiniteVolumeField divU(u.gridPtr(), "divU", 0);
 
     for (const CutCell &cell: ib.constructCutCells(ib.zone()))
     {

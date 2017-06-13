@@ -18,14 +18,14 @@ public:
     };
 
     //- Constructors
-    FiniteVolumeField(const FiniteVolumeGrid2D &grid,
+    FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
                       const std::string &name,
                       const T& val = T(),
                       bool faces = true,
                       bool nodes = false);
 
     FiniteVolumeField(const Input &input,
-                      const FiniteVolumeGrid2D &grid,
+                      const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
                       const std::string &name,
                       const T& val = T(),
                       bool faces = true,
@@ -87,9 +87,6 @@ public:
     { return faces_; }
 
     //- Node-centered values
-    void initNodes()
-    { nodes_.resize(grid.nNodes()); }
-
     std::vector<T> &nodes()
     { return nodes_; }
 
@@ -120,27 +117,21 @@ public:
 
     FiniteVolumeField &savePreviousIteration();
 
-    FiniteVolumeField &oldField(int i)
-    { return previousTimeSteps_[i]->second; }
+    void clearHistory();
 
     const FiniteVolumeField &oldField(int i) const
     { return previousTimeSteps_[i]->second; }
 
-    Scalar oldTimeStep(int i)
+    Scalar oldTimeStep(int i) const
     { return previousTimeSteps_[i]->first; }
 
-    FiniteVolumeField &prevIteration()
-    { return *previousIteration_.front(); }
-
     const FiniteVolumeField &prevIteration() const
-    { return *previousIteration_.front(); }
+    { return *previousIteration_; }
 
     //- Vectorization
     Vector vectorize() const;
 
     //- Operators
-    FiniteVolumeField &operator=(const FiniteVolumeField &rhs);
-
     FiniteVolumeField &operator=(const Vector &rhs);
 
     FiniteVolumeField &operator+=(const FiniteVolumeField &rhs);
@@ -155,8 +146,11 @@ public:
 
     FiniteVolumeField &operator/=(Scalar lhs);
 
-    const FiniteVolumeGrid2D& grid() const
+    std::shared_ptr<const FiniteVolumeGrid2D> gridPtr() const
     { return grid_; }
+
+    const FiniteVolumeGrid2D& grid() const
+    { return *grid_; }
 
 protected:
 
@@ -169,7 +163,7 @@ protected:
     std::map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
 
     //- Grid
-    const FiniteVolumeGrid2D &grid_;
+    std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     //- Misc data
     std::vector<T> faces_, nodes_;
@@ -177,7 +171,7 @@ protected:
     //- Field history
     std::vector<std::shared_ptr<PreviousField>> previousTimeSteps_;
 
-    std::vector<std::shared_ptr<FiniteVolumeField<T>>> previousIteration_;
+    std::shared_ptr<FiniteVolumeField<T>> previousIteration_;
 };
 
 template<class T>

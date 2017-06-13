@@ -48,8 +48,8 @@ Scalar FractionalStepSimple::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_.computeForce(ScalarFiniteVolumeField(grid(), "rho", rho_),
-                     ScalarFiniteVolumeField(grid(), "mu", mu_), u, p);
+    ib_.computeForce(ScalarFiniteVolumeField(grid_, "rho", rho_),
+                     ScalarFiniteVolumeField(grid_, "mu", mu_), u, p);
 
     ib_.update(timeStep);
 

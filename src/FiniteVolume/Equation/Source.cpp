@@ -6,7 +6,7 @@ namespace source
 
     ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field)
     {
-        ScalarFiniteVolumeField divF(field.grid(), "divF");
+        ScalarFiniteVolumeField divF(field.gridPtr(), "divF");
 
         for (const Cell &cell: field.grid().cellZone("fluid"))
         {
@@ -26,7 +26,7 @@ namespace source
 
     VectorFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField& field)
     {
-        VectorFiniteVolumeField lapF(field.grid(), "lapF");
+        VectorFiniteVolumeField lapF(field.gridPtr(), "lapF");
 
         for(const Cell &cell: field.grid().cellZone("fluid"))
         {
@@ -48,7 +48,7 @@ namespace source
 
     VectorFiniteVolumeField div(const ScalarFiniteVolumeField& rho, const VectorFiniteVolumeField& u, const VectorFiniteVolumeField& field)
     {
-        VectorFiniteVolumeField divF(field.grid(), "divF");
+        VectorFiniteVolumeField divF(field.gridPtr(), "divF");
 
         for (const Cell &cell: field.grid().cellZone("fluid"))
         {

@@ -6,25 +6,25 @@
 //- Constructors
 
 template<class T>
-FiniteVolumeField<T>::FiniteVolumeField(const FiniteVolumeGrid2D &grid,
+FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
                                         const std::string &name,
                                         const T& val,
                                         bool faces,
                                         bool nodes)
         :
-        Field<T>::Field(grid.cells().size(), val, name),
+        Field<T>::Field(grid->cells().size(), val, name),
         grid_(grid)
 {
     if (faces)
-        faces_.resize(grid.faces().size(), val);
+        faces_.resize(grid_->faces().size(), val);
 
     if (nodes)
-        nodes_.resize(grid.nodes().size(), val);
+        nodes_.resize(grid_->nodes().size(), val);
 }
 
 template<class T>
 FiniteVolumeField<T>::FiniteVolumeField(const Input &input,
-                                        const FiniteVolumeGrid2D &grid,
+                                        const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
                                         const std::string &name,
                                         const T& val,
                                         bool faces,
@@ -125,13 +125,11 @@ void FiniteVolumeField<T>::setBoundaryFaces()
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    auto prevTimeStep = std::shared_ptr<PreviousField>(
-            new PreviousField(timeStep, FiniteVolumeField<T>(*this))
-    );
+    auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
+    prevTimeStep->second.clearHistory();
 
     previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
-    previousTimeSteps_.erase(previousTimeSteps_.end() - (previousTimeSteps_.size() - nPreviousFields),
-                             previousTimeSteps_.end());
+    previousTimeSteps_.resize(nPreviousFields);
 
     return previousTimeSteps_.front()->second;
 }
@@ -139,12 +137,17 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousIteration()
 {
-    if (previousIteration_.size() >= 1)
-        previousIteration_.clear();
+    previousIteration_ = std::make_shared<FiniteVolumeField<T>>(*this);
+    previousIteration_->clearHistory();
 
-    previousIteration_.push_back(std::shared_ptr<FiniteVolumeField<T>>(new FiniteVolumeField<T>(*this)));
+    return *previousIteration_;
+}
 
-    return *previousIteration_.front();
+template<class T>
+void FiniteVolumeField<T>::clearHistory()
+{
+    previousIteration_ = nullptr;
+    previousTimeSteps_.clear();
 }
 
 template<class T>
@@ -160,22 +163,6 @@ Vector FiniteVolumeField<T>::vectorize() const
 }
 
 //- Operators
-
-template<class T>
-FiniteVolumeField<T> &FiniteVolumeField<T>::operator=(const FiniteVolumeField &rhs)
-{
-    if (this == &rhs)
-        return *this;
-    else if (&grid() != &rhs.grid())
-        throw Exception("FiniteVolumeField", "operator=", "grid references must be the same.");
-
-    Field<T>::operator=(rhs);
-    patchBoundaries_ = rhs.patchBoundaries_;
-    faces_ = rhs.faces_;
-    nodes_ = rhs.nodes_;
-
-    return *this;
-}
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator+=(const FiniteVolumeField &rhs)
@@ -422,7 +409,7 @@ template<class T>
 FiniteVolumeField<T>
 smooth(const FiniteVolumeField<T> &field, const std::vector<std::vector<Ref<const Cell> > > &rangeSearch, Scalar e)
 {
-    FiniteVolumeField<T> smoothedField(field.grid(), field.name());
+    FiniteVolumeField<T> smoothedField(field.gridPtr(), field.name());
     Scalar A = 1.;
     const Scalar eSqr = e * e;
 

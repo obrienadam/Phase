@@ -12,13 +12,13 @@ Celeste::Celeste(const Input &input,
     constructMatrices();
 }
 
-VectorFiniteVolumeField Celeste::compute()
+void Celeste::compute(VectorFiniteVolumeField& ft)
 {
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
 
-    VectorFiniteVolumeField ft(gamma_.grid(), "ft");
+    ft.fill(Vector2D(0., 0.));
 
     for (const Face &face: gamma_.grid().interiorFaces())
     {
@@ -65,8 +65,6 @@ VectorFiniteVolumeField Celeste::compute()
     }
 
     solver().grid().sendMessages(solver().comm(), ft);
-
-    return ft;
 }
 
 void Celeste::constructMatrices()

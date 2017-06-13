@@ -38,7 +38,7 @@ std::string Solver::info() const
 
 FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 {
-    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(*grid_, name)));
+    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
@@ -48,7 +48,7 @@ FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 
 ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, *grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -59,7 +59,7 @@ ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::s
 
 ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(*grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -69,7 +69,7 @@ ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 
 VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, *grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
@@ -79,7 +79,7 @@ VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::s
 
 VectorFiniteVolumeField &Solver::addVectorField(const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(*grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");

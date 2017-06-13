@@ -11,7 +11,7 @@ public:
     Celeste(const Input& input,
             Solver &solver);
 
-    virtual VectorFiniteVolumeField compute();
+    virtual void compute(VectorFiniteVolumeField& ft);
 
     void constructMatrices();
 

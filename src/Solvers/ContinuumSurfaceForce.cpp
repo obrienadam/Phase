@@ -16,22 +16,20 @@ ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
     constructSmoothingKernels();
 }
 
-VectorFiniteVolumeField ContinuumSurfaceForce::compute()
+void ContinuumSurfaceForce::compute(VectorFiniteVolumeField& ft)
 {
     computeGradient(fv::FACE_TO_CELL, gamma_.grid().cellZone("fluid"), gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
 
-    VectorFiniteVolumeField ft(gamma_.grid(), "ft");
+    ft.fill(Vector2D(0., 0.));
 
     for(const Cell &cell: gamma_.grid().cellZone("fluid"))
         ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
 
     for(const Face &face: gamma_.grid().faces())
         ft(face) = sigma_*kappa_(face)*gradGamma_(face);
-
-    return ft;
 }
 
 void ContinuumSurfaceForce::constructSmoothingKernels()

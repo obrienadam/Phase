@@ -10,7 +10,7 @@ public:
     ContinuumSurfaceForce(const Input& input,
                           Solver &solver);
 
-    virtual VectorFiniteVolumeField compute();
+    virtual void compute(VectorFiniteVolumeField& ft);
 
     virtual const ScalarFiniteVolumeField& gammaTilde() const { return gammaTilde_; }
     virtual const VectorFiniteVolumeField& gradGammaTilde() const { return gradGammaTilde_; }

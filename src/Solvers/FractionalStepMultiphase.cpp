@@ -282,7 +282,9 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft = surfaceTensionForce_.compute();
+    surfaceTensionForce_.compute(ft);
+
+    grid_->sendMessages(comm_, ft);
 
     //- Update the gravitational source term
     sg.savePreviousTimeStep(timeStep, 1);

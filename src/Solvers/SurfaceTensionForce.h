@@ -14,7 +14,7 @@ public:
                         Solver &solver);
 
     //- Compute
-    virtual VectorFiniteVolumeField compute() = 0;
+    virtual void compute(VectorFiniteVolumeField& ft) = 0;
 
     Scalar theta(const Cell& cell);
 

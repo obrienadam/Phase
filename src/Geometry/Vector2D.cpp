@@ -8,14 +8,6 @@
 const Scalar Vector2D::EPSILON_ =
         10. * std::numeric_limits<Scalar>::epsilon(); // This parameter governs the precision of vector operations
 
-Vector2D::Vector2D(Scalar x, Scalar y)
-        :
-        x(x),
-        y(y)
-{
-
-}
-
 Vector2D::Vector2D(std::string vecStr)
 {
     using namespace std;

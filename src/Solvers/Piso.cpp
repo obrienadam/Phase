@@ -146,9 +146,9 @@ Scalar Piso::solvePCorrEqn()
 
 void Piso::rhieChowInterpolation()
 {
-    VectorFiniteVolumeField &uStar = u.prevIteration();
-    VectorFiniteVolumeField &uPrev = u.oldField(0);
-    ScalarFiniteVolumeField &rhoPrev = rho.oldField(0);
+    const VectorFiniteVolumeField &uStar = u.prevIteration();
+    const VectorFiniteVolumeField &uPrev = u.oldField(0);
+    const ScalarFiniteVolumeField &rhoPrev = rho.oldField(0);
     Scalar dt = u.oldTimeStep(0);
 
     d.fill(0.);
