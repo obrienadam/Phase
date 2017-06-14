@@ -57,6 +57,11 @@ public:
         compute(ffcn);
     }
 
+    void setPatch(const Patch& patch, const std::function<T(const Face& face)>& fcn) {
+        for(const Face& face: patch)
+            (*this)(face) = fcn(face);
+    }
+
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
 
@@ -71,6 +76,8 @@ public:
     void interpolateFaces(const std::function<Scalar(const Face& face)>& alpha);
 
     void setBoundaryFaces();
+
+    void setBoundaryFaces(BoundaryType bType, const std::function<T(const Face& face)>& fcn);
 
     //- Field info
     bool hasFaces() const

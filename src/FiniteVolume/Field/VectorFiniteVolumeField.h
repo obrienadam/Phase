@@ -17,6 +17,9 @@ Vector VectorFiniteVolumeField::vectorize() const;
 template<>
 void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input);
 
+template<>
+void VectorFiniteVolumeField::setBoundaryFaces();
+
 //- External
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, VectorFiniteVolumeField rhs);
 

@@ -2,6 +2,7 @@
 #define FRACTIONAL_STEP_SIMPLE_MULTIPHASE_H
 
 #include "FractionalStepSimple.h"
+#include "Celeste.h"
 
 class FractionalStepSimpleMultiphase: public FractionalStepSimple
 {
@@ -15,7 +16,7 @@ public:
     Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &rho, &mu, &gamma;
-    VectorFiniteVolumeField &rhoU, &gradGamma;
+    VectorFiniteVolumeField &rhoU, &gradGamma, &ft;
 
 private:
 
@@ -29,8 +30,14 @@ private:
 
     void updateProperties(Scalar timeStep);
 
+    //- Properties
     Scalar rho1_, rho2_, mu1_, mu2_;
+    Vector2D g_;
 
+    //- Models
+    Celeste surfaceTensionModel_;
+
+    //- Equations
     Equation<Scalar> gammaEqn_;
 };
 

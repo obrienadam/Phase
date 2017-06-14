@@ -94,10 +94,7 @@ Scalar FractionalStepSimple::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
 
     u.interpolateFaces([](const Face& f){
-        Scalar l1 = (f.lCell().centroid() - f.centroid()).mag();
-        Scalar l2 = (f.rCell().centroid() - f.centroid()).mag();
-
-        return l2/(l1 + l2);
+        return f.rCell().volume()/(f.lCell().volume() + f.rCell().volume());
     });
 
     return error;
@@ -110,10 +107,7 @@ Scalar FractionalStepSimple::solvePEqn(Scalar timeStep)
     Scalar error = pEqn_.solve();
 
     p.interpolateFaces([](const Face& f){
-        Scalar l1 = (f.lCell().centroid() - f.centroid()).mag();
-        Scalar l2 = (f.rCell().centroid() - f.centroid()).mag();
-
-        return l2/(l1 + l2);
+        return f.rCell().volume()/(f.lCell().volume() + f.rCell().volume());
     });
 
     return error;

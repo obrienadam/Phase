@@ -45,14 +45,14 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     {
         Vector2D refVal = Vector2D(valStr);
 
-        for (const Patch& patch: grid().patches())
+        for (const Patch &patch: grid().patches())
         {
             BoundaryType type = patchBoundaries_[patch.id()].first;
             patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for (const Patch& patch: grid().patches())
+    for (const Patch &patch: grid().patches())
     {
         valStr = input.boundaryInput().get<string>("Boundaries." + name_ + "." + patch.name() + ".value", "");
 
@@ -66,13 +66,37 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     }
 
     auto &self = *this;
-    for(const Patch& patch: grid().patches())
+    for (const Patch &patch: grid().patches())
     {
         Vector2D bRefVal = boundaryRefValue(patch);
 
-        for(const Face& face: patch)
+        for (const Face &face: patch)
             self(face) = bRefVal;
     }
+}
+
+template<>
+void VectorFiniteVolumeField::setBoundaryFaces()
+{
+    auto &self = *this;
+
+    for (const Patch &patch: grid_->patches())
+        switch (boundaryType(patch))
+        {
+            case FIXED:
+                break;
+            case NORMAL_GRADIENT:
+                for (const Face &face: patch)
+                    self(face) = self(face.lCell());
+                break;
+            case SYMMETRY:
+                for (const Face &face: patch)
+                    self(face) = self(face.lCell())
+                                 - dot(self(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
+                break;
+            default:
+                throw Exception("VectorFiniteVolumeField", "setBoundaryFaces", "unrecognized boundary type.");
+        }
 }
 
 //- External functions

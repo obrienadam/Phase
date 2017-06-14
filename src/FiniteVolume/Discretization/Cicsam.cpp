@@ -37,7 +37,7 @@ namespace cicsam
             Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
             Scalar coD = fabs(dot(u(face), sf) / dot(rc, sf) * timeStep);
 
-            Scalar thetaF = acos(fabs(dot(gradGamma(face).unitVec(), rc.unitVec())));
+            Scalar thetaF = acos(fabs(dot((gradGamma(donor) + gradGamma(acceptor)).unitVec(), rc.unitVec())));
             Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
             Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
             Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);

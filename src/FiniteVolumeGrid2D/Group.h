@@ -78,6 +78,7 @@ public:
 protected:
 
     typedef std::pair<Point2D, Label> Value;
+
     typedef boost::geometry::index::rtree<Value, boost::geometry::index::quadratic<16> > Rtree;
 
     std::vector<Ref<const T> > getRefs(const std::vector<Value> &vals) const;

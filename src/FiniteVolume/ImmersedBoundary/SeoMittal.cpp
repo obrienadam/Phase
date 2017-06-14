@@ -135,7 +135,7 @@ ScalarFiniteVolumeField seo::div(const ImmersedBoundary &ib, const VectorFiniteV
 void seo::correct(const ImmersedBoundary &ib, Scalar rho, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &gradP,
                   VectorFiniteVolumeField &u, Scalar timeStep)
 {
-    //- Correct faces
+    //- Correct interior faces
     for (const Face &face: u.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
@@ -143,14 +143,15 @@ void seo::correct(const ImmersedBoundary &ib, Scalar rho, const ScalarFiniteVolu
         u(face) -= timeStep / rho * gradP(face);
     }
 
-    for(const Face& face: u.grid().boundaryFaces())
-    {
-        Vector2D rf = face.centroid() - face.lCell().centroid();
-        gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
-    }
-
+    //- Correct the boundary faces
     for(const Patch& patch: u.grid().patches())
     {
+        for(const Face& face: patch)
+        {
+            Vector2D rf = face.centroid() - face.lCell().centroid();
+            gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
+        }
+
         switch(u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:
@@ -310,14 +311,14 @@ void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho
         u(face) -= timeStep / rho(face) * gradP(face);
     }
 
-    for(const Face& face: u.grid().boundaryFaces())
-    {
-        Vector2D rf = face.centroid() - face.lCell().centroid();
-        gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
-    }
-
     for(const Patch& patch: u.grid().patches())
     {
+        for(const Face& face: patch)
+        {
+            Vector2D rf = face.centroid() - face.lCell().centroid();
+            gradP(face) = (p(face) - p(face.lCell())) * rf / dot(rf, rf);
+        }
+
         switch(u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:

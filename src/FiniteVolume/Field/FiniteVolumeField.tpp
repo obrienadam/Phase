@@ -123,6 +123,18 @@ void FiniteVolumeField<T>::setBoundaryFaces()
 }
 
 template<class T>
+void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::function<T(const Face& face)>& fcn)
+{
+    auto &self = *this;
+    for(const Patch& patch: grid_->patches())
+    {
+        if(boundaryType(patch) == bType)
+            for(const Face& face: patch)
+                self(face) = fcn(face);
+    }
+}
+
+template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
     auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);

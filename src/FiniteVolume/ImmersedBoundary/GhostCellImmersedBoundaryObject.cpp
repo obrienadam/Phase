@@ -2,8 +2,8 @@
 #include "ForcingCellStencil.h"
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id, FiniteVolumeGrid2D &grid)
-    :
-      ImmersedBoundaryObject(name, id, grid)
+        :
+        ImmersedBoundaryObject(name, id, grid)
 {
 
 }
@@ -30,19 +30,19 @@ void GhostCellImmersedBoundaryObject::updateCells()
 
     switch (shapePtr_->type())
     {
-    case Shape2D::CIRCLE:
-        for (const Cell &cell: fluid_->itemsWithin(
-                 *static_cast<Circle*>(shapePtr_.get()))) //- The circle method is much more efficient
-            cells_.add(cell);
-        break;
-    case Shape2D::BOX:
-        for (const Cell &cell: fluid_->itemsWithin(
-                 *static_cast<Box*>(shapePtr_.get()))) //- The box method is much more efficient
-            cells_.add(cell);
-        break;
-    default:
-        for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
-            cells_.add(cell);
+        case Shape2D::CIRCLE:
+            for (const Cell &cell: fluid_->itemsWithin(
+                    *static_cast<Circle*>(shapePtr_.get()))) //- The circle method is much more efficient
+                cells_.add(cell);
+            break;
+        case Shape2D::BOX:
+            for (const Cell &cell: fluid_->itemsWithin(
+                    *static_cast<Box*>(shapePtr_.get()))) //- The box method is much more efficient
+                cells_.add(cell);
+            break;
+        default:
+            for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
+                cells_.add(cell);
     }
 
     auto isIbCell = [this](const Cell &cell) {
@@ -87,20 +87,20 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
         //- Boundary assembly
         switch (bType)
         {
-        case FIXED:
-            centralCoeff = 0.5;
-            for (Scalar &coeff: coeffs)
-                coeff *= 0.5;
+            case FIXED:
+                centralCoeff = 0.5;
+                for (Scalar &coeff: coeffs)
+                    coeff *= 0.5;
 
-            eqn.addSource(st.cell(), -bRefValue);
-            break;
+                eqn.addSource(st.cell(), -bRefValue);
+                break;
 
-        case ImmersedBoundaryObject::NORMAL_GRADIENT:
-            centralCoeff = -1.;
-            break;
+            case ImmersedBoundaryObject::NORMAL_GRADIENT:
+                centralCoeff = -1.;
+                break;
 
-        default:
-            throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+            default:
+                throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
         }
 
         eqn.add(st.cell(), st.cell(), centralCoeff);
@@ -108,6 +108,30 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
         int i = 0;
         for (const Cell &ipCell: st.ipCells())
             eqn.add(st.cell(), ipCell, coeffs[i++]);
+    }
+
+    for(const Cell& cell: freshCells_)
+    {
+        ForcingCellStencil st(cell, shape(), *fluid_);
+        auto cells = st.nbCells();
+        std::vector<Scalar> coeffs;
+        Scalar src;
+
+        switch(bType)
+        {
+            case FIXED:
+                coeffs = st.dirichletCellCoeffs();
+                src = st.dirichletBoundaryCoeff()*bRefValue;
+                break;
+            case NORMAL_GRADIENT:
+                coeffs = st.neumannCellCoeffs();
+                src = st.neumannBoundaryCoeff()*0.;
+        }
+
+        eqn.add(cell, cell, 1.);
+        for(int i = 0; i < 2; ++i)
+            eqn.add(cell, cells[i], -coeffs[i]);
+        eqn.addSource(cell, -src);
     }
 
     return eqn;
@@ -126,20 +150,20 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
         //- Boundary assembly
         switch (bType)
         {
-        case FIXED:
-            centralCoeff = 0.5;
-            for (Scalar &coeff: coeffs)
-                coeff *= 0.5;
+            case FIXED:
+                centralCoeff = 0.5;
+                for (Scalar &coeff: coeffs)
+                    coeff *= 0.5;
 
-            eqn.addSource(st.cell(), -velocity());
-            break;
+                eqn.addSource(st.cell(), -velocity());
+                break;
 
-        case ImmersedBoundaryObject::NORMAL_GRADIENT:
-            centralCoeff = -1.;
-            break;
+            case ImmersedBoundaryObject::NORMAL_GRADIENT:
+                centralCoeff = -1.;
+                break;
 
-        default:
-            throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+            default:
+                throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
         }
 
         eqn.add(st.cell(), st.cell(), centralCoeff);
@@ -152,13 +176,25 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     for(const Cell& cell: freshCells_)
     {
         ForcingCellStencil st(cell, shape(), *fluid_);
+        auto cells = st.nbCells();
+        std::vector<Scalar> coeffs;
+        Vector2D src;
+
+        switch(bType)
+        {
+            case FIXED:
+                coeffs = st.dirichletCellCoeffs();
+                src = st.dirichletBoundaryCoeff()*velocity(st.xc());
+                break;
+            case NORMAL_GRADIENT:
+                coeffs = st.neumannCellCoeffs();
+                src = st.neumannBoundaryCoeff()*Vector2D();
+        }
 
         eqn.add(cell, cell, 1.);
-
         for(int i = 0; i < 2; ++i)
-            eqn.add(cell, st.nbCells()[i], -st.dirichletCellCoeffs()[i]);
-
-        eqn.addSource(cell, -st.dirichletBoundaryCoeff()*velocity());
+            eqn.add(cell, cells[i], -coeffs[i]);
+        eqn.addSource(cell, -src);
     }
 
     return eqn;

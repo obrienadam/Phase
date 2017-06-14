@@ -199,6 +199,7 @@ void ImmersedBoundary::clearFreshCells()
 std::vector<CutCell> ImmersedBoundary::constructCutCells(const CellGroup &cellGroup) const
 {
     std::vector<CutCell> cutCells;
+    cutCells.reserve(cellGroup.size());
 
     if(ibObjs_.empty())
     {
