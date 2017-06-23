@@ -1,4 +1,69 @@
-add_subdirectory(Field)
-add_subdirectory(Equation)
-add_subdirectory(Discretization)
-add_subdirectory(ImmersedBoundary)
+set(HEADERS Discretization/CrankNicolson.h
+        Discretization/FaceInterpolation.h
+        Discretization/GradientEvaluation.h
+        Discretization/Cicsam.h
+        Discretization/Plic.h
+        Equation/Equation.h
+        Equation/FiniteVolumeEquation.h
+        Equation/TimeDerivative.h
+        Equation/Divergence.h
+        Equation/Laplacian.h
+        Equation/Source.h
+        Field/Field.h
+        Field/FiniteVolumeField.h
+        Field/ScalarFiniteVolumeField.h
+        Field/VectorFiniteVolumeField.h
+        Field/TensorFiniteVolumeField.h
+        Field/PolygonFiniteVolumeField.h
+        ImmersedBoundary/ImmersedBoundary.h
+        ImmersedBoundary/ImmersedBoundaryObject.h
+        ImmersedBoundary/GhostCellImmersedBoundaryObject.h
+        ImmersedBoundary/ForcingCellImmersedBoundaryObject.h
+        ImmersedBoundary/LeastSquaresImmersedBoundaryObject.h
+        ImmersedBoundary/GhostCellStencil.h
+        ImmersedBoundary/CutCell.h
+        ImmersedBoundary/CutCellLink.h
+        ImmersedBoundary/ImmersedBoundaryStencil.h
+        ImmersedBoundary/ForcingCellStencil.h
+        ImmersedBoundary/LeastSquaresStencil.h
+        ImmersedBoundary/Motion.h
+        ImmersedBoundary/TranslatingMotion.h
+        ImmersedBoundary/OscillatingMotion.h
+        ImmersedBoundary/SeoMittal.h)
+
+set(SOURCES Discretization/CrankNicolson.cpp
+        Discretization/FaceInterpolation.tpp
+        Discretization/FaceInterpolation.cpp
+        Discretization/GradientEvaluation.cpp
+        Discretization/Cicsam.cpp
+        Discretization/Plic.cpp
+        Equation/Equation.tpp
+        Equation/ScalarEquation.cpp
+        Equation/VectorEquation.cpp
+        Equation/TimeDerivative.cpp
+        Equation/Divergence.cpp
+        Equation/Laplacian.cpp
+        Equation/Source.cpp
+        Field/Field.tpp
+        Field/FiniteVolumeField.tpp
+        Field/ScalarFiniteVolumeField.cpp
+        Field/VectorFiniteVolumeField.cpp
+        Field/TensorFiniteVolumeField.cpp
+        Field/PolygonFiniteVolumeField.cpp
+        ImmersedBoundary/ImmersedBoundary.cpp
+        ImmersedBoundary/ImmersedBoundaryObject.cpp
+        ImmersedBoundary/GhostCellImmersedBoundaryObject.cpp
+        ImmersedBoundary/ForcingCellImmersedBoundaryObject.cpp
+        ImmersedBoundary/LeastSquaresImmersedBoundaryObject.cpp
+        ImmersedBoundary/ImmersedBoundaryStencil.cpp
+        ImmersedBoundary/ForcingCellStencil.cpp
+        ImmersedBoundary/LeastSquaresStencil.cpp
+        ImmersedBoundary/GhostCellStencil.cpp
+        ImmersedBoundary/CutCell.cpp
+        ImmersedBoundary/CutCellLink.cpp
+        ImmersedBoundary/Motion.cpp
+        ImmersedBoundary/TranslatingMotion.cpp
+        ImmersedBoundary/OscillatingMotion.cpp
+        ImmersedBoundary/SeoMittal.cpp)
+
+add_library(FiniteVolume ${HEADERS} ${SOURCES})

@@ -2,13 +2,12 @@
 #include "Laplacian.h"
 
 Poisson::Poisson(const Input &input,
-                 const Communicator &comm,
                  std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        Solver(input, comm, grid),
+        Solver(input, grid),
         phi(addScalarField(input, "phi")),
         gamma(addScalarField("gamma")),
-        phiEqn_(input, comm, phi, "phiEqn")
+        phiEqn_(input, phi, "phiEqn")
 {
     //- All active cells to fluid cells
     grid_->createCellZone("fluid");
@@ -25,7 +24,7 @@ Scalar Poisson::solve(Scalar timeStep)
     phiEqn_ = (fv::laplacian(gamma, phi) + ib_.bcs(phi) == 0.);
     Scalar error = phiEqn_.solve();
 
-    grid_->sendMessages(comm_, phi);
+    grid_->sendMessages(phi);
 
     return error;
 }

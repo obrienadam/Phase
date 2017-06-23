@@ -7,4 +7,4 @@ set(SOURCE  Viewer.cpp
             IbViewer.cpp)
 
 add_library(Viewers ${HEADERS} ${SOURCE})
-target_link_libraries(Viewers boost_system boost_filesystem cgns)
+target_link_libraries(Viewers boost_system boost_filesystem cgns hdf5)

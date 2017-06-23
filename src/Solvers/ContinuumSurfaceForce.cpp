@@ -4,32 +4,45 @@
 #include "FaceInterpolation.h"
 
 ContinuumSurfaceForce::ContinuumSurfaceForce(const Input &input,
-                                             Solver &solver)
-    :
-      SurfaceTensionForce(input, solver),
-      gammaTilde_(solver.addScalarField("gammaTilde")),
-      gradGammaTilde_(solver.addVectorField("gradGammaTilde"))
+                                             const ScalarFiniteVolumeField& gamma,
+                                             const ScalarFiniteVolumeField& rho,
+                                             const ScalarFiniteVolumeField& mu,
+                                             const VectorFiniteVolumeField& u,
+                                             VectorFiniteVolumeField& gradGamma)
+        :
+        SurfaceTensionForce(input, gamma, rho, mu, u, gradGamma),
+        gammaTilde_(std::make_shared<ScalarFiniteVolumeField>(grid_, "gammaTilde")),
+        gradGammaTilde_(std::make_shared<VectorFiniteVolumeField>(grid_, "gradGammaTilde"))
 {
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     curvatureCutoffTolerance_ = input.caseInput().get<Scalar>("Solver.curvatureCutoffTolerance", 1e-10);
 
+    gammaTilde_->copyBoundaryTypes(gamma);
+    gammaTilde_->setBoundaryFaces(ScalarFiniteVolumeField::FIXED, [this](const Face& face){
+        return gamma_(face);
+    });
+
     constructSmoothingKernels();
 }
 
-void ContinuumSurfaceForce::compute(VectorFiniteVolumeField& ft)
+void ContinuumSurfaceForce::compute()
 {
-    computeGradient(fv::FACE_TO_CELL, gamma_.grid().cellZone("fluid"), gamma_, gradGamma_);
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
 
+    VectorFiniteVolumeField &ft = *this;
+    const ScalarFiniteVolumeField &kappa = *kappa_;
+
     ft.fill(Vector2D(0., 0.));
 
-    for(const Cell &cell: gamma_.grid().cellZone("fluid"))
-        ft(cell) = sigma_*kappa_(cell)*gradGamma_(cell);
+    for(const Cell &cell: grid_->cellZone("fluid"))
+        ft(cell) = sigma_*kappa(cell)*gradGamma_(cell);
 
     for(const Face &face: gamma_.grid().faces())
-        ft(face) = sigma_*kappa_(face)*gradGamma_(face);
+        ft(face) = sigma_*kappa(face)*gradGamma_(face);
+
+    grid_->sendMessages(ft);
 }
 
 void ContinuumSurfaceForce::constructSmoothingKernels()
@@ -37,92 +50,81 @@ void ContinuumSurfaceForce::constructSmoothingKernels()
     cellRangeSearch_ = gamma_.grid().constructSmoothingKernels(kernelWidth_);
 }
 
+void ContinuumSurfaceForce::registerSubFields(Solver& solver)
+{
+    solver.registerField(gammaTilde_);
+    solver.registerField(gradGammaTilde_);
+    solver.registerField(n_);
+    solver.registerField(kappa_);
+}
+
 //- Private methods
 
 void ContinuumSurfaceForce::computeGradGammaTilde()
 {
-    gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
-    solver().grid().sendMessages(solver().comm(), gammaTilde_);
-    computeGradient(fv::FACE_TO_CELL, gammaTilde_.grid().cellZone("fluid"), gammaTilde_, gradGammaTilde_);
+    *gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+    grid_->sendMessages(*gammaTilde_);
+    computeGradient(fv::FACE_TO_CELL, grid_->cellZone("fluid"), *gammaTilde_, *gradGammaTilde_);
 }
 
 void ContinuumSurfaceForce::computeInterfaceNormals()
 {
-//    Equation<Vector2D> eqn(n_, "IB contact line normal");
-//    const Scalar centralCoeff = 1.;
+    VectorFiniteVolumeField &n = *n_;
+    const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
 
-//    throw Exception("ContinuumSurfaceForce", "computeInterfaceNormals", "this method has been deprecated and should not be called.");
+    for (const Cell &cell: grid_->cells())
+    {
+        Vector2D m = -gradGammaTilde(cell);
+        n(cell) = m.magSqr() > curvatureCutoffTolerance_ ? m.unitVec(): Vector2D(0., 0.);
+    }
 
-//    for(const Cell &cell: n_.grid.cellZone("fluid"))
-//    {
-//        eqn.set(cell, cell, 1.);
+    grid_->sendMessages(n);
 
-//        Vector2D n = gradGammaTilde_(cell) == Vector2D(0., 0.) ? Vector2D(0., 0.) : -gradGammaTilde_(cell).unitVec();
-//        eqn.setSource(cell, n);
-//    }
-
-//    for(const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
-//        for(const GhostCellStencil &stencil: ibObj.stencils())
-//        {
-//            std::vector<Scalar> coeffs = stencil.ipCoeffs();
-
-//            //- From previous values, workout the direction and orientation of the contact line
-
-//            Vector2D uIp = stencil.ipValue(u_);
-//            Vector2D gradGammaIp = stencil.ipValue(gradGamma_);
-
-//            Vector2D bpNormal = gradGammaIp == Vector2D(0., 0.) ? Vector2D(0., 0.) : SurfaceTensionForce::computeContactLineNormal(gradGammaIp, stencil.cell().centroid() - stencil.imagePoint(), uIp);
-//            eqn.set(stencil.cell(), stencil.cell(), centralCoeff/2.);
-
-//            int i = 0;
-//            for(const Cell& nbCell: stencil.ipCells())
-//                eqn.set(stencil.cell(), nbCell, coeffs[i++]/2.);
-
-//            eqn.setSource(stencil.cell(), bpNormal);
-//        }
-
-//    //Scalar error = eqn.solve(*solver_.newSparseMatrixSolver());
-//    Scalar error = 0;
-
-//    if(std::isnan(error))
-//    {
-//        printf("Warning: failed to solve the IB normal equation. Attempting to compute normals using ContinuumSurfaceForce::computerInterfaceNormals.\n");
-//        ContinuumSurfaceForce::computeInterfaceNormals();
-//        return;
-//    }
-
-//    interpolateFaces(fv::INVERSE_VOLUME, n_);
-
-//    for(const Cell &cell: n_.grid.localActiveCells())
-//        n_[cell.id()] = n_[cell.id()] == Vector2D(0., 0.) ? Vector2D(0., 0.) : n_[cell.id()].unitVec();
-
-//    for(Vector2D &n: n_.faces())
-//        n = n == Vector2D(0., 0.) ? Vector2D(0., 0.) : n.unitVec();
+    for(const Patch& patch: grid_->patches())
+    {
+        if(isContactLinePatch(patch))
+        {
+            for(const Face& face: patch)
+            {
+                Vector2D sf = face.outwardNorm(face.lCell().centroid());
+                n(face) = computeContactLineNormal(gradGammaTilde(face.lCell()), sf, u_(face.lCell()), theta());
+            }
+        }
+        else
+        {
+            for(const Face& face: patch)
+                n(face) = n(face.lCell());
+        }
+    }
 }
 
 void ContinuumSurfaceForce::computeCurvature()
 {
-    for(const Cell &cell: kappa_.grid().cellZone("fluid"))
+    ScalarFiniteVolumeField &kappa = *kappa_;
+    const VectorFiniteVolumeField &n = *n_;
+
+    for(const Cell &cell: grid_->cellZone("fluid"))
     {
-        Scalar &k = kappa_[cell.id()] = 0.;
+        Scalar &k = kappa(cell) = 0.;
 
         for(const InteriorLink &nb: cell.neighbours())
-            k += dot(n_.faces()[nb.face().id()], nb.outwardNorm());
+            k += dot(n(nb.face()), nb.outwardNorm());
 
         for(const BoundaryLink &bd: cell.boundaries())
-            k += dot(n_.faces()[bd.face().id()], bd.outwardNorm());
+            k += dot(n(bd.face()), bd.outwardNorm());
 
         k /= cell.volume();
     }
 
-    solver().grid().sendMessages(solver().comm(), kappa_);
-
-    interpolateFaces(fv::INVERSE_VOLUME, kappa_);
+    grid_->sendMessages(kappa);
+    interpolateCurvatureFaces();
 }
 
 void ContinuumSurfaceForce::interpolateCurvatureFaces()
 {
-    for(const Face &face: kappa_.grid().interiorFaces())
+    ScalarFiniteVolumeField &kappa = *kappa_;
+
+    for(const Face &face: grid_->interiorFaces())
     {
         const Cell& lCell = face.lCell();
         const Cell& rCell = face.rCell();
@@ -131,24 +133,13 @@ void ContinuumSurfaceForce::interpolateCurvatureFaces()
         const Scalar gradGammaMagSqr = ((gamma_(rCell) - gamma_(lCell))*rc/dot(rc, rc)).magSqr();
 
         if(gradGammaMagSqr < curvatureCutoffTolerance_)
-            kappa_(face) = 0.;
+            kappa(face) = 0.;
         else
         {
             Scalar g = rCell.volume()/(rCell.volume() + lCell.volume());
-            kappa_(face) = g*kappa_(lCell) + (1. - g)*kappa_(rCell);
+            kappa(face) = g*kappa(lCell) + (1. - g)*kappa(rCell);
         }
     }
 
-    for(const Face &face: kappa_.grid().boundaryFaces())
-    {
-        const Cell& cell = face.lCell();
-        Vector2D rf = face.centroid() - cell.centroid();
-
-        Scalar gradGammaMagSqr = ((gamma_(face) - gamma_(cell))*rf/dot(rf, rf)).magSqr();
-
-        if(gradGammaMagSqr < curvatureCutoffTolerance_)
-            kappa_(face) = 0.;
-        else
-            kappa_(face) = kappa_(cell);
-    }
+    kappa.setBoundaryFaces();
 }

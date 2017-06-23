@@ -1,11 +1,11 @@
 #include "IbViewer.h"
 
-IbViewer::IbViewer(const Input &input, const Communicator &comm, const Solver &solver)
+IbViewer::IbViewer(const Input &input, const Solver &solver)
     :
-      Viewer(input, comm, solver),
+      Viewer(input, solver),
       ib_(solver.ib())
 {
-    if (comm.isMainProc())
+    if (solver.grid().comm().isMainProc())
     {
         for (const ImmersedBoundaryObject &ibObj: solver_.ibObjs())
         {
@@ -38,9 +38,9 @@ void IbViewer::close()
     cutCellFile_.close();
 }
 
-void IbViewer::write(Scalar solutionTime, const Communicator &comm)
+void IbViewer::write(Scalar solutionTime)
 {
-    if (solver_.comm().isMainProc())
+    if (solver_.grid().comm().isMainProc())
     {
         auto geomFileItr = ibFiles_.begin();
         auto forceFileItr = ibForces_.begin();
@@ -54,7 +54,7 @@ void IbViewer::write(Scalar solutionTime, const Communicator &comm)
             {
             case Shape2D::CIRCLE:
             {
-                const Circle &circ = *static_cast<const Circle*>(shape);
+                const Circle &circ = static_cast<const Circle&>(*shape);
 
                 *geomFileItr << "Geometry x=" << circ.centroid().x << " y=" << circ.centroid().y
                              << " T=CIRCLE C=BLACK LT=0.4 FC=CUST2 CS=GRID EP=300 ZN=" << zoneNo_ << "\n"

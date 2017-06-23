@@ -27,4 +27,3 @@ set(SOURCES Solver.cpp
             Celeste.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
-target_link_libraries(Solvers Discretization ImmersedBoundary Utilities)

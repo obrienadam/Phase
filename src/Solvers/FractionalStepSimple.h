@@ -9,7 +9,6 @@ class FractionalStepSimple: public Solver
 public:
 
     FractionalStepSimple(const Input& input,
-                         const Communicator& comm,
                          std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     void initialize();
@@ -20,7 +19,7 @@ public:
 
     Scalar maxCourantNumber(Scalar timeStep) const;
 
-    Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
+    virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u, &gradP;
     ScalarFiniteVolumeField &p;

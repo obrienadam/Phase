@@ -7,4 +7,3 @@ set(SOURCE Integrator.cpp
            VolumeIntegrator.cpp)
 
 add_library(Utilities ${HEADERS} ${SOURCE})
-target_link_libraries(Utilities Math)

@@ -1,2 +1,2 @@
 add_executable(phaseReconstructSolution phaseReconstructSolution.cpp)
-target_link_libraries(phaseReconstructSolution System boost_system boost_filesystem cgns)
+target_link_libraries(phaseReconstructSolution System boost_system boost_filesystem cgns hdf5)

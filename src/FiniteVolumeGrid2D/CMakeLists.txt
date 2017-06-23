@@ -35,4 +35,4 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         FiniteVolumeZone.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
-target_link_libraries(FiniteVolumeGrid2D System Communicator metis Geometry)
+target_link_libraries(FiniteVolumeGrid2D metis cgns hdf5)

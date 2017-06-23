@@ -14,16 +14,15 @@ int main(int argc, char *argv[])
     Communicator::init(argc, argv);
 
     Input input;
-    Communicator comm;
     CommandLine(argc, argv);
 
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
-    grid->partition(input, comm);
+    grid->partition(input, std::make_shared<Communicator>());
 
-    Poisson solver(input, comm, grid);
-    CgnsViewer viewer(input, comm, solver);
+    Poisson solver(input, grid);
+    CgnsViewer viewer(input, solver);
 
     Time time;
 
@@ -31,9 +30,9 @@ int main(int argc, char *argv[])
     solver.solve(0);
     time.stop();
 
-    comm.printf("Time elapsed = %s\n", time.elapsedTime().c_str());
+    solver.printf("Time elapsed = %s\n", time.elapsedTime().c_str());
 
-    viewer.write(1, comm);
+    viewer.write(1);
 
     Communicator::finalize();
 

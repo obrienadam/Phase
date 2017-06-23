@@ -11,12 +11,12 @@ class IbViewer : public Viewer
 {
 public:
 
-    IbViewer(const Input& input, const Communicator& comm, const Solver& solver);
+    IbViewer(const Input& input, const Solver& solver);
     ~IbViewer();
 
     void close();
 
-    void write(Scalar solutionTime, const Communicator &comm);
+    void write(Scalar solutionTime);
 
 private:
 

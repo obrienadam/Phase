@@ -1,16 +1,20 @@
 #include "SurfaceTensionForce.h"
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
-                                         Solver &solver)
+                                         const ScalarFiniteVolumeField& gamma,
+                                         const ScalarFiniteVolumeField& rho,
+                                         const ScalarFiniteVolumeField& mu,
+                                         const VectorFiniteVolumeField& u,
+                                         VectorFiniteVolumeField& gradGamma)
         :
-        gamma_(solver.scalarFields().find("gamma")->second),
-        u_(solver.vectorFields().find("u")->second),
-        rho_(solver.scalarFields().find("rho")->second),
-        mu_(solver.scalarFields().find("mu")->second),
-        n_(solver.addVectorField("n")),
-        kappa_(solver.addScalarField("kappa")),
-        gradGamma_(solver.vectorFields().find("gradGamma")->second),
-        solver_(solver)
+    VectorFiniteVolumeField(gamma.gridPtr(), "ft", Vector2D(0., 0.), true, false),
+    gamma_(gamma),
+    rho_(rho),
+    mu_(mu),
+    u_(u),
+    gradGamma_(gradGamma),
+    kappa_(std::make_shared<ScalarFiniteVolumeField>(grid_, "kappa")),
+    n_(std::make_shared<VectorFiniteVolumeField>(grid_, "n"))
 {
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
     thetaAdv_ = input.caseInput().get<Scalar>("Properties.advancingContactAngle") * M_PI / 180.;
@@ -34,17 +38,6 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
             throw Exception("SurfaceTensionForce", "SurfaceTensionForce",
                             "invalid contact angle status \"" + status + "\".");
     }
-
-    for (const ImmersedBoundaryObject &ibObj: solver.ibObjs())
-    {
-        ibContactAngles_.insert(
-                std::make_pair(ibObj.id(),
-                               input.boundaryInput().get<Scalar>(
-                                       "ImmersedBoundaries." + ibObj.name() + ".gamma.contactAngle",
-                                       input.caseInput().get<Scalar>("Properties.advancingContactAngle")
-                               ) * M_PI / 180.)
-        );
-    }
 }
 
 Scalar SurfaceTensionForce::theta(const Cell& cell)
@@ -52,18 +45,21 @@ Scalar SurfaceTensionForce::theta(const Cell& cell)
     return thetaAdv_;
 }
 
-Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma, const Vector2D &wallNormal,
-                                                       const Vector2D &vel, Scalar theta) const
+Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma,
+                                                       const Vector2D &wallNormal,
+                                                       const Vector2D &vel,
+                                                       Scalar theta) const
 {
-    const Vector2D nt = wallNormal.tangentVec();
+    Vector2D nt = wallNormal.tangentVec();
     return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI / 2. - theta).unitVec() : nt.rotate(M_PI / 2. + theta).unitVec();
 }
 
-Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma, const Vector2D &wallNormal,
+Vector2D SurfaceTensionForce::computeContactLineNormal(const Vector2D &gradGamma,
+                                                       const Vector2D &wallNormal,
                                                        const Vector2D &vel) const
 {
-    const Vector2D nt = wallNormal.tangentVec();
-    const Scalar theta = dot(-gradGamma, vel) >= 0. ? thetaAdv_ : thetaRec_;
+    Vector2D nt = wallNormal.tangentVec();
+    Scalar theta = dot(-gradGamma, vel) >= 0. ? thetaAdv_ : thetaRec_;
     return dot(-gradGamma, nt) > 0. ? nt.rotate(M_PI / 2. - theta).unitVec() : nt.rotate(M_PI / 2. + theta).unitVec();
 }
 

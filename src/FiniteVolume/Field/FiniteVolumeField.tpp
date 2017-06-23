@@ -73,7 +73,8 @@ void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 template<class T>
 typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Patch &patch) const
 {
-    return patchBoundaries_.find(patch.id())->second.first;
+    auto it = patchBoundaries_.find(patch.id());
+    return it == patchBoundaries_.end() ? NORMAL_GRADIENT: it->second.first;
 }
 
 template<class T>

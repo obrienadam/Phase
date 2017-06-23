@@ -6,13 +6,12 @@
 
 template<class T>
 Equation<T>::Equation(const Input &input,
-                      const Communicator &comm,
                       FiniteVolumeField<T> &field,
                       const std::string &name)
         :
         Equation<T>::Equation(field, name)
 {
-    configureSparseSolver(input, comm);
+    configureSparseSolver(input, field.grid().comm());
 }
 
 template<class T>

@@ -34,7 +34,7 @@ std::vector<VolumeIntegrator> VolumeIntegrator::initVolumeIntegrators(const Inpu
         if(fieldIt == solver.scalarFields().end())
             continue;
 
-        const ScalarFiniteVolumeField &field = fieldIt->second;
+        const ScalarFiniteVolumeField &field = *fieldIt->second;
         const CellGroup &cellGroup = solver.grid().cellZone(cellGroupNames[i]);
 
         printf("Initializing a volume integrator for field \"%s\" on cell group \"%s\".\n", field.name().c_str(), cellGroup.name().c_str());

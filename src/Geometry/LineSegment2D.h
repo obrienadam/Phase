@@ -24,6 +24,12 @@ public:
     Scalar length() const
     { return (ptB_ - ptA_).mag(); }
 
+    Scalar dx() const
+    { return ptB_.x - ptA_.x; }
+
+    Scalar dy() const
+    { return ptB_.y - ptA_.y; }
+
     Point2D center() const
     { return (ptA_ + ptB_) / 2.; }
 

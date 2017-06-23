@@ -15,20 +15,19 @@ int main(int argc, char *argv[])
     Communicator::init(argc, argv);
 
     Input input;
-    Communicator comm;
     CommandLine(argc, argv);
 
     input.parseInputFile();
 
     shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
-    grid->partition(input, comm);
+    grid->partition(input, std::make_shared<Communicator>());
 
-    PisoMultiphase solver(input, comm, grid);
-    CgnsViewer viewer(input, comm, solver);
+    PisoMultiphase solver(input, grid);
+    CgnsViewer viewer(input, solver);
 
     RunControl runControl;
 
-    runControl.run(input, comm, solver, viewer);
+    runControl.run(input, solver, viewer);
 
     Communicator::finalize();
 

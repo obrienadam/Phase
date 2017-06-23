@@ -1,13 +1,12 @@
 #include "Piso.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
-#include "SourceEvaluation.h"
+#include "Source.h"
 
 Piso::Piso(const Input &input,
-           const Communicator &comm,
            std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
-        Solver(input, comm, grid),
+        Solver(input, grid),
         u(addVectorField(input, "u")),
         gradP(addVectorField("gradP")),
         gradPCorr(addVectorField("gradPCorr")),
@@ -17,8 +16,8 @@ Piso::Piso(const Input &input,
         mu(addScalarField("mu")),
         m(addScalarField("m")),
         d(addScalarField("d")),
-        uEqn_(input, comm, u, "uEqn"),
-        pCorrEqn_(input, comm, pCorr, "pCorrEqn"),
+        uEqn_(input, u, "uEqn"),
+        pCorrEqn_(input, pCorr, "pCorrEqn"),
         fluid_(grid->createCellZone("fluid"))
 {
     rho.fill(input.caseInput().get<Scalar>("Properties.rho", 1.));
@@ -60,7 +59,7 @@ Scalar Piso::solve(Scalar timeStep)
         }
     }
 
-    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.;
 }
@@ -77,7 +76,7 @@ Scalar Piso::maxCourantNumber(Scalar timeStep) const
         maxCo = std::max(maxCo, fabs(dot(u(face), sf) / dot(rc, sf)));
     }
 
-    return comm_.max(maxCo * timeStep);
+    return grid_->comm().max(maxCo * timeStep);
 }
 
 Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
@@ -85,7 +84,7 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
     Scalar co = maxCourantNumber(prevTimeStep);
     Scalar lambda1 = 0.05, lambda2 = 1.1;
 
-    return comm_.min(
+    return grid_->comm().min(
             std::min(
                     std::min(maxCo / co * prevTimeStep, (1 + lambda1 * maxCo / co) * prevTimeStep),
                     std::min(lambda2 * prevTimeStep, maxTimeStep_)
@@ -97,13 +96,13 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u) ==
-             fv::laplacian(mu, u) - fv::source(gradP));
+             fv::laplacian(mu, u) - fv::source(gradP, fluid_));
 
     uEqn_.relax(momentumOmega_);
 
     Scalar error = uEqn_.solve();
 
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
 
     rhieChowInterpolation();
 
@@ -126,7 +125,7 @@ Scalar Piso::solvePCorrEqn()
     pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.bcs(pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
-    grid_->sendMessages(comm_, pCorr);
+    grid_->sendMessages(pCorr);
 
     pCorr.setBoundaryFaces();
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, pCorr, gradPCorr);
@@ -134,12 +133,12 @@ Scalar Piso::solvePCorrEqn()
     for(const Cell &cell: grid_->localActiveCells())
         p(cell) += pCorrOmega_*pCorr(cell);
 
-    grid_->sendMessages(comm_, p);
+    grid_->sendMessages(p);
 
     p.setBoundaryFaces();
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
 
-    grid_->sendMessages(comm_, gradP);
+    grid_->sendMessages(gradP);
 
     return error;
 }
@@ -158,7 +157,7 @@ void Piso::rhieChowInterpolation()
         d(cell) = cell.volume() / (0.5 * (coeff.x + coeff.y));
     }
 
-    grid_->sendMessages(comm_, d);
+    grid_->sendMessages(d);
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 
@@ -222,7 +221,7 @@ void Piso::correctVelocity()
     for (const Cell &cell: u.grid().localActiveCells())
         u(cell) -= d(cell) * gradPCorr(cell);
 
-    grid_->sendMessages(comm_, u); // gradPCorr may not be correct in buffer zones
+    grid_->sendMessages(u); // gradPCorr may not be correct in buffer zones
 
     for (const Face &face: u.grid().interiorFaces())
         u(face) -= d(face) * gradPCorr(face);

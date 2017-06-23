@@ -12,14 +12,14 @@ public:
 
     enum {FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4, DEAD_CELLS = 5, BUFFER_CELLS = 6};
 
-    enum StencilType{GHOST_CELL_BILINEAR, FORCING_POINT_LINEAR};
-
-    ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver);
+    ImmersedBoundary(const Input &input, Solver &solver);
 
     void initCellZones(CellZone &zone);
 
     const CellZone& zone() const
     { return *zone_; }
+
+    std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D& pt) const;
 
     void update(Scalar timeStep);
 
@@ -47,6 +47,12 @@ public:
 
     std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
 
+    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator begin() const
+    { return ibObjs_.begin(); }
+
+    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator end() const
+    { return ibObjs_.end(); }
+
     bool isIbCell(const Cell &cell) const;
 
     void computeForce(const ScalarFiniteVolumeField& rho, const ScalarFiniteVolumeField& mu, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
@@ -58,7 +64,6 @@ protected:
     const CellZone *zone_ = nullptr;
 
     Solver &solver_;
-    const Communicator &comm_;
     FiniteVolumeField<int> &cellStatus_;
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
 

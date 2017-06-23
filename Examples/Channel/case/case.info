@@ -31,7 +31,7 @@ LinearAlgebra
     lib trilinos
     solver BiCGSTAB
     preconditioner RILUK
-    iluFill 4
+    iluFill 3
   }
 }
 

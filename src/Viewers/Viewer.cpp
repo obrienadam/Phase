@@ -2,7 +2,7 @@
 
 #include "Viewer.h"
 
-Viewer::Viewer(const Input &input, const Communicator &comm, const Solver &solver)
+Viewer::Viewer(const Input &input, const Solver &solver)
     :
       solver_(solver)
 {
@@ -23,18 +23,18 @@ Viewer::Viewer(const Input &input, const Communicator &comm, const Solver &solve
     for(const auto& field: solver_.integerFields())
     {
         if(std::find(integerFieldNames.begin(), integerFieldNames.end(), field.first) != integerFieldNames.end())
-            integerFields_.push_back(Ref<const FiniteVolumeField<int> >(field.second));
+            integerFields_.push_back(Ref<const FiniteVolumeField<int> >(*field.second));
     }
 
     for(const auto& field: solver_.scalarFields())
     {
         if(std::find(scalarFieldNames.begin(), scalarFieldNames.end(), field.first) != scalarFieldNames.end())
-            scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(field.second));
+            scalarFields_.push_back(Ref<const ScalarFiniteVolumeField>(*field.second));
     }
 
     for(const auto& field: solver_.vectorFields())
     {
         if(std::find(vectorFieldNames.begin(), vectorFieldNames.end(), field.first) != vectorFieldNames.end())
-            vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(field.second));
+            vectorFields_.push_back(Ref<const VectorFiniteVolumeField>(*field.second));
     }
 }

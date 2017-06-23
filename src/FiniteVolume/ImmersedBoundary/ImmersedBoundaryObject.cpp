@@ -67,6 +67,12 @@ void ImmersedBoundaryObject::setZone(CellZone &zone)
     cells_ = CellZone("Cells", zone.registry());
 }
 
+LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const
+{
+    LineSegment2D ln(ptA, ptB);
+    return isInIb(ptB) ? LineSegment2D(ptA, shapePtr_->intersections(ln)[0]) : ln;
+}
+
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
 {
     auto intersections = shape().intersections(LineSegment2D(ptA, ptB));

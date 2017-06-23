@@ -9,9 +9,9 @@ class Viewer
 {
 public:
 
-    Viewer(const Input& input, const Communicator& comm, const Solver& solver);
+    Viewer(const Input& input, const Solver& solver);
 
-    virtual void write(Scalar solutionTime, const Communicator& comm) = 0;
+    virtual void write(Scalar solutionTime) = 0;
 
 protected:
 

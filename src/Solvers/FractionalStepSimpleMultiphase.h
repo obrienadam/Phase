@@ -8,15 +8,16 @@ class FractionalStepSimpleMultiphase: public FractionalStepSimple
 {
 public:
     FractionalStepSimpleMultiphase(const Input& input,
-                                   const Communicator& comm,
                                    std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     void initialize();
 
+    Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
+
     Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &rho, &mu, &gamma;
-    VectorFiniteVolumeField &rhoU, &gradGamma, &ft;
+    VectorFiniteVolumeField &rhoU, &gradGamma;
 
 private:
 
@@ -31,11 +32,11 @@ private:
     void updateProperties(Scalar timeStep);
 
     //- Properties
-    Scalar rho1_, rho2_, mu1_, mu2_;
+    Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
     Vector2D g_;
 
     //- Models
-    Celeste surfaceTensionModel_;
+    std::shared_ptr<Celeste> ft_;
 
     //- Equations
     Equation<Scalar> gammaEqn_;

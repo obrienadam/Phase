@@ -14,4 +14,3 @@ set(SOURCES Equation.tpp
             Source.cpp)
 
 add_library(Equation ${HEADERS} ${SOURCES})
-target_link_libraries(Equation Field Math)

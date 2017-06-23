@@ -1,8 +1,6 @@
 #ifndef FINITE_VOLUME_FIELD
 #define FINITE_VOLUME_FIELD
 
-#include <deque>
-
 #include "Field.h"
 #include "FiniteVolumeGrid2D.h"
 #include "Input.h"
@@ -18,18 +16,18 @@ public:
     };
 
     //- Constructors
-    FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
-                      const std::string &name,
-                      const T& val = T(),
-                      bool faces = true,
-                      bool nodes = false);
+    explicit FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+                               const std::string &name,
+                               const T& val = T(),
+                               bool faces = true,
+                               bool nodes = false);
 
-    FiniteVolumeField(const Input &input,
-                      const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
-                      const std::string &name,
-                      const T& val = T(),
-                      bool faces = true,
-                      bool nodes = false);
+    explicit FiniteVolumeField(const Input &input,
+                               const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+                               const std::string &name,
+                               const T& val = T(),
+                               bool faces = true,
+                               bool nodes = false);
 
     //- Initialization
     void fill(const T &val);

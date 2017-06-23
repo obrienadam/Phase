@@ -47,8 +47,7 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
         {
             Vector2D sf = cell.solidFaceNorm();
             Vector2D dP = -rho*cell.ibObj().acceleration(cell.bFace().center());
-            Scalar flux = timeStep/rho*dot(dP, sf);
-            pEqn.addSource(cell, flux);
+            pEqn.addSource(cell, timeStep/rho*dot(dP, sf));
         }
     }
 
@@ -60,7 +59,7 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
 
             for (const GhostCellStencil &st: gcIbObj.stencils())
             {
-                Scalar dPdN = dot(-rho * ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
+                Scalar dPdN = -rho*dot(ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
 
                 pEqn.add(st.cell(), st.cell(), 1. / st.length());
                 pEqn.addSource(st.cell(), -dPdN);
@@ -73,63 +72,12 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
         }
         catch (std::bad_cast e)
         {
-            throw Exception("seo", "laplacian", "failed to cast ImmersedBoundaryObject to GhostCellImmersedBoundaryObject.");
+            throw Exception("seo", "laplacian",
+                            "failed to cast ImmersedBoundaryObject to GhostCellImmersedBoundaryObject.");
         }
     }
 
     return pEqn;
-}
-
-ScalarFiniteVolumeField seo::div(const ImmersedBoundary &ib, const VectorFiniteVolumeField &u)
-{
-    ScalarFiniteVolumeField divU(u.gridPtr(), "divU", 0);
-
-    for (const CutCell &cell: ib.constructCutCells(ib.zone()))
-    {
-        for (const CutCellLink &nb: cell.neighbours())
-            divU(cell) += dot(u(nb.face()), nb.fluidNorm());
-
-        for (const BoundaryLink &bd: cell.boundaries())
-            divU(cell) += dot(u(bd.face()), bd.outwardNorm());
-
-        if(cell.intersectsIbObj())
-            divU(cell) += dot(cell.ibObj().velocity(cell.bFace().center()), cell.solidFaceNorm());
-    }
-
-    for (const ImmersedBoundaryObject &ibObj: ib.ibObjs())
-        for (const CutCell &cell: ib.constructCutCells(ibObj.ibCells()))
-        {
-            for (const CutCellLink &nb: cell.neighbours())
-                divU(cell) += dot(u(nb.face()), nb.fluidNorm());
-
-            for (const BoundaryLink &bd: cell.boundaries())
-                divU(cell) += dot(u(bd.face()), bd.outwardNorm());
-
-            if(cell.intersectsIbObj())
-                divU(cell) += dot(ibObj.velocity(cell.bFace().center()), cell.solidFaceNorm());
-
-            Scalar sumBeta = 0.;
-            std::vector<Scalar> beta;
-
-            for (const CutCellLink &nb: cell.neighbours())
-                if (!ibObj.isInIb(nb.cell().centroid()))
-                {
-                    beta.push_back(fabs(dot(nb.fluidNorm(), cell.solidFaceNorm())));
-                    sumBeta += beta.back();
-                }
-
-            int i = 0;
-            if(sumBeta > 0)
-            {
-                for (const CutCellLink &nb: cell.neighbours())
-                    if (!ibObj.isInIb(nb.cell().centroid()))
-                        divU(nb.cell()) += beta[i++] / sumBeta * divU(cell);
-            }
-
-            divU(cell) = 0.;
-        }
-
-    return divU;
 }
 
 void seo::correct(const ImmersedBoundary &ib, Scalar rho, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &gradP,
@@ -279,7 +227,7 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, const ScalarFiniteVo
             for (const GhostCellStencil &st: gcIbObj.stencils())
             {
                 Scalar rhoF = st.ipValue(rho);
-                Scalar dPdN = dot(-rhoF * ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
+                Scalar dPdN = -rhoF * dot(ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
 
                 pEqn.add(st.cell(), st.cell(), 1. / st.length());
                 pEqn.addSource(st.cell(), -dPdN);
@@ -292,7 +240,8 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, const ScalarFiniteVo
         }
         catch (std::bad_cast e)
         {
-            throw Exception("seo", "laplacian", "failed to cast ImmersedBoundaryObject to GhostCellImmersedBoundaryObject.");
+            throw Exception("seo", "laplacian",
+                            "failed to cast ImmersedBoundaryObject to GhostCellImmersedBoundaryObject.");
         }
     }
 
@@ -300,8 +249,12 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, const ScalarFiniteVo
 }
 
 
-void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField& p,
-                  VectorFiniteVolumeField &gradP, VectorFiniteVolumeField &u, Scalar timeStep)
+void seo::correct(const ImmersedBoundary &ib,
+                  const ScalarFiniteVolumeField &rho,
+                  const ScalarFiniteVolumeField& p,
+                  const VectorFiniteVolumeField& src,
+                  VectorFiniteVolumeField &gradP,
+                  VectorFiniteVolumeField &u, Scalar timeStep)
 {
     //- Correct faces
     for (const Face &face: u.grid().interiorFaces())
@@ -353,7 +306,7 @@ void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho
             sumAx += sf.x;
             sumAy += sf.y;
 
-            gradP(cell) += Vector2D(gradP(nb.face()).x*sf.x, gradP(nb.face()).y*sf.y);
+            gradP(cell) += Vector2D(gradP(nb.face()).x*sf.x, gradP(nb.face()).y*sf.y) / rho(nb.face());
         }
 
         for(const BoundaryLink& bd: cell.boundaries())
@@ -363,7 +316,7 @@ void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho
             sumAx += ax;
             sumAy += ay;
 
-            gradP(cell) += Vector2D(gradP(bd.face()).x*ax, gradP(bd.face()).y*ay);
+            gradP(cell) += Vector2D(gradP(bd.face()).x*ax, gradP(bd.face()).y*ay) / rho(bd.face());
         }
 
         if(cell.intersectsIbObj())
@@ -373,16 +326,65 @@ void seo::correct(const ImmersedBoundary &ib, const ScalarFiniteVolumeField &rho
             sumAx += ax;
             sumAy += ay;
 
-            Vector2D sf = cell.solidFaceNorm();
             Vector2D dP = -rho(cell)*cell.ibObj().acceleration(cell.bFace().center());
-            dP = dot(dP, sf)*sf/sf.magSqr();
-
-            gradP(cell) += Vector2D(dP.x*ax, dP.y*ay);
+            gradP(cell) += Vector2D(dP.x*ax, dP.y*ay) / rho(cell);
         }
 
-        gradP(cell) = Vector2D(gradP(cell).x/sumAx, gradP(cell).y/sumAy);
-        u(cell) -= timeStep/rho(cell)*gradP(cell);
+        gradP(cell) = rho(cell) * Vector2D(gradP(cell).x/sumAx, gradP(cell).y/sumAy);
+        u(cell) -= timeStep/rho(cell)* gradP(cell);
     }
+}
+
+ScalarFiniteVolumeField seo::div(const ImmersedBoundary &ib, const VectorFiniteVolumeField &u)
+{
+    ScalarFiniteVolumeField divU(u.gridPtr(), "divU", 0);
+
+    for (const CutCell &cell: ib.constructCutCells(ib.zone()))
+    {
+        for (const CutCellLink &nb: cell.neighbours())
+            divU(cell) += dot(u(nb.face()), nb.fluidNorm());
+
+        for (const BoundaryLink &bd: cell.boundaries())
+            divU(cell) += dot(u(bd.face()), bd.outwardNorm());
+
+        if(cell.intersectsIbObj())
+            divU(cell) += dot(cell.ibObj().velocity(cell.bFace().center()), cell.solidFaceNorm());
+    }
+
+    for (const ImmersedBoundaryObject &ibObj: ib.ibObjs())
+        for (const CutCell &cell: ib.constructCutCells(ibObj.ibCells()))
+        {
+            Scalar sumBeta = 0.;
+            std::vector<Scalar> betas;
+
+            for (const CutCellLink &nb: cell.neighbours())
+                if (!ibObj.isInIb(nb.cell().centroid()))
+                {
+                    divU(cell) += dot(u(nb.face()), nb.fluidNorm());
+
+                    Scalar beta = fabs(dot(nb.fluidNorm(), cell.solidFaceNorm()));
+                    betas.push_back(beta);
+                    sumBeta += beta;
+                }
+
+            for (const BoundaryLink &bd: cell.boundaries())
+                divU(cell) += dot(u(bd.face()), bd.outwardNorm());
+
+            if(cell.intersectsIbObj())
+                divU(cell) += dot(ibObj.velocity(cell.bFace().center()), cell.solidFaceNorm());
+
+            int i = 0;
+            if(sumBeta > 0)
+            {
+                for (const CutCellLink &nb: cell.neighbours())
+                    if (!ibObj.isInIb(nb.cell().centroid()))
+                        divU(nb.cell()) += betas[i++] / sumBeta * divU(cell);
+            }
+
+            divU(cell) = 0.;
+        }
+
+    return divU;
 }
 
 Scalar seo::maxDivergence(const ImmersedBoundary &ib, const VectorFiniteVolumeField& u)

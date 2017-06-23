@@ -7,13 +7,20 @@ class ContinuumSurfaceForce : public SurfaceTensionForce
 {
 public:
 
-    ContinuumSurfaceForce(const Input& input,
-                          Solver &solver);
+    ContinuumSurfaceForce(const Input &input,
+                        const ScalarFiniteVolumeField& gamma,
+                        const ScalarFiniteVolumeField& rho,
+                        const ScalarFiniteVolumeField& mu,
+                        const VectorFiniteVolumeField& u,
+                        VectorFiniteVolumeField& gradGamma);
 
-    virtual void compute(VectorFiniteVolumeField& ft);
+    virtual void compute();
 
-    virtual const ScalarFiniteVolumeField& gammaTilde() const { return gammaTilde_; }
-    virtual const VectorFiniteVolumeField& gradGammaTilde() const { return gradGammaTilde_; }
+    virtual const ScalarFiniteVolumeField& gammaTilde() const { return *gammaTilde_; }
+
+    virtual const VectorFiniteVolumeField& gradGammaTilde() const { return *gradGammaTilde_; }
+
+    virtual void registerSubFields(Solver& solver);
 
     void constructSmoothingKernels();
 
@@ -29,8 +36,8 @@ protected:
 
     Scalar curvatureCutoffTolerance_;
 
-    ScalarFiniteVolumeField &gammaTilde_;
-    VectorFiniteVolumeField &gradGammaTilde_;
+    std::shared_ptr<ScalarFiniteVolumeField> gammaTilde_;
+    std::shared_ptr<VectorFiniteVolumeField> gradGammaTilde_;
 };
 
 

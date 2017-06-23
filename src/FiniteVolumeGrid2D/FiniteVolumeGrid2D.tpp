@@ -12,15 +12,17 @@ std::vector<Label> FiniteVolumeGrid2D::getCellIds(const T &cells)
 }
 
 template<typename T>
-void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &data) const
+void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data) const
 {
+    if(!comm_) return;
+
     std::vector<std::vector<T>> recvBuffers(neighbouringProcs_.size());
 
     //- Post recvs first (non-blocking)
     for (int i = 0; i < neighbouringProcs_.size(); ++i)
     {
         recvBuffers[i].resize(bufferCellZones_[i]->size());
-        comm.irecv(neighbouringProcs_[i], recvBuffers[i], comm.rank());
+        comm_->irecv(neighbouringProcs_[i], recvBuffers[i], comm_->rank());
     }
 
     //- Send data (blocking sends)
@@ -32,10 +34,10 @@ void FiniteVolumeGrid2D::sendMessages(const Communicator &comm, std::vector<T> &
         std::transform(sendCellGroups_[i]->begin(), sendCellGroups_[i]->end(),
                        sendBuffer.begin(), [&data](const Cell &cell) { return data[cell.id()]; });
 
-        comm.ssend(neighbouringProcs_[i], sendBuffer, neighbouringProcs_[i]);
+        comm_->ssend(neighbouringProcs_[i], sendBuffer, neighbouringProcs_[i]);
     }
 
-    comm.waitAll();
+    comm_->waitAll();
 
     //- Unload recv buffers
     for (int i = 0; i < neighbouringProcs_.size(); ++i)

@@ -9,7 +9,6 @@ class FractionalStepMultiphase : public FractionalStep
 public:
 
     FractionalStepMultiphase(const Input &input,
-                             const Communicator &comm,
                              std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     virtual void initialize();
@@ -20,7 +19,7 @@ public:
 
 
     ScalarFiniteVolumeField &gamma, &rho, &mu;
-    VectorFiniteVolumeField &gradGamma, &ft, &sg, &gradRho, &rhoU;
+    VectorFiniteVolumeField &gradGamma, &sg, &gradRho, &rhoU;
 
 protected:
 
@@ -43,7 +42,7 @@ protected:
     Scalar cicsamBlending_, rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;
 
-    Celeste surfaceTensionForce_;
+    std::shared_ptr<Celeste> ft_;
 
     Equation<Scalar> gammaEqn_;
 };

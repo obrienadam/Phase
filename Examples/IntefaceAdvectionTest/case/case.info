@@ -48,7 +48,7 @@ Properties
 	rho2 1000
 	mu1 0.01
 	mu2 0.01
-	sigma 0
+	sigma 0.1
 
 	advancingContactAngle 90
 	recedingContactAngle 90

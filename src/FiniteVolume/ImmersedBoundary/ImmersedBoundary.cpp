@@ -6,10 +6,9 @@
 #include "ForcingCellImmersedBoundaryObject.h"
 #include "LeastSquaresImmersedBoundaryObject.h"
 
-ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm, Solver &solver)
+ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
         :
         solver_(solver),
-        comm_(comm),
         cellStatus_(solver.addIntegerField("cellStatus"))
 {
     try //- Lazy way to check if any immersed boundary input is present, just catch the exception if it fails
@@ -18,7 +17,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
     }
     catch (...)
     {
-        comm.printf("No immersed boundaries present.\n");
+        solver.grid().comm().printf("No immersed boundaries present.\n");
         return;
     }
 
@@ -26,11 +25,11 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
 
     for (const auto &ibObjectInput: input.boundaryInput().get_child("ImmersedBoundaries"))
     {
-        comm.printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
+        solver.grid().comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
 
         std::string method = ibObjectInput.second.get<std::string>("method", "ghost-cell");
         std::transform(method.begin(), method.end(), method.begin(), ::tolower);
-        comm.printf("Immersed boundary method: %s\n", method.c_str());
+        solver.grid().comm().printf("Immersed boundary method: %s\n", method.c_str());
 
         std::shared_ptr<ImmersedBoundaryObject> ibObject;
 
@@ -68,7 +67,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
             if (!fin.is_open())
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "failed to open file \"" + filename + "\".");
 
-            comm.printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(), filename.c_str());
+            solver.grid().comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(), filename.c_str());
 
             while (!fin.eof())
             {
@@ -98,13 +97,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
 
         if (scaleFactor)
         {
-            comm.printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(), scaleFactor.get());
+            solver.grid().comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(), scaleFactor.get());
             ibObject->shape().scale(scaleFactor.get());
         }
 
         if (rotationAngle)
         {
-            comm.printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObjectInput.first.c_str(),
+            solver.grid().comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n", ibObjectInput.first.c_str(),
                         rotationAngle.get());
 
             if (ibObject->shape().type() == Shape2D::BOX)
@@ -140,7 +139,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const Communicator &comm,
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
-            comm.printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
+            solver.grid().comm().printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(), child.first.c_str());
             ibObject->addBoundaryType(child.first, boundaryType);
         }
 
@@ -178,7 +177,16 @@ void ImmersedBoundary::initCellZones(CellZone& zone)
     }
 
     setCellStatus();
-    solver_.grid().computeGlobalOrdering(solver_.comm());
+    solver_.grid().computeGlobalOrdering();
+}
+
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Point2D& pt) const
+{
+    for(const auto& ibObj: ibObjs_)
+        if(ibObj->isInIb(pt))
+            return ibObj;
+
+    return nullptr;
 }
 
 void ImmersedBoundary::update(Scalar timeStep)
@@ -187,7 +195,7 @@ void ImmersedBoundary::update(Scalar timeStep)
         ibObj->update(timeStep);
 
     setCellStatus();
-    solver_.grid().computeGlobalOrdering(comm_);
+    solver_.grid().computeGlobalOrdering();
 }
 
 void ImmersedBoundary::clearFreshCells()

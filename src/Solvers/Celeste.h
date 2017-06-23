@@ -8,28 +8,40 @@ class Celeste : public ContinuumSurfaceForce
 {
 public:
 
-    Celeste(const Input& input,
-            Solver &solver);
+    Celeste(const Input &input,
+            const ScalarFiniteVolumeField &gamma,
+            const ScalarFiniteVolumeField &rho,
+            const ScalarFiniteVolumeField &mu,
+            const VectorFiniteVolumeField &u,
+            VectorFiniteVolumeField &gradGamma);
 
-    virtual void compute(VectorFiniteVolumeField& ft);
+    virtual void compute();
+
+    void compute(const ImmersedBoundary& ib);
 
     void constructMatrices();
 
+    void constructMatrices(const ImmersedBoundary& ib);
+
 protected:
 
-    void constructGammaTildeMatrices();
-    void constructKappaMatrices();
-
     virtual void computeGradGammaTilde();
-    virtual void computeInterfaceNormals();
+
     virtual void computeCurvature();
-    void weightCurvatures();
+
+    void computeCurvature(const ImmersedBoundary& ib);
+
+    Matrix leastSquaresMatrix(const Cell& cell, bool weighted = false);
+
+    Matrix leastSquaresMatrix(const ImmersedBoundary& ib, const Cell& cell, bool weighted = false);
+
+    void constructGammaTildeMatrices();
+
+    void constructKappaMatrices();
 
     const Scalar eps_ = 1e-9;
 
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
-    ScalarFiniteVolumeField &w_;
-
 };
 
 #endif

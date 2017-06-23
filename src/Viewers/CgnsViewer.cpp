@@ -9,16 +9,16 @@
 #include "CgnsViewer.h"
 #include "Exception.h"
 
-CgnsViewer::CgnsViewer(const Input &input, const Communicator &comm, const Solver &solver)
+CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
     :
-      Viewer(input, comm, solver)
+      Viewer(input, solver)
 {
     char filename[256];
-    sprintf(filename, "solution/Proc%d/", comm.rank());
+    sprintf(filename, "solution/Proc%d/", solver.grid().comm().rank());
 
     boost::filesystem::create_directories(filename);
 
-    sprintf(filename, "solution/Proc%d/Grid.cgns", comm.rank());
+    sprintf(filename, "solution/Proc%d/Grid.cgns", solver.grid().comm().rank());
 
     gridfile_ = filename;
 
@@ -33,14 +33,14 @@ CgnsViewer::CgnsViewer(const Input &input, const Communicator &comm, const Solve
     cg_close(fid);
 }
 
-void CgnsViewer::write(Scalar solutionTime, const Communicator &comm)
+void CgnsViewer::write(Scalar solutionTime)
 {
     char filename[256];
-    sprintf(filename, "solution/%lf/Proc%d", solutionTime, comm.rank());
+    sprintf(filename, "solution/%lf/Proc%d", solutionTime, solver_.grid().comm().rank());
 
     boost::filesystem::create_directories(filename);
 
-    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, comm.rank());
+    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, solver_.grid().comm().rank());
 
     int fid, bid, zid, sid;
 
@@ -48,7 +48,7 @@ void CgnsViewer::write(Scalar solutionTime, const Communicator &comm)
 
     bid = createBase(fid, filename_);
     zid = createZone(fid, bid, solver_.grid(), "Cells");
-    linkGrid(fid, bid, zid, comm);
+    linkGrid(fid, bid, zid, solver_.grid().comm());
 
     cg_sol_write(fid, bid, zid, "Solution", CGNS_ENUMV(CellCenter), &sid);
 

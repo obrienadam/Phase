@@ -9,9 +9,9 @@ class CgnsViewer : public Viewer
 {
 public:
 
-    CgnsViewer(const Input& input, const Communicator& comm, const Solver& solver);
+    CgnsViewer(const Input& input, const Solver& solver);
 
-    void write(Scalar solutionTime, const Communicator& comm);
+    void write(Scalar solutionTime);
 
 protected:
 

@@ -1,70 +1,77 @@
 #include "Source.h"
 #include "Tensor2D.h"
 
-namespace source
+namespace fv
 {
-
-    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field)
+    namespace src
     {
-        ScalarFiniteVolumeField divF(field.gridPtr(), "divF");
 
-        for (const Cell &cell: field.grid().cellZone("fluid"))
+        ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field)
         {
-            Scalar div = 0.;
+            ScalarFiniteVolumeField divF(field.gridPtr(), "divF");
 
-            for (const InteriorLink &nb: cell.neighbours())
-                div += dot(field(nb.face()), nb.outwardNorm());
+            for (const Cell &cell: field.grid().cellZone("fluid"))
+            {
+                Scalar div = 0.;
 
-            for (const BoundaryLink &bd: cell.boundaries())
-                div += dot(field(bd.face()), bd.outwardNorm());
+                for (const InteriorLink &nb: cell.neighbours())
+                    div += dot(field(nb.face()), nb.outwardNorm());
 
-            divF(cell) = div;
+                for (const BoundaryLink &bd: cell.boundaries())
+                    div += dot(field(bd.face()), bd.outwardNorm());
+
+                divF(cell) = div;
+            }
+
+            return divF;
         }
 
-        return divF;
-    }
-
-    VectorFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma, const VectorFiniteVolumeField& field)
-    {
-        VectorFiniteVolumeField lapF(field.gridPtr(), "lapF");
-
-        for(const Cell &cell: field.grid().cellZone("fluid"))
+        VectorFiniteVolumeField laplacian(const ScalarFiniteVolumeField &gamma, const VectorFiniteVolumeField &field)
         {
-            for(const InteriorLink& nb: cell.neighbours())
+            VectorFiniteVolumeField lapF(field.gridPtr(), "lapF");
+
+            for (const Cell &cell: field.grid().cellZone("fluid"))
             {
-                Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm())/dot(nb.rCellVec(), nb.rCellVec());
-                lapF(cell) += coeff*field(nb.face());
+                for (const InteriorLink &nb: cell.neighbours())
+                {
+                    Scalar coeff =
+                            gamma(nb.face()) * dot(nb.rCellVec(), nb.outwardNorm()) / dot(nb.rCellVec(), nb.rCellVec());
+                    lapF(cell) += coeff * field(nb.face());
+                }
+
+                for (const BoundaryLink &bd: cell.boundaries())
+                {
+                    Scalar coeff =
+                            gamma(bd.face()) * dot(bd.rFaceVec(), bd.outwardNorm()) / dot(bd.rFaceVec(), bd.rFaceVec());
+                    lapF(cell) += coeff * field(bd.face());
+                }
             }
 
-            for(const BoundaryLink& bd: cell.boundaries())
-            {
-                Scalar coeff = gamma(bd.face())*dot(bd.rFaceVec(), bd.outwardNorm())/dot(bd.rFaceVec(), bd.rFaceVec());
-                lapF(cell) += coeff*field(bd.face());
-            }
+            return lapF;
         }
 
-        return lapF;
-    }
-
-    VectorFiniteVolumeField div(const ScalarFiniteVolumeField& rho, const VectorFiniteVolumeField& u, const VectorFiniteVolumeField& field)
-    {
-        VectorFiniteVolumeField divF(field.gridPtr(), "divF");
-
-        for (const Cell &cell: field.grid().cellZone("fluid"))
+        VectorFiniteVolumeField div(const ScalarFiniteVolumeField &rho,
+                                    const VectorFiniteVolumeField &u,
+                                    const VectorFiniteVolumeField &field)
         {
-            for (const InteriorLink &nb: cell.neighbours())
+            VectorFiniteVolumeField divF(field.gridPtr(), "divF");
+
+            for (const Cell &cell: field.grid().cellZone("fluid"))
             {
-                const Face& face = nb.face();
-                divF(cell) += rho(face)*dot(outer(u(face), field(face)), nb.outwardNorm());
+                for (const InteriorLink &nb: cell.neighbours())
+                {
+                    const Face &face = nb.face();
+                    divF(cell) += rho(face) * dot(outer(u(face), field(face)), nb.outwardNorm());
+                }
+
+                for (const BoundaryLink &bd: cell.boundaries())
+                {
+                    const Face &face = bd.face();
+                    divF(cell) += rho(face) * dot(outer(u(face), field(face)), bd.outwardNorm());
+                }
             }
 
-            for (const BoundaryLink &bd: cell.boundaries())
-            {
-                const Face& face = bd.face();
-                divF(cell) += rho(face)*dot(outer(u(face), field(face)), bd.outwardNorm());
-            }
+            return divF;
         }
-
-        return divF;
     }
 }

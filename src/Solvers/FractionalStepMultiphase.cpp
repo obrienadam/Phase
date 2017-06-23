@@ -3,24 +3,20 @@
 #include "Cicsam.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
-#include "SourceEvaluation.h"
 #include "Source.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
-                                                   const Communicator &comm,
                                                    std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input, comm, grid),
+        FractionalStep(input, grid),
         gamma(addScalarField(input, "gamma")),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
         gradGamma(addVectorField("gradGamma")),
-        ft(addVectorField("ft")),
         sg(addVectorField("sg")),
         gradRho(addVectorField("gradRho")),
         rhoU(addVectorField("rhoU")),
-        gammaEqn_(input, comm, gamma, "gammaEqn"),
-        surfaceTensionForce_(input, *this)
+        gammaEqn_(input, gamma, "gammaEqn")
 {
     cicsamBlending_ = input.caseInput().get<Scalar>("Solver.cicsamBlending", 1.);
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1", rho_);
@@ -33,7 +29,12 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
 
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
-    Scalar sigma = surfaceTensionForce_.sigma();
+    ft_ = std::make_shared<Celeste>(input, gamma, rho, mu, u, gradGamma);
+
+    registerField(ft_);
+    ft_->registerSubFields(*this);
+
+    Scalar sigma = ft_->sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
 
     for (const Face &face: grid_->interiorFaces())
@@ -43,9 +44,9 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
                                       sqrt(((rho1_ + rho2_) * delta * delta * delta) / (4 * M_PI * sigma)));
     }
 
-    capillaryTimeStep_ = comm.min(capillaryTimeStep_);
-    comm.printf("CICSAM blending constant (k): %.2f\n", cicsamBlending_);
-    comm.printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
+    capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
+    printf("CICSAM blending constant (k): %.2f\n", cicsamBlending_);
+    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 void FractionalStepMultiphase::initialize()
@@ -77,8 +78,8 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     solvePEqn(timeStep); //- Solve the pressure equation, using sharp value of rho
     correctVelocity(timeStep);
 
-    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
-    comm_.printf("Max absolute velocity divergence error = %.4e\n", maxDivergenceError());
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    printf("Max absolute velocity divergence error = %.4e\n", maxDivergenceError());
 
     return 0.;
 }
@@ -106,7 +107,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
         return std::max(std::min(gamma(cell), 1.), 0.);
     });
 
-    grid_->sendMessages(comm_, gamma);
+    grid_->sendMessages(gamma);
 
     gamma.interpolateFaces([this, &beta](const Face& face){
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
@@ -115,7 +116,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     //- Recompute gradGamma for next cicsam iteration
     gamma.setBoundaryFaces();
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, gamma, gradGamma);
-    grid_->sendMessages(comm_, gradGamma); //- In case donor cell is on another proc
+    grid_->sendMessages(gradGamma); //- In case donor cell is on another proc
 
     updateProperties(timeStep);
 
@@ -127,10 +128,10 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u) + ib_.bcs(u)
-             == cn::laplacian(mu, u, 0.5) - fv::source(gradP - sg.oldField(0) - ft.oldField(0)));
+             == cn::laplacian(mu, u, 0.5) - fv::source(gradP - sg.oldField(0) - ft_->oldField(0), fluid_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
     computeFaceVelocities(timeStep);
 
     return error;
@@ -138,14 +139,14 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, phi) + ib_.bcs(phi) == source::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho, phi) + ib_.bcs(phi) == fv::src::div(u));
 
     Scalar error = pEqn_.solve();
 
     for(const Cell& cell: grid_->localActiveCells())
         p(cell) += phi(cell);
 
-    grid_->sendMessages(comm_, p);
+    grid_->sendMessages(p);
 
     p.interpolateFaces([](const Face& face){
         Scalar l1 = (face.centroid() - face.lCell().centroid()).mag();
@@ -158,7 +159,7 @@ Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 
     //- Weighted gradients greatly reduce the effect of large pressure differences
     fv::computeInverseWeightedGradient(rho, p, gradP);
-    grid_->sendMessages(comm_, gradP);
+    grid_->sendMessages(gradP);
 
     return error;
 }
@@ -167,6 +168,7 @@ void FractionalStepMultiphase::computeFaceVelocities(Scalar timeStep)
 {
     const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
+    const VectorFiniteVolumeField &ft = *ft_;
     const VectorFiniteVolumeField &ft0 = ft.oldField(0);
 
     for (const Face &face: u.grid().interiorFaces())
@@ -214,6 +216,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
 {
     const VectorFiniteVolumeField &gradP0 = gradP.oldField(0);
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
+    const VectorFiniteVolumeField &ft = *ft_;
     const VectorFiniteVolumeField &ft0 = ft.oldField(0);
     const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
 
@@ -221,7 +224,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         u(cell) -= timeStep * ((gradP(cell) - sg(cell) - ft(cell)) / rho(cell) -
                                (gradP0(cell) - sg0(cell) - ft0(cell)) / rho0(cell));
 
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
 
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho(face) * (gradP(face) - gradP0(face));
@@ -268,7 +271,6 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = std::max(std::min(gamma(cell), 1.), 0.);
         return (1. - g)*rho1_ + g*rho2_;
     });
-    grid_->sendMessages(comm_, rho);
     rho.interpolateFaces(alpha);
 
     //- Update viscosity
@@ -277,25 +279,21 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = std::max(std::min(gamma(cell), 1.), 0.);
         return (1. - g)*mu1_ + g*mu2_;
     });
-    grid_->sendMessages(comm_, mu);
     mu.interpolateFaces(alpha);
 
     //- Update the surface tension
-    ft.savePreviousTimeStep(timeStep, 1);
-    surfaceTensionForce_.compute(ft);
-
-    grid_->sendMessages(comm_, ft);
+    ft_->savePreviousTimeStep(timeStep, 1);
+    ft_->compute();
 
     //- Update the gravitational source term
-    sg.savePreviousTimeStep(timeStep, 1);
     fv::computeInverseWeightedGradient(rho, rho, gradRho);
-    for (const Cell &cell: fluid_)
-        sg(cell) = dot(g_, -cell.centroid()) * gradRho(cell);
 
-    grid_->sendMessages(comm_, sg);
-
-    for (const Face &face: sg.grid().faces())
-        sg(face) = dot(g_, -face.centroid()) * gradRho(face);
+    sg.savePreviousTimeStep(timeStep, 1);
+    sg.compute([this](const Cell& cell) {
+        return dot(g_, -cell.centroid()) * gradRho(cell);
+    }, [this](const Face& face) {
+        return dot(g_, -face.centroid()) * gradRho(face);
+    });
 }
 
 void FractionalStepMultiphase::checkMassFluxConsistency(Scalar timeStep)
@@ -313,5 +311,5 @@ void FractionalStepMultiphase::checkMassFluxConsistency(Scalar timeStep)
             max = error;
     }
 
-    comm_.printf("Max mass flux error = %.2lf.\n", max);
+    printf("Max mass flux error = %.2lf.\n", max);
 }

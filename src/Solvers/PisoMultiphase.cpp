@@ -4,19 +4,17 @@
 #include "Celeste.h"
 #include "FaceInterpolation.h"
 #include "GradientEvaluation.h"
-#include "SourceEvaluation.h"
+#include "Source.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input,
-                               const Communicator &comm,
                                std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
-        Piso(input, comm, grid),
+        Piso(input, grid),
         gamma(addScalarField(input, "gamma")),
         gradGamma(addVectorField("gradGamma")),
-        ft(addVectorField("ft")),
         gradRho(addVectorField("gradRho")),
         sg(addVectorField("sg")),
-        gammaEqn_(input, comm, gamma, "gammaEqn")
+        gammaEqn_(input, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2");
@@ -32,17 +30,19 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     if (tmp == "CSF")
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new ContinuumSurfaceForce(input, *this));
+        ft_ = std::make_shared<ContinuumSurfaceForce>(input, gamma, rho, mu, u, gradGamma);
     else if (tmp == "CELESTE")
-        surfaceTensionForce_ = std::shared_ptr<SurfaceTensionForce>(new Celeste(input, *this));
+        ft_ = std::make_shared<Celeste>(input, gamma, rho, mu, u, gradGamma);
     else
         throw Exception("PisoMultiphase", "PisoMultiphase", "unrecognized surface tension model \"" + tmp + "\".");
+
+    registerField(ft_);
 
     //surfaceTensionForce_->compute();
     computeRho();
     computeMu();
 
-    Scalar sigma = surfaceTensionForce_->sigma();
+    Scalar sigma = ft_->sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
 
     for (const Face &face: grid_->interiorFaces())
@@ -52,9 +52,9 @@ PisoMultiphase::PisoMultiphase(const Input &input,
                                       sqrt(((rho1_ + rho2_) * delta * delta * delta) / (4 * M_PI * sigma)));
     }
 
-    capillaryTimeStep_ = comm_.min(capillaryTimeStep_);
+    capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
 
-    comm_.printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
+    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 Scalar PisoMultiphase::solve(Scalar timeStep)
@@ -75,7 +75,7 @@ Scalar PisoMultiphase::solve(Scalar timeStep)
 
     solveGammaEqn(timeStep);
 
-    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
 
     return 0.; // just to get rid of warning
 }
@@ -94,7 +94,7 @@ void PisoMultiphase::computeRho()
 {
     using namespace std;
 
-    const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = ft_->gammaTilde();
 
     rho.savePreviousTimeStep(0, 1);
 
@@ -104,7 +104,7 @@ void PisoMultiphase::computeRho()
         rho(cell) = (1 - w) * rho1_ + w * rho2_;
     }
 
-    grid_->sendMessages(comm_, rho);
+    grid_->sendMessages(rho);
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
     fv::computeInverseWeightedGradient(rho, rho, gradRho);
@@ -120,7 +120,7 @@ void PisoMultiphase::computeMu()
 {
     using namespace std;
 
-    const ScalarFiniteVolumeField &alpha = surfaceTensionForce_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = ft_->gammaTilde();
 
     mu.savePreviousTimeStep(0, 1);
 
@@ -130,23 +130,23 @@ void PisoMultiphase::computeMu()
         mu(cell) = (1 - w) * mu1_ + w * mu2_;
     }
 
-    grid_->sendMessages(comm_, mu);
+    grid_->sendMessages(mu);
 
     interpolateFaces(fv::INVERSE_VOLUME, mu);
 }
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 {
-    surfaceTensionForce_->compute(ft);
+    ft_->compute();
     computeRho();
     computeMu();
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u)
-             == fv::laplacian(mu, u) + fv::source(ft - gradP - sg));
+             == fv::laplacian(mu, u) + fv::source(*ft_ - gradP - sg, fluid_));
 
     Scalar error = uEqn_.solve();
 
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
 
     rhieChowInterpolation();
 
@@ -169,7 +169,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 
     Scalar error = gammaEqn_.solve();
 
-    grid_->sendMessages(comm_, gamma);
+    grid_->sendMessages(gamma);
 
     gamma.interpolateFaces([this, &beta](const Face& face){
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
@@ -177,7 +177,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 
     fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
 
-    grid_->sendMessages(comm_, gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
+    grid_->sendMessages(gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 
     return error;
 }
@@ -185,6 +185,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 void PisoMultiphase::rhieChowInterpolation()
 {
     Piso::rhieChowInterpolation();
+    const auto& ft = *ft_;
 
     for (const Face &face: u.grid().interiorFaces())
     {

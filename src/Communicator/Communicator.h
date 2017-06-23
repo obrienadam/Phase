@@ -19,6 +19,7 @@ public:
     ~Communicator();
 
     //- Printing
+
     int printf(const char *format, ...) const;
 
     //- Info

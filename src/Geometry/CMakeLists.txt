@@ -24,4 +24,3 @@ set(SOURCES Vector2D.cpp
             Box.cpp)
 
 add_library(Geometry ${HEADERS} ${SOURCES})
-target_link_libraries(Geometry System Equation)

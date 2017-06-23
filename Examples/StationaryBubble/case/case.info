@@ -21,11 +21,11 @@ Solver
 
 Properties
 {
-	rho1 998
-	rho2 998
-	mu1 8.94e-4
-	mu2 8.94e-4
-	sigma 0.0262
+	rho1 1
+	rho2 1
+	mu1 0.01
+	mu2 0.01
+	sigma 0.01
 	g (0,0)
 
 	advancingContactAngle 90
@@ -39,8 +39,8 @@ Grid
 	nCellsY 100
 
 	; Rectilinear parameters
-	width 0.005
-	height 0.005
+	width 1
+	height 1
 }
 
 Viewer

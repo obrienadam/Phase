@@ -1,4 +1,5 @@
 #include <ostream>
+#include <algorithm>
 
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
@@ -15,19 +16,18 @@ extern "C"
 #include "Matrix.h"
 #include "Exception.h"
 
-Matrix::Matrix(size_t nRows, size_t nCols)
+Matrix::Matrix(Size m, Size n)
 {
-    resize(nRows, nCols);
+    resize(m, n);
 }
 
-void Matrix::resize(size_t nRows, size_t nCols)
+void Matrix::resize(Size m, Size n)
 {
-    nRows_ = nRows;
-    nCols_ = nCols;
-    isSquare_ = nRows_ == nCols_;
-    std::vector<Scalar>::resize(nRows * nCols);
-    ipiv_.resize(nRows_);
-    zero();
+    m_ = m;
+    n_ = n;
+    isSquare_ = m_ == n_;
+    std::vector<Scalar>::resize(m_ * n_, 0.);
+    ipiv_.resize(m_);
 }
 
 void Matrix::zero()
@@ -40,58 +40,60 @@ void Matrix::init(const Scalar *begin, const Scalar *end)
     std::vector<Scalar>::assign(begin, end);
 }
 
-Scalar &Matrix::operator()(size_t m, size_t n)
+Scalar &Matrix::operator()(Size i, Size j)
 {
-    return std::vector<Scalar>::operator[](m * nCols_ + n);
+    return std::vector<Scalar>::operator[](i * n_ + j);
 }
 
-const Scalar &Matrix::operator()(size_t m, size_t n) const
+Scalar Matrix::operator()(Size i, Size j) const
 {
-    return std::vector<Scalar>::operator[](m * nCols_ + n);
+    return std::vector<Scalar>::operator[](i * n_ + j);
 }
 
 Matrix &Matrix::operator=(const std::initializer_list<Scalar> &list)
 {
-    if (list.size() != nRows_ * nCols_)
+    if (list.size() != m_ * n_)
         throw Exception("Matrix", "operator=", "initializer list size does not match matrix dimensions.");
 
-    std::vector<Scalar>::operator=(list);
+    assign(list);
     return *this;
 }
 
 //- Operators
 Matrix &Matrix::operator+=(const Matrix &rhs)
 {
-    for (size_t m = 0; m < nRows_; ++m)
-        for (size_t n = 0; n < nCols_; ++n)
-            operator()(m, n) += rhs(m, n);
+    if (m_ != rhs.m_ || n_ != rhs.n_)
+        throw Exception("Matrix", "operator+=", "dimension mismatch.");
+
+    std::transform(begin(), end(), rhs.begin(), begin(), std::plus<Scalar>());
 
     return *this;
 }
 
 Matrix &Matrix::operator-=(const Matrix &rhs)
 {
-    for (size_t m = 0; m < nRows_; ++m)
-        for (size_t n = 0; n < nCols_; ++n)
-            operator()(m, n) -= rhs(m, n);
+    if (m_ != rhs.m_ || n_ != rhs.n_)
+        throw Exception("Matrix", "operator-=", "dimension mismatch.");
+
+    std::transform(begin(), end(), rhs.begin(), begin(), std::minus<Scalar>());
 
     return *this;
 }
 
 Matrix &Matrix::operator*=(Scalar rhs)
 {
-    for (size_t m = 0; m < nRows_; ++m)
-        for (size_t n = 0; n < nCols_; ++n)
-            operator()(m, n) *= rhs;
+    std::transform(begin(), end(), begin(), [rhs](Scalar a){
+        return a * rhs;
+    });
 
     return *this;
 }
 
 Matrix &Matrix::operator/=(Scalar rhs)
 {
-    for (size_t m = 0; m < nRows_; ++m)
-        for (size_t n = 0; n < nCols_; ++n)
-            operator()(m, n) /= rhs;
+    std::transform(begin(), end(), begin(), [rhs](Scalar a){
+        return a / rhs;
+    });
 
     return *this;
 }
@@ -99,11 +101,12 @@ Matrix &Matrix::operator/=(Scalar rhs)
 Matrix &Matrix::solve(Matrix &b)
 {
     if (isSquare_)
-        LAPACKE_dgesv(LAPACK_ROW_MAJOR, nRows_, b.nCols_, data(), nCols_, ipiv_.data(), b.data(), b.nCols_);
+        LAPACKE_dgesv(LAPACK_ROW_MAJOR, m_, b.n_, data(), n_, ipiv_.data(), b.data(), b.n_);
     else
     {
-        LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', nRows_, nCols_, b.nCols_, data(), nCols_, b.data(), b.nCols_);
-        b.nRows_ = nCols_; // A bit hackish, but resizes b apropriately. Only works so long as the data format is row major
+        LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m_, n_, b.n_, data(), n_, b.data(), b.m_);
+        b.m_ = n_; // A bit hackish, but resizes b apropriately. Only works so long as the data format is row major
+        b.isSquare_ = b.m_ == n_;
     }
 
     return b;
@@ -115,15 +118,15 @@ Matrix &Matrix::transpose()
     {
         auto &self = *this;
 
-        for (size_t m = 0; m < nRows_; ++m)
-            for (size_t n = m + 1; n < nCols_; ++n)
+        for (size_t m = 0; m < m_; ++m)
+            for (size_t n = m + 1; n < n_; ++n)
                 std::swap(self(m, n), self(n, m));
     }
     else // General non-square matrices
     {
         auto last = end();
         auto first = begin();
-        int m = nCols_;
+        int m = n_;
 
         const int mn1 = (last - first - 1);
         const int n = (last - first) / m;
@@ -142,7 +145,7 @@ Matrix &Matrix::transpose()
             } while ((first + a) != cycle);
         }
 
-        std::swap(nRows_, nCols_);
+        std::swap(m_, n_);
     }
 
     return *this;
@@ -150,11 +153,8 @@ Matrix &Matrix::transpose()
 
 Matrix &Matrix::invert()
 {
-    if (nRows_ != nCols_)
-        operator=(Matrix(*this).transpose() * (*this));
-
-    lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, nRows_, nCols_, data(), nCols_, ipiv_.data());
-    lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, nRows_, data(), nCols_, ipiv_.data());
+    lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m_, n_, data(), n_, ipiv_.data());
+    lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, m_, data(), n_, ipiv_.data());
 
     if (info1 != 0 || info2 != 0)
         throw Exception("Matrix", "invert", "inversion failed, matrix is singular to working precision.");
@@ -164,13 +164,13 @@ Matrix &Matrix::invert()
 
 Scalar Matrix::norm(char type) const
 {
-    return LAPACKE_dlange(LAPACK_ROW_MAJOR, type, nRows_, nCols_, data(), nCols_);
+    return LAPACKE_dlange(LAPACK_ROW_MAJOR, type, m_, n_, data(), n_);
 }
 
 Scalar Matrix::cond(char type) const
 {
     Scalar rcond;
-    LAPACKE_dgecon(LAPACK_ROW_MAJOR, type, nRows_, data(), nCols_, norm(type), &rcond);
+    LAPACKE_dgecon(LAPACK_ROW_MAJOR, type, m_, data(), n_, norm(type), &rcond);
     return rcond;
 }
 
@@ -222,26 +222,6 @@ Matrix solve(Matrix A, Matrix b)
     return A.solve(b);
 }
 
-Matrix sum(const Matrix &A)
-{
-    Matrix result(1, A.nRows() == 1 ? 1 : A.nCols());
-    result.zero();
-
-    if (result.nCols() == 1)
-    {
-        for (int i = 0; i < A.nCols(); ++i)
-            result(0, 0) += A(0, i);
-    }
-    else
-    {
-        for (int i = 0; i < A.nRows(); ++i)
-            for (int j = 0; j < A.nCols(); ++j)
-                result(0, j) += A(i, j);
-    }
-
-    return result;
-}
-
 Matrix operator+(Matrix lhs, const Matrix &rhs)
 {
     return lhs += rhs;
@@ -264,10 +244,10 @@ Matrix operator*(Scalar lhs, Matrix rhs)
 
 Matrix operator*(const Matrix &A, const Matrix &B)
 {
-    Matrix C(A.nRows(), B.nCols());
+    Matrix C(A.m(), B.n());
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.nRows(), B.nCols(), A.nCols(), 1., A.data(), A.nCols(),
-                B.data(), B.nCols(), 1., C.data(), C.nCols());
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.m(), B.n(), A.n(), 1., A.data(), A.n(),
+                B.data(), B.n(), 1., C.data(), C.n());
 
     // Works for sure
     //    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
@@ -287,11 +267,11 @@ Matrix operator/(Matrix lhs, Scalar rhs)
 
 std::ostream &operator<<(std::ostream &os, const Matrix &mat)
 {
-    for (size_t m = 0; m < mat.nRows(); ++m)
+    for (Size i = 0, m = mat.m(); i < m; ++i)
     {
-        for (size_t n = 0; n < mat.nCols(); ++n)
+        for (Size j = 0, n = mat.n(); j < n; ++j)
         {
-            os << mat(m, n) << ' ';
+            os << mat(i, j) << ' ';
         }
         os << '\n';
     }

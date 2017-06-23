@@ -19,7 +19,6 @@ public:
              const std::string &name = "N/A");
 
     Equation(const Input &input,
-             const Communicator &comm,
              FiniteVolumeField<T> &field,
              const std::string &name);
 

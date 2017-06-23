@@ -194,19 +194,22 @@ public:
     std::vector<std::vector<Ref<const Cell> > > constructSmoothingKernels(Scalar width) const;
 
     //- Parallel/paritioning
+    const Communicator &comm() const
+    { return *comm_; }
+
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
 
-    void partition(const Input &input, const Communicator &comm);
+    void partition(const Input &input, std::shared_ptr<Communicator> comm);
 
     template<typename T>
-    void sendMessages(const Communicator &comm, std::vector<T> &data) const;
+    void sendMessages(std::vector<T> &data) const;
 
     void addNeighbouringProc(int procNo,
                              const std::vector<Label> &sendOrder,
                              const std::vector<Label> &recvOrder);
 
     //- Active cell ordering, required for lineary algebra!
-    void computeGlobalOrdering(const Communicator &comm);
+    void computeGlobalOrdering();
 
     //- Misc
     const BoundingBox &boundingBox() const
@@ -239,6 +242,7 @@ protected:
     std::unordered_map<std::string, CellGroup> cellGroups_;
     std::unordered_map<std::string, CellZone> cellZones_;
 
+    std::shared_ptr<Communicator> comm_;
     std::vector<int> neighbouringProcs_;
     std::vector<std::shared_ptr<CellGroup>> sendCellGroups_; // shared pointers are used so that zones can be moveable!
     std::vector<std::shared_ptr<CellZone>> bufferCellZones_;

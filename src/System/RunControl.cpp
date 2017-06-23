@@ -1,6 +1,6 @@
 #include "RunControl.h"
 
-void RunControl::run(const Input &input, const Communicator &comm, Solver &solver, Viewer &viewer)
+void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 {
     //- Time step conditions
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
@@ -14,16 +14,13 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
 
     //- Print the solver info
-    comm.printf("%s\n", (std::string(96, '-')).c_str());
-    comm.printf("%s", solver.info().c_str());
-    comm.printf("%s\n", (std::string(96, '-')).c_str());
+    solver.printf("%s\n", (std::string(96, '-')).c_str());
+    solver.printf("%s", solver.info().c_str());
+    solver.printf("%s\n", (std::string(96, '-')).c_str());
 
     //- Initial conditions
     solver.setInitialConditions(input);
     solver.initialize();
-
-    //- Tecplot viewer
-    IbViewer ibViewer(input, comm, solver);
 
     time_.start();
     for(
@@ -34,8 +31,7 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
     {
         if(iterNo%fileWriteFrequency == 0)
         {
-            viewer.write(time, comm);
-            ibViewer.write(time, comm);
+            viewer.write(time);
 
           //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
           //      vi.integrate();
@@ -48,17 +44,17 @@ void RunControl::run(const Input &input, const Communicator &comm, Solver &solve
 
         solver.solve(timeStep);
         time_.stop();
-        comm.printf("Time step: %.2e s\n", timeStep);
-        comm.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
-        comm.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds()/(iterNo + 1));
-        comm.printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
+        solver.printf("Time step: %.2e s\n", timeStep);
+        solver.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
+        solver.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds()/(iterNo + 1));
+        solver.printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
     }
     time_.stop();
 
-    viewer.write(time, comm);
-    comm.printf("%s\n", (std::string(96, '*')).c_str());
-    comm.printf("Calculation complete.\n");
-    comm.printf("Elapsed time: %s\n", time_.elapsedTime().c_str());
-    comm.printf("Elapsed CPU time: %s\n", time_.elapsedCpuTime(comm).c_str());
-    comm.printf("%s\n", (std::string(96, '*')).c_str());
+    viewer.write(time);
+    solver.printf("%s\n", (std::string(96, '*')).c_str());
+    solver.printf("Calculation complete.\n");
+    solver.printf("Elapsed time: %s\n", time_.elapsedTime().c_str());
+    solver.printf("Elapsed CPU time: %s\n", time_.elapsedCpuTime(solver.grid().comm()).c_str());
+    solver.printf("%s\n", (std::string(96, '*')).c_str());
 }

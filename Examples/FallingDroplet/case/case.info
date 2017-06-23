@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-4
+	timeStep 1e-3
 	maxCo 0.3
 	maxTime 0.2
 
@@ -23,38 +23,22 @@ LinearAlgebra
 {
   uEqn
   {
-    lib hypre
-    maxIterations 50
-    tolerance 1e-4
-    iluFill 0
-    maxPreconditionerUses 10
+    lib eigen
   }
 
   pCorrEqn
   {
-    lib hypre
-    maxIterations 500
-    tolerance 1e-4
-    iluFill 4
-    maxPreconditionerUses 10
+    lib eigen
   }
   
   pEqn
   {
-    lib hypre
-    maxIterations 500
-    tolerance 1e-4
-    iluFill 4
-    maxPreconditionerUses 1
+    lib eigen
   }
 
   gammaEqn
   {
-    lib hypre
-    maxIterations 20
-    tolerance 1e-4
-    iluFill 0
-    maxPreconditionerUses 10
+    lib eigen
   }
 }
 

@@ -51,9 +51,12 @@ public:
     { return *fluid_; }
 
     //- Operations
+    LineSegment2D intersectionLine(const Point2D& ptA, const Point2D& ptB) const;
+
+    Vector2D nearestEdgeNormal(const Point2D& pt) const;
+
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
-
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
     void addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue);

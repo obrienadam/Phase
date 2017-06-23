@@ -16,11 +16,13 @@ class Solver
 public:
     //- Constructors
     Solver(const Input &input,
-           const Communicator &comm,
            std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     //- Info
     virtual std::string info() const;
+
+    //- Print
+    void printf(const char* format, ...) const;
 
     //- Solve
     virtual Scalar solve(Scalar timeStep) = 0;
@@ -32,6 +34,12 @@ public:
     { return maxTimeStep_; }
 
     //- Field management
+    void registerField(std::shared_ptr<ScalarFiniteVolumeField> field)
+    { scalarFields_[field->name()] = field; }
+
+    void registerField(std::shared_ptr<VectorFiniteVolumeField> field)
+    { vectorFields_[field->name()] = field; }
+
     FiniteVolumeField<int> &addIntegerField(const std::string &name);
 
     ScalarFiniteVolumeField &addScalarField(const Input &input, const std::string &name);
@@ -42,20 +50,34 @@ public:
 
     VectorFiniteVolumeField &addVectorField(const std::string &name);
 
-    FiniteVolumeField<int> &getIntegerField(const std::string &name)
-    { return integerFields_.find(name)->second; }
-
-    std::map<std::string, FiniteVolumeField<int> > &integerFields() const
+    //- Field data structures
+    const std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> >& integerFields() const
     { return integerFields_; }
 
-    std::map<std::string, ScalarFiniteVolumeField> &scalarFields() const
+    const std::map<std::string, std::shared_ptr<ScalarFiniteVolumeField>>& scalarFields() const
     { return scalarFields_; }
 
-    std::map<std::string, VectorFiniteVolumeField> &vectorFields() const
+    const std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>>& vectorFields() const
     { return vectorFields_; }
 
-    std::map<std::string, std::vector<Polygon> > &geometries() const
-    { return geometries_; }
+    //- Field lookup
+    FiniteVolumeField<int>& integerField(const std::string& name)
+    { return *integerFields_.find(name)->second; }
+
+    const FiniteVolumeField<int>& integerField(const std::string& name) const
+    { return *integerFields_.find(name)->second; }
+
+    ScalarFiniteVolumeField& scalarField(const std::string& name)
+    { return *scalarFields_.find(name)->second; }
+
+    const ScalarFiniteVolumeField& scalarField(const std::string& name) const
+    { return *scalarFields_.find(name)->second; }
+
+    VectorFiniteVolumeField& vectorField(const std::string& name)
+    { return *vectorFields_.find(name)->second; }
+
+    const VectorFiniteVolumeField& vectorField(const std::string& name) const
+    { return *vectorFields_.find(name)->second; }
 
     //- Grid
     FiniteVolumeGrid2D &grid()
@@ -63,10 +85,6 @@ public:
 
     const FiniteVolumeGrid2D &grid() const
     { return *grid_; }
-
-    //- Comm
-    const Communicator &comm() const
-    { return comm_; }
 
     //- ICs/IBs
     void setInitialConditions(const Input &input);
@@ -104,20 +122,17 @@ protected:
 
     void setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field);
 
-    void
-    setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field);
+    void setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field);
 
     void setRotating(const std::string &xFunction, const std::string &yFunction, const Vector2D &amplitude,
                      const Vector2D &center, VectorFiniteVolumeField &field);
 
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
-    const Communicator comm_;
 
     //- Fields and geometries
-    mutable std::map<std::string, FiniteVolumeField<int> > integerFields_;
-    mutable std::map<std::string, ScalarFiniteVolumeField> scalarFields_;
-    mutable std::map<std::string, VectorFiniteVolumeField> vectorFields_;
-    mutable std::map<std::string, std::vector<Polygon> > geometries_;
+    mutable std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
+    mutable std::map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> scalarFields_;
+    mutable std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
 
     Scalar timeStepRelaxation_, maxTimeStep_;
 

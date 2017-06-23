@@ -1,20 +1,18 @@
 #include "FractionalStep.h"
 #include "GradientEvaluation.h"
 #include "FaceInterpolation.h"
-#include "SourceEvaluation.h"
 #include "Source.h"
 
 FractionalStep::FractionalStep(const Input &input,
-                               const Communicator &comm,
                                std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        Solver(input, comm, grid),
+        Solver(input, grid),
         u(addVectorField(input, "u")),
         gradP(addVectorField("gradP")),
         phi(addScalarField("phi")),
         p(addScalarField(input, "p")),
-        uEqn_(input, comm, u, "uEqn"),
-        pEqn_(input, comm, phi, "pEqn"),
+        uEqn_(input, u, "uEqn"),
+        pEqn_(input, phi, "pEqn"),
         fluid_(grid->createCellZone("fluid"))
 {
     alphaAdv_ = input.caseInput().get<Scalar>("Solver.CrankNicholsonAdvection", 0.5);
@@ -55,7 +53,7 @@ Scalar FractionalStep::solve(Scalar timeStep)
 {
     solveUEqn(timeStep);
 
-    ib_.clearFreshCells(); //- Cleare the fresh cells
+    ib_.clearFreshCells(); //- Clear the fresh cells
 
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -63,8 +61,8 @@ Scalar FractionalStep::solve(Scalar timeStep)
     //- ibObjManager_.computeForce(rho, mu, u, p);
     ib_.update(timeStep);
 
-    comm_.printf("Max Co = %lf\n", maxCourantNumber(timeStep));
-    comm_.printf("Max divergence error = %.4e\n", maxDivergenceError());
+    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
+    printf("Max divergence error = %.4e\n", maxDivergenceError());
 
     return 0.;
 }
@@ -75,10 +73,10 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho_, u, timeStep) + fv::div(rho_*u, u) + ib_.bcs(u) ==
-             fv::laplacian(mu_, u) - fv::source(gradP));
+             fv::laplacian(mu_, u) - fv::source(gradP, fluid_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
 
     computeFaceVelocities(timeStep);
 
@@ -87,14 +85,14 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, phi) + ib_.bcs(phi) == source::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho_, phi) + ib_.bcs(phi) == fv::src::div(u));
 
     Scalar error = pEqn_.solve();
 
     for (const Cell &cell: grid_->localActiveCells())
         p(cell) += phi(cell);
 
-    grid_->sendMessages(comm_, p);
+    grid_->sendMessages(p);
 
     //- Compute pressure gradient
     p.interpolateFaces([](const Face &f) {
@@ -104,7 +102,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     gradP.savePreviousTimeStep(timeStep, 1);
     fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
 
-    grid_->sendMessages(comm_, gradP);
+    grid_->sendMessages(gradP);
 
     return error;
 }
@@ -141,7 +139,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho_ * (gradP(cell) - gradP0(cell));
 
-    grid_->sendMessages(comm_, u);
+    grid_->sendMessages(u);
 
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho_ * (gradP(face) - gradP0(face));
@@ -168,7 +166,7 @@ Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
         maxCo = std::max(maxCo, fabs(dot(u(face), sf) / dot(rc, sf)));
     }
 
-    return comm_.max(maxCo * timeStep);
+    return grid_->comm().max(maxCo * timeStep);
 }
 
 Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
@@ -176,7 +174,7 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
     Scalar co = maxCourantNumber(prevTimeStep);
     Scalar lambda1 = 0.1, lambda2 = 1.2;
 
-    return comm_.min(
+    return grid_->comm().min(
             std::min(
                     std::min(maxCo / co * prevTimeStep, (1 + lambda1 * maxCo / co) * prevTimeStep),
                     std::min(lambda2 * prevTimeStep, maxTimeStep_)
@@ -201,5 +199,5 @@ Scalar FractionalStep::maxDivergenceError() const
             maxError = fabs(div);
     }
 
-    return comm_.max(maxError);
+    return grid_->comm().max(maxError);
 }

@@ -6,10 +6,9 @@
 #include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
 
-Solver::Solver(const Input &input, const Communicator &comm, std::shared_ptr<FiniteVolumeGrid2D>& grid)
+Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
-        ib_(input, comm, *this),
-        comm_(comm),
+        ib_(input, *this),
         grid_(grid)
 {
     //- Set simulation time options
@@ -18,17 +17,6 @@ Solver::Solver(const Input &input, const Communicator &comm, std::shared_ptr<Fin
 
     //- Set voluem integrators
     volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-
-    int rank = comm.rank();
-
-    FiniteVolumeField<int> &proc = addIntegerField("proc");
-    FiniteVolumeField<int> &cellId = addIntegerField("cellId");
-
-    for (const Cell &cell: grid_->cells())
-    {
-        proc(cell) = rank;
-        cellId(cell) = cell.id();
-    }
 }
 
 std::string Solver::info() const
@@ -36,55 +24,66 @@ std::string Solver::info() const
     return "SOLVER INFO\n";
 }
 
+void Solver::printf(const char* format, ...) const
+{
+    va_list argsPtr;
+    va_start(argsPtr, format);
+
+    if(grid_->comm().isMainProc())
+        vfprintf(stdout, format, argsPtr);
+
+    va_end(argsPtr);
+}
+
 FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 {
-    auto insert = integerFields_.insert(std::make_pair(name, FiniteVolumeField<int>(grid_, name)));
+    auto insert = integerFields_.insert(std::make_pair(name, std::make_shared<FiniteVolumeField<int>>(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
 
-    return insert.first->second;
+    return *insert.first->second;
 }
 
 ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(input, grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
 
 
-    return insert.first->second;
+    return *insert.first->second;
 }
 
 ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, ScalarFiniteVolumeField(grid_, name)));
+    auto insert = scalarFields_.insert(std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
 
-    return insert.first->second;
+    return *insert.first->second;
 }
 
 VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(input, grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
 
-    return insert.first->second;
+    return *insert.first->second;
 }
 
 VectorFiniteVolumeField &Solver::addVectorField(const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, VectorFiniteVolumeField(grid_, name)));
+    auto insert = vectorFields_.insert(std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
 
-    return insert.first->second;
+    return *insert.first->second;
 }
 
 void Solver::setInitialConditions(const Input &input)
@@ -94,11 +93,11 @@ void Solver::setInitialConditions(const Input &input)
 
     for (const auto &child: input.initialConditionInput().get_child("InitialConditions"))
     {
-        auto scalarFieldIt = scalarFields().find(child.first);
+        auto scalarFieldIt = scalarFields_.find(child.first);
 
-        if (scalarFieldIt != scalarFields().end())
+        if (scalarFieldIt != scalarFields_.end())
         {
-            ScalarFiniteVolumeField &field = scalarFieldIt->second;
+            ScalarFiniteVolumeField &field = *scalarFieldIt->second;
 
             for (const auto &ic: child.second)
             {
@@ -153,11 +152,11 @@ void Solver::setInitialConditions(const Input &input)
             continue;
         }
 
-        auto vectorFieldIt = vectorFields().find(child.first);
+        auto vectorFieldIt = vectorFields_.find(child.first);
 
-        if (vectorFieldIt != vectorFields().end())
+        if (vectorFieldIt != vectorFields_.end())
         {
-            VectorFiniteVolumeField &field = vectorFieldIt->second;
+            VectorFiniteVolumeField &field = *vectorFieldIt->second;
 
             for (const auto &ic: child.second)
             {
