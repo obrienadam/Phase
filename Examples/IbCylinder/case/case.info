@@ -21,7 +21,7 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib trilinos
+		lib eigen
 		iluFill 0
 		tolerance 1e-10
 	}

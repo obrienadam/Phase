@@ -1,5 +1,5 @@
 #include "FractionalStep.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "FaceInterpolation.h"
 #include "Source.h"
 
@@ -8,9 +8,9 @@ FractionalStep::FractionalStep(const Input &input,
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
-        gradP(addVectorField("gradP")),
         phi(addScalarField("phi")),
         p(addScalarField(input, "p")),
+        gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
         uEqn_(input, u, "uEqn"),
         pEqn_(input, phi, "pEqn"),
         fluid_(grid->createCellZone("fluid"))
@@ -100,7 +100,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
     });
 
     gradP.savePreviousTimeStep(timeStep, 1);
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
+    gradP.compute(fluid_);
 
     grid_->sendMessages(gradP);
 

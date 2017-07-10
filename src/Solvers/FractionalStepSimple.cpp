@@ -1,6 +1,5 @@
 #include "FractionalStepSimple.h"
 #include "FaceInterpolation.h"
-#include "GradientEvaluation.h"
 #include "Source.h"
 #include "SeoMittal.h"
 
@@ -9,8 +8,8 @@ FractionalStepSimple::FractionalStepSimple(const Input &input,
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
-        gradP(addVectorField("gradP")),
         p(addScalarField(input, "p")),
+        gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
         uEqn_(input, u, "uEqn"),
         pEqn_(input, p, "pEqn"),
         fluid_(grid->createCellZone("fluid"))
@@ -40,9 +39,11 @@ std::string FractionalStepSimple::info() const
 
 Scalar FractionalStepSimple::solve(Scalar timeStep)
 {
+    for(auto ibObj: ib_) ibObj->updateCells();
+
     solveUEqn(timeStep);
 
-    ib_.clearFreshCells();
+    for(auto ibObj: ib_) ibObj->clear();
 
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -52,7 +53,7 @@ Scalar FractionalStepSimple::solve(Scalar timeStep)
 
     ib_.update(timeStep);
 
-    printf("Max divergence error = %.4e\n", grid_->comm().max(seo::maxDivergence(ib_, u)));
+    printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     return 0;
@@ -101,21 +102,23 @@ Scalar FractionalStepSimple::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepSimple::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (seo::laplacian(ib_, rho_, timeStep, p) == seo::div(ib_, u));
-    //pEqn_ = (fv::laplacian(timeStep/rho_, p) + ib_.bcs(p) == source::div(u));
+    //pEqn_ = (seo::laplacian(ib_, rho_, timeStep, p) == seo::div(ib_, u));
+    pEqn_ = (fv::laplacian(timeStep/rho_, p) /*+ ib_.bcs(p)*/ == fv::src::div(u));
     Scalar error = pEqn_.solve();
 
     p.interpolateFaces([](const Face& f){
         return f.rCell().volume()/(f.lCell().volume() + f.rCell().volume());
     });
 
+
+
     return error;
 }
 
 void FractionalStepSimple::correctVelocity(Scalar timeStep)
 {
-    seo::correct(ib_, rho_, p, gradP, u, timeStep);
-    return;
+    //seo::correct(ib_, rho_, p, gradP, u, timeStep);
+    //return;
 
     for(const Cell& cell: fluid_)
         u(cell) -= timeStep/rho_*gradP(cell);

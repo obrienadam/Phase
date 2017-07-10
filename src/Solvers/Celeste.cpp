@@ -1,16 +1,17 @@
 #include "Celeste.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "FaceInterpolation.h"
 #include "LineSegment2D.h"
 
 Celeste::Celeste(const Input &input,
+                 const ImmersedBoundary &ib,
                  const ScalarFiniteVolumeField &gamma,
                  const ScalarFiniteVolumeField &rho,
                  const ScalarFiniteVolumeField &mu,
                  const VectorFiniteVolumeField &u,
-                 VectorFiniteVolumeField &gradGamma)
+                 const ScalarGradient &gradGamma)
         :
-        ContinuumSurfaceForce(input, gamma, rho, mu, u, gradGamma)
+        SurfaceTensionForce(input, ib, gamma, rho, mu, u, gradGamma)
 {
     constructMatrices();
 }
@@ -29,7 +30,6 @@ void Celeste::compute()
     for (const Face &face: gamma_.grid().interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
-        gradGamma_(face) = (gamma_(face.rCell()) - gamma_(face.lCell())) * rc / rc.magSqr();
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
     }
 
@@ -86,7 +86,7 @@ void Celeste::constructKappaMatrices()
 
 void Celeste::computeGradGammaTilde()
 {
-    *gammaTilde_ = smooth(gamma_, cellRangeSearch_, kernelWidth_);
+    *gammaTilde_ = smooth(gamma_, grid_->localActiveCells(), kernelWidth_);
     grid_->sendMessages(*gammaTilde_);
 
     //- Used in the reconstruction of gradGammaTilde
@@ -143,7 +143,7 @@ void Celeste::computeCurvature()
 
     for (const Cell &cell: grid_->cellZone("fluid"))
     {
-        if (gradGammaTilde(cell).magSqr() < curvatureCutoffTolerance_)
+        if (gradGammaTilde(cell).magSqr() < eps_ * eps_)
             continue;
 
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
@@ -194,7 +194,9 @@ void Celeste::computeCurvature()
     }
 
     grid_->sendMessages(kappa);
-    interpolateCurvatureFaces();
+    kappa_->interpolateFaces([](const Face& face){
+        return face.rCell().volume() / (face.lCell().volume() + face.rCell().volume());
+    });
 }
 
 void Celeste::computeCurvature(const ImmersedBoundary &ib)
@@ -208,7 +210,7 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
     for (const Cell &cell: grid_->cellZone("fluid"))
     {
-        if (gradGammaTilde(cell).magSqr() < curvatureCutoffTolerance_)
+        if (gradGammaTilde(cell).magSqr() < eps_ * eps_)
             continue;
 
         const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
@@ -231,7 +233,7 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
                     Vector2D r = stencil.first - cell.centroid();
                     //sSqr = pow(r.mag() + eps_, 2);
 
-                    dn = computeContactLineNormal(gradGamma_(cell), stencil.second, u_(cell), theta()) -
+                    dn = contactLineNormal(cell, nb.cell(), ibObj) -
                          n(cell);
 
                     n(nb.cell()) = n(cell) + dn;
@@ -260,8 +262,8 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
                     Vector2D r = stencil.first - cell.centroid();
                     //sSqr = pow(r.mag() + eps_, 2);
-                    std::cout << theta() * 180 / M_PI << std::endl;
-                    dn = computeContactLineNormal(gradGammaTilde(cell), stencil.second, u_(cell), theta()) -
+                    std::cout << theta(ibObj) * 180 / M_PI << std::endl;
+                    dn = contactLineNormal(cell, dg.cell(), ibObj) -
                          n(cell);
 
                     n(dg.cell()) = n(cell) + dn;
@@ -295,7 +297,9 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
     }
 
     grid_->sendMessages(kappa);
-    interpolateCurvatureFaces();
+    kappa_->interpolateFaces([](const Face& face){
+        return face.rCell().volume() / (face.lCell().volume() + face.rCell().volume());
+    });
 }
 
 Matrix Celeste::leastSquaresMatrix(const Cell &cell, bool weighted)

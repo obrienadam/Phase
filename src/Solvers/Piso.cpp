@@ -1,6 +1,6 @@
 #include "Piso.h"
 #include "FaceInterpolation.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "Source.h"
 
 Piso::Piso(const Input &input,
@@ -8,10 +8,10 @@ Piso::Piso(const Input &input,
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
-        gradP(addVectorField("gradP")),
-        gradPCorr(addVectorField("gradPCorr")),
         p(addScalarField(input, "p")),
         pCorr(addScalarField("pCorr")),
+        gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
+        gradPCorr(addVectorField(std::make_shared<ScalarGradient>(pCorr))),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
         m(addScalarField("m")),
@@ -128,7 +128,7 @@ Scalar Piso::solvePCorrEqn()
     grid_->sendMessages(pCorr);
 
     pCorr.setBoundaryFaces();
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, pCorr, gradPCorr);
+    gradPCorr.compute(fluid_);
 
     for(const Cell &cell: grid_->localActiveCells())
         p(cell) += pCorrOmega_*pCorr(cell);
@@ -136,7 +136,7 @@ Scalar Piso::solvePCorrEqn()
     grid_->sendMessages(p);
 
     p.setBoundaryFaces();
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
+    gradP.compute(fluid_);
 
     grid_->sendMessages(gradP);
 

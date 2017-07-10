@@ -7,6 +7,7 @@
 #include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
+#include "ScalarGradient.h"
 
 class FractionalStep : public Solver
 {
@@ -28,8 +29,9 @@ public:
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &gradP;
+    VectorFiniteVolumeField &u;
     ScalarFiniteVolumeField &phi, &p;
+    ScalarGradient &gradP;
 
 protected:
 

@@ -9,7 +9,6 @@ set(HEADERS Solver.h
             PisoMultiphase.h
             FractionalStepMultiphase.h
             SurfaceTensionForce.h
-            ContinuumSurfaceForce.h
             Celeste.h)
 
 set(SOURCES Solver.cpp
@@ -23,7 +22,6 @@ set(SOURCES Solver.cpp
             FractionalStepMultiphase.cpp
             FractionalStepSimpleMultiphase.cpp
             SurfaceTensionForce.cpp
-            ContinuumSurfaceForce.cpp
             Celeste.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})

@@ -5,6 +5,7 @@
 #include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
+#include "ScalarGradient.h"
 
 class Piso : public Solver
 {
@@ -19,7 +20,8 @@ public:
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u, &gradP, &gradPCorr;
+    VectorFiniteVolumeField &u;
+    ScalarGradient &gradP, &gradPCorr;
     ScalarFiniteVolumeField &p, &pCorr, &rho, &mu, &m, &d;
 
 protected:

@@ -25,7 +25,8 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     ScalarFiniteVolumeField &gamma;
-    VectorFiniteVolumeField &gradGamma, &gradRho, &sg;
+    ScalarGradient &gradGamma, &gradRho;
+    VectorFiniteVolumeField &sg;
 
 protected:
 

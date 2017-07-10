@@ -19,7 +19,8 @@ public:
 
 
     ScalarFiniteVolumeField &gamma, &rho, &mu;
-    VectorFiniteVolumeField &gradGamma, &sg, &gradRho, &rhoU;
+    ScalarGradient &gradGamma, &gradRho;
+    VectorFiniteVolumeField &sg, &rhoU;
 
 protected:
 

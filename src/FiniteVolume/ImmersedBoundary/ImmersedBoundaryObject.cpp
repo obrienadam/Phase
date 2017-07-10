@@ -67,6 +67,16 @@ void ImmersedBoundaryObject::setZone(CellZone &zone)
     cells_ = CellZone("Cells", zone.registry());
 }
 
+void ImmersedBoundaryObject::clear()
+{
+    fluid_->add(cells_);
+    ibCells_.clear();
+    solidCells_.clear();
+    freshCells_.clear();
+    deadCells_.clear();
+    grid_.setCellsActive(*fluid_);
+}
+
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const
 {
     LineSegment2D ln(ptA, ptB);

@@ -17,7 +17,8 @@ public:
     Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &rho, &mu, &gamma;
-    VectorFiniteVolumeField &rhoU, &gradGamma;
+    ScalarGradient &gradGamma;
+    VectorFiniteVolumeField &rhoU;
 
 private:
 

@@ -2,6 +2,7 @@
 
 #include "ImmersedBoundary.h"
 #include "Solver.h"
+#include "StepImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
 #include "ForcingCellImmersedBoundaryObject.h"
 #include "LeastSquaresImmersedBoundaryObject.h"
@@ -33,7 +34,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
         std::shared_ptr<ImmersedBoundaryObject> ibObject;
 
-        if(method == "ghost-cell")
+        if (method == "step")
+            ibObject = std::shared_ptr<StepImmersedBoundaryObject>(new StepImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
+        else if(method == "ghost-cell")
             ibObject = std::shared_ptr<GhostCellImmersedBoundaryObject>(new GhostCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
         else if(method == "forcing-cell")
             ibObject = std::shared_ptr<ForcingCellImmersedBoundaryObject>(new ForcingCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
@@ -187,6 +190,15 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Poin
             return ibObj;
 
     return nullptr;
+}
+
+const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string& name) const
+{
+    for(const auto& ibObj: ibObjs_)
+        if(ibObj->name() == name)
+            return *ibObj;
+
+    throw Exception("ImmersedBoundary", "ibObj", "no immersed boundary object named \"" + name + "\".");
 }
 
 void ImmersedBoundary::update(Scalar timeStep)

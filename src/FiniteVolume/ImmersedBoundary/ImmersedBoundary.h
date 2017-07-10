@@ -14,12 +14,15 @@ public:
 
     ImmersedBoundary(const Input &input, Solver &solver);
 
+    //- Cell zones
     void initCellZones(CellZone &zone);
 
     const CellZone& zone() const
     { return *zone_; }
 
     std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D& pt) const;
+
+    const ImmersedBoundaryObject &ibObj(const std::string& name) const;
 
     void update(Scalar timeStep);
 

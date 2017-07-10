@@ -183,8 +183,39 @@ template<class T>
 void interpolateNodes(FiniteVolumeField<T> &field);
 
 template<class T>
-FiniteVolumeField<T>
-smooth(const Field<T> &field, const std::vector<std::vector<Ref<const Cell> > > &rangeSearch, Scalar epsilon);
+FiniteVolumeField<T> smooth(const FiniteVolumeField<T> &field,
+                            const CellGroup &cells,
+                            Scalar epsilon)
+{
+    FiniteVolumeField<T> smoothedField(field.gridPtr(), field.name());
+    Scalar A = 1.;
+    Scalar epsilonSqr = epsilon * epsilon;
+
+//    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
+    auto K = [&A](Scalar r, Scalar e)
+    { // This smoothing kernel appears to be slightly better
+        return r < e ? A / (2. * e) * (1. + cos(M_PI * r / e)) : 0.;
+    };
+
+    for (const Cell &cell: cells)
+    {
+        //- Determine the normalizing constant for this kernel
+        Scalar integralK = 0.;
+        A = 1.;
+
+        auto kCells = cells.itemsWithin(Circle(cell.centroid(), epsilon));
+
+        for (const Cell &kCell: kCells)
+            integralK += K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
+
+        A = 1. / integralK;
+
+        for (const Cell &kCell: kCells)
+            smoothedField(cell) += field(kCell) * K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
+    }
+
+    return smoothedField;
+}
 
 #include "FiniteVolumeField.tpp"
 

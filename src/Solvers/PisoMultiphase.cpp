@@ -3,7 +3,7 @@
 #include "Plic.h"
 #include "Celeste.h"
 #include "FaceInterpolation.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "Source.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input,
@@ -11,8 +11,8 @@ PisoMultiphase::PisoMultiphase(const Input &input,
         :
         Piso(input, grid),
         gamma(addScalarField(input, "gamma")),
-        gradGamma(addVectorField("gradGamma")),
-        gradRho(addVectorField("gradRho")),
+        gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
+        gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
         sg(addVectorField("sg")),
         gammaEqn_(input, gamma, "gammaEqn")
 {
@@ -29,12 +29,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
-    if (tmp == "CSF")
-        ft_ = std::make_shared<ContinuumSurfaceForce>(input, gamma, rho, mu, u, gradGamma);
-    else if (tmp == "CELESTE")
-        ft_ = std::make_shared<Celeste>(input, gamma, rho, mu, u, gradGamma);
-    else
-        throw Exception("PisoMultiphase", "PisoMultiphase", "unrecognized surface tension model \"" + tmp + "\".");
+    ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
 
     registerField(ft_);
 
@@ -94,7 +89,7 @@ void PisoMultiphase::computeRho()
 {
     using namespace std;
 
-    const ScalarFiniteVolumeField &alpha = ft_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = gamma;
 
     rho.savePreviousTimeStep(0, 1);
 
@@ -107,7 +102,7 @@ void PisoMultiphase::computeRho()
     grid_->sendMessages(rho);
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
-    fv::computeInverseWeightedGradient(rho, rho, gradRho);
+    gradRho.computeWeighted(rho, fluid_);
 
     for (const Cell &cell: sg.grid().cellZone("fluid"))
         sg(cell) = dot(g_, cell.centroid()) * gradRho(cell);
@@ -120,7 +115,7 @@ void PisoMultiphase::computeMu()
 {
     using namespace std;
 
-    const ScalarFiniteVolumeField &alpha = ft_->gammaTilde();
+    const ScalarFiniteVolumeField &alpha = gamma;
 
     mu.savePreviousTimeStep(0, 1);
 
@@ -175,7 +170,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
     });
 
-    fv::computeInverseWeightedGradient(rho, gamma, gradGamma);
+    gradGamma.computeWeighted(rho, fluid_);
 
     grid_->sendMessages(gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 

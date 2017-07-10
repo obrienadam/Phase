@@ -1,6 +1,6 @@
 set(HEADERS Discretization/CrankNicolson.h
         Discretization/FaceInterpolation.h
-        Discretization/GradientEvaluation.h
+        Field/ScalarGradient.h
         Discretization/Cicsam.h
         Discretization/Plic.h
         Equation/Equation.h
@@ -15,8 +15,10 @@ set(HEADERS Discretization/CrankNicolson.h
         Field/VectorFiniteVolumeField.h
         Field/TensorFiniteVolumeField.h
         Field/PolygonFiniteVolumeField.h
+        Field/ScalarGradient.h
         ImmersedBoundary/ImmersedBoundary.h
         ImmersedBoundary/ImmersedBoundaryObject.h
+        ImmersedBoundary/StepImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellImmersedBoundaryObject.h
         ImmersedBoundary/ForcingCellImmersedBoundaryObject.h
         ImmersedBoundary/LeastSquaresImmersedBoundaryObject.h
@@ -34,7 +36,7 @@ set(HEADERS Discretization/CrankNicolson.h
 set(SOURCES Discretization/CrankNicolson.cpp
         Discretization/FaceInterpolation.tpp
         Discretization/FaceInterpolation.cpp
-        Discretization/GradientEvaluation.cpp
+        Field/ScalarGradient.cpp
         Discretization/Cicsam.cpp
         Discretization/Plic.cpp
         Equation/Equation.tpp
@@ -50,8 +52,10 @@ set(SOURCES Discretization/CrankNicolson.cpp
         Field/VectorFiniteVolumeField.cpp
         Field/TensorFiniteVolumeField.cpp
         Field/PolygonFiniteVolumeField.cpp
+        Field/ScalarGradient.cpp
         ImmersedBoundary/ImmersedBoundary.cpp
         ImmersedBoundary/ImmersedBoundaryObject.cpp
+        ImmersedBoundary/StepImmersedBoundaryObject.cpp
         ImmersedBoundary/GhostCellImmersedBoundaryObject.cpp
         ImmersedBoundary/ForcingCellImmersedBoundaryObject.cpp
         ImmersedBoundary/LeastSquaresImmersedBoundaryObject.cpp

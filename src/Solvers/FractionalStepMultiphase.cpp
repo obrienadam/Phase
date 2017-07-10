@@ -1,7 +1,7 @@
 #include "FractionalStepMultiphase.h"
 #include "CrankNicolson.h"
 #include "Cicsam.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "FaceInterpolation.h"
 #include "Source.h"
 
@@ -12,9 +12,9 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
         gamma(addScalarField(input, "gamma")),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
-        gradGamma(addVectorField("gradGamma")),
+        gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
+        gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
         sg(addVectorField("sg")),
-        gradRho(addVectorField("gradRho")),
         rhoU(addVectorField("rhoU")),
         gammaEqn_(input, gamma, "gammaEqn")
 {
@@ -29,7 +29,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
 
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g"));
 
-    ft_ = std::make_shared<Celeste>(input, gamma, rho, mu, u, gradGamma);
+    ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
 
     registerField(ft_);
     ft_->registerSubFields(*this);
@@ -52,7 +52,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
 void FractionalStepMultiphase::initialize()
 {
     //- Ensure the computation starts with a valid gamma field
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, gamma, gradGamma);
+    gradGamma.compute(fluid_);
 
     //- Be careful about this, mu and rho must have valid time histories!!!
     rho.computeBoundaryFaces([this](const Face& face){
@@ -115,7 +115,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
     //- Recompute gradGamma for next cicsam iteration
     gamma.setBoundaryFaces();
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, gamma, gradGamma);
+    gradGamma.compute(fluid_);
     grid_->sendMessages(gradGamma); //- In case donor cell is on another proc
 
     updateProperties(timeStep);
@@ -158,7 +158,7 @@ Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
     gradP.savePreviousTimeStep(timeStep, 1);
 
     //- Weighted gradients greatly reduce the effect of large pressure differences
-    fv::computeInverseWeightedGradient(rho, p, gradP);
+    gradP.computeWeighted(rho, fluid_);
     grid_->sendMessages(gradP);
 
     return error;
@@ -286,7 +286,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
     ft_->compute();
 
     //- Update the gravitational source term
-    fv::computeInverseWeightedGradient(rho, rho, gradRho);
+    gradRho.computeWeighted(rho, fluid_);
 
     sg.savePreviousTimeStep(timeStep, 1);
     sg.compute([this](const Cell& cell) {

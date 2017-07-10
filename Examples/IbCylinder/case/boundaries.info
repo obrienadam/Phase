@@ -70,7 +70,7 @@ ImmersedBoundaries
 {
   Cylinder1
   {
-    method ghost-cell
+    method step
 
     geometry
     {

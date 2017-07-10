@@ -50,6 +50,17 @@ public:
 
     VectorFiniteVolumeField &addVectorField(const std::string &name);
 
+    template<class T>
+    T &addVectorField(std::shared_ptr<T> field)
+    {
+        auto insert = vectorFields_.insert(std::make_pair(field->name(), field));
+
+        if (!insert.second)
+            throw Exception("Solver", "addVectorField", "field \"" + field->name() + "\" already exists.");
+
+        return *field;
+    }
+
     //- Field data structures
     const std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> >& integerFields() const
     { return integerFields_; }

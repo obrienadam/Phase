@@ -11,8 +11,6 @@ public:
 
     enum BoundaryType{FIXED, NORMAL_GRADIENT};
 
-    enum MotionType{NONE, TRANSLATING, OSCILLATING, FREE};
-
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
                            Label id,
@@ -43,6 +41,8 @@ public:
 
     //- Set/get primary cell zone
     void setZone(CellZone& zone);
+
+    void clear();
 
     CellZone& cellZone()
     { return *fluid_; }

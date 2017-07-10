@@ -1,5 +1,5 @@
 #include "CoupledEquation.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "FaceInterpolation.h"
 /*
 CoupledEquation::CoupledEquation(const Input &input, const ScalarFiniteVolumeField &rho, const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, ScalarFiniteVolumeField &p)

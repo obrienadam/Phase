@@ -1,23 +1,26 @@
 #ifndef CELESTE_H
 #define CELESTE_H
 
-#include "ContinuumSurfaceForce.h"
+#include "SurfaceTensionForce.h"
 #include "Matrix.h"
 
-class Celeste : public ContinuumSurfaceForce
+class Celeste : public SurfaceTensionForce
 {
 public:
 
     Celeste(const Input &input,
+            const ImmersedBoundary &ib,
             const ScalarFiniteVolumeField &gamma,
             const ScalarFiniteVolumeField &rho,
             const ScalarFiniteVolumeField &mu,
             const VectorFiniteVolumeField &u,
-            VectorFiniteVolumeField &gradGamma);
+            const ScalarGradient &gradGamma);
 
     virtual void compute();
 
     void compute(const ImmersedBoundary& ib);
+
+    void registerSubFields(Solver& solver) {}
 
     void constructMatrices();
 
@@ -39,7 +42,7 @@ protected:
 
     void constructKappaMatrices();
 
-    const Scalar eps_ = 1e-9;
+    const Scalar eps_ = 1e-10;
 
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 };

@@ -1,5 +1,5 @@
 #include "FractionalStepSimpleMultiphase.h"
-#include "GradientEvaluation.h"
+#include "ScalarGradient.h"
 #include "Source.h"
 #include "CrankNicolson.h"
 #include "Cicsam.h"
@@ -13,7 +13,7 @@ FractionalStepSimpleMultiphase::FractionalStepSimpleMultiphase(const Input &inpu
         mu(addScalarField("mu")),
         gamma(addScalarField(input, "gamma")),
         rhoU(addVectorField("rhoU")),
-        gradGamma(addVectorField("gradGamma")),
+        gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gammaEqn_(input, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1", rho_);
@@ -25,7 +25,7 @@ FractionalStepSimpleMultiphase::FractionalStepSimpleMultiphase(const Input &inpu
     rho.copyBoundaryTypes(gamma);
     mu.copyBoundaryTypes(gamma);
 
-    ft_ = std::make_shared<Celeste>(input, gamma, rho, mu, u, gradGamma);
+    ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
     registerField(ft_);
 
     Scalar sigma = ft_->sigma();
@@ -44,7 +44,7 @@ FractionalStepSimpleMultiphase::FractionalStepSimpleMultiphase(const Input &inpu
 void FractionalStepSimpleMultiphase::initialize()
 {
     //- Ensure the computation starts with a valid gamma field
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, gamma, gradGamma);
+    gradGamma.compute(fluid_);
 
     //- Set the fixed boundaries for rho and mu
     rho.setBoundaryFaces(ScalarFiniteVolumeField::FIXED, [this](const Face& face){
@@ -116,7 +116,7 @@ Scalar FractionalStepSimpleMultiphase::solveGammaEqn(Scalar timeStep)
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
     });
 
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, gamma, gradGamma);
+    gradGamma.compute(fluid_);
     grid_->sendMessages(gradGamma);
 
     updateProperties(timeStep);
@@ -159,8 +159,7 @@ Scalar FractionalStepSimpleMultiphase::solvePEqn(Scalar timeStep)
 void FractionalStepSimpleMultiphase::correctVelocity(Scalar timeStep)
 {
     //seo::correct(ib_, rho, p, *ft_, gradP, u, timeStep);
-
-    fv::computeGradient(fv::FACE_TO_CELL, fluid_, p, gradP);
+    gradP.computeWeighted(rho, fluid_);
 
     for(const Face& face: grid_->interiorFaces())
         u(face) -= timeStep/rho(face) * gradP(face);
