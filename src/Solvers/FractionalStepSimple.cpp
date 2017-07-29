@@ -2,6 +2,7 @@
 #include "FaceInterpolation.h"
 #include "Source.h"
 #include "SeoMittal.h"
+#include "QuadraticIbm.h"
 
 FractionalStepSimple::FractionalStepSimple(const Input &input,
                                            std::shared_ptr<FiniteVolumeGrid2D> &grid)
@@ -10,6 +11,7 @@ FractionalStepSimple::FractionalStepSimple(const Input &input,
         u(addVectorField(input, "u")),
         p(addScalarField(input, "p")),
         gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
+        gradU(addTensorField(std::make_shared<JacobianField>(u))),
         uEqn_(input, u, "uEqn"),
         pEqn_(input, p, "pEqn"),
         fluid_(grid->createCellZone("fluid"))
@@ -26,7 +28,9 @@ FractionalStepSimple::FractionalStepSimple(const Input &input,
 
 void FractionalStepSimple::initialize()
 {
-
+    u.setBoundaryFaces();
+    p.setBoundaryFaces();
+    gradP.compute(fluid_);
 }
 
 std::string FractionalStepSimple::info() const
@@ -39,19 +43,12 @@ std::string FractionalStepSimple::info() const
 
 Scalar FractionalStepSimple::solve(Scalar timeStep)
 {
-    for(auto ibObj: ib_) ibObj->updateCells();
-
     solveUEqn(timeStep);
-
-    for(auto ibObj: ib_) ibObj->clear();
-
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_.computeForce(ScalarFiniteVolumeField(grid_, "rho", rho_),
-                     ScalarFiniteVolumeField(grid_, "mu", mu_), u, p);
-
-    ib_.update(timeStep);
+    //ib_.computeForce(rho_, mu_, u, p);
+    //ib_.update(timeStep);
 
     printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -89,13 +86,19 @@ Scalar FractionalStepSimple::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeSte
 Scalar FractionalStepSimple::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
+    //gradU.compute(fluid_);
+    //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u) + ib_.bcs(u) == fv::laplacian(mu_/rho_, u));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u) + ib_.solidVelocity(u) == fv::laplacian(mu_/rho_, u));
+    //uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.solidVelocity(u) == qibm::laplacian(mu_/rho_, u, ib_));
     Scalar error = uEqn_.solve();
+    grid_->sendMessages(u);
 
     u.interpolateFaces([](const Face& f){
         return f.rCell().volume()/(f.lCell().volume() + f.rCell().volume());
     });
+
+    //qibm::computeFaceVelocities(u, ib_);
 
     return error;
 }
@@ -103,14 +106,13 @@ Scalar FractionalStepSimple::solveUEqn(Scalar timeStep)
 Scalar FractionalStepSimple::solvePEqn(Scalar timeStep)
 {
     //pEqn_ = (seo::laplacian(ib_, rho_, timeStep, p) == seo::div(ib_, u));
-    pEqn_ = (fv::laplacian(timeStep/rho_, p) /*+ ib_.bcs(p)*/ == fv::src::div(u));
+    pEqn_ = (fv::laplacian(timeStep/rho_, p) + ib_.bcs(p) == src::div(u));
     Scalar error = pEqn_.solve();
+    grid_->sendMessages(p);
 
-    p.interpolateFaces([](const Face& f){
-        return f.rCell().volume()/(f.lCell().volume() + f.rCell().volume());
-    });
-
-
+    //- Gradient
+    p.setBoundaryFaces();
+    gradP.compute(fluid_);
 
     return error;
 }
@@ -126,7 +128,22 @@ void FractionalStepSimple::correctVelocity(Scalar timeStep)
     for(const Face& face: grid_->interiorFaces())
         u(face) -= timeStep/rho_*gradP(face);
 
-    u.setBoundaryFaces();
+    for(const Patch& patch: grid_->patches())
+        switch(u.boundaryType(patch))
+        {
+            case VectorFiniteVolumeField::FIXED:
+                break;
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                for(const Face& face: patch)
+                    u(face) -= timeStep/rho_*gradP(face);
+                break;
+            case VectorFiniteVolumeField::SYMMETRY:
+                for(const Face& face: patch)
+                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) *face.norm()/face.norm().magSqr();
+                break;
+        }
+
+    grid_->sendMessages(u);
 }
 
 Scalar FractionalStepSimple::maxDivergenceError()
@@ -143,8 +160,7 @@ Scalar FractionalStepSimple::maxDivergenceError()
         for (const BoundaryLink &bd: cell.boundaries())
             div += dot(u(bd.face()), bd.outwardNorm());
 
-        if (fabs(div) > maxError)
-            maxError = fabs(div);
+        maxError = fabs(div) > maxError ? div : maxError;
     }
 
     return grid_->comm().max(maxError);

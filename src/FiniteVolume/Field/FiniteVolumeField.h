@@ -34,25 +34,35 @@ public:
 
     void fillInterior(const T &val);
 
-    void compute(const std::function<T(const Cell& cell)> &fcn) {
+    template<class TFunc>
+    void computeCells(const TFunc &fcn) {
         for(const Cell& cell: grid().cells())
             (*this)(cell) = fcn(cell);
     }
 
-    void compute(const std::function<T(const Face& face)> &fcn) {
+    template<class TFunc>
+    void computeFaces(const TFunc&fcn) {
         for(const Face& face: grid().faces())
             (*this)(face) = fcn(face);
     }
 
-    void computeBoundaryFaces(const std::function<T(const Face& face)> &fcn) {
+    template <class TFunc>
+    void computeInteriorFaces(const TFunc &fcn) {
+        for(const Face& face: grid().interiorFaces())
+            (*this)(face) = fcn(face);
+    }
+
+    template <class TFunc>
+    void computeBoundaryFaces(const TFunc&fcn) {
         for(const Face& face: grid().boundaryFaces())
             (*this)(face) = fcn(face);
     }
 
-    void compute(const std::function<T(const Cell& cell)>& cfcn,
-                 const std::function<T(const Face& face)>& ffcn) {
-        compute(cfcn);
-        compute(ffcn);
+    template <class TFuncCell, class TFuncFace>
+    void compute(const TFuncCell& cfcn,
+                 const TFuncFace& ffcn) {
+        computeCells(cfcn);
+        computeFaces(ffcn);
     }
 
     void setPatch(const Patch& patch, const std::function<T(const Face& face)>& fcn) {
@@ -71,7 +81,18 @@ public:
 
     std::pair<BoundaryType, T> boundaryInfo(const Face &face) const;
 
-    void interpolateFaces(const std::function<Scalar(const Face& face)>& alpha);
+    template<class TFunc>
+    void interpolateFaces(const TFunc& alpha) {
+        auto &self = *this;
+
+        for(const Face& face: grid_->interiorFaces())
+        {
+            Scalar g = alpha(face);
+            self(face) = g*self(face.lCell()) + (1. - g)*self(face.rCell());
+        }
+
+        setBoundaryFaces();
+    }
 
     void setBoundaryFaces();
 
@@ -180,40 +201,18 @@ protected:
 };
 
 template<class T>
-void interpolateNodes(FiniteVolumeField<T> &field);
+void smooth(const FiniteVolumeField<T> &field,
+            const CellGroup &cells,
+            Scalar epsilon,
+            FiniteVolumeField<T>& smoothedField);
 
 template<class T>
 FiniteVolumeField<T> smooth(const FiniteVolumeField<T> &field,
                             const CellGroup &cells,
                             Scalar epsilon)
 {
-    FiniteVolumeField<T> smoothedField(field.gridPtr(), field.name());
-    Scalar A = 1.;
-    Scalar epsilonSqr = epsilon * epsilon;
-
-//    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
-    auto K = [&A](Scalar r, Scalar e)
-    { // This smoothing kernel appears to be slightly better
-        return r < e ? A / (2. * e) * (1. + cos(M_PI * r / e)) : 0.;
-    };
-
-    for (const Cell &cell: cells)
-    {
-        //- Determine the normalizing constant for this kernel
-        Scalar integralK = 0.;
-        A = 1.;
-
-        auto kCells = cells.itemsWithin(Circle(cell.centroid(), epsilon));
-
-        for (const Cell &kCell: kCells)
-            integralK += K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
-
-        A = 1. / integralK;
-
-        for (const Cell &kCell: kCells)
-            smoothedField(cell) += field(kCell) * K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
-    }
-
+    FiniteVolumeField<T> smoothedField(field.gridPtr(), field.name() + "Tilde");
+    smooth(field, cells, epsilon, smoothedField);
     return smoothedField;
 }
 

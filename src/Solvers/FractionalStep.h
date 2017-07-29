@@ -4,10 +4,9 @@
 #include <fstream>
 
 #include "Solver.h"
-#include "Communicator.h"
 #include "FiniteVolumeEquation.h"
-#include "ForceIntegrator.h"
 #include "ScalarGradient.h"
+#include "JacobianField.h"
 
 class FractionalStep : public Solver
 {
@@ -15,9 +14,6 @@ public:
 
     FractionalStep(const Input &input,
                    std::shared_ptr<FiniteVolumeGrid2D> &grid);
-
-    ~FractionalStep()
-    { log.close(); }
 
     virtual void initialize();
 
@@ -30,8 +26,9 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
     VectorFiniteVolumeField &u;
-    ScalarFiniteVolumeField &phi, &p;
+    ScalarFiniteVolumeField &p;
     ScalarGradient &gradP;
+    JacobianField &gradU;
 
 protected:
 
@@ -39,22 +36,16 @@ protected:
 
     virtual Scalar solvePEqn(Scalar timeStep);
 
-    virtual void computeFaceVelocities(Scalar timeStep);
-
     virtual void correctVelocity(Scalar timeStep);
 
     Scalar maxDivergenceError() const;
 
     Scalar rho_, mu_;
 
-    Scalar alphaAdv_, alphaDiff_;
-
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;
 
     CellZone& fluid_;
-
-    std::ofstream log;
 };
 
 #endif

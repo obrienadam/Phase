@@ -59,14 +59,14 @@ namespace fv
 
             for (const InteriorLink &nb: cell.neighbours())
             {
-                Scalar coeff = gamma * dot(nb.rCellVec(), nb.outwardNorm()) / dot(nb.rCellVec(), nb.rCellVec());
+                Scalar coeff = gamma * dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
                 centralCoeff -= coeff;
                 eqn.add(cell, nb.cell(), coeff);
             }
 
             for (const BoundaryLink &bd: cell.boundaries())
             {
-                const Scalar coeff = gamma * dot(bd.rFaceVec(), bd.outwardNorm()) / dot(bd.rFaceVec(), bd.rFaceVec());
+                const Scalar coeff = gamma * dot(bd.rFaceVec(), bd.outwardNorm()) / bd.rFaceVec().magSqr();
 
                 switch (field.boundaryType(bd.face()))
                 {

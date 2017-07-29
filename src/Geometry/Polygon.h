@@ -7,6 +7,7 @@
 
 #include "Shape2D.h"
 #include "Line2D.h"
+#include "Exception.h"
 
 class Polygon : public Shape2D
 {
@@ -36,6 +37,9 @@ public:
 
     Scalar area() const
     { return area_; }
+
+    Scalar momentOfInertia() const
+    { throw Exception("Polygon", "momentOfInertia", "not implemented."); }
 
     Scalar perimeter() const;
 

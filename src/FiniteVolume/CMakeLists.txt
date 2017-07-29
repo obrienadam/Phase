@@ -16,6 +16,7 @@ set(HEADERS Discretization/CrankNicolson.h
         Field/TensorFiniteVolumeField.h
         Field/PolygonFiniteVolumeField.h
         Field/ScalarGradient.h
+        Field/JacobianField.h
         ImmersedBoundary/ImmersedBoundary.h
         ImmersedBoundary/ImmersedBoundaryObject.h
         ImmersedBoundary/StepImmersedBoundaryObject.h
@@ -31,7 +32,9 @@ set(HEADERS Discretization/CrankNicolson.h
         ImmersedBoundary/Motion.h
         ImmersedBoundary/TranslatingMotion.h
         ImmersedBoundary/OscillatingMotion.h
-        ImmersedBoundary/SeoMittal.h)
+        ImmersedBoundary/SolidBodyMotion.h
+        ImmersedBoundary/SeoMittal.h
+        ImmersedBoundary/QuadraticIbm.h)
 
 set(SOURCES Discretization/CrankNicolson.cpp
         Discretization/FaceInterpolation.tpp
@@ -53,6 +56,7 @@ set(SOURCES Discretization/CrankNicolson.cpp
         Field/TensorFiniteVolumeField.cpp
         Field/PolygonFiniteVolumeField.cpp
         Field/ScalarGradient.cpp
+        Field/JacobianField.cpp
         ImmersedBoundary/ImmersedBoundary.cpp
         ImmersedBoundary/ImmersedBoundaryObject.cpp
         ImmersedBoundary/StepImmersedBoundaryObject.cpp
@@ -68,6 +72,8 @@ set(SOURCES Discretization/CrankNicolson.cpp
         ImmersedBoundary/Motion.cpp
         ImmersedBoundary/TranslatingMotion.cpp
         ImmersedBoundary/OscillatingMotion.cpp
-        ImmersedBoundary/SeoMittal.cpp)
+        ImmersedBoundary/SolidBodyMotion.cpp
+        ImmersedBoundary/SeoMittal.cpp
+        ImmersedBoundary/QuadraticIbm.cpp)
 
 add_library(FiniteVolume ${HEADERS} ${SOURCES})

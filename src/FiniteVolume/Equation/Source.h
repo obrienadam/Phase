@@ -4,23 +4,27 @@
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 
-namespace fv
+namespace src
 {
-    namespace src
-    {
+    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
 
-        ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
+    VectorFiniteVolumeField div(const ScalarFiniteVolumeField &rho,
+                                const VectorFiniteVolumeField &u,
+                                const VectorFiniteVolumeField &field);
 
-        VectorFiniteVolumeField laplacian(const ScalarFiniteVolumeField &gamma,
-                                          const VectorFiniteVolumeField &field);
+    ScalarFiniteVolumeField laplacian(Scalar gamma,
+                                      const ScalarFiniteVolumeField &phi);
 
-        VectorFiniteVolumeField div(const ScalarFiniteVolumeField &rho,
-                                    const VectorFiniteVolumeField &u,
-                                    const VectorFiniteVolumeField &field);
-    }
+    ScalarFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma,
+                                      const ScalarFiniteVolumeField& phi);
+
+    VectorFiniteVolumeField ftc(const ScalarFiniteVolumeField& cellWeight,
+                                const ScalarFiniteVolumeField& faceWeight,
+                                const VectorFiniteVolumeField& field,
+                                const CellGroup& cells);
 
     template <class T>
-    FiniteVolumeField<T> source(const FiniteVolumeField<T> &field, const CellGroup& group)
+    FiniteVolumeField<T> src(const FiniteVolumeField<T> &field, const CellGroup& group)
     {
         VectorFiniteVolumeField srcField(field.gridPtr(), field.name(), T(), false, false);
 

@@ -1,27 +1,24 @@
 set(HEADERS Matrix.h
-    SparseMatrixSolver.h
-    EigenSparseMatrixSolver.h
-    TrilinosSparseMatrixSolver.h
-    Vector.h
-    BisectionSearch.h
-    SecantSearch.h
-    Interpolation.h
-    LinearInterpolation.h
-    BilinearInterpolation.h
-    QuadraticNormalInterpolation.h
-    InterpolationFunction.h)
+        SparseMatrixSolver.h
+        EigenSparseMatrixSolver.h
+        TrilinosSparseMatrixSolver.h
+        Vector.h
+        Algorithm.h
+        Interpolation.h
+        LinearInterpolation.h
+        BilinearInterpolation.h
+        QuadraticNormalInterpolation.h
+        InterpolationFunction.h)
 
 set(SOURCES Matrix.cpp
-    SparseMatrixSolver.cpp
-    EigenSparseMatrixSolver.cpp
-    TrilinosSparseMatrixSolver.cpp
-    Vector.cpp
-    BisectionSearch.cpp
-    SecantSearch.cpp
-    LinearInterpolation.cpp
-    BilinearInterpolation.cpp
-    QuadraticNormalInterpolation.cpp
-    InterpolationFunction.cpp)
+        SparseMatrixSolver.cpp
+        EigenSparseMatrixSolver.cpp
+        TrilinosSparseMatrixSolver.cpp
+        Vector.cpp
+        LinearInterpolation.cpp
+        BilinearInterpolation.cpp
+        QuadraticNormalInterpolation.cpp
+        InterpolationFunction.cpp Algorithm.h)
 
 add_library(Math ${HEADERS} ${SOURCES})
 

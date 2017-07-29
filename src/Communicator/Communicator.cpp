@@ -6,12 +6,15 @@
 #include "Exception.h"
 
 MPI_Datatype Communicator::MPI_VECTOR2D_;
+MPI_Datatype Communicator::MPI_TENSOR2D_;
 
 void Communicator::init(int argc, char *argv[])
 {
     MPI_Init(&argc, &argv);
     MPI_Type_vector(1, 2, 2, MPI_DOUBLE, &MPI_VECTOR2D_);
+    MPI_Type_vector(1, 4, 4, MPI_DOUBLE, &MPI_TENSOR2D_);
     MPI_Type_commit(&MPI_VECTOR2D_);
+    MPI_Type_commit(&MPI_TENSOR2D_);
 }
 
 void Communicator::finalize()
@@ -137,6 +140,11 @@ void Communicator::ssend(int dest, const std::vector<Vector2D> &vals, int tag) c
     MPI_Ssend(vals.data(), vals.size(), MPI_VECTOR2D_, dest, tag, comm_);
 }
 
+void Communicator::ssend(int dest, const std::vector<Tensor2D>& vals, int tag) const
+{
+    MPI_Ssend(vals.data(), vals.size(), MPI_TENSOR2D_, dest, tag, comm_);
+}
+
 void Communicator::recv(int source, std::vector<int> &vals) const
 {
     MPI_Status status;
@@ -159,6 +167,12 @@ void Communicator::recv(int source, std::vector<Vector2D> &vals) const
 {
     MPI_Status status;
     MPI_Recv(vals.data(), vals.size(), MPI_VECTOR2D_, source, MPI_ANY_TAG, comm_, &status);
+}
+
+void Communicator::recv(int source, std::vector<Tensor2D> &vals) const
+{
+    MPI_Status status;
+    MPI_Recv(vals.data(), vals.size(), MPI_TENSOR2D_, source, MPI_ANY_TAG, comm_, &status);
 }
 
 void Communicator::irecv(int source, std::vector<int> &vals, int tag) const
@@ -189,6 +203,14 @@ void Communicator::irecv(int source, std::vector<Vector2D> &vals, int tag) const
 {
     MPI_Request request;
     MPI_Irecv(vals.data(), vals.size(), MPI_VECTOR2D_, source, tag, comm_, &request);
+
+    currentRequests_.push_back(request);
+}
+
+void Communicator::irecv(int source, std::vector<Tensor2D>& vals, int tag) const
+{
+    MPI_Request request;
+    MPI_Irecv(vals.data(), vals.size(), MPI_TENSOR2D_, source, tag, comm_, &request);
 
     currentRequests_.push_back(request);
 }

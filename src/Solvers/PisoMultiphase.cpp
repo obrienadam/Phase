@@ -31,7 +31,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
 
     ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
 
-    registerField(ft_);
+    addVectorField(ft_);
 
     //surfaceTensionForce_->compute();
     computeRho();
@@ -102,7 +102,7 @@ void PisoMultiphase::computeRho()
     grid_->sendMessages(rho);
 
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
-    gradRho.computeWeighted(rho, fluid_);
+    gradRho.compute(fluid_);
 
     for (const Cell &cell: sg.grid().cellZone("fluid"))
         sg(cell) = dot(g_, cell.centroid()) * gradRho(cell);
@@ -137,7 +137,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeMu();
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u)
-             == fv::laplacian(mu, u) + fv::source(*ft_ - gradP - sg, fluid_));
+             == fv::laplacian(mu, u) + src::src(*ft_ - gradP - sg, fluid_));
 
     Scalar error = uEqn_.solve();
 
@@ -170,7 +170,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
     });
 
-    gradGamma.computeWeighted(rho, fluid_);
+    gradGamma.compute(fluid_);
 
     grid_->sendMessages(gradGamma); // Must send gradGamma to other processes for CICSAM to work properly
 

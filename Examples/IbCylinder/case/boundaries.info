@@ -12,7 +12,7 @@ Boundaries
 
     y+
     {
-      type normal_gradient
+      type symmetry
       value (0,0)
     }
 
@@ -24,7 +24,7 @@ Boundaries
 
     y-
     {
-      type normal_gradient
+      type symmetry
       value (0,0)
     }
   }
@@ -39,7 +39,7 @@ Boundaries
 
     y+
     {
-      type fixed
+      type symmetry
       value 0
     }
 
@@ -51,7 +51,7 @@ Boundaries
 
     y-
     {
-      type fixed
+      type symmetry
       value 0
     }    
   }
@@ -70,13 +70,13 @@ ImmersedBoundaries
 {
   Cylinder1
   {
-    method step
+    method ghost-cell
 
     geometry
     {
       type circle
       center (2,2.5)
-      radius 0.6
+      radius 0.5
     }
 
     u

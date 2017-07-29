@@ -18,6 +18,9 @@ public:
     Scalar area() const
     { return area_; }
 
+    Scalar momentOfInertia() const
+    { return momentOfInertia_; }
+
     Scalar perimeter() const
     { return 2*(upper_.x - lower_.x) + 2*(upper_.y - lower_.y); }
 
@@ -70,7 +73,7 @@ public:
 
 private:
     Point2D centroid_, lower_, upper_;
-    Scalar area_;
+    Scalar area_, momentOfInertia_;
 };
 
 

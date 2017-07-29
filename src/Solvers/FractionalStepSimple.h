@@ -4,6 +4,7 @@
 #include "Solver.h"
 #include "FiniteVolumeEquation.h"
 #include "ScalarGradient.h"
+#include "JacobianField.h"
 
 class FractionalStepSimple: public Solver
 {
@@ -25,6 +26,7 @@ public:
     VectorFiniteVolumeField &u;
     ScalarFiniteVolumeField &p;
     ScalarGradient &gradP;
+    JacobianField &gradU;
 
 protected:
 

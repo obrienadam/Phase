@@ -9,7 +9,6 @@ except IndexError:
     print "Error: must specify the case name"
     sys.exit(-1)
 
-
 if not os.path.exists(directory):
     os.makedirs(directory)
 else:

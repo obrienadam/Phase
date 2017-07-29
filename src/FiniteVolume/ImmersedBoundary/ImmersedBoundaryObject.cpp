@@ -7,15 +7,14 @@
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
                                                Label id,
                                                FiniteVolumeGrid2D &grid)
-    :
-      name_(name),
-      grid_(grid),
-      id_(id)
+        :
+        name_(name),
+        grid_(grid),
+        id_(id)
 {
     cells_ = CellZone("Cells", grid.cellZoneRegistry());
 
     zoneRegistry_ = std::shared_ptr<CellZone::ZoneRegistry>(new CellZone::ZoneRegistry());
-
     ibCells_ = CellZone("IbCells", zoneRegistry_);
     solidCells_ = CellZone("SolidCells", zoneRegistry_);
     freshCells_ = CellZone("FreshCells", zoneRegistry_);
@@ -31,9 +30,14 @@ void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
 void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar height)
 {
     shapePtr_ = std::shared_ptr<Box>(new Box(
-                                         Point2D(center.x - width / 2., center.y - height / 2.),
-                                         Point2D(center.x + width / 2., center.y + height / 2.)
-                                         ));
+            Point2D(center.x - width / 2., center.y - height / 2.),
+            Point2D(center.x + width / 2., center.y + height / 2.)
+    ));
+}
+
+void ImmersedBoundaryObject::setMotion(std::shared_ptr<Motion> motion)
+{
+    motion_ = motion;
 }
 
 void ImmersedBoundaryObject::setMotionType(const std::map<std::string, std::string> &properties)
@@ -56,6 +60,12 @@ void ImmersedBoundaryObject::setMotionType(const std::map<std::string, std::stri
         Vector2D phase = properties.find("phase")->second;
 
         motion_ = std::shared_ptr<OscillatingMotion>(new OscillatingMotion(shapePtr_->centroid(), freq, amp, phase, 0.));
+    }
+    else if(type == "solidBody")
+    {
+        Scalar materialDensity = std::stod(properties.find("materialDensity")->second);
+        Vector2D vel = properties.find("velocity")->second;
+        Scalar omega = std::stod(properties.find("angularVelocity")->second);
     }
     else
         throw Exception("ImmersedBoundaryObject", "update", "invalid motion type \"" + type + "\".");
@@ -80,7 +90,8 @@ void ImmersedBoundaryObject::clear()
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const
 {
     LineSegment2D ln(ptA, ptB);
-    return isInIb(ptB) ? LineSegment2D(ptA, shapePtr_->intersections(ln)[0]) : ln;
+    auto xc = shapePtr_->intersections(ln);
+    return xc.empty() ? ln: LineSegment2D(ln.ptA(), xc[0]);
 }
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
@@ -104,8 +115,8 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
     LineSegment2D edge = shapePtr_->nearestEdge(xc);
 
     return std::make_pair(
-                xc, -(edge.ptB() - edge.ptA()).normalVec()
-                );
+            xc, -(edge.ptB() - edge.ptA()).normalVec()
+    );
 }
 
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
@@ -166,6 +177,57 @@ Vector2D ImmersedBoundaryObject::velocity() const
 Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
 {
     return motion_ ? motion_->velocity(point): Vector2D(0., 0.);
+}
+
+void ImmersedBoundaryObject::update(Scalar timeStep)
+{
+    if(motion_)
+    {
+        motion_->update(*this, timeStep);
+        updateCells();
+    }
+}
+
+void ImmersedBoundaryObject::updateCells()
+{
+    clear();
+
+    switch (shapePtr_->type())
+    {
+        case Shape2D::CIRCLE:
+        {
+            auto cells = fluid_->itemsWithin(*std::static_pointer_cast<Circle>(shapePtr_));
+            cells_.add(cells.begin(), cells.end());
+        }
+            break;
+        case Shape2D::BOX:
+        {
+            auto cells = fluid_->itemsWithin(*std::static_pointer_cast<Box>(shapePtr_));
+            cells_.add(cells.begin(), cells.end());
+        }
+            break;
+        default:
+        {
+            auto cells = fluid_->itemsWithin(*shapePtr_);
+            cells_.add(cells.begin(), cells.end());
+        }
+            break;
+    }
+
+    solidCells_.add(cells_); //- By default solid cells are not made inactive
+}
+
+Equation<Vector2D> ImmersedBoundaryObject::solidVelocity(VectorFiniteVolumeField &u) const
+{
+    Equation<Vector2D> eqn(u);
+
+    for(const Cell& cell: solidCells_)
+    {
+        eqn.add(cell, cell, 1.);
+        eqn.addSource(cell, -velocity(cell.centroid()));
+    }
+
+    return eqn;
 }
 
 void ImmersedBoundaryObject::clearFreshCells()

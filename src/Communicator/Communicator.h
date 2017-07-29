@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Vector2D.h"
+#include "Tensor2D.h"
 
 class Communicator
 {
@@ -66,6 +67,8 @@ public:
 
     void ssend(int dest, const std::vector<Vector2D> &vals, int tag = 0) const;
 
+    void ssend(int dest, const std::vector<Tensor2D> &vals, int tag = 0) const;
+
     void recv(int source, std::vector<int> &vals) const;
 
     void recv(int source, std::vector<unsigned long> &vals) const;
@@ -73,6 +76,8 @@ public:
     void recv(int source, std::vector<double> &vals) const;
 
     void recv(int source, std::vector<Vector2D> &vals) const;
+
+    void recv(int source, std::vector<Tensor2D> &vals) const;
 
     //- Non-blocking point-to-point communication
     void irecv(int source, std::vector<int> &vals, int tag = 0) const;
@@ -82,6 +87,8 @@ public:
     void irecv(int source, std::vector<double> &vals, int tag = 0) const;
 
     void irecv(int source, std::vector<Vector2D> &vals, int tag = 0) const;
+
+    void irecv(int source, std::vector<Tensor2D>& vals, int tag = 0) const;
 
     void waitAll() const;
 
@@ -100,7 +107,7 @@ public:
 
 private:
 
-    static MPI_Datatype MPI_VECTOR2D_;
+    static MPI_Datatype MPI_VECTOR2D_, MPI_TENSOR2D_;
 
     MPI_Comm comm_;
     mutable std::vector<MPI_Request> currentRequests_;

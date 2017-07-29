@@ -24,6 +24,8 @@ public:
 
     virtual Scalar area() const = 0;
 
+    virtual Scalar momentOfInertia() const = 0;
+
     virtual Scalar perimeter() const = 0;
 
     //- Tests

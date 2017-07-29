@@ -66,6 +66,12 @@ void Celeste::constructMatrices()
     constructKappaMatrices();
 }
 
+void Celeste::constructMatrices(const ImmersedBoundary& ib)
+{
+    constructGammaTildeMatrices();
+
+}
+
 //- Protected methods
 
 void Celeste::constructGammaTildeMatrices()
@@ -86,11 +92,7 @@ void Celeste::constructKappaMatrices()
 
 void Celeste::computeGradGammaTilde()
 {
-    *gammaTilde_ = smooth(gamma_, grid_->localActiveCells(), kernelWidth_);
-    grid_->sendMessages(*gammaTilde_);
-
-    //- Used in the reconstruction of gradGammaTilde
-    gammaTilde_->setBoundaryFaces();
+    smoothGammaField();
 
     auto &gammaTilde = *gammaTilde_;
     auto &gradGammaTilde = *gradGammaTilde_;
@@ -262,7 +264,7 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
                     Vector2D r = stencil.first - cell.centroid();
                     //sSqr = pow(r.mag() + eps_, 2);
-                    std::cout << theta(ibObj) * 180 / M_PI << std::endl;
+
                     dn = contactLineNormal(cell, dg.cell(), ibObj) -
                          n(cell);
 
@@ -342,7 +344,7 @@ Matrix Celeste::leastSquaresMatrix(const ImmersedBoundary &ib, const Cell &cell,
 
     auto addRow = [&ib, &A, weighted](int row, const Point2D& ptA, const Point2D &ptB) {
         auto ibObj = ib.ibObj(ptB);
-        Vector2D r = ibObj ? ibObj->intersectionLine(ptA, ptB).tan() : ptB - ptA;
+        Vector2D r = ibObj ? ibObj->intersectionLine(ptA, ptB).ptB() - ptA : ptB - ptA;
         Scalar w = weighted ? r.magSqr() : 1.;
 
         A(row, 0) = r.x / w;

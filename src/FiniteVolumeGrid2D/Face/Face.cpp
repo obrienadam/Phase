@@ -23,6 +23,20 @@ Vector2D Face::outwardNorm(const Point2D &point) const
     return dot(centroid_ - point, normal_) > 0. ? normal_ : -normal_;
 }
 
+Scalar Face::volumeWeight() const
+{
+    Scalar v1 = rCell().volume();
+    Scalar v2 = lCell().volume();
+    return v1 / (v1 + v2);
+}
+
+Scalar Face::distanceWeight() const
+{
+    Scalar l1 = (centroid_ - rCell().centroid()).mag();
+    Scalar l2 = (centroid_ - lCell().centroid()).mag();
+    return l1 / (l1 + l2);
+}
+
 std::vector<Ref<const Cell> > Face::cells() const
 {
     std::set<Label> ids;

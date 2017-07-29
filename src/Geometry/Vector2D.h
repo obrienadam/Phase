@@ -22,14 +22,13 @@ public:
 
     Scalar mag() const;
 
+    Vector2D abs() const;
+
     Vector2D unitVec() const;
 
     Vector2D normalVec() const;
 
     Vector2D tangentVec() const;
-
-    Vector2D abs() const
-    { return Vector2D(fabs(x), fabs(y)); }
 
     Scalar angle() const;
 
@@ -85,6 +84,10 @@ Scalar dot(const Vector2D &u, const Vector2D &v);
 
 Scalar cross(const Vector2D &u, const Vector2D &v);
 
-std::string to_string(const Vector2D &vec);
+Vector2D pointwise(const Vector2D& u, const Vector2D &v);
+
+namespace std {
+    string to_string(const Vector2D &vec);
+}
 
 #endif

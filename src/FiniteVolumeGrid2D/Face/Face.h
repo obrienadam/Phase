@@ -61,6 +61,10 @@ public:
     const Cell &rCell() const
     { return cells_[cellIds_[1]]; }
 
+    Scalar volumeWeight() const;
+
+    Scalar distanceWeight() const;
+
     std::vector<Ref<const Cell>> cells() const;
 
     void addCell(const Cell &cell);

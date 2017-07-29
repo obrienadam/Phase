@@ -4,8 +4,6 @@
 
 #include <cgnslib.h>
 #include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <boost/filesystem.hpp>
 
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Point;

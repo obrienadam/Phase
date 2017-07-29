@@ -1,11 +1,8 @@
 #include "Circle.h"
 
 Circle::Circle(Point2D center, Scalar radius)
-        :
-        center_(center),
-        radius_(radius)
 {
-    area_ = M_PI * radius_ * radius_;
+    init(center, radius);
 }
 
 void Circle::init(const Point2D &center, Scalar radius)
@@ -13,6 +10,7 @@ void Circle::init(const Point2D &center, Scalar radius)
     center_ = center;
     radius_ = radius;
     area_ = M_PI * radius_ * radius_;
+    momentOfInertia_ = M_PI_2 * pow(radius_, 4);
 }
 
 //- Tests
@@ -89,6 +87,7 @@ void Circle::scale(Scalar factor)
 {
     radius_ *= factor;
     area_ *= factor * factor;
+    momentOfInertia_ *= pow(factor, 4);
 }
 
 //- Translations

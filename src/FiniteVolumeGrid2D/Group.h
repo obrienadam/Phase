@@ -38,11 +38,11 @@ public:
 
     virtual void add(const Group<T>& other);
 
-    template<class const_iterator>
+    template <class const_iterator>
     void add(const_iterator begin, const_iterator end)
     {
-        for(; begin != end; ++begin)
-            add(*begin);
+        for(const_iterator itr = begin; itr != end; ++itr)
+            add(*itr);
     }
 
     virtual void remove(const T &item);
@@ -50,6 +50,12 @@ public:
     virtual void remove(const Group<T>& other);
 
     virtual void merge(Group<T> &other);
+
+    Group<T> intersection(const Group<T>& other) const;
+
+    Group<T> difference(const Group<T>& other) const;
+
+    Group<T> symmetricDifference(const Group<T>& other) const;
 
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;

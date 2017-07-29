@@ -34,4 +34,16 @@ private:
     std::vector<Vector2D> data_;
 };
 
+Vector2D computeForce(const FaceGroup& patch,
+                      Scalar rho,
+                      Scalar mu,
+                      const ScalarFiniteVolumeField& p,
+                      const VectorFiniteVolumeField &u);
+
+Vector2D computeForce(const Patch& patch,
+                      const ScalarFiniteVolumeField& p,
+                      const ScalarFiniteVolumeField& rho,
+                      const ScalarFiniteVolumeField& mu,
+                      const VectorFiniteVolumeField &u);
+
 #endif

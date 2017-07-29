@@ -90,20 +90,6 @@ T FiniteVolumeField<T>::boundaryRefValue(const Patch &patch) const
 }
 
 template<class T>
-void FiniteVolumeField<T>::interpolateFaces(const std::function<Scalar(const Face &)> &alpha)
-{
-    auto &self = *this;
-
-    for(const Face& face: grid().interiorFaces())
-    {
-        Scalar g = alpha(face);
-        self(face) = g*self(face.lCell()) + (1. - g)*self(face.rCell());
-    }
-
-    setBoundaryFaces();
-}
-
-template<class T>
 void FiniteVolumeField<T>::setBoundaryFaces()
 {
     auto &self = *this;
@@ -383,37 +369,32 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
 }
 
 //- External functions
-
 template<class T>
-void interpolateNodes(FiniteVolumeField<T> &field)
+void smooth(const FiniteVolumeField<T>& field, const CellGroup& cells, Scalar epsilon, FiniteVolumeField<T>& smoothedField)
 {
-    for (const Node &node: field.grid().nodes())
+    Scalar A = 1.;
+    Scalar epsilonSqr = epsilon * epsilon;
+
+//    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
+    auto K = [&A](Scalar r, Scalar e)
+    { // This smoothing kernel appears to be slightly better
+        return r < e ? A / (2. * e) * (1. + cos(M_PI * r / e)) : 0.;
+    };
+
+    for (const Cell &cell: cells)
     {
-        const Scalar nCells = node.cells().size();
-        field(node) = T();
+        //- Determine the normalizing constant for this kernel
+        Scalar integralK = 0.;
+        A = 1.;
 
-        for (const Cell &cell: node.cells())
-            field(node) += field(cell) / nCells;
-    }
+        auto kCells = cells.itemsWithin(Circle(cell.centroid(), epsilon));
 
-    for (const Face &face: field.grid().interiorFaces())
-        field(face) = 0.5 * (field(face.lNode()) + field(face.rNode()));
+        for (const Cell &kCell: kCells)
+            integralK += K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
 
-    for(const Patch& patch: field.grid().patches())
-    {
-        switch (field.boundaryType(patch))
-        {
-            case FiniteVolumeField<T>::FIXED:
-                break;
+        A = 1. / integralK;
 
-            case FiniteVolumeField<T>::NORMAL_GRADIENT:
-            case FiniteVolumeField<T>::SYMMETRY:
-                for(const Face& face: patch)
-                    field(face) = field(face.lCell());
-                break;
-
-            default:
-                throw Exception("FiniteVolumeField<T>", "interpolateNodes", "unrecongnized boundary condition type.");
-        }
+        for (const Cell &kCell: kCells)
+            smoothedField(cell) += field(kCell) * K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
     }
 }

@@ -16,8 +16,9 @@ extern "C"
 #include "Matrix.h"
 #include "Exception.h"
 
-Matrix::Matrix(Size m, Size n)
+Matrix::Matrix(Size m, Size n, const std::initializer_list<Scalar> &coeffs)
 {
+    assign(coeffs);
     resize(m, n);
 }
 
@@ -25,7 +26,6 @@ void Matrix::resize(Size m, Size n)
 {
     m_ = m;
     n_ = n;
-    isSquare_ = m_ == n_;
     std::vector<Scalar>::resize(m_ * n_, 0.);
     ipiv_.resize(m_);
 }
@@ -37,7 +37,9 @@ void Matrix::zero()
 
 void Matrix::init(const Scalar *begin, const Scalar *end)
 {
-    std::vector<Scalar>::assign(begin, end);
+    std::transform(begin, end, this->begin(), [](Scalar val) {
+        return val;
+    });
 }
 
 Scalar &Matrix::operator()(Size i, Size j)
@@ -47,15 +49,16 @@ Scalar &Matrix::operator()(Size i, Size j)
 
 Scalar Matrix::operator()(Size i, Size j) const
 {
-    return std::vector<Scalar>::operator[](i * n_ + j);
+    return (*this)[i * n_ + j];
 }
 
-Matrix &Matrix::operator=(const std::initializer_list<Scalar> &list)
+Matrix &Matrix::operator=(const std::initializer_list<Scalar> &coeffs)
 {
-    if (list.size() != m_ * n_)
-        throw Exception("Matrix", "operator=", "initializer list size does not match matrix dimensions.");
+    if(m_*n_ != coeffs.size())
+        throw Exception("Matrix", "operator=", "dimension mismatch.");
 
-    assign(list);
+    assign(coeffs);
+
     return *this;
 }
 
@@ -100,13 +103,12 @@ Matrix &Matrix::operator/=(Scalar rhs)
 
 Matrix &Matrix::solve(Matrix &b)
 {
-    if (isSquare_)
+    if (isSquare())
         LAPACKE_dgesv(LAPACK_ROW_MAJOR, m_, b.n_, data(), n_, ipiv_.data(), b.data(), b.n_);
     else
     {
         LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m_, n_, b.n_, data(), n_, b.data(), b.m_);
         b.m_ = n_; // A bit hackish, but resizes b apropriately. Only works so long as the data format is row major
-        b.isSquare_ = b.m_ == n_;
     }
 
     return b;
@@ -114,7 +116,7 @@ Matrix &Matrix::solve(Matrix &b)
 
 Matrix &Matrix::transpose()
 {
-    if (isSquare_) // Square matrices
+    if (isSquare()) // Square matrices
     {
         auto &self = *this;
 
@@ -246,10 +248,11 @@ Matrix operator*(const Matrix &A, const Matrix &B)
 {
     Matrix C(A.m(), B.n());
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.m(), B.n(), A.n(), 1., A.data(), A.n(),
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                A.m(), B.n(), A.n(), 1., A.data(), A.n(),
                 B.data(), B.n(), 1., C.data(), C.n());
 
-    // Works for sure
+    // Works for sure but slower
     //    const int nI = A.nRows(), nJ = B.nCols(), nK = A.nCols();
 
     //    for(int i = 0; i < nI; ++i)

@@ -26,26 +26,31 @@ public:
     bool isContactLineIbObj(const ImmersedBoundaryObject& ibObj) const
     { return ibContactAngles_.find(ibObj.id()) != ibContactAngles_.end(); }
 
-    //- References to interally stored fields
-    virtual void registerSubFields(Solver& solver) = 0;
-
+    //- Internal fields
     const ScalarFiniteVolumeField &kappa() const
     { return *kappa_; }
 
     const VectorFiniteVolumeField &n() const
     { return *n_; }
 
+    //- Internal field pointers
+    std::shared_ptr<ScalarFiniteVolumeField> kappaPtr() const
+    { return kappa_; }
+
+    std::shared_ptr<VectorFiniteVolumeField> nPtr() const
+    { return n_; }
+
     //- Return properties
     Scalar sigma() const
     { return sigma_; }
 
-    Scalar theta(const ImmersedBoundaryObject& ibObj) const
+    Scalar getTheta(const ImmersedBoundaryObject& ibObj) const
     {
         auto it = ibContactAngles_.find(ibObj.id());
         return it != ibContactAngles_.end() ? it->second: M_PI_2;
     }
 
-    Scalar theta(const Patch& patch) const
+    Scalar getTheta(const Patch& patch) const
     {
         auto it = patchContactAngles_.find(patch.id());
         return it != patchContactAngles_.end() ? it->second: M_PI_2;
@@ -54,6 +59,8 @@ public:
     //- Compute
     virtual void compute() = 0;
 
+    virtual void compute(const ImmersedBoundary& ib) = 0;
+
     virtual void computeInterfaceNormals();
 
     Vector2D contactLineNormal(const Face& face);
@@ -61,6 +68,8 @@ public:
     Vector2D contactLineNormal(const Cell& lCell,
                                const Cell& rCell,
                                const ImmersedBoundaryObject& ibObj);
+
+    void smoothGammaField();
 
 protected:
 
@@ -77,6 +86,7 @@ protected:
 
     const ImmersedBoundary &ib_;
 
+    //- Fields, can share ownership
     std::shared_ptr<ScalarFiniteVolumeField> kappa_, gammaTilde_;
     std::shared_ptr<ScalarGradient> gradGammaTilde_;
     std::shared_ptr<VectorFiniteVolumeField> n_;

@@ -21,6 +21,7 @@ public:
     ScalarFiniteVolumeField &gamma, &rho, &mu;
     ScalarGradient &gradGamma, &gradRho;
     VectorFiniteVolumeField &sg, &rhoU;
+    Celeste &ft;
 
 protected:
 
@@ -30,20 +31,13 @@ protected:
 
     virtual Scalar solvePEqn(Scalar timeStep);
 
-    virtual void computeFaceVelocities(Scalar timeStep);
-
     virtual void correctVelocity(Scalar timeStep);
-
-    void checkMassFluxConsistency(Scalar timeStep);
 
     void updateProperties(Scalar timeStep);
 
     Vector2D g_;
-
     Scalar cicsamBlending_, rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;
-
-    std::shared_ptr<Celeste> ft_;
 
     Equation<Scalar> gammaEqn_;
 };

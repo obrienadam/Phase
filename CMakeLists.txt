@@ -81,7 +81,7 @@ message(STATUS "MPI include directory: " ${MPI_CXX_INCLUDE_PATH})
 message(STATUS "MPI libraries: " ${MPI_C_LIBRARIES})
 message(STATUS "Trilinos directory: " ${Trilinos_DIR})
 
-set(PHASE_LIBRARIES Solvers FiniteVolumeGrid2D FiniteVolume Viewers Utilities Geometry Math System Communicator)
+set(PHASE_LIBRARIES Solvers FiniteVolumeGrid2D FiniteVolume System Viewers Utilities Geometry Math Communicator)
 
 add_subdirectory(src)
 add_subdirectory(modules)

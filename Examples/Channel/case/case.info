@@ -22,7 +22,7 @@ LinearAlgebra
   {
     lib trilinos
     solver BiCGSTAB
-    preconditioner DIAGONAL
+    preconditioner RILUK
     iluFill 0
   }
 
@@ -31,7 +31,7 @@ LinearAlgebra
     lib trilinos
     solver BiCGSTAB
     preconditioner RILUK
-    iluFill 3
+    iluFill 4
   }
 }
 
@@ -46,8 +46,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 160
-	nCellsY 80
+	nCellsX 1280
+	nCellsY 640
 
 	; Rectilinear parameters
 	width 0.8

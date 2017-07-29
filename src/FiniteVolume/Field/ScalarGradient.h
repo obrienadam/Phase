@@ -12,8 +12,6 @@ public:
 
     void compute(const CellGroup& cells);
 
-    void computeWeighted(const ScalarFiniteVolumeField& w, const CellGroup &group);
-
 private:
     const ScalarFiniteVolumeField& phi_;
 };

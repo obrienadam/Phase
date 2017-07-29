@@ -56,6 +56,46 @@ void Group<T>::merge(Group<T> &other)
 }
 
 template <class T>
+Group<T> Group<T>::intersection(const Group<T> &other) const
+{
+    Group<T> result;
+
+    for(const T& item: items_)
+        if(other.isInGroup(item))
+            result.add(item);
+
+    return result;
+}
+
+template <class T>
+Group<T> Group<T>::difference(const Group<T> &other) const
+{
+    Group<T> result;
+
+    for(const T& item: items_)
+        if(!other.isInGroup(item))
+            result.add(item);
+
+    return result;
+}
+
+template <class T>
+Group<T> Group<T>::symmetricDifference(const Group<T> &other) const
+{
+    Group<T> result;
+
+    for(const T& item: items_)
+        if(!other.isInGroup(item))
+            result.add(item);
+
+    for(const T& item: other.items_)
+        if(!isInGroup(item))
+            result.add(item);
+
+    return result;
+}
+
+template <class T>
 std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
 {
     std::vector<Value> result;

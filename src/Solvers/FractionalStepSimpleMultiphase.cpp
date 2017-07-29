@@ -26,7 +26,7 @@ FractionalStepSimpleMultiphase::FractionalStepSimpleMultiphase(const Input &inpu
     mu.copyBoundaryTypes(gamma);
 
     ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
-    registerField(ft_);
+    addVectorField(ft_);
 
     Scalar sigma = ft_->sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
@@ -106,7 +106,7 @@ Scalar FractionalStepSimpleMultiphase::solveGammaEqn(Scalar timeStep)
     Scalar error = gammaEqn_.solve();
 
     // - While this may affect mass conservation, it prevents issues at high density ratios
-    gamma.compute([this](const Cell &cell){
+    gamma.computeCells([this](const Cell &cell){
         return std::max(std::min(gamma(cell), 1.), 0.);
     });
 
@@ -127,8 +127,7 @@ Scalar FractionalStepSimpleMultiphase::solveGammaEqn(Scalar timeStep)
 Scalar FractionalStepSimpleMultiphase::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u) + ib_.bcs(u) == cn::laplacian(mu, u, 0.5)
-                                                                          + fv::source(*ft_, fluid_));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u) + ib_.bcs(u) == cn::laplacian(mu, u, 0.5) + src::src(*ft_, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
@@ -143,7 +142,7 @@ Scalar FractionalStepSimpleMultiphase::solveUEqn(Scalar timeStep)
 Scalar FractionalStepSimpleMultiphase::solvePEqn(Scalar timeStep)
 {
     //pEqn_ = (seo::laplacian(ib_, rho, timeStep, p) == seo::div(ib_, u));
-    pEqn_ = (fv::laplacian(timeStep/rho, p) + ib_.bcs(p) == fv::src::div(u));
+    pEqn_ = (fv::laplacian(timeStep/rho, p) + ib_.bcs(p) == src::div(u));
 
     Scalar error = pEqn_.solve();
 
@@ -159,7 +158,7 @@ Scalar FractionalStepSimpleMultiphase::solvePEqn(Scalar timeStep)
 void FractionalStepSimpleMultiphase::correctVelocity(Scalar timeStep)
 {
     //seo::correct(ib_, rho, p, *ft_, gradP, u, timeStep);
-    gradP.computeWeighted(rho, fluid_);
+    gradP.compute(fluid_);
 
     for(const Face& face: grid_->interiorFaces())
         u(face) -= timeStep/rho(face) * gradP(face);
@@ -179,7 +178,7 @@ void FractionalStepSimpleMultiphase::updateProperties(Scalar timeStep)
     };
 
     //- Update rhoU
-    rhoU.compute([this](const Face& face){
+    rhoU.computeFaces([this](const Face& face){
         Scalar g = std::max(std::min(gamma(face), 1.), 0.);
         Scalar g0 = std::max(std::min(gamma.oldField(0)(face), 1.), 0.);
         Scalar rhoF = (1. - g)*rho1_ + g*rho2_;
@@ -189,7 +188,7 @@ void FractionalStepSimpleMultiphase::updateProperties(Scalar timeStep)
 
     //- Update density
     rho.savePreviousTimeStep(timeStep, 1);
-    rho.compute([this](const Cell& cell){
+    rho.computeCells([this](const Cell& cell){
         Scalar g = std::max(std::min(gamma(cell), 1.), 0.);
         return (1. - g)*rho1_ + g*rho2_;
     });
@@ -197,7 +196,7 @@ void FractionalStepSimpleMultiphase::updateProperties(Scalar timeStep)
 
     //- Update viscosity
     mu.savePreviousTimeStep(timeStep, 1);
-    mu.compute([this](const Cell& cell){
+    mu.computeCells([this](const Cell& cell){
         Scalar g = std::max(std::min(gamma(cell), 1.), 0.);
         return (1. - g)*mu1_ + g*mu2_;
     });

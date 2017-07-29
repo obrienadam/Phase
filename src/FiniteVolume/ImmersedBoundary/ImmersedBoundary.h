@@ -44,6 +44,8 @@ public:
         return eqn;
     }
 
+    Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+
     void clearFreshCells();
 
     std::vector<CutCell> constructCutCells(const CellGroup& cellGroup) const;
@@ -58,7 +60,15 @@ public:
 
     bool isIbCell(const Cell &cell) const;
 
-    void computeForce(const ScalarFiniteVolumeField& rho, const ScalarFiniteVolumeField& mu, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p);
+    void computeForce(Scalar rho,
+                      Scalar mu,
+                      const VectorFiniteVolumeField& u,
+                      const ScalarFiniteVolumeField& p);
+
+    void computeForce(const ScalarFiniteVolumeField& rho,
+                      const ScalarFiniteVolumeField& mu,
+                      const VectorFiniteVolumeField& u,
+                      const ScalarFiniteVolumeField& p);
 
 protected:
 

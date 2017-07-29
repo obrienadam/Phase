@@ -20,8 +20,6 @@ public:
 
     void compute(const ImmersedBoundary& ib);
 
-    void registerSubFields(Solver& solver) {}
-
     void constructMatrices();
 
     void constructMatrices(const ImmersedBoundary& ib);

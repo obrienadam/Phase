@@ -1,4 +1,5 @@
 #include "Cicsam.h"
+#include "Algorithm.h"
 
 namespace cicsam
 {
@@ -31,22 +32,21 @@ namespace cicsam
             const Cell& acceptor = flux >= 0. ? face.rCell() : face.lCell();
             Vector2D rc = acceptor.centroid() - donor.centroid();
 
-            Scalar gammaD = gamma(donor);
-            Scalar gammaA = gamma(acceptor);
-            Scalar gammaU = std::max(std::min(gammaA - 2.*dot(rc, gradGamma(donor)), 1.), 0.);
+            Scalar gammaD = clamp(gamma(donor), 0., 1.);
+            Scalar gammaA = clamp(gamma(acceptor), 0., 1.);
+            Scalar gammaU = clamp(gammaA - 2.*dot(rc, gradGamma(donor)), 0., 1.);
             Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
-            Scalar coD = fabs(dot(u(face), sf) / dot(rc, sf) * timeStep);
-
-            Scalar thetaF = acos(fabs(dot((gradGamma(donor) + gradGamma(acceptor)).unitVec(), rc.unitVec())));
+            Scalar coD = std::abs(dot(u(face), sf) / dot(rc, sf) * timeStep);
+            Scalar thetaF = acos(fabs(dot((gradGamma(donor)/2 + gradGamma(acceptor)/2).unitVec(), rc.unitVec())));
             Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
             Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
             Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
 
             if (std::isnan(betaFace))
-                betaFace = 0.; // Default to upwind, the most stable option
+                betaFace = 0.5; // Default to a centered scheme
 
             //- Make sure the stencil is bounded
-            beta(face) = std::max(std::min(betaFace, 1.), 0.);
+            beta(face) = clamp(betaFace, 0., 1.);
         }
 
         return beta;

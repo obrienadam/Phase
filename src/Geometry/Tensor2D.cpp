@@ -42,6 +42,12 @@ Tensor2D &Tensor2D::operator/=(Scalar a)
     return *this;
 }
 
+std::ostream &operator<<(std::ostream &os, const Tensor2D &tau)
+{
+    os << "[xx=" << tau.xx << " xy=" << tau.xy << "; yx=" << tau.yx << " yy=" << tau.yy << "]";
+    return os;
+}
+
 //- External functions
 Vector2D dot(const Tensor2D &tau, const Vector2D &u)
 {

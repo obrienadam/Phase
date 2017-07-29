@@ -9,7 +9,7 @@ class Matrix : protected std::vector<Scalar>
 {
 public:
 
-    Matrix(Size m = 0, Size n = 0);
+    Matrix(Size m = 0, Size n = 0, const std::initializer_list<Scalar>& coeffs = {});
 
     void resize(Size m, Size n);
 
@@ -24,7 +24,7 @@ public:
     { return n_; }
 
     bool isSquare() const
-    { return isSquare_; }
+    { return m_ == n_; }
 
     Scalar &operator()(Size i, Size j);
 
@@ -64,7 +64,6 @@ public:
 private:
 
     Size m_, n_;
-    bool isSquare_;
     mutable std::vector<int> ipiv_;
 
 };

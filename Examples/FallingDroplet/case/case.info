@@ -44,7 +44,7 @@ LinearAlgebra
 
 Properties
 {
-	rho1 750
+	rho1 760
 	rho2 998
  	mu1 9e-3
 	mu2 8.94e-4
@@ -68,7 +68,7 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,n,ft,gradRho
+	vectorFields u,n,ft,gradrho,sg
 	scalarFields p,m,gamma,rho,mu,kappa
 }
 

@@ -1,12 +1,11 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
-#include "FiniteVolumeGrid2D.h"
 #include "Input.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "TensorFiniteVolumeField.h"
 #include "SparseMatrixSolver.h"
-#include "Circle.h"
 #include "ImmersedBoundary.h"
 #include "VolumeIntegrator.h"
 #include "ForceIntegrator.h"
@@ -34,11 +33,6 @@ public:
     { return maxTimeStep_; }
 
     //- Field management
-    void registerField(std::shared_ptr<ScalarFiniteVolumeField> field)
-    { scalarFields_[field->name()] = field; }
-
-    void registerField(std::shared_ptr<VectorFiniteVolumeField> field)
-    { vectorFields_[field->name()] = field; }
 
     FiniteVolumeField<int> &addIntegerField(const std::string &name);
 
@@ -51,12 +45,34 @@ public:
     VectorFiniteVolumeField &addVectorField(const std::string &name);
 
     template<class T>
+    T &addScalarField(std::shared_ptr<T> field)
+    {
+        auto insert = scalarFields_.insert(std::make_pair(field->name(), field));
+
+        if (!insert.second)
+            throw Exception("Solver", "addScalarField", "field \"" + field->name() + "\" already exists.");
+
+        return *field;
+    }
+
+    template<class T>
     T &addVectorField(std::shared_ptr<T> field)
     {
         auto insert = vectorFields_.insert(std::make_pair(field->name(), field));
 
         if (!insert.second)
             throw Exception("Solver", "addVectorField", "field \"" + field->name() + "\" already exists.");
+
+        return *field;
+    }
+
+    template<class T>
+    T &addTensorField(std::shared_ptr<T> field)
+    {
+        auto insert = tensorFields_.insert(std::make_pair(field->name(), field));
+
+        if (!insert.second)
+            throw Exception("Solver", "addTensorField", "field \"" + field->name() + "\" already exists.");
 
         return *field;
     }
@@ -144,6 +160,7 @@ protected:
     mutable std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
     mutable std::map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> scalarFields_;
     mutable std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
+    mutable std::map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
     Scalar timeStepRelaxation_, maxTimeStep_;
 

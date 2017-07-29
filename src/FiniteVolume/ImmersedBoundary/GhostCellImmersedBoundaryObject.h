@@ -20,6 +20,8 @@ public:
 
     Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const;
 
+    Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+
     Vector2D normalForce() const
     { return normalForce_; }
 

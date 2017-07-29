@@ -32,6 +32,11 @@ Scalar Vector2D::magSqr() const
     return x * x + y * y;
 }
 
+Vector2D Vector2D::abs() const
+{
+    return Vector2D(std::abs(x), std::abs(y));
+}
+
 Vector2D Vector2D::unitVec() const
 {
     Scalar invMag = 1. / mag();
@@ -139,14 +144,14 @@ Vector2D &Vector2D::operator/=(Scalar other)
 
 bool Vector2D::operator<(const Vector2D &rhs) const
 {
-    return x < rhs.x || (x == rhs.x && y < rhs.y) ? true : false;
+    return x < rhs.x || (x == rhs.x && y < rhs.y);
 }
 
 //- External functions
 
 std::ostream &operator<<(std::ostream &os, const Vector2D &vec)
 {
-    return os << "(" << vec.x << ", " << vec.y << ")";
+    return os << std::to_string(vec);
 }
 
 Vector2D operator+(Vector2D lhs, const Vector2D &rhs)
@@ -193,7 +198,12 @@ Scalar cross(const Vector2D &u, const Vector2D &v)
     return u.x * v.y - u.y * v.x;
 }
 
-std::string to_string(const Vector2D &vec)
+Vector2D pointwise(const Vector2D& u, const Vector2D &v)
+{
+    return Vector2D(u.x*v.x, u.y*v.y);
+}
+
+std::string std::to_string(const Vector2D &vec)
 {
     return "(" + std::to_string(vec.x) + ", " + std::to_string(vec.y) + ")";
 }

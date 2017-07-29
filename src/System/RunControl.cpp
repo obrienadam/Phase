@@ -1,4 +1,5 @@
 #include "RunControl.h"
+#include "IbViewer.h"
 
 void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 {
@@ -12,6 +13,8 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
+
+    IbViewer ibViewer(input, solver);
 
     //- Print the solver info
     solver.printf("%s\n", (std::string(96, '-')).c_str());
@@ -32,6 +35,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
         if(iterNo%fileWriteFrequency == 0)
         {
             viewer.write(time);
+            ibViewer.write(time);
 
           //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
           //      vi.integrate();

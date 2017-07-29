@@ -18,6 +18,13 @@ public:
 
     void add(const CellGroup& cells);
 
+    template <class const_iterator>
+    void add(const_iterator begin, const_iterator end)
+    {
+        for(const_iterator itr = begin; itr != end; ++itr)
+            add(*itr);
+    }
+
     void remove(const Cell &cell);
 
     void clear();

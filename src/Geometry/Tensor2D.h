@@ -23,6 +23,8 @@ public:
 
 };
 
+std::ostream &operator<<(std::ostream &os, const Tensor2D &tau);
+
 Vector2D dot(const Tensor2D &tau, const Vector2D &u);
 
 Tensor2D dot(const Tensor2D &tau, const Tensor2D &sigma);

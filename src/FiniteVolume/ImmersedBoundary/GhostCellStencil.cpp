@@ -3,19 +3,27 @@
 
 GhostCellStencil::GhostCellStencil(const Cell &cell, const Shape2D &shape, const FiniteVolumeGrid2D &grid)
         :
-          ImmersedBoundaryStencil(cell)
+        ImmersedBoundaryStencil(cell)
 {
     bp_ = shape.nearestIntersect(cell_.centroid());
     ip_ = 2. * bp_ - cell.centroid();
     ipCells_ = grid.findNearestNode(ip_).cells();
 
-    std::vector<Point2D> centroids;
-    for (const Cell &cell: ipCells_)
-        centroids.push_back(cell.centroid());
+    Point2D x1 = ipCells_[0].get().centroid();
+    Point2D x2 = ipCells_[1].get().centroid();
+    Point2D x3 = ipCells_[2].get().centroid();
+    Point2D x4 = ipCells_[3].get().centroid();
 
-    interpolator_ = std::unique_ptr<Interpolation>(new BilinearInterpolation(centroids));
+    Matrix A = inverse(Matrix(4, 4, {
+            x1.x*x1.y, x1.x, x1.y, 1.,
+            x2.x*x2.y, x2.x, x2.y, 1.,
+            x3.x*x3.y, x3.x, x3.y, 1.,
+            x4.x*x4.y, x4.x, x4.y, 1.,
+    }));
 
-    ipCoeffs_ = (*interpolator_)(ip_);
+    Matrix m = Matrix(1, 4, {ip_.x*ip_.y, ip_.x, ip_.y, 1.}) * A;
+
+    ipCoeffs_ = (Matrix(1, 4, {ip_.x*ip_.y, ip_.x, ip_.y, 1.}) * A).containerCopy();
 }
 
 Scalar GhostCellStencil::ipValue(const ScalarFiniteVolumeField &field) const

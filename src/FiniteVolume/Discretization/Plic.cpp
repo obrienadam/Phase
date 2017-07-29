@@ -1,8 +1,31 @@
 #include "Plic.h"
-#include "BisectionSearch.h"
-#include "SecantSearch.h"
+#include "ScalarGradient.h"
+#include "Algorithm.h"
 
 namespace plic {
+
+    Equation<Scalar> div(const VectorFiniteVolumeField& u,
+                         const ScalarGradient& gradGamma,
+                         ScalarFiniteVolumeField& gamma,
+                         Scalar timeStep)
+    {
+        Equation<Scalar> eqn(gamma);
+
+        for(const Cell& cell: gamma.grid().cellZone("fluid"))
+        {
+            //- Construct the plic polygon if necessary
+            if(gamma(cell) > 0.001 && gamma(cell) < 0.999)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+
+        return gamma;
+    }
 /*
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradField, ScalarFiniteVolumeField &field, Scalar timeStep, std::vector<Polygon> &plicPolygons)
 {

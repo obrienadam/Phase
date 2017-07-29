@@ -12,8 +12,12 @@ Box::Box(const Point2D &lower, const Point2D &upper)
     if (upper_.y < lower_.y)
         std::swap(upper_.y, lower_.y);
 
+    Scalar w = upper_.x - lower_.x;
+    Scalar h = upper_.y - lower_.y;
+
     centroid_ = (lower_ + upper_) / 2.;
-    area_ = (upper_.x - lower_.x) * (upper_.y - lower_.y);
+    area_ = w * h;
+    momentOfInertia_ = w * h / 12. * (w * w + h * h);
 }
 
 //- Tests
@@ -139,7 +143,11 @@ void Box::scale(Scalar factor)
     upper_ += factor * (upper_ - centroid_);
     lower_ += factor * (lower_ - centroid_);
 
-    area_ = (upper_.x - lower_.x) * (upper_.y - lower_.y);
+    Scalar w = upper_.x - lower_.x;
+    Scalar h = upper_.y - lower_.y;
+
+    area_ = w * h;
+    momentOfInertia_ = w * h / 12. * (w * w + h * h);
 }
 
 void Box::rotate(Scalar theta)

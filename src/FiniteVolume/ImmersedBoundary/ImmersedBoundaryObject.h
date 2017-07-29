@@ -28,7 +28,12 @@ public:
     }
 
     //- Motion
+    void setMotion(std::shared_ptr<Motion> motion);
+
     virtual void setMotionType(const std::map<std::string, std::string>& properties);
+
+    std::shared_ptr<Motion> motion()
+    { return motion_; }
 
     bool isInIb(const Point2D &pt) const
     { return shapePtr_->isInside(pt); }
@@ -100,26 +105,28 @@ public:
 
     virtual Vector2D velocity(const Point2D &point) const;
 
-    virtual Vector2D normalForce() const
-    { return Vector2D(0, 0); }
+    const Vector2D& force() const
+    { return force_; }
 
-    virtual Vector2D shearForce() const
-    { return Vector2D(0, 0); }
+    Scalar torque() const
+    { return torque_; }
 
-    virtual void computeNormalForce(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p)
-    {}
-
-    virtual void computeShearForce(const ScalarFiniteVolumeField &mu, const VectorFiniteVolumeField& u)
-    {}
+    virtual void computeForce(Scalar rho, Scalar mu, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p)
+    {
+        force_ = Vector2D(0., 0.);
+        torque_ = 0.;
+    }
 
     //- Update (must to be overriden)
-    virtual void update(Scalar timeStep) = 0;
+    virtual void update(Scalar timeStep);
 
-    virtual void updateCells() = 0;
+    virtual void updateCells();
 
     virtual Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const = 0;
 
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
+
+    virtual Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
 
     void clearFreshCells();
 
@@ -145,6 +152,9 @@ protected:
     std::map<std::string, BoundaryType> boundaryTypes_;
     std::map<std::string, Scalar> boundaryRefScalars_;
     std::map<std::string, Vector2D> boundaryRefVectors_;
+
+    Vector2D force_;
+    Scalar torque_;
 
     std::shared_ptr<Motion> motion_;
 };

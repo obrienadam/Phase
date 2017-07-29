@@ -96,7 +96,7 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u) ==
-             fv::laplacian(mu, u) - fv::source(gradP, fluid_));
+             fv::laplacian(mu, u) - src::src(gradP, fluid_));
 
     uEqn_.relax(momentumOmega_);
 

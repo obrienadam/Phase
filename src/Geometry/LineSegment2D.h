@@ -30,14 +30,14 @@ public:
     Scalar dy() const
     { return ptB_.y - ptA_.y; }
 
+    Vector2D rVec() const
+    { return ptB_ - ptA_; }
+
     Point2D center() const
     { return (ptA_ + ptB_) / 2.; }
 
     Vector2D norm() const
     { return (ptB_ - ptA_).normalVec(); }
-
-    Vector2D tan() const
-    { return ptB_ - ptA_; }
 
     bool isBounded(const Point2D &pt) const;
 
