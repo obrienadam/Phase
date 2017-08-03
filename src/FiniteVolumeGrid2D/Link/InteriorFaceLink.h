@@ -17,6 +17,12 @@ public:
 
     InteriorLink &operator=(const InteriorLink &rhs);
 
+    Scalar volumeWeight() const;
+
+    Scalar distanceWeight() const;
+
+    Scalar distanceSqrWeight() const;
+
     const Cell &cell() const;
 
     const Vector2D &rCellVec() const

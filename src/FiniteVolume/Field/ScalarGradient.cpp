@@ -28,31 +28,121 @@ void ScalarGradient::computeFaces()
     }
 }
 
-void ScalarGradient::compute(const CellGroup& group)
-{
+void ScalarGradient::compute(const CellGroup& group, Method method) {
     computeFaces();
     VectorFiniteVolumeField &gradPhi = *this;
 
     std::fill(gradPhi.begin(), gradPhi.end(), Vector2D(0., 0.));
 
-    for (const Cell &cell: group)
+    switch (method)
     {
-        Vector2D sumSf(0., 0.);
+        case FACE_TO_CELL:
+            for (const Cell &cell: group)
+            {
+                Vector2D sum(0., 0.), tmp(0., 0.);
 
-        for (const InteriorLink &nb: cell.neighbours())
+                for (const InteriorLink &nb: cell.neighbours()) {
+                    Vector2D sf = nb.outwardNorm().abs();
+                    tmp += pointwise(gradPhi(nb.face()), sf);
+                    sum += sf;
+                }
+
+                for (const BoundaryLink &bd: cell.neighbours()) {
+                    Vector2D sf = bd.outwardNorm().abs();
+                    tmp += pointwise(gradPhi(bd.face()), sf);
+                    sum += sf;
+                }
+
+                gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
+            }
+            break;
+        case GREEN_GAUSS_CELL:
+            for(const Cell& cell: group)
+            {
+                for (const InteriorLink &nb: cell.neighbours())
+                {
+                    Scalar g = nb.distanceWeight();
+                    Scalar phiF = g * phi_(cell) + (1. - g) * phi_(nb.cell());
+                    gradPhi(cell) += phiF * nb.outwardNorm();
+                }
+
+                for (const BoundaryLink &bd: cell.boundaries())
+                    gradPhi(cell) += phi_(bd.face()) * bd.outwardNorm();
+
+                gradPhi(cell) /= cell.volume();
+            }
+            break;
+        case GREEN_GAUSS_NODE:
+            for(const Cell& cell: group)
+            {
+                for (const InteriorLink &nb: cell.neighbours())
+                {
+                    auto lNodeWeights = nb.face().lNode().distanceWeights();
+                    auto rNodeWeights = nb.face().rNode().distanceWeights();
+                    Scalar phiLN = 0, phiRN = 0;
+                    int i = 0;
+                    for(const Cell& cell: nb.face().lNode().cells())
+                        phiLN += lNodeWeights[i++] * phi_(cell);
+
+                    i = 0;
+                    for(const Cell& cell: nb.face().rNode().cells())
+                        phiRN += rNodeWeights[i++] * phi_(cell);
+
+                    Scalar phiF = (phiLN + phiRN) / 2.;
+                    gradPhi(cell) += phiF * nb.outwardNorm();
+                }
+
+                for (const BoundaryLink &bd: cell.boundaries())
+                {
+                    auto lNodeWeights = bd.face().lNode().distanceWeights();
+                    auto rNodeWeights = bd.face().rNode().distanceWeights();
+                    Scalar phiLN = 0, phiRN = 0;
+                    int i = 0;
+                    for(const Cell& cell: bd.face().lNode().cells())
+                        phiLN += lNodeWeights[i++] * phi_(cell);
+
+                    i = 0;
+                    for(const Cell& cell: bd.face().rNode().cells())
+                        phiRN += rNodeWeights[i++] * phi_(cell);
+
+                    Scalar phiF = (phiLN + phiRN) / 2.;
+                    gradPhi(cell) += phiF * bd.outwardNorm();
+                }
+
+                gradPhi(cell) /= cell.volume();
+            }
+            break;
+    }
+}
+
+void ScalarGradient::compute(Method method)
+{
+    compute(grid_->localActiveCells(), method);
+}
+
+void ScalarGradient::compute(const ScalarFiniteVolumeField& weight)
+{
+    computeFaces();
+    VectorFiniteVolumeField &gradPhi = *this;
+
+    for(const Cell& cell: grid_->cells())
+    {
+        Vector2D sum(0., 0.), tmp(0., 0.);
+
+        for(const InteriorLink& nb: cell.neighbours())
         {
             Vector2D sf = nb.outwardNorm().abs();
-            gradPhi(cell) += pointwise(gradPhi(nb.face()), sf);
-            sumSf += sf;
+            tmp += pointwise(gradPhi(nb.face()), sf) / weight(nb.face());
+            sum += sf;
         }
 
-        for (const BoundaryLink &bd: cell.boundaries())
+        for(const BoundaryLink& bd: cell.neighbours())
         {
             Vector2D sf = bd.outwardNorm().abs();
-            gradPhi(cell) += pointwise(gradPhi(bd.face()), sf);
-            sumSf += sf;
+            tmp += pointwise(gradPhi(bd.face()), sf) / weight(bd.face());
+            sum += sf;
         }
 
-        gradPhi(cell) = Vector2D(gradPhi(cell).x / sumSf.x, gradPhi(cell).y / sumSf.y);
+        gradPhi(cell) = weight(cell) * Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }
 }

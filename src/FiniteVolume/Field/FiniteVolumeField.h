@@ -145,6 +145,9 @@ public:
 
     void clearHistory();
 
+    FiniteVolumeField& oldField(int i)
+    { return previousTimeSteps_[i]->second; }
+
     const FiniteVolumeField &oldField(int i) const
     { return previousTimeSteps_[i]->second; }
 

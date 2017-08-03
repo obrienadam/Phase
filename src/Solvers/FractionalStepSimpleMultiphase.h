@@ -19,6 +19,7 @@ public:
     ScalarFiniteVolumeField &rho, &mu, &gamma;
     ScalarGradient &gradGamma;
     VectorFiniteVolumeField &rhoU;
+    Celeste& ft;
 
 private:
 
@@ -35,9 +36,6 @@ private:
     //- Properties
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
     Vector2D g_;
-
-    //- Models
-    std::shared_ptr<Celeste> ft_;
 
     //- Equations
     Equation<Scalar> gammaEqn_;

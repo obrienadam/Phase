@@ -44,10 +44,10 @@ LinearAlgebra
 
 Properties
 {
-	rho1 760
+	rho1 50
 	rho2 998
  	mu1 9e-3
-	mu2 8.94e-4
+	mu2 9e-3
 	sigma 0.0262
 	g (0,-9.8065)
 
@@ -68,7 +68,7 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,n,ft,gradrho,sg
+	vectorFields u,n,ft,gradrho,sg,us
 	scalarFields p,m,gamma,rho,mu,kappa
 }
 
@@ -83,6 +83,6 @@ Integrators
 
 System
 {
-  fileWriteFrequency 100
+  fileWriteFrequency 1
   consoleOutputFrequency 1
 }

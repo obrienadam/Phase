@@ -1,8 +1,6 @@
-#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include "TrilinosBelosSparseMatrixSolver.h"
 
-#include "TrilinosSparseMatrixSolver.h"
-
-TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm)
+TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communicator &comm)
         :
         comm_(comm)
 {
@@ -12,7 +10,7 @@ TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm)
     solver_ = rcp(new Solver(rcp(new LinearProblem()), belosParameters_));
 }
 
-void TrilinosSparseMatrixSolver::setRank(int rank)
+void TrilinosBelosSparseMatrixSolver::setRank(int rank)
 {
     using namespace Teuchos;
 
@@ -33,7 +31,7 @@ void TrilinosSparseMatrixSolver::setRank(int rank)
     }
 }
 
-void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
+void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
 {
     Index minGlobalIndex = map_->getMinGlobalIndex();
 
@@ -64,17 +62,17 @@ void TrilinosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &
         precon_->initialize();
 }
 
-void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)
+void TrilinosBelosSparseMatrixSolver::setGuess(const Vector &x0)
 {
     std::transform(x0.begin(), x0.end(), x_->getDataNonConst().begin(), [](Scalar val) { return val; });
 }
 
-void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
+void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     std::transform(rhs.begin(), rhs.end(), b_->getDataNonConst().begin(), [](Scalar val) { return val; });
 }
 
-Scalar TrilinosSparseMatrixSolver::solve()
+Scalar TrilinosBelosSparseMatrixSolver::solve()
 {
     if(nPreconUses_++ == maxPreconUses_)
     {
@@ -88,14 +86,14 @@ Scalar TrilinosSparseMatrixSolver::solve()
     return error();
 }
 
-void TrilinosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
+void TrilinosBelosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
     for (const Cell &cell: field.grid().localActiveCells())
         field(cell) = soln[cell.index(0)];
 }
 
-void TrilinosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
+void TrilinosBelosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
     Index nActiveCells = field.grid().localActiveCells().size();
@@ -107,39 +105,39 @@ void TrilinosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
     }
 }
 
-void TrilinosSparseMatrixSolver::setMaxIters(int maxIters)
+void TrilinosBelosSparseMatrixSolver::setMaxIters(int maxIters)
 {
     belosParameters_->set("Maximum Iterations", maxIters);
     solver_->setParameters(belosParameters_);
 }
 
-void TrilinosSparseMatrixSolver::setToler(Scalar toler)
+void TrilinosBelosSparseMatrixSolver::setToler(Scalar toler)
 {
     belosParameters_->set("Convergence Tolerance", toler);
     solver_->setParameters(belosParameters_);
 }
 
-void TrilinosSparseMatrixSolver::setDropToler(Scalar toler)
+void TrilinosBelosSparseMatrixSolver::setDropToler(Scalar toler)
 {
     ifpackParameters_->set("fact: relax value", toler);
 }
 
-void TrilinosSparseMatrixSolver::setFillFactor(int fill)
+void TrilinosBelosSparseMatrixSolver::setFillFactor(int fill)
 {
     ifpackParameters_->set("fact: iluk level-of-fill", fill);
 }
 
-int TrilinosSparseMatrixSolver::nIters() const
+int TrilinosBelosSparseMatrixSolver::nIters() const
 {
     return solver_->getNumIters();
 }
 
-Scalar TrilinosSparseMatrixSolver::error() const
+Scalar TrilinosBelosSparseMatrixSolver::error() const
 {
     return solver_->achievedTol();
 }
 
-void TrilinosSparseMatrixSolver::printStatus(const std::string &msg) const
+void TrilinosBelosSparseMatrixSolver::printStatus(const std::string &msg) const
 {
     comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), "BiCGSTAB", nIters(), error());
 }

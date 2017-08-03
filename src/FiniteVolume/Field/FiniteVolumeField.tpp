@@ -228,11 +228,11 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(const FiniteVolumeField<S
     for(const Cell& cell: grid().cells())
         self(cell) /= rhs(cell);
 
-    if(!faces_.empty() && rhs.hasFaces())
+    if(hasFaces() && rhs.hasFaces())
         for(const Face& face: grid().faces())
             self(face) /= rhs(face);
 
-    if(!nodes_.empty() && rhs.hasNodes())
+    if(hasNodes() && rhs.hasNodes())
         for(const Node& node: grid().nodes())
             self(node) /= rhs(node);
 

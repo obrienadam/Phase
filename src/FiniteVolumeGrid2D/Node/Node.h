@@ -30,6 +30,10 @@ public:
 
     const std::vector<Ref<const Cell>> cells() const;
 
+    std::vector<Scalar> volumeWeights() const;
+
+    std::vector<Scalar> distanceWeights() const;
+
     const Point2D &centroid() const //- For compatibility with Groups
     { return *this; }
 

@@ -4,6 +4,12 @@
 #include "Equation.h"
 
 namespace plic {
+
+    Equation<Scalar> div(const VectorFiniteVolumeField& u,
+                         const VectorFiniteVolumeField& gradGamma,
+                         ScalarFiniteVolumeField& gamma,
+                         Scalar timeStep);
+
 /*
 Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradGamma, ScalarFiniteVolumeField &field, Scalar timeStep,
                                       std::vector<Polygon>& plicPolygons);

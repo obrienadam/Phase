@@ -4,22 +4,23 @@
 namespace cicsam
 {
 
-    Scalar hc(Scalar gammaTildeD, Scalar coD)
+    Scalar hc(Scalar gammaDTilde, Scalar coD)
     {
-        return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(1., gammaTildeD / coD) : gammaTildeD;
+        return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
     }
 
-    Scalar uq(Scalar gammaTildeD, Scalar coD)
+    Scalar uq(Scalar gammaDTilde, Scalar coD)
     {
-        return gammaTildeD >= 0 && gammaTildeD <= 1 ? std::min(
-                (8. * coD * gammaTildeD + (1. - coD) * (6. * gammaTildeD + 3.)) / 8., hc(gammaTildeD, coD)) : gammaTildeD;
+        return gammaDTilde >= 0 && gammaDTilde <= 1 ?
+               std::min((8. * coD * gammaDTilde + (1. - coD) * (6. * gammaDTilde + 3.)) / 8., hc(gammaDTilde, coD))
+                                                    : gammaDTilde;
     }
 
-    ScalarFiniteVolumeField computeBeta(const VectorFiniteVolumeField &u,
-                                        const VectorFiniteVolumeField &gradGamma,
-                                        const ScalarFiniteVolumeField &gamma,
-                                        Scalar timeStep,
-                                        Scalar k)
+    ScalarFiniteVolumeField beta(const VectorFiniteVolumeField &u,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 const ScalarFiniteVolumeField &gamma,
+                                 Scalar timeStep,
+                                 Scalar k)
     {
         ScalarFiniteVolumeField beta(gamma.gridPtr(), "beta");
 
@@ -27,7 +28,6 @@ namespace cicsam
         {
             Vector2D sf = face.outwardNorm(face.lCell().centroid());
             Scalar flux = dot(u(face), sf);
-
             const Cell& donor = flux >= 0. ? face.lCell() : face.rCell();
             const Cell& acceptor = flux >= 0. ? face.rCell() : face.lCell();
             Vector2D rc = acceptor.centroid() - donor.centroid();
@@ -35,18 +35,22 @@ namespace cicsam
             Scalar gammaD = clamp(gamma(donor), 0., 1.);
             Scalar gammaA = clamp(gamma(acceptor), 0., 1.);
             Scalar gammaU = clamp(gammaA - 2.*dot(rc, gradGamma(donor)), 0., 1.);
-            Scalar gammaTilde = (gammaD - gammaU) / (gammaA - gammaU);
-            Scalar coD = std::abs(dot(u(face), sf) / dot(rc, sf) * timeStep);
-            Scalar thetaF = acos(fabs(dot((gradGamma(donor)/2 + gradGamma(acceptor)/2).unitVec(), rc.unitVec())));
-            Scalar psiF = std::min(k * (cos(2 * thetaF) + 1.) / 2., 1.);
-            Scalar gammaTildeF = psiF * hc(gammaTilde, coD) + (1. - psiF) * uq(gammaTilde, coD);
-            Scalar betaFace = (gammaTildeF - gammaTilde) / (1. - gammaTilde);
+            Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
-            if (std::isnan(betaFace))
-                betaFace = 0.5; // Default to a centered scheme
+            Scalar coD = 0.; //- Cell courant number
+            for(const InteriorLink& nb: donor.neighbours())
+                coD += std::max(dot(u(nb.face()), nb.outwardNorm()) / donor.volume() * timeStep, 0.);
 
-            //- Make sure the stencil is bounded
-            beta(face) = clamp(betaFace, 0., 1.);
+            for(const BoundaryLink& bd: donor.boundaries())
+                coD += std::max(dot(u(bd.face()), bd.outwardNorm()) / donor.volume() * timeStep, 0.);
+
+            Scalar thetaF = std::acos(std::abs(dot(gradGamma(donor).unitVec(), rc.unitVec())));
+            Scalar psiF = std::min(k * (std::cos(2 * thetaF) + 1.) / 2., 1.);
+            Scalar gammaFTilde = psiF * hc(gammaDTilde, coD) + (1. - psiF) * uq(gammaDTilde, coD);
+            Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
+
+            //- If stencil cannot be computed, default to upwind
+            beta(face) = std::isnan(betaFace) ? 0.: clamp(betaFace, 0., 1.);
         }
 
         return beta;
@@ -64,11 +68,17 @@ namespace cicsam
             for (const InteriorLink &nb: cell.neighbours())
             {
                 Scalar flux = dot(u(nb.face()), nb.outwardNorm());
-                Scalar alpha = flux > 0 ? 1. - beta(nb.face()): beta(nb.face());
 
-                eqn.add(cell, cell, theta*alpha*flux);
-                eqn.add(cell, nb.cell(), theta*(1. - alpha)*flux);
-                eqn.addSource(cell, (1. - theta)*flux*gamma(nb.face()));
+                const Cell& donor = flux > 0. ? cell: nb.cell();
+                const Cell& acceptor = flux > 0. ? nb.cell(): cell;
+
+                Scalar b = beta(nb.face());
+
+                eqn.add(cell, donor, theta * (1. - b) * flux);
+                eqn.add(cell, acceptor, theta * b * flux);
+
+                Scalar gammaF = (1. - b) * gamma(donor) + b * gamma(acceptor);
+                eqn.addSource(cell, (1. - theta) * flux * gammaF);
             }
 
             for (const BoundaryLink &bd: cell.boundaries())

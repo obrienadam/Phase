@@ -156,15 +156,20 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     boost::algorithm::to_lower(lib);
 
     if (lib == "eigen" || lib == "eigen3")
-        spSolver_ = std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver());
-    else if(lib == "trilinos")
-        spSolver_ = std::shared_ptr<TrilinosSparseMatrixSolver>(new TrilinosSparseMatrixSolver(comm));
+        spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
+    else if(lib == "trilinos" || lib == "belos")
+        spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
+    else if(lib == "muelu")
+    {
+        std::string xmlFileName = input.caseInput().get<std::string>("LinearAlgebra." + name + ".xmlFileName");
+        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, xmlFileName);
+    }
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
     if (comm.nProcs() > 1 && !spSolver_->supportsMPI())
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
-                        "\" does not support multiple processes in its current configuration.");
+                                                                "\" does not support multiple processes in its current configuration.");
 
     spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
     spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-6));

@@ -3,7 +3,7 @@
 
 ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField &field)
 {
-    ScalarFiniteVolumeField divF(field.gridPtr(), "divF");
+    ScalarFiniteVolumeField divF(field.gridPtr(), "divF", 0., false, false);
 
     for (const Cell &cell: field.grid().cellZone("fluid"))
     {
@@ -24,7 +24,7 @@ ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField &field)
 ScalarFiniteVolumeField src::laplacian(Scalar gamma,
                                        const ScalarFiniteVolumeField &phi)
 {
-    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name());
+    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name(), 0., false, false);
 
     for (const Cell &cell: phi.grid().cellZone("fluid"))
     {
@@ -47,7 +47,7 @@ ScalarFiniteVolumeField src::laplacian(Scalar gamma,
 ScalarFiniteVolumeField src::laplacian(const ScalarFiniteVolumeField& gamma,
                                        const ScalarFiniteVolumeField& phi)
 {
-    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name());
+    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name(), 0., false, false);
 
     for(const Cell& cell: phi.grid().cellZone("fluid"))
     {
@@ -72,28 +72,35 @@ VectorFiniteVolumeField src::ftc(const ScalarFiniteVolumeField& cellWeight,
                                  const VectorFiniteVolumeField& field,
                                  const CellGroup& cells)
 {
-    VectorFiniteVolumeField src(field.gridPtr(), "tmp", Vector2D(0., 0.));
+    VectorFiniteVolumeField src(field.gridPtr(), "tmp", Vector2D(0., 0.), false, false);
 
     for(const Cell& cell: cells)
     {
-        Vector2D sumSf(0., 0.);
+        Vector2D sumSf(0., 0.), tmp(0., 0.);
 
         for(const InteriorLink& nb: cell.neighbours())
         {
             Vector2D sf = nb.outwardNorm().abs();
-            src(cell) += pointwise(field(nb.face()), sf) / faceWeight(nb.face());
+            tmp += pointwise(field(nb.face()), sf) / faceWeight(nb.face());
             sumSf += sf;
         }
 
         for(const BoundaryLink& bd: cell.boundaries())
         {
             Vector2D sf = bd.outwardNorm().abs();
-            src(cell) += pointwise(field(bd.face()), sf) / faceWeight(bd.face());
+            tmp += pointwise(field(bd.face()), sf) / faceWeight(bd.face());
             sumSf += sf;
         }
 
-        src(cell) = cellWeight(cell) * Vector2D(src(cell).x/sumSf.x, src(cell).y/sumSf.y) * cell.volume();
+        src(cell) = cellWeight(cell) * Vector2D(tmp.x / sumSf.x, tmp.y / sumSf.y) * cell.volume();
     }
 
     return src;
+}
+
+VectorFiniteVolumeField src::ftc(const ScalarFiniteVolumeField& weight,
+                                 const VectorFiniteVolumeField& field,
+                                 const CellGroup& cells)
+{
+    return ftc(weight, weight, field, cells);
 }

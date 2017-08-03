@@ -20,7 +20,7 @@ public:
 
     ScalarFiniteVolumeField &gamma, &rho, &mu;
     ScalarGradient &gradGamma, &gradRho;
-    VectorFiniteVolumeField &sg, &rhoU;
+    VectorFiniteVolumeField &sg, &rhoU, &us;
     Celeste &ft;
 
 protected:

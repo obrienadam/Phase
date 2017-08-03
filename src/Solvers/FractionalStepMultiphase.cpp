@@ -17,6 +17,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
         ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma))),
         sg(addVectorField("sg")),
         rhoU(addVectorField("rhoU")),
+        us(addVectorField("us")),
         gammaEqn_(input, gamma, "gammaEqn")
 {
     cicsamBlending_ = input.caseInput().get<Scalar>("Solver.cicsamBlending", 1.);
@@ -78,9 +79,10 @@ Scalar FractionalStepMultiphase::computeMaxTimeStep(Scalar maxCo, Scalar prevTim
 
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
+    auto beta = cicsam::beta(u, gradGamma, gamma, timeStep, cicsamBlending_);
+
     gamma.savePreviousTimeStep(timeStep, 1);
-    auto beta = cicsam::computeBeta(u, gradGamma, gamma, timeStep, cicsamBlending_);
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma) + ib_.bcs(gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.) + ib_.bcs(gamma) == 0.);
     Scalar error = gammaEqn_.solve();
 
     // - While this may affect mass conservation, it prevents issues at high density ratios
@@ -89,15 +91,18 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     });
 
     grid_->sendMessages(gamma);
-    gamma.interpolateFaces([this, &beta](const Face& face){
-        return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
+
+    gamma.computeInteriorFaces([this, &beta](const Face& f) {
+        Scalar flux = dot(u(f), f.outwardNorm());
+        const Cell& d = flux > 0. ? f.lCell(): f.rCell();
+        const Cell& a = flux > 0. ? f.rCell(): f.lCell();
+        return (1. - beta(f)) * gamma(d) + beta(f) * gamma(a);
     });
-
-    //- Recompute gradGamma for next cicsam iteration
     gamma.setBoundaryFaces();
-    gradGamma.compute(fluid_);
 
+    gradGamma.compute(fluid_);
     grid_->sendMessages(gradGamma); //- In case donor cell is on another proc
+
     updateProperties(timeStep);
 
     return error;
@@ -117,6 +122,9 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
+
+    for(const Cell& cell: grid_->cells())
+        us(cell) = u(cell);
 
     for(const Face& f: grid_->interiorFaces())
     {
@@ -176,8 +184,8 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
     const VectorFiniteVolumeField &ft0 = ft.oldField(0);
     const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
 
-    auto fb = src::ftc(rho0, rho0, gradP0 - sg0 - ft0, fluid_) / rho0
-              - src::ftc(rho, rho, gradP - sg - ft, fluid_) / rho;
+    auto fb = src::ftc(rho0, gradP0 - sg0 - ft0, fluid_) / rho0
+              - src::ftc(rho, gradP - sg - ft, fluid_) / rho;
 
     for(const Cell& cell: fluid_)
         u(cell) += timeStep * fb(cell) / cell.volume();
@@ -204,21 +212,21 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         }
 
     grid_->sendMessages(u);
+
+    for(const Cell& cell: grid_->cells())
+        us(cell) -= u(cell);
 }
 
 void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 {
-    auto alpha = [](const Face& f){
-        return f.volumeWeight();
-    };
-
     //- Update rhoU
     rhoU.computeFaces([this](const Face& face){
         Scalar g = clamp(gamma(face), 0., 1.);
         Scalar g0 = clamp(gamma.oldField(0)(face), 0., 1.);
         Scalar rhoF = (1. - g)*rho1_ + g*rho2_;
         Scalar rhoF0 = (1. - g0)*rho1_ + g0*rho2_;
-        return (rhoF + rhoF0)/2.*u(face);
+        //return (rhoF + rhoF0)/2.*u(face);
+        return rhoF * u(face);
     });
 
     //- Update density
@@ -227,7 +235,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = clamp(gamma(cell), 0., 1.);
         return (1. - g)*rho1_ + g*rho2_;
     });
-    rho.interpolateFaces(alpha);
+    rho.interpolateFaces([](const Face& f) { return f.volumeWeight(); });
 
     //- Update viscosity
     mu.savePreviousTimeStep(timeStep, 1);
@@ -235,7 +243,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = clamp(gamma(cell), 0., 1.);
         return (1. - g)*mu1_ + g*mu2_;
     });
-    mu.interpolateFaces(alpha);
+    mu.interpolateFaces([](const Face& f) { return f.volumeWeight(); });
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);

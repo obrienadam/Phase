@@ -20,7 +20,7 @@ LinearAlgebra
 {
   uEqn
   {
-    lib trilinos
+    lib eigen
     solver BiCGSTAB
     preconditioner RILUK
     iluFill 0
@@ -28,7 +28,7 @@ LinearAlgebra
 
   pEqn
   {
-    lib trilinos
+    lib eigen
     solver BiCGSTAB
     preconditioner RILUK
     iluFill 4
@@ -46,8 +46,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 1280
-	nCellsY 640
+	nCellsX 320
+	nCellsY 160
 
 	; Rectilinear parameters
 	width 0.8

@@ -2,6 +2,8 @@ set(HEADERS Discretization/CrankNicolson.h
         Discretization/FaceInterpolation.h
         Field/ScalarGradient.h
         Discretization/Cicsam.h
+        Discretization/Hric.h
+        Discretization/Slic.h
         Discretization/Plic.h
         Equation/Equation.h
         Equation/FiniteVolumeEquation.h
@@ -41,6 +43,8 @@ set(SOURCES Discretization/CrankNicolson.cpp
         Discretization/FaceInterpolation.cpp
         Field/ScalarGradient.cpp
         Discretization/Cicsam.cpp
+        Discretization/Hric.cpp
+        Discretization/Slic.cpp
         Discretization/Plic.cpp
         Equation/Equation.tpp
         Equation/ScalarEquation.cpp

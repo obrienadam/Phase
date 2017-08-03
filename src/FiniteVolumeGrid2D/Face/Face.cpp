@@ -23,6 +23,11 @@ Vector2D Face::outwardNorm(const Point2D &point) const
     return dot(centroid_ - point, normal_) > 0. ? normal_ : -normal_;
 }
 
+Vector2D Face::outwardNorm() const
+{
+    return outwardNorm(lCell().centroid());
+}
+
 Scalar Face::volumeWeight() const
 {
     Scalar v1 = rCell().volume();

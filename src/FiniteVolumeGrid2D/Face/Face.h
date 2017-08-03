@@ -37,6 +37,8 @@ public:
 
     Vector2D outwardNorm(const Point2D &point) const;
 
+    Vector2D outwardNorm() const;
+
     Label id() const
     { return id_; }
 

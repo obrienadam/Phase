@@ -24,6 +24,26 @@ void InteriorLink::init()
     rCellVec_ = cell_.centroid() - self_.centroid();
 }
 
+Scalar InteriorLink::volumeWeight() const
+{
+    return cell_.volume() / (self_.volume() + cell_.volume());
+}
+
+
+Scalar InteriorLink::distanceWeight() const
+{
+    Scalar l1 = (face_.centroid() - self_.centroid()).mag();
+    Scalar l2 = (face_.centroid() - cell_.centroid()).mag();
+    return l2 / (l1 + l2);
+}
+
+Scalar InteriorLink::distanceSqrWeight() const
+{
+    Scalar l1 = (face_.centroid() - self_.centroid()).magSqr();
+    Scalar l2 = (face_.centroid() - cell_.centroid()).magSqr();
+    return l2 / (l1 + l2);
+}
+
 const Cell &InteriorLink::cell() const
 {
     return cell_;

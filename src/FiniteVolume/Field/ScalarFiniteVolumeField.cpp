@@ -6,7 +6,7 @@ ScalarFiniteVolumeField &ScalarFiniteVolumeField::operator=(const Vector &rhs)
     auto &self = *this;
 
     for (const Cell &cell: self.grid().localActiveCells())
-        self[cell.id()] = rhs[cell.index(0)];
+        self(cell) = rhs[cell.index(0)];
 
     return self;
 }
@@ -62,8 +62,13 @@ ScalarFiniteVolumeField operator/(Scalar lhs, ScalarFiniteVolumeField rhs)
     for (const Cell &cell: rhs.grid().cells())
         rhs(cell) = lhs / rhs(cell);
 
-    for (const Face &face: rhs.grid().faces())
-        rhs(face) = lhs / rhs(face);
+    if(rhs.hasFaces())
+        for (const Face &face: rhs.grid().faces())
+            rhs(face) = lhs / rhs(face);
+
+    if(rhs.hasNodes())
+        for(const Node &node: rhs.grid().nodes())
+            rhs(node) = lhs / rhs(node);
 
     return rhs;
 }

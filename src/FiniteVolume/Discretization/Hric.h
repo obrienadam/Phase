@@ -1,15 +1,14 @@
-#ifndef CICSAM_H
-#define CICSAM_H
+#ifndef HRIC_H
+#define HRIC_H
 
 #include "Equation.h"
 
-namespace cicsam
+namespace hric
 {
     ScalarFiniteVolumeField beta(const VectorFiniteVolumeField &u,
                                  const VectorFiniteVolumeField &gradGamma,
                                  const ScalarFiniteVolumeField &gamma,
-                                 Scalar timeStep,
-                                 Scalar k = 1.);
+                                 Scalar timeStep);
 
     Equation<Scalar> div(const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField& beta,

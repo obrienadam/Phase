@@ -68,15 +68,21 @@ Scalar Piso::maxCourantNumber(Scalar timeStep) const
 {
     Scalar maxCo = 0;
 
-    for (const Face &face: grid_->interiorFaces())
+    for(const Cell& cell: fluid_)
     {
-        Vector2D sf = face.outwardNorm(face.lCell().centroid());
-        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+        Scalar co = 0.;
 
-        maxCo = std::max(maxCo, fabs(dot(u(face), sf) / dot(rc, sf)));
+        for(const InteriorLink& nb: cell.neighbours())
+            co += std::max(dot(u(nb.face()), nb.outwardNorm()), 0.);
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            co += std::max(dot(u(bd.face()), bd.outwardNorm()), 0.);
+
+        co *= timeStep / cell.volume();
+        maxCo = std::max(co, maxCo);
     }
 
-    return grid_->comm().max(maxCo * timeStep);
+    return grid_->comm().max(maxCo);
 }
 
 Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const

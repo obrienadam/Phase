@@ -14,7 +14,7 @@ Equation<T> div(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeFiel
     const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
     const VectorFiniteVolumeField &u0 = u.oldField(0);
 
-    for (const Cell &cell: field.grid.cellZone("fluid"))
+    for (const Cell &cell: field.grid().cellZone("fluid"))
     {
         Scalar centralCoeff0 = 0.;
         Scalar centralCoeff = 0.;

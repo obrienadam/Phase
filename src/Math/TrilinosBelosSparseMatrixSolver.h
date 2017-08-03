@@ -1,5 +1,5 @@
-#ifndef TRILINOS_SPARSE_MATRIX_SOLVER_H
-#define TRILINOS_SPARSE_MATRIX_SOLVER_H
+#ifndef TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
+#define TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -9,10 +9,10 @@
 
 #include "SparseMatrixSolver.h"
 
-class TrilinosSparseMatrixSolver : public SparseMatrixSolver
+class TrilinosBelosSparseMatrixSolver : public SparseMatrixSolver
 {
 public:
-    TrilinosSparseMatrixSolver(const Communicator &comm);
+    TrilinosBelosSparseMatrixSolver(const Communicator &comm);
 
     void setRank(int rank);
 

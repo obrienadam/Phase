@@ -152,7 +152,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
 
-    auto beta = cicsam::computeBeta(u, gradGamma, gamma, timeStep, 0.5);
+    auto beta = cicsam::beta(u, gradGamma, gamma, timeStep, 0.5);
 
     switch (interfaceAdvectionMethod_)
     {

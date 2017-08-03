@@ -23,6 +23,10 @@ namespace src
                                 const VectorFiniteVolumeField& field,
                                 const CellGroup& cells);
 
+    VectorFiniteVolumeField ftc(const ScalarFiniteVolumeField& weight,
+                                const VectorFiniteVolumeField& field,
+                                const CellGroup& cells);
+
     template <class T>
     FiniteVolumeField<T> src(const FiniteVolumeField<T> &field, const CellGroup& group)
     {

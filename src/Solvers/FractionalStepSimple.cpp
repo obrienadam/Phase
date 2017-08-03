@@ -60,15 +60,21 @@ Scalar FractionalStepSimple::maxCourantNumber(Scalar timeStep) const
 {
     Scalar maxCo = 0;
 
-    for (const Face &face: grid_->interiorFaces())
+    for(const Cell& cell: fluid_)
     {
-        Vector2D sf = face.outwardNorm(face.lCell().centroid());
-        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+        Scalar co = 0.;
 
-        maxCo = std::max(maxCo, fabs(dot(u(face), sf) / dot(rc, sf)));
+        for(const InteriorLink& nb: cell.neighbours())
+            co += std::max(dot(u(nb.face()), nb.outwardNorm()), 0.);
+
+        for(const BoundaryLink& bd: cell.boundaries())
+            co += std::max(dot(u(bd.face()), bd.outwardNorm()), 0.);
+
+        co *= timeStep / cell.volume();
+        maxCo = std::max(co, maxCo);
     }
 
-    return grid_->comm().max(maxCo * timeStep);
+    return grid_->comm().max(maxCo);
 }
 
 Scalar FractionalStepSimple::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
@@ -89,7 +95,7 @@ Scalar FractionalStepSimple::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u) + ib_.solidVelocity(u) == fv::laplacian(mu_/rho_, u));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u) == fv::laplacian(mu_/rho_, u, 0.5));
     //uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.solidVelocity(u) == qibm::laplacian(mu_/rho_, u, ib_));
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);

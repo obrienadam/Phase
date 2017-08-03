@@ -55,6 +55,7 @@ protected:
 };
 
 #include "EigenSparseMatrixSolver.h"
-#include "TrilinosSparseMatrixSolver.h"
+#include "TrilinosBelosSparseMatrixSolver.h"
+#include "TrilinosMueluSparseMatrixSolver.h"
 
 #endif
