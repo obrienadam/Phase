@@ -5,11 +5,7 @@ Patch::Patch(const std::string &name, Label id, const std::shared_ptr<PatchRegis
       Group(name)
 {
     id_ = id;
-
-    if(registry)
-        registry_ = registry;
-    else
-        registry_ = std::shared_ptr<PatchRegistry>(new PatchRegistry());
+    registry_ = registry ? registry: std::make_shared<PatchRegistry>();
 }
 
 void Patch::add(const Face &face)

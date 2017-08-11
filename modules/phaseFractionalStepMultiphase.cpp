@@ -23,13 +23,13 @@ int main(int argc, char *argv[])
     grid->partition(input, std::make_shared<Communicator>());
 
     FractionalStepMultiphase solver(input, grid);
-
     CgnsViewer viewer(input, solver);
-    RunControl runControl;
 
+    RunControl runControl;
     runControl.run(input, solver, viewer);
 
     Communicator::finalize();
 
     return 0;
 }
+

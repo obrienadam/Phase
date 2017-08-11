@@ -115,11 +115,6 @@ void ScalarGradient::compute(const CellGroup& group, Method method) {
     }
 }
 
-void ScalarGradient::compute(Method method)
-{
-    compute(grid_->localActiveCells(), method);
-}
-
 void ScalarGradient::compute(const ScalarFiniteVolumeField& weight)
 {
     computeFaces();

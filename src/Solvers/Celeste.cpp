@@ -16,6 +16,19 @@ Celeste::Celeste(const Input &input,
     constructMatrices();
 }
 
+void Celeste::computeFaces()
+{
+    computeGradGammaTilde();
+    computeInterfaceNormals();
+    computeCurvature();
+
+    auto &ft = *this;
+    auto &kappa = *kappa_;
+
+    for(const Face& face: gamma_.grid().faces())
+        ft(face) = sigma_ * kappa(face) * gradGamma_(face);
+}
+
 void Celeste::compute()
 {
     computeGradGammaTilde();
@@ -25,18 +38,12 @@ void Celeste::compute()
     auto &ft = *this;
     auto &kappa = *kappa_;
 
-    ft.fill(Vector2D(0., 0.));
-
-    for (const Face &face: gamma_.grid().interiorFaces())
-    {
-        Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
+    for(const Face& face: gamma_.grid().faces())
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
-    }
 
+    ft.fill(Vector2D(0., 0.));
     for (const Cell &cell: gamma_.grid().cellZone("fluid"))
         ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
-
-    grid_->sendMessages(ft);
 }
 
 void Celeste::compute(const ImmersedBoundary &ib)
@@ -56,8 +63,6 @@ void Celeste::compute(const ImmersedBoundary &ib)
     ft.interpolateFaces([](const Face &face) {
         return face.rCell().volume() / (face.lCell().volume() + face.rCell().volume());
     });
-
-    grid_->sendMessages(ft);
 }
 
 void Celeste::constructMatrices()
@@ -78,7 +83,7 @@ void Celeste::constructGammaTildeMatrices()
 {
     gradGammaTildeMatrices_.resize(grid_->cells().size());
 
-    for(const Cell& cell: grid_->cells())
+    for(const Cell& cell: grid_->localActiveCells())
         gradGammaTildeMatrices_[cell.id()] = leastSquaresMatrix(cell, true);
 }
 
@@ -86,7 +91,7 @@ void Celeste::constructKappaMatrices()
 {
     kappaMatrices_.resize(grid_->cells().size());
 
-    for(const Cell& cell: grid_->cells())
+    for(const Cell& cell: grid_->localActiveCells())
         kappaMatrices_[cell.id()] = leastSquaresMatrix(cell, false);
 }
 
@@ -130,37 +135,32 @@ void Celeste::computeGradGammaTilde()
         b = gradGammaTildeMatrices_[cell.id()] * b;
         gradGammaTilde(cell) = Vector2D(b(0, 0), b(1, 0));
     }
-
-    grid_->sendMessages(*gradGammaTilde_);
 }
 
 void Celeste::computeCurvature()
 {
     Matrix bx(8, 1), by(8, 1);
-    kappa_->fill(0.);
-
     auto &n = *n_;
     auto &gradGammaTilde = *gradGammaTilde_;
     auto &kappa = *kappa_;
 
+    kappa.fill(0.);
     for (const Cell &cell: grid_->cellZone("fluid"))
     {
         if (gradGammaTilde(cell).magSqr() < eps_ * eps_)
             continue;
 
-        const size_t stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-        int i = 0;
+        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
         bx.resize(stencilSize, 1);
         by.resize(stencilSize, 1);
 
+        int i = 0;
         for (const InteriorLink &nb: cell.neighbours())
         {
             Vector2D dn = n(nb.cell()) - n(cell);
-            Scalar sSqr = pow(nb.rFaceVec().mag() + eps_, 2);
-            sSqr = 1;
 
-            bx(i, 0) = dn.x / sSqr;
-            by(i, 0) = dn.y / sSqr;
+            bx(i, 0) = dn.x;
+            by(i, 0) = dn.y;
 
             ++i;
         }
@@ -168,11 +168,9 @@ void Celeste::computeCurvature()
         for (const DiagonalCellLink &dg: cell.diagonals())
         {
             Vector2D dn = n(dg.cell()) - n(cell);
-            Scalar sSqr = pow(dg.rCellVec().mag() + eps_, 2);
-            sSqr = 1;
 
-            bx(i, 0) = dn.x / sSqr;
-            by(i, 0) = dn.y / sSqr;
+            bx(i, 0) = dn.x;
+            by(i, 0) = dn.y;
 
             ++i;
         }
@@ -180,11 +178,9 @@ void Celeste::computeCurvature()
         for (const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D dn = n(bd.face()) - n(cell);
-            Scalar sSqr = pow(bd.rFaceVec().mag() + eps_, 2);
-            sSqr = 1;
 
-            bx(i, 0) = dn.x / sSqr;
-            by(i, 0) = dn.y / sSqr;
+            bx(i, 0) = dn.x;
+            by(i, 0) = dn.y;
 
             ++i;
         }
@@ -196,9 +192,7 @@ void Celeste::computeCurvature()
     }
 
     grid_->sendMessages(kappa);
-    kappa_->interpolateFaces([](const Face& face){
-        return face.rCell().volume() / (face.lCell().volume() + face.rCell().volume());
-    });
+    kappa.interpolateFaces();
 }
 
 void Celeste::computeCurvature(const ImmersedBoundary &ib)

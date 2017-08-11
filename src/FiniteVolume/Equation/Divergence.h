@@ -20,10 +20,10 @@ namespace fv
                 Scalar flux = dot(u(nb.face()), nb.outwardNorm());
                 Scalar flux0 = dot(u0(nb.face()), nb.outwardNorm());
 
-                eqn.add(cell, nb.cell(), theta * std::min(flux, 0.));
                 eqn.add(cell, cell, theta * std::max(flux, 0.));
-                eqn.addSource(cell, (1. - theta) * std::min(flux0, 0.) * phi(nb.cell()));
+                eqn.add(cell, nb.cell(), theta * std::min(flux, 0.));
                 eqn.addSource(cell, (1. - theta) * std::max(flux0, 0.) * phi(cell));
+                eqn.addSource(cell, (1. - theta) * std::min(flux0, 0.) * phi(nb.cell()));
             }
 
             for (const BoundaryLink &bd: cell.boundaries())

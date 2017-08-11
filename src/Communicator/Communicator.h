@@ -69,15 +69,7 @@ public:
 
     void ssend(int dest, const std::vector<Tensor2D> &vals, int tag = 0) const;
 
-    void recv(int source, std::vector<int> &vals) const;
-
-    void recv(int source, std::vector<unsigned long> &vals) const;
-
-    void recv(int source, std::vector<double> &vals) const;
-
-    void recv(int source, std::vector<Vector2D> &vals) const;
-
-    void recv(int source, std::vector<Tensor2D> &vals) const;
+    void ssend(int dest, unsigned long val, int tag = 0) const;
 
     //- Non-blocking point-to-point communication
     void irecv(int source, std::vector<int> &vals, int tag = 0) const;
@@ -89,6 +81,8 @@ public:
     void irecv(int source, std::vector<Vector2D> &vals, int tag = 0) const;
 
     void irecv(int source, std::vector<Tensor2D>& vals, int tag = 0) const;
+
+    void irecv(int source, unsigned long& val, int tag = 0) const;
 
     void waitAll() const;
 

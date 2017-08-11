@@ -145,34 +145,9 @@ void Communicator::ssend(int dest, const std::vector<Tensor2D>& vals, int tag) c
     MPI_Ssend(vals.data(), vals.size(), MPI_TENSOR2D_, dest, tag, comm_);
 }
 
-void Communicator::recv(int source, std::vector<int> &vals) const
+void Communicator::ssend(int dest, unsigned long val, int tag) const
 {
-    MPI_Status status;
-    MPI_Recv(vals.data(), vals.size(), MPI_INT, source, MPI_ANY_TAG, comm_, &status);
-}
-
-void Communicator::recv(int source, std::vector<unsigned long> &vals) const
-{
-    MPI_Status status;
-    MPI_Recv(vals.data(), vals.size(), MPI_UNSIGNED_LONG, source, MPI_ANY_TAG, comm_, &status);
-}
-
-void Communicator::recv(int source, std::vector<double> &vals) const
-{
-    MPI_Status status;
-    MPI_Recv(vals.data(), vals.size(), MPI_DOUBLE, source, MPI_ANY_TAG, comm_, &status);
-}
-
-void Communicator::recv(int source, std::vector<Vector2D> &vals) const
-{
-    MPI_Status status;
-    MPI_Recv(vals.data(), vals.size(), MPI_VECTOR2D_, source, MPI_ANY_TAG, comm_, &status);
-}
-
-void Communicator::recv(int source, std::vector<Tensor2D> &vals) const
-{
-    MPI_Status status;
-    MPI_Recv(vals.data(), vals.size(), MPI_TENSOR2D_, source, MPI_ANY_TAG, comm_, &status);
+    MPI_Ssend(&val, 1, MPI_UNSIGNED_LONG, dest, tag, comm_);
 }
 
 void Communicator::irecv(int source, std::vector<int> &vals, int tag) const
@@ -211,6 +186,14 @@ void Communicator::irecv(int source, std::vector<Tensor2D>& vals, int tag) const
 {
     MPI_Request request;
     MPI_Irecv(vals.data(), vals.size(), MPI_TENSOR2D_, source, tag, comm_, &request);
+
+    currentRequests_.push_back(request);
+}
+
+void Communicator::irecv(int source, unsigned long &val, int tag) const
+{
+    MPI_Request request;
+    MPI_Irecv(&val, 1, MPI_UNSIGNED_LONG, source, tag, comm_, &request);
 
     currentRequests_.push_back(request);
 }

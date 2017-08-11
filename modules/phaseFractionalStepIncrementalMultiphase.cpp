@@ -4,7 +4,7 @@
 #include "Communicator.h"
 #include "CommandLine.h"
 #include "ConstructGrid.h"
-#include "FractionalStepSimple.h"
+#include "FractionalStepIncrementalMultiphase.h"
 #include "CgnsViewer.h"
 #include "RunControl.h"
 
@@ -22,14 +22,14 @@ int main(int argc, char *argv[])
     shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
     grid->partition(input, std::make_shared<Communicator>());
 
-    FractionalStepSimple solver(input, grid);
-    CgnsViewer viewer(input, solver);
+    FractionalStepIncrementalMultiphase solver(input, grid);
 
+    CgnsViewer viewer(input, solver);
     RunControl runControl;
+
     runControl.run(input, solver, viewer);
 
     Communicator::finalize();
 
     return 0;
 }
-

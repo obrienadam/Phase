@@ -7,9 +7,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
                                                      const std::vector<std::pair<Scalar, Scalar> > &xDimRefinements,
                                                      const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements)
         :
-        FiniteVolumeGrid2D((nCellsX + 1) * (nCellsY + 1),
-                           nCellsX * nCellsY,
-                           (nCellsX + 1) * nCellsY + nCellsX * (nCellsY + 1))
+        FiniteVolumeGrid2D()
 {
     width *= convertToMeters;
     height *= convertToMeters;

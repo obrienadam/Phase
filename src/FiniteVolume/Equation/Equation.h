@@ -87,8 +87,6 @@ public:
     //- Solve the system
     Scalar solve();
 
-    Scalar solveWithGuess();
-
     //- Relax the central coefficients (will fail if a central coefficient is not specified)
     void relax(Scalar relaxationFactor);
 
@@ -105,7 +103,8 @@ protected:
 
     Scalar &coeffRef(Index i, Index j);
 
-    Size nActiveCells_; // Cached for efficiency
+    Size nLocalActiveCells_, nGlobalActiveCells_; // Cached for efficiency
+    std::pair<Index, Index> indexRange_;
 
     CoefficientList coeffs_;
     Vector sources_;

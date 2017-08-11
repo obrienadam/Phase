@@ -15,17 +15,22 @@ public:
         FIXED, NORMAL_GRADIENT, SYMMETRY, OUTFLOW
     };
 
+    enum InterpolationType
+    {
+        VOLUME, DISTANCE
+    };
+
     //- Constructors
-    explicit FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+    explicit FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                const std::string &name,
-                               const T& val = T(),
+                               const T &val = T(),
                                bool faces = true,
                                bool nodes = false);
 
     explicit FiniteVolumeField(const Input &input,
-                               const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+                               const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                const std::string &name,
-                               const T& val = T(),
+                               const T &val = T(),
                                bool faces = true,
                                bool nodes = false);
 
@@ -35,38 +40,38 @@ public:
     void fillInterior(const T &val);
 
     template<class TFunc>
-    void computeCells(const TFunc &fcn) {
-        for(const Cell& cell: grid().cells())
+    void computeCells(const TFunc &fcn)
+    {
+        for (const Cell &cell: grid().cells())
             (*this)(cell) = fcn(cell);
     }
 
     template<class TFunc>
-    void computeFaces(const TFunc&fcn) {
-        for(const Face& face: grid().faces())
+    void computeFaces(const TFunc &fcn)
+    {
+        for (const Face &face: grid().faces())
             (*this)(face) = fcn(face);
     }
 
-    template <class TFunc>
-    void computeInteriorFaces(const TFunc &fcn) {
-        for(const Face& face: grid().interiorFaces())
+    template<class TFunc>
+    void computeInteriorFaces(const TFunc &fcn)
+    {
+        for (const Face &face: grid().interiorFaces())
             (*this)(face) = fcn(face);
     }
 
-    template <class TFunc>
-    void computeBoundaryFaces(const TFunc&fcn) {
-        for(const Face& face: grid().boundaryFaces())
+    template<class TFunc>
+    void computeBoundaryFaces(const TFunc &fcn)
+    {
+        for (const Face &face: grid().boundaryFaces())
             (*this)(face) = fcn(face);
     }
 
-    template <class TFuncCell, class TFuncFace>
-    void compute(const TFuncCell& cfcn,
-                 const TFuncFace& ffcn) {
-        computeCells(cfcn);
-        computeFaces(ffcn);
-    }
+    void faceToCell(const FiniteVolumeField<Scalar> &cellWeight, const FiniteVolumeField<Scalar> &faceWeight);
 
-    void setPatch(const Patch& patch, const std::function<T(const Face& face)>& fcn) {
-        for(const Face& face: patch)
+    void setPatch(const Patch &patch, const std::function<T(const Face &face)> &fcn)
+    {
+        for (const Face &face: patch)
             (*this)(face) = fcn(face);
     }
 
@@ -75,28 +80,46 @@ public:
 
     BoundaryType boundaryType(const Patch &patch) const;
 
-    BoundaryType boundaryType(const Face& face) const;
+    BoundaryType boundaryType(const Face &face) const;
 
     T boundaryRefValue(const Patch &patch) const;
 
     std::pair<BoundaryType, T> boundaryInfo(const Face &face) const;
 
     template<class TFunc>
-    void interpolateFaces(const TFunc& alpha) {
+    void interpolateFaces(const TFunc &alpha)
+    {
         auto &self = *this;
 
-        for(const Face& face: grid_->interiorFaces())
+        for (const Face &face: grid_->interiorFaces())
         {
             Scalar g = alpha(face);
-            self(face) = g*self(face.lCell()) + (1. - g)*self(face.rCell());
+            self(face) = g * self(face.lCell()) + (1. - g) * self(face.rCell());
         }
 
         setBoundaryFaces();
     }
 
+    void interpolateFaces(InterpolationType type = VOLUME)
+    {
+        switch (type)
+        {
+            case VOLUME:
+                interpolateFaces([](const Face &face) {
+                    return face.volumeWeight();
+                });
+                break;
+            case DISTANCE:
+                interpolateFaces([](const Face &face) {
+                    return face.distanceWeight();
+                });
+                break;
+        }
+    }
+
     void setBoundaryFaces();
 
-    void setBoundaryFaces(BoundaryType bType, const std::function<T(const Face& face)>& fcn);
+    void setBoundaryFaces(BoundaryType bType, const std::function<T(const Face &face)> &fcn);
 
     //- Field info
     bool hasFaces() const
@@ -126,6 +149,12 @@ public:
     const T &operator()(const Cell &cell) const
     { return std::vector<T>::operator[](cell.id()); }
 
+    T &operator()(Label id)
+    { return std::vector<T>::operator[](id); }
+
+    const T &operator()(Label id) const
+    { return std::vector<T>::operator[](id); }
+
     T &operator()(const Face &face)
     { return faces_[face.id()]; }
 
@@ -145,7 +174,7 @@ public:
 
     void clearHistory();
 
-    FiniteVolumeField& oldField(int i)
+    FiniteVolumeField &oldField(int i)
     { return previousTimeSteps_[i]->second; }
 
     const FiniteVolumeField &oldField(int i) const
@@ -178,7 +207,7 @@ public:
     std::shared_ptr<const FiniteVolumeGrid2D> gridPtr() const
     { return grid_; }
 
-    const FiniteVolumeGrid2D& grid() const
+    const FiniteVolumeGrid2D &grid() const
     { return *grid_; }
 
 protected:
@@ -207,7 +236,7 @@ template<class T>
 void smooth(const FiniteVolumeField<T> &field,
             const CellGroup &cells,
             Scalar epsilon,
-            FiniteVolumeField<T>& smoothedField);
+            FiniteVolumeField<T> &smoothedField);
 
 template<class T>
 FiniteVolumeField<T> smooth(const FiniteVolumeField<T> &field,

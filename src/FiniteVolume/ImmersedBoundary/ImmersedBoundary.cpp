@@ -319,8 +319,8 @@ void ImmersedBoundary::setCellStatus()
     for (const Cell &cell: solver_.grid().cellZone("fluid"))
         cellStatus_(cell) = FLUID_CELLS;
 
-    for (const std::shared_ptr<CellZone> &bufferZone: solver_.grid().bufferZones())
-        for (const Cell &cell: *bufferZone)
+    for (const CellZone &bufferZone: solver_.grid().bufferZones())
+        for (const Cell &cell: bufferZone)
             cellStatus_(cell) = BUFFER_CELLS;
 
     for (const auto &ibObj: ibObjs_)

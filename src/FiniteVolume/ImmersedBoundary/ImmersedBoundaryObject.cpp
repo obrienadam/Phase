@@ -84,7 +84,7 @@ void ImmersedBoundaryObject::clear()
     solidCells_.clear();
     freshCells_.clear();
     deadCells_.clear();
-    grid_.setCellsActive(*fluid_);
+    grid_.setCellsActive(fluid_->begin(), fluid_->end());
 }
 
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const

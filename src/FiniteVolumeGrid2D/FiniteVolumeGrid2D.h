@@ -20,10 +20,16 @@ class FiniteVolumeGrid2D
 {
 public:
 
-    FiniteVolumeGrid2D(Size nNodes = 0, Size nCells = 0, Size nFaces = 0);
+    FiniteVolumeGrid2D();
+
+    FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
+                       const std::vector<Label> &cellInds,
+                       const std::vector<Label> &cells);
 
     //- Initialization
-    void init(const std::vector<Point2D> &nodes, const std::vector<Label> &cellInds, const std::vector<Label> &cells);
+    void init(const std::vector<Point2D> &nodes,
+              const std::vector<Label> &cellInds,
+              const std::vector<Label> &cells);
 
     void reset();
 
@@ -38,7 +44,7 @@ public:
     { return faces_.size(); }
 
     Size nLocalActiveCells() const
-    { return localActiveCells().size(); }
+    { return localActiveCells_.size(); }
 
     Size nActiveCellsGlobal() const
     { return nActiveCellsGlobal_; }
@@ -83,17 +89,23 @@ public:
     std::vector<int> elementList() const;
 
     //- Cell groups and zones
-    void setCellActive(Cell &cell);
+    void setCellActive(const Cell &cell);
 
-    void setCellsActive(const std::vector<Label> &ids);
+    template <class const_iterator>
+    void setCellsActive(const_iterator begin, const_iterator end)
+    {
+        localActiveCells_.add(begin, end);
+        globalActiveCells_.add(begin, end);
+    }
 
-    void setCellsActive(const CellGroup &cellGroup);
+    void setCellInactive(const Cell &cell);
 
-    void setCellsInactive(const std::vector<Label> &ids);
-
-    void setCellsInactive(const CellGroup &cellGroup);
-
-    void setCellsLocallyInactive(const std::vector<Label> &ids);
+    template <class const_iterator>
+    void setCellsInactive(const_iterator begin, const_iterator end)
+    {
+        localInactiveCells_.add(begin, end);
+        globalInactiveCells_.add(begin, end);
+    }
 
     CellGroup &cellGroup(const std::string &name)
     { return cellGroups_.find(name)->second; }
@@ -107,38 +119,27 @@ public:
     const CellZone &cellZone(const std::string &name) const
     { return cellZones_.find(name)->second; }
 
-    CellGroup &createCellGroup(const std::string &name, const std::vector<Label> &ids = std::vector<Label>());
+    CellGroup &createCellGroup(const std::string& name);
 
-    CellZone &createCellZone(const std::string &name, const std::vector<Label> &ids = std::vector<Label>());
+    CellZone &createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry = nullptr);
 
     const std::shared_ptr<CellZone::ZoneRegistry>& cellZoneRegistry() const
     { return cellZoneRegistry_; }
 
-    const CellGroup &localActiveCells() const
+    const CellZone &localActiveCells() const
     { return localActiveCells_; }
 
-    const CellGroup &globalActiveCells() const
+    const CellZone &globalActiveCells() const
     { return globalActiveCells_; }
 
-    const CellGroup &inactiveCells() const
-    { return inactiveCells_; }
+    const CellZone &localInactiveCells() const
+    { return localActiveCells_; }
 
-    const std::vector<std::shared_ptr<CellZone>> &bufferZones() const
+    const CellZone &globalInactiveCells() const
+    { return globalInactiveCells_; }
+
+    const std::vector<CellZone> &bufferZones() const
     { return bufferCellZones_; }
-
-    void setAllCellsActive();
-
-    //- Misc cell methods
-    const Cell &findContainingCell(const Point2D &point, const Cell &guess) const;
-
-    std::vector<Ref<Cell> > getCells(const std::vector<Label> &ids);
-
-    std::vector<Ref<const Cell> > getCells(const std::vector<Label> &ids) const;
-
-    template<class T>
-    std::vector<Label> getCellIds(const T &cells);
-
-    void assignCellIds();
 
     //- Face related methods
 
@@ -175,6 +176,9 @@ public:
     const FaceGroup& faceGroup(const std::string& name) const
     { return faceGroups_.find(name)->second; }
 
+    bool hasPatch(const std::string& name) const
+    { return patches_.find(name) != patches_.end(); }
+
     Patch& patch(const std::string& name)
     { return patches_.find(name)->second; }
 
@@ -191,8 +195,6 @@ public:
 
     std::vector<Ref<const Node>> nodesInShape(const Shape2D &shape) const;
 
-    std::vector<std::vector<Ref<const Cell> > > constructSmoothingKernels(Scalar width) const;
-
     //- Parallel/paritioning
     const Communicator &comm() const
     { return *comm_; }
@@ -201,12 +203,8 @@ public:
 
     void partition(const Input &input, std::shared_ptr<Communicator> comm);
 
-    template<typename T>
+    template<class T>
     void sendMessages(std::vector<T> &data) const;
-
-    void addNeighbouringProc(int procNo,
-                             const std::vector<Label> &sendOrder,
-                             const std::vector<Label> &recvOrder);
 
     //- Active cell ordering, required for lineary algebra!
     void computeGlobalOrdering();
@@ -234,18 +232,21 @@ protected:
     std::vector<Cell> cells_;
     Size nActiveCellsGlobal_;
 
-    //- Default cell groups, active and inactive (import for ordering computations!)
-    CellGroup localActiveCells_, inactiveCells_, globalActiveCells_;
+    //- Local cell zones
+    CellZone localActiveCells_, localInactiveCells_;
 
-    //- Defined cell groups/zones
+    //- Cells on this proc that are globally active/inactive
+    CellZone globalActiveCells_, globalInactiveCells_;
+
+    //- User defined cell groups/zones
     std::shared_ptr<CellZone::ZoneRegistry> cellZoneRegistry_;
     std::unordered_map<std::string, CellGroup> cellGroups_;
     std::unordered_map<std::string, CellZone> cellZones_;
 
+    //- Communication zones
     std::shared_ptr<Communicator> comm_;
-    std::vector<int> neighbouringProcs_;
-    std::vector<std::shared_ptr<CellGroup>> sendCellGroups_; // shared pointers are used so that zones can be moveable!
-    std::vector<std::shared_ptr<CellZone>> bufferCellZones_;
+    std::vector<CellGroup> sendCellGroups_; // shared pointers are used so that zones can be moveable!
+    std::vector<CellZone> bufferCellZones_;
 
     //- Face related data
     std::vector<Face> faces_;
@@ -255,13 +256,12 @@ protected:
     FaceGroup interiorFaces_;
     FaceGroup boundaryFaces_;
 
-    //- Face groups and patches
+    //- User defined face groups and patches
     std::shared_ptr<Patch::PatchRegistry> patchRegistry_;
     std::unordered_map<std::string, FaceGroup> faceGroups_;
     std::unordered_map<std::string, Patch> patches_;
 
     BoundingBox bBox_;
-    Polygon domain_;
 
     //- For node searches
     Search nodeSearch_;

@@ -14,11 +14,11 @@ target_link_libraries(phasePisoMultiphase ${PHASE_LIBRARIES})
 add_executable(phaseFractionalStep phaseFractionalStep.cpp)
 target_link_libraries(phaseFractionalStep ${PHASE_LIBRARIES})
 
-add_executable(phaseFractionalStepSimple phaseFractionalStepSimple.cpp)
-target_link_libraries(phaseFractionalStepSimple ${PHASE_LIBRARIES})
-
-add_executable(phaseFractionalStepSimpleMultiphase phaseFractionalStepSimpleMultiphase.cpp)
-target_link_libraries(phaseFractionalStepSimpleMultiphase ${PHASE_LIBRARIES})
-
 add_executable(phaseFractionalStepMultiphase phaseFractionalStepMultiphase.cpp)
 target_link_libraries(phaseFractionalStepMultiphase ${PHASE_LIBRARIES})
+
+add_executable(phaseFractionalStepIncremental phaseFractionalStepIncremental.cpp)
+target_link_libraries(phaseFractionalStepIncremental ${PHASE_LIBRARIES})
+
+add_executable(phaseFractionalStepIncrementalMultiphase phaseFractionalStepIncrementalMultiphase.cpp)
+target_link_libraries(phaseFractionalStepIncrementalMultiphase ${PHASE_LIBRARIES})

@@ -2,11 +2,11 @@
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const ImmersedBoundary &ib,
-                                         const ScalarFiniteVolumeField& gamma,
-                                         const ScalarFiniteVolumeField& rho,
-                                         const ScalarFiniteVolumeField& mu,
-                                         const VectorFiniteVolumeField& u,
-                                         const ScalarGradient& gradGamma)
+                                         const ScalarFiniteVolumeField &gamma,
+                                         const ScalarFiniteVolumeField &rho,
+                                         const ScalarFiniteVolumeField &mu,
+                                         const VectorFiniteVolumeField &u,
+                                         const ScalarGradient &gradGamma)
         :
         VectorFiniteVolumeField(gamma.gridPtr(), "ft", Vector2D(0., 0.), true, false),
         ib_(ib),
@@ -27,7 +27,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     //- Determine which patches contact angles will be enforced on
     for (const auto &input: input.boundaryInput().get_child("Boundaries." + gamma.name()))
     {
-        if(input.first == "*")
+        if (input.first == "*" || !grid_->hasPatch(input.first))
             continue;
 
         patchContactAngles_.insert(std::make_pair(
@@ -38,7 +38,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 
     //- Determine which IBs contact angles will be enforced on
 
-    if(input.boundaryInput().find("ImmersedBoundaries") == input.boundaryInput().not_found())
+    if (input.boundaryInput().find("ImmersedBoundaries") == input.boundaryInput().not_found())
         return;
 
     for (const auto &input: input.boundaryInput().get_child("ImmersedBoundaries"))
@@ -52,39 +52,33 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 
 void SurfaceTensionForce::computeInterfaceNormals()
 {
-    n_->computeCells([this](const Cell& cell){
-        return gradGamma_(cell).magSqr()  > 0. ? -gradGamma_(cell).unitVec() : Vector2D(0., 0.);
-    });
+    const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
+    VectorFiniteVolumeField &n = *n_;
+
+    for(const Cell& cell: grid_->localActiveCells())
+        n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
     //- Boundary faces set from contact line orientation
-    VectorFiniteVolumeField &n = *n_;
-    for(const Patch& patch: grid_->patches())
+    for (const Patch &patch: grid_->patches())
     {
-        for(const Face& face: patch)
+        for (const Face &face: patch)
         {
             Scalar theta = getTheta(patch);
 
-            if(n(face.lCell()) == Vector2D(0., 0.))
+            if (n(face.lCell()) == Vector2D(0., 0.))
                 n(face) = Vector2D(0., 0.);
             else
             {
                 Vector2D t = face.norm().tangentVec().unitVec();
-                n(face) = dot(n(face.lCell()), t) > 0 ? t.rotate(M_PI_2 - theta) : t.rotate(3*M_PI_2 - theta);
+                n(face) = t.rotate(dot(n(face.lCell()), t) > 0. ? M_PI_2 - theta : 3 * M_PI_2 - theta);
             }
         }
     }
 }
 
-Vector2D SurfaceTensionForce::contactLineNormal(const Face& face)
-{
-    Vector2D wn = face.outwardNorm(face.lCell().centroid()).unitVec();
-    Scalar theta = getTheta(grid_->patch(face));
-    return dot(-gradGamma_(face.lCell()), wn) > 0. ? wn.rotate(M_PI / 2. - theta) : wn.rotate(M_PI / 2. + theta);
-}
-
-Vector2D SurfaceTensionForce::contactLineNormal(const Cell& lCell,
-                                                const Cell& rCell,
-                                                const ImmersedBoundaryObject& ibObj)
+Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
+                                                const Cell &rCell,
+                                                const ImmersedBoundaryObject &ibObj)
 {
     LineSegment2D ln = ibObj.intersectionLine(lCell.centroid(), rCell.centroid());
 }

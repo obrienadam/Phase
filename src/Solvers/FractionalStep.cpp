@@ -1,10 +1,11 @@
 #include "FractionalStep.h"
-#include "ScalarGradient.h"
 #include "FaceInterpolation.h"
 #include "Source.h"
+#include "SeoMittal.h"
+#include "QuadraticIbm.h"
 
 FractionalStep::FractionalStep(const Input &input,
-                               std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                           std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
@@ -15,8 +16,8 @@ FractionalStep::FractionalStep(const Input &input,
         pEqn_(input, p, "pEqn"),
         fluid_(grid->createCellZone("fluid"))
 {
-    rho_ = input.caseInput().get<Scalar>("Properties.rho", 1.);
-    mu_ = input.caseInput().get<Scalar>("Properties.mu", 1.);
+    rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
+    mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);
 
     //- All active cells to fluid cells
     fluid_.add(grid_->localActiveCells());
@@ -33,7 +34,10 @@ void FractionalStep::initialize()
 
 std::string FractionalStep::info() const
 {
-    return Solver::info();
+    return Solver::info()
+           + "Fractional-step (Simple)\n"
+           + "A simple 1-step fractional-step projection method\n"
+           + "May not produce accurate results near boundaries\n";
 }
 
 Scalar FractionalStep::solve(Scalar timeStep)
@@ -42,95 +46,13 @@ Scalar FractionalStep::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_.update(timeStep);
+    //ib_.computeForce(rho_, mu_, u, p);
+    //ib_.update(timeStep);
 
-    printf("Max Co = %lf\n", maxCourantNumber(timeStep));
-    printf("Max divergence error = %.4e\n", maxDivergenceError());
+    printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
+    printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
-    return 0.;
-}
-
-//- Protected methods
-
-Scalar FractionalStep::solveUEqn(Scalar timeStep)
-{
-    u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u)
-             == fv::laplacian(mu_/rho_, u, 0.5) - src::src(gradP/rho_, fluid_));
-
-    Scalar error = uEqn_.solve();
-    grid_->sendMessages(u);
-
-    for(const Face& f: grid_->interiorFaces())
-    {
-        const Cell& l = f.lCell();
-        const Cell& r = f.rCell();
-        Scalar g = f.volumeWeight();
-
-        u(f) = g*(u(l) + timeStep/rho_*gradP(l))
-               + (1. - g)*(u(r) + timeStep/rho_*gradP(r))
-               - timeStep/rho_*gradP(f);
-    }
-
-    for(const Patch& patch: grid_->patches())
-        switch(u.boundaryType(patch))
-        {
-            case VectorFiniteVolumeField::FIXED:
-                break;
-            case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                for(const Face& face: patch)
-                    u(face) = u(face.lCell()) + timeStep / rho_ * (gradP(face.lCell()) - gradP(face));
-                break;
-            case VectorFiniteVolumeField::SYMMETRY:
-                for(const Face& face: patch)
-                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) * face.norm()/ face.norm().magSqr();
-                break;
-        }
-
-    return error;
-}
-
-Scalar FractionalStep::solvePEqn(Scalar timeStep)
-{
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.bcs(p) == src::div(u) + src::laplacian(timeStep / rho_, p));
-
-    Scalar error = pEqn_.solve();
-    grid_->sendMessages(p);
-    p.setBoundaryFaces();
-
-    gradP.savePreviousTimeStep(timeStep, 1);
-    gradP.compute(fluid_);
-    grid_->sendMessages(gradP);
-
-    return error;
-}
-
-void FractionalStep::correctVelocity(Scalar timeStep)
-{
-    const VectorFiniteVolumeField& gradP0 = gradP.oldField(0);
-
-    for (const Cell &cell: fluid_)
-        u(cell) -= timeStep / rho_ * (gradP(cell) - gradP0(cell));
-
-    grid_->sendMessages(u);
-
-    for (const Face &face: grid_->interiorFaces())
-        u(face) -= timeStep / rho_ * (gradP(face) - gradP0(face));
-
-    for(const Patch& patch: grid_->patches())
-        switch(u.boundaryType(patch))
-        {
-            case VectorFiniteVolumeField::FIXED:
-                break;
-            case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                for(const Face& face: patch)
-                    u(face) -= timeStep / rho_ * (gradP(face) - gradP0(face));
-                break;
-            case VectorFiniteVolumeField::SYMMETRY:
-                for(const Face& face: patch)
-                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) * face.norm()/ face.norm().magSqr();
-                break;
-        }
+    return 0;
 }
 
 Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
@@ -166,7 +88,69 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
             ));
 }
 
-Scalar FractionalStep::maxDivergenceError() const
+Scalar FractionalStep::solveUEqn(Scalar timeStep)
+{
+    u.savePreviousTimeStep(timeStep, 1);
+    //gradU.compute(fluid_);
+    //grid_->sendMessages(gradU);
+
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u) == fv::laplacian(mu_/rho_, u, 0.5));
+    //uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.solidVelocity(u) == qibm::laplacian(mu_/rho_, u, ib_));
+    Scalar error = uEqn_.solve();
+    grid_->sendMessages(u);
+
+    u.interpolateFaces();
+
+    //qibm::computeFaceVelocities(u, ib_);
+
+    return error;
+}
+
+Scalar FractionalStep::solvePEqn(Scalar timeStep)
+{
+    //pEqn_ = (seo::laplacian(ib_, rho_, timeStep, p) == seo::div(ib_, u));
+    pEqn_ = (fv::laplacian(timeStep/rho_, p) + ib_.bcs(p) == src::div(u));
+    Scalar error = pEqn_.solve();
+    grid_->sendMessages(p);
+
+    //- Gradient
+    p.setBoundaryFaces();
+    gradP.compute(fluid_);
+    grid_->sendMessages(gradP);
+
+    return error;
+}
+
+void FractionalStep::correctVelocity(Scalar timeStep)
+{
+    //seo::correct(ib_, rho_, p, gradP, u, timeStep);
+    //return;
+
+    for(const Cell& cell: fluid_)
+        u(cell) -= timeStep/rho_*gradP(cell);
+
+    for(const Face& face: grid_->interiorFaces())
+        u(face) -= timeStep/rho_*gradP(face);
+
+    for(const Patch& patch: grid_->patches())
+        switch(u.boundaryType(patch))
+        {
+            case VectorFiniteVolumeField::FIXED:
+                break;
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                for(const Face& face: patch)
+                    u(face) -= timeStep/rho_*gradP(face);
+                break;
+            case VectorFiniteVolumeField::SYMMETRY:
+                for(const Face& face: patch)
+                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) *face.norm()/face.norm().magSqr();
+                break;
+        }
+
+    grid_->sendMessages(u);
+}
+
+Scalar FractionalStep::maxDivergenceError()
 {
     Scalar maxError = 0.;
 
@@ -180,9 +164,10 @@ Scalar FractionalStep::maxDivergenceError() const
         for (const BoundaryLink &bd: cell.boundaries())
             div += dot(u(bd.face()), bd.outwardNorm());
 
-        if (fabs(div) > maxError)
-            maxError = fabs(div);
+        maxError = fabs(div) > maxError ? div : maxError;
     }
 
     return grid_->comm().max(maxError);
 }
+
+

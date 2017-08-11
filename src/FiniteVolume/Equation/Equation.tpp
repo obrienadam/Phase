@@ -17,8 +17,8 @@ Equation<T>::Equation(const Input &input,
 template<class T>
 void Equation<T>::clear()
 {
-    for (auto &coeff: coeffs_)
-        coeff.clear();
+    for (auto &row: coeffs_)
+        row.clear();
 
     sources_.zero();
 }
@@ -31,7 +31,9 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
     else if (&field_.grid() != &rhs.field_.grid())
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
-    nActiveCells_ = rhs.nActiveCells_;
+    nLocalActiveCells_ = rhs.nLocalActiveCells_;
+    nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
+    indexRange_ = rhs.indexRange_;
     coeffs_ = rhs.coeffs_;
     sources_ = rhs.sources_;
 
@@ -47,7 +49,9 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
     if (&field_ != &rhs.field_)
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
-    nActiveCells_ = rhs.nActiveCells_;
+    nLocalActiveCells_ = rhs.nLocalActiveCells_;
+    nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
+    indexRange_ = rhs.indexRange_;
     coeffs_ = std::move(rhs.coeffs_);
     sources_ = std::move(rhs.sources_);
 
@@ -188,32 +192,13 @@ Scalar Equation<T>::solve()
         throw Exception("Equation<T>", "solve",
                         "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nActiveCells_ = field_.grid().nLocalActiveCells();
+    nLocalActiveCells_ = field_.grid().nLocalActiveCells();
+    nGlobalActiveCells_ = field_.grid().nActiveCellsGlobal();
 
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(-sources_);
     spSolver_->solve();
-    spSolver_->mapSolution(field_);
-
-    spSolver_->printStatus("Equation " + name + ":");
-
-    return spSolver_->error();
-}
-
-template<class T>
-Scalar Equation<T>::solveWithGuess()
-{
-    if (!spSolver_)
-        throw Exception("Equation<T>", "solve",
-                        "must allocate a SparseMatrixSolver object before attempting to solve.");
-
-    nActiveCells_ = field_.grid().nLocalActiveCells();
-
-    spSolver_->setRank(getRank());
-    spSolver_->set(coeffs_);
-    spSolver_->setRhs(-sources_);
-    spSolver_->solve(field_.vectorize());
     spSolver_->mapSolution(field_);
 
     spSolver_->printStatus("Equation " + name + ":");

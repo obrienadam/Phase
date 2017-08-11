@@ -57,13 +57,13 @@ public:
     }
 
     //- Compute
+    virtual void computeFaces() = 0;
+
     virtual void compute() = 0;
 
     virtual void compute(const ImmersedBoundary& ib) = 0;
 
     virtual void computeInterfaceNormals();
-
-    Vector2D contactLineNormal(const Face& face);
 
     Vector2D contactLineNormal(const Cell& lCell,
                                const Cell& rCell,
@@ -85,6 +85,9 @@ protected:
     const ScalarGradient &gradGamma_;
 
     const ImmersedBoundary &ib_;
+
+    //- Cutoff
+    Scalar eps_ = 1e-6;
 
     //- Fields, can share ownership
     std::shared_ptr<ScalarFiniteVolumeField> kappa_, gammaTilde_;

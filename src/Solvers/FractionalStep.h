@@ -1,25 +1,23 @@
 #ifndef FRACTIONAL_STEP_H
 #define FRACTIONAL_STEP_H
 
-#include <fstream>
-
 #include "Solver.h"
 #include "FiniteVolumeEquation.h"
 #include "ScalarGradient.h"
 #include "JacobianField.h"
 
-class FractionalStep : public Solver
+class FractionalStep: public Solver
 {
 public:
 
-    FractionalStep(const Input &input,
-                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStep(const Input& input,
+                         std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
-    virtual void initialize();
+    void initialize();
 
-    virtual std::string info() const;
+    std::string info() const;
 
-    virtual Scalar solve(Scalar timeStep);
+    Scalar solve(Scalar timeStep);
 
     Scalar maxCourantNumber(Scalar timeStep) const;
 
@@ -32,20 +30,20 @@ public:
 
 protected:
 
-    virtual Scalar solveUEqn(Scalar timeStep);
+    Scalar solveUEqn(Scalar timeStep);
 
-    virtual Scalar solvePEqn(Scalar timeStep);
+    Scalar solvePEqn(Scalar timeStep);
 
-    virtual void correctVelocity(Scalar timeStep);
+    void correctVelocity(Scalar timeStep);
 
-    Scalar maxDivergenceError() const;
-
-    Scalar rho_, mu_;
+    Scalar maxDivergenceError();
 
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;
 
-    CellZone& fluid_;
+    Scalar rho_, mu_;
+
+    CellZone &fluid_;
 };
 
 #endif

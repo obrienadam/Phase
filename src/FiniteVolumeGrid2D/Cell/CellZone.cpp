@@ -7,10 +7,7 @@ CellZone::CellZone(const std::string &name,
     :
       Group(name)
 {
-    if(registry)
-        registry_ = registry;
-    else
-        registry_ = std::shared_ptr<ZoneRegistry>(new ZoneRegistry());
+    registry_ = registry ? registry: std::make_shared<ZoneRegistry>();
 }
 
 CellZone::~CellZone()
@@ -54,12 +51,4 @@ void CellZone::clear()
         registry_->erase(cell.id());
 
     CellGroup::clear();
-}
-
-void CellZone::setRegistry(std::shared_ptr<CellZone::ZoneRegistry> &registry)
-{
-    auto items = this->items();
-    clear();
-    registry_ = registry;
-    CellGroup::add(items.begin(), items.end()); //- Since add(cell) is overloaded, this should work
 }

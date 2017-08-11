@@ -15,6 +15,9 @@ template<>
 Vector VectorFiniteVolumeField::vectorize() const;
 
 template<>
+void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
+                                         const FiniteVolumeField<Scalar> &faceWeight);
+template<>
 void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input);
 
 template<>

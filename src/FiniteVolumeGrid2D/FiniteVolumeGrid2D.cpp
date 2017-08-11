@@ -4,26 +4,37 @@
 #include "FiniteVolumeGrid2D.h"
 #include "Exception.h"
 
-FiniteVolumeGrid2D::FiniteVolumeGrid2D(Size nNodes, Size nCells, Size nFaces)
+FiniteVolumeGrid2D::FiniteVolumeGrid2D()
         :
         interiorFaces_("InteriorFaces"),
         boundaryFaces_("BoundaryFaces")
 {
-    nodes_.reserve(nNodes);
-    cells_.reserve(nCells);
-    faces_.reserve(nFaces);
+    auto registry = std::make_shared<CellZone::ZoneRegistry>();
+    localActiveCells_ = CellZone("LocalActiveCells", registry);
+    localInactiveCells_ = CellZone("GlobalActiveCells", registry);
 
-    cellZoneRegistry_ = std::shared_ptr<CellZone::ZoneRegistry>(new CellZone::ZoneRegistry);
+    registry = std::make_shared<CellZone::ZoneRegistry>();
+    globalActiveCells_ = CellZone("GlobalActiveCells", registry);
+    globalInactiveCells_ = CellZone("GlobalInactiveCells", registry);
 
-    localActiveCells_ = CellZone("LocalActiveCells", cellZoneRegistry_);
-    globalActiveCells_ = CellZone("GlobalActiveCells", cellZoneRegistry_);
-    inactiveCells_ = CellZone("InactiveCells", cellZoneRegistry_);
+    //- Public registries
+    cellZoneRegistry_ = std::make_shared<CellZone::ZoneRegistry>();
+    patchRegistry_ = std::make_shared<Patch::PatchRegistry>();
 
-    patchRegistry_ = std::shared_ptr<Patch::PatchRegistry>(new Patch::PatchRegistry());
     comm_ = std::make_shared<Communicator>();
 }
 
-void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vector<Label> &cellInds,
+FiniteVolumeGrid2D::FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
+                                       const std::vector<Label> &cellInds,
+                                       const std::vector<Label> &cells)
+        :
+        FiniteVolumeGrid2D()
+{
+    init(nodes, cellInds, cells);
+}
+
+void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes,
+                              const std::vector<Label> &cellInds,
                               const std::vector<Label> &cells)
 {
     reset();
@@ -35,8 +46,8 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vect
     {
         int start = cellInds[i];
         int end = cellInds[i + 1];
-        std::vector<Label> ids;
 
+        std::vector<Label> ids;
         for (int j = start; j < end; ++j)
             ids.push_back(cells[j]);
 
@@ -49,25 +60,45 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes, const std::vect
 
 void FiniteVolumeGrid2D::reset()
 {
-    localActiveCells_.clear();
-    globalActiveCells_.clear();
-    inactiveCells_.clear();
-    cellGroups_.clear();
-    cellZones_.clear();
-
+    //- Node related data
     nodes_.clear();
     interiorNodes_.clear();
     boundaryNodes_.clear();
-    nodeSearch_.clear();
+
+    //- Cell related data
     cells_.clear();
-    faces_.clear();
-    neighbouringProcs_.clear();
-    sendCellGroups_.clear();
+    nActiveCellsGlobal_ = 0;
+
+    //- Local cell zones
+    localActiveCells_.clear();
+    localInactiveCells_.clear();
+
+    //- Cells on this proc that are globally active/inactive
+    globalActiveCells_.clear();
+    globalInactiveCells_.clear();
+
+    //- User defined cell groups/zones
+    cellGroups_.clear();
+    cellZones_.clear();
+
+    //- Communication zones
+    sendCellGroups_.clear(); // shared pointers are used so that zones can be moveable!
     bufferCellZones_.clear();
-    faceDirectory_.clear();
+
+    //- Face related data
+    faces_.clear();
+    faceDirectory_.clear(); // A directory that can find a face given the two node ids
+
+    //- Interior and boundary face data structures
     interiorFaces_.clear();
     boundaryFaces_.clear();
+
+    //- User defined face groups and patches
+    faceGroups_.clear();
     patches_.clear();
+
+    bBox_ = BoundingBox(Point2D(0., 0.), Point2D(0., 0.));
+    nodeSearch_.clear();
 }
 
 //- size info
@@ -91,14 +122,12 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label> &nodeIds)
     using namespace std;
 
     cells_.push_back(Cell(nodeIds, *this));
-
     Cell &newCell = cells_.back();
 
     for (Label id: nodeIds)
         nodes_[id].addCell(newCell);
 
-    for (Label i = 0, end = nodeIds.size(); i < end; ++i)
-    {
+    for (Label i = 0, end = nodeIds.size(); i < end; ++i) {
         Label n1 = nodeIds[i], n2 = nodeIds[(i + 1) % end];
 
         auto key = n1 < n2 ? make_pair(n1, n2) : make_pair(n2, n1);
@@ -113,8 +142,7 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label> &nodeIds)
             faceDirectory_[key] = face.id();
 
             face.addCell(newCell);
-        }
-        else // face already exists, but is now an interior face
+        } else // face already exists, but is now an interior face
         {
             Face &face = faces_[it->second];
             face.setType(Face::INTERIOR);
@@ -209,121 +237,26 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
     return elems;
 }
 
-void FiniteVolumeGrid2D::setCellActive(Cell &cell)
+void FiniteVolumeGrid2D::setCellActive(const Cell &cell)
 {
-    inactiveCells_.remove(cell);
     localActiveCells_.add(cell);
     globalActiveCells_.add(cell);
 }
 
-void FiniteVolumeGrid2D::setCellsActive(const std::vector<Label> &ids)
+void FiniteVolumeGrid2D::setCellInactive(const Cell& cell)
 {
-    for (Cell &cell: getCells(ids))
-        setCellActive(cell);
+    localInactiveCells_.add(cell);
+    globalInactiveCells_.add(cell);
 }
 
-void FiniteVolumeGrid2D::setCellsActive(const CellGroup &cellGroup)
+CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string& name)
 {
-    for (const Cell &cell: cellGroup)
-        setCellActive(cells_[cell.id()]);
+    return cellGroups_[name] = CellGroup(name);
 }
 
-void FiniteVolumeGrid2D::setCellsInactive(const std::vector<Label> &ids)
+CellZone &FiniteVolumeGrid2D::createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry)
 {
-    for (Cell &cell: getCells(ids))
-    {
-        localActiveCells_.remove(cell);
-        globalActiveCells_.remove(cell);
-        inactiveCells_.add(cell);
-        cell.clearIndices();
-    }
-}
-
-void FiniteVolumeGrid2D::setCellsInactive(const CellGroup &cellGroup)
-{
-    for (const Cell &cell: cellGroup)
-    {
-        localActiveCells_.remove(cells_[cell.id()]);
-        globalActiveCells_.remove(cells_[cell.id()]);
-        inactiveCells_.add(cells_[cell.id()]);
-        cells_[cell.id()].clearIndices();
-    }
-}
-
-void FiniteVolumeGrid2D::setCellsLocallyInactive(const std::vector<Label> &ids)
-{
-    for (const Cell &cell: getCells(ids))
-        localActiveCells_.remove(cell);
-}
-
-CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string &name, const std::vector<Label> &ids)
-{
-    CellGroup& cellGroup = cellGroups_.insert(std::make_pair(name, CellGroup(name))).first->second;
-    cellGroup.clear();
-
-    for (Cell &cell: getCells(ids))
-        cellGroup.add(cell);
-
-    return cellGroup;
-}
-
-CellZone &FiniteVolumeGrid2D::createCellZone(const std::string &name, const std::vector<Label> &ids)
-{
-    CellZone& cellZone = cellZones_.insert(std::make_pair(name, CellZone(name, cellZoneRegistry_))).first->second;
-    cellZone.clear();
-
-    for (Cell &cell: getCells(ids))
-        cellZone.add(cell);
-
-    return cellZone;
-}
-
-void FiniteVolumeGrid2D::setAllCellsActive()
-{
-    inactiveCells_.clear();
-    localActiveCells_.clear();
-    globalActiveCells_.clear();
-
-    for (Cell &cell: cells_)
-    {
-        localActiveCells_.add(cell);
-        globalActiveCells_.add(cell);
-    }
-}
-
-//- Cell related methods
-
-std::vector<Ref<Cell> > FiniteVolumeGrid2D::getCells(const std::vector<Label> &ids)
-{
-    std::vector<Ref<Cell> > cells;
-    cells.reserve(ids.size());
-
-    std::transform(ids.begin(),
-                   ids.end(),
-                   std::back_inserter(cells),
-                   [this](Label id) { return std::ref(this->cells_[id]); });
-
-    return cells;
-}
-
-std::vector<Ref<const Cell> > FiniteVolumeGrid2D::getCells(const std::vector<Label> &ids) const
-{
-    std::vector<Ref<const Cell> > cells;
-    cells.reserve(ids.size());
-
-    std::transform(ids.begin(),
-                   ids.end(),
-                   std::back_inserter(cells),
-                   [this](Label id) { return std::cref(this->cells_[id]); });
-
-    return cells;
-}
-
-void FiniteVolumeGrid2D::assignCellIds()
-{
-    Label id = 0;
-    for (Cell &cell: cells_)
-        cell.setId(id++);
+    return cellZones_[name] = CellZone(name, registry ? registry: cellZoneRegistry_);
 }
 
 //- Face related methods
@@ -419,24 +352,6 @@ std::vector<Ref<const Node> > FiniteVolumeGrid2D::nodesInShape(const Shape2D &sh
     return getNodes(nodeSearch_.rangeSearch(shape));
 }
 
-std::vector<std::vector<Ref<const Cell>>> FiniteVolumeGrid2D::constructSmoothingKernels(Scalar width) const
-{
-    std::vector<std::vector<Ref<const Cell>>> kernels(nCells());
-    const CellGroup &group = globalActiveCells();
-
-    for (const Cell &cell: group)
-    {
-        Circle base = Circle(cell.centroid(), width);
-        std::vector<Ref<const Cell>> kernel = group.itemsWithin(base);
-
-        //- must  find intersecting boundary edges
-
-        kernels[cell.id()] = kernel;
-    }
-
-    return kernels;
-}
-
 std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementConnectivity() const
 {
     using namespace std;
@@ -457,23 +372,24 @@ std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementCo
 void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communicator> comm)
 {
     using namespace std;
-    comm->printf("Partitioning...\n");
-    if (comm->nProcs() == 1) // no need to perform a partition
+
+    comm_ = comm;
+    if (comm_->nProcs() == 1) // no need to perform a partition
         return;
 
+    comm_->printf("Partitioning grid into %d partitions...\n", comm_->nProcs());
     vector<idx_t> cellPartition(nCells());
 
-    if (comm->isMainProc())
+    if (comm_->isMainProc()) // partition is performed on main proc
     {
-        idx_t nPartitions = comm->nProcs();
+        idx_t nPartitions = comm_->nProcs();
         idx_t nElems = nCells();
         pair<vector<int>, vector<int>> mesh = nodeElementConnectivity();
         idx_t nNodes = this->nNodes();
-        idx_t nCommon = 2;
+        idx_t nCommon = 2; //- face connectivity weighting only
         idx_t objVal;
         vector<idx_t> nodePartition(this->nNodes());
 
-        comm->printf("Partitioning mesh into %d subdomains...\n", nPartitions);
         int status = METIS_PartMeshDual(&nElems, &nNodes,
                                         mesh.first.data(), mesh.second.data(),
                                         NULL, NULL,
@@ -481,186 +397,166 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
                                         NULL, NULL, &objVal,
                                         cellPartition.data(), nodePartition.data());
         if (status == METIS_OK)
-            comm->printf("Sucessfully partitioned mesh.\n");
+            comm_->printf("Sucessfully computed partitioning.\n");
         else
             throw Exception("FiniteVolumeGrid2D", "partition", "an error occurred during partitioning.");
     }
 
-    comm->broadcast(comm->mainProcNo(), cellPartition);
+    //- Broadcast the partitioning to other processes
+    comm_->broadcast(comm_->mainProcNo(), cellPartition);
 
-    vector<Point2D> localNodes;
-    vector<Label> localCellInds(1, 0), localCells, localCellList;
-    map<string, vector<Label>> localPatches;
-    vector<int> localNodeId(nodes_.size(), -1);
-    vector<int> localCellId(cells_.size(), -1);
-    Label nextLocalNodeId = 0, nextLocalCellId = 0;
+    //- Criteria to see if a cell is retained on a particular proc
+    auto addCellToThisProc = [this, &cellPartition](const Cell& cell, Scalar r = 0.)->bool {
+        if(cellPartition[cell.id()] == comm_->rank())
+            return true;
 
-    comm->printf("Initializing local domains...\n");
-    auto addCellToPart = [&](const Cell &cell) -> bool // helper lambda, returns whether or not a cell was added
-    {
-        if (localCellId[cell.id()] != -1)
-            return false;
+        for(const InteriorLink& nb: cell.neighbours())
+            if(cellPartition[nb.cell().id()] == comm_->rank())
+                return true;
 
-        localCellList.push_back(cell.id());
-        localCellInds.push_back(localCellInds.back() + cell.nodes().size());
+        for(const DiagonalCellLink& dg: cell.diagonals())
+            if(cellPartition[dg.cell().id()] == comm_->rank())
+                return true;
 
-        for (const Node &node: cell.nodes())
-        {
-            if (localNodeId[node.id()] == -1)
-            {
-                localNodes.push_back(nodes_[node.id()]);
-                localNodeId[node.id()] = nextLocalNodeId++;
-            }
+        for(const Cell& kCell: globalActiveCells_.itemsWithin(Circle(cell.centroid(), r)))
+            if(cellPartition[kCell.id()] == comm_->rank())
+                return true;
 
-            localCells.push_back(localNodeId[node.id()]);
-        }
-
-        //- check for patches
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            localPatches[patch(bd.face()).name()].push_back(bd.face().lNode().id());
-            localPatches[patch(bd.face()).name()].push_back(bd.face().rNode().id());
-        }
-
-        localCellId[cell.id()] = nextLocalCellId++;
-
-        return true;
+        return false;
     };
 
-    for (const Cell &cell: cells_)
+    //- Construct the crs representation of the local grid
+    comm_->printf("Computing the local cell domains...\n");
+    vector<Point2D> nodes;
+    vector<Label> cellInds(1, 0), cellNodeIds, cellProc;
+    unordered_map<Label, Label> cellGlobalToLocalIdMap, cellLocalToGlobalIdMap;
+    vector<int> localNodeId(nodes_.size(), -1);
+    Scalar r = input.caseInput().get<Scalar>("Grid.minBufferWidth", 0.); //- May be important for algorithms requiring spatial searches
+
+    for(const Cell& cell: cells_)
     {
-        if (comm->rank() == cellPartition[cell.id()])
-            addCellToPart(cell);
+        if(addCellToThisProc(cell, r))
+        {
+            cellInds.push_back(cellInds.back() + cell.nodes().size());
+            cellProc.push_back(cellPartition[cell.id()]);
+
+            cellGlobalToLocalIdMap[cell.id()] = cellInds.size() - 2;
+            cellLocalToGlobalIdMap[cellInds.size() - 2] = cell.id();
+
+            for(const Node& node: cell.nodes())
+            {
+                if(localNodeId[node.id()] == -1)
+                {
+                    localNodeId[node.id()] = nodes.size();
+                    nodes.push_back(node);
+                }
+
+                cellNodeIds.push_back(localNodeId[node.id()]);
+            }
+        }
     }
 
-    comm->printf("Finished initializing local domains.\n"
-                         "Constructing intraprocess communication buffers...\n");
+    //- Boundary patches
+    comm_->printf("Computing the local boundary patches...\n");
+    std::unordered_map<std::string, std::vector<Label>> localPatches;
 
-    vector<int> neighboursProc(comm->nProcs(), -1);
-    vector<int> nbProcs;
-    vector<vector<Label>> sendOrder, recvOrder;
+    for(const Patch& patch: patches())
+    {
+        vector<Label> nodeIds;
 
-    int bufferWidth = input.caseInput().get<int>("Grid.partitionBufferWidth", 1); //- Must be set carefully!
-
-    for (int i = 0; i < bufferWidth; ++i) // This is where buffer width can be set
-        for (const Cell &cell: getCells(localCellList))
+        for (const Face &face: patch)
         {
-            for (const InteriorLink &nb: cell.neighbours())
+            int lid = localNodeId[face.lNode().id()];
+            int rid = localNodeId[face.rNode().id()];
+
+            if (lid > -1 && rid > -1)
             {
-                int nbProc = cellPartition[nb.cell().id()];
-
-                if (comm->rank() == nbProc)
-                    continue;
-                else if (neighboursProc[nbProc] == -1)
-                {
-                    neighboursProc[nbProc] = nbProcs.size();
-                    nbProcs.push_back(nbProc);
-                    recvOrder.push_back(vector<Label>());
-                }
-
-                if (addCellToPart(nb.cell()))
-                    recvOrder[neighboursProc[nbProc]].push_back(nb.cell().id());
-            }
-
-            for (const DiagonalCellLink &dg: cell.diagonals())
-            {
-                int nbProc = cellPartition[dg.cell().id()];
-
-                if (comm->rank() == nbProc)
-                    continue;
-                else if (neighboursProc[nbProc] == -1)
-                {
-                    neighboursProc[nbProc] = nbProcs.size();
-                    nbProcs.push_back(nbProc);
-                    recvOrder.push_back(vector<Label>());
-                }
-
-                if (addCellToPart(dg.cell()))
-                    recvOrder[neighboursProc[nbProc]].push_back(dg.cell().id());
+                nodeIds.push_back((Label)lid);
+                nodeIds.push_back((Label)rid);
             }
         }
 
-    //- Send and receive the buffer orders
-    vector<vector<int>> sendSizes(nbProcs.size(), vector<int>(1));
-    for (int i = 0; i < nbProcs.size(); ++i)
-        comm->irecv(nbProcs[i], sendSizes[i]);
-
-    for (int i = 0; i < nbProcs.size(); ++i)
-        comm->ssend(nbProcs[i], vector<int>(1, recvOrder[i].size()));
-
-    sendOrder.resize(nbProcs.size());
-    comm->waitAll();
-
-    for (int i = 0; i < nbProcs.size(); ++i)
-    {
-        sendOrder[i].resize(sendSizes[i][0]);
-        comm->irecv(nbProcs[i], sendOrder[i]);
+        if(!nodeIds.empty())
+            localPatches[patch.name()] = nodeIds;
     }
 
-    for (int i = 0; i < nbProcs.size(); ++i)
-        comm->ssend(nbProcs[i], recvOrder[i]);
+    //- Now re-initialize local domains
+    comm_->printf("Initializing local domains...\n");
+    init(nodes, cellInds, cellNodeIds);
+    for(const auto& patch: localPatches)
+        createPatchByNodes(patch.first, patch.second);
 
-    comm->waitAll();
+    comm_->printf("Finished initializing local domains.\n");
 
-    comm->printf("Finished constructing intraprocess communication buffers.\n"
-                         "Re-initializing local grid entities...\n");
+    //- Interprocess communication zones
+    comm_->printf("Initializing interprocess communication buffers...\n");
+    sendCellGroups_.resize(comm_->nProcs());
+    bufferCellZones_.resize(comm_->nProcs());
 
-    init(localNodes, localCellInds, localCells);
-
-    //- Map the buffer orders to local ids
-    for (int i = 0; i < nbProcs.size(); ++i)
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        for (Label &id: sendOrder[i])
-            id = localCellId[id];
-
-        for (Label &id: recvOrder[i])
-            id = localCellId[id];
-
-        addNeighbouringProc(nbProcs[i], sendOrder[i], recvOrder[i]);
+        sendCellGroups_[proc] = CellGroup("Proc" + std::to_string(proc));
+        bufferCellZones_[proc] = CellZone("Proc" + std::to_string(proc), localActiveCells_.registry());
     }
 
-    comm->printf("Finished re-initializing local grid entities.\n"
-                         "Initialing local patches...\n");
+    //- Identify buffer regions
+    for(const Cell& cell: cells_)
+        if(cellProc[cell.id()] != comm_->rank())
+            bufferCellZones_[cellProc[cell.id()]].add(cell);
 
-    //- Map boundary patches to local ids
-    for (auto &entry: localPatches)
+    //- Initialize the receive orders
+    vector<vector<Label>> recvOrders(comm_->nProcs());
+    vector<unsigned  long> sendSizes(comm_->nProcs(), 0);
+
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        for (Label &id: entry.second)
-            id = localNodeId[id];
+        if(proc == comm_->rank())
+            continue;
 
-        createPatchByNodes(entry.first, entry.second);
+        for (const Cell &cell: bufferCellZones_[proc])
+            recvOrders[proc].push_back(cellLocalToGlobalIdMap[cell.id()]);
+
+        //- From the adjacent proc, get the number of items expected
+        comm_->irecv(proc, sendSizes[proc], proc);
     }
 
-    vector<Label> partitionPatch;
-    for (const Face &face: boundaryFaces())
-        if (patchRegistry_->find(face.id()) == patchRegistry_->end())
-            partitionPatch.push_back(face.id());
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    {
+        if(proc == comm_->rank())
+            continue;
 
-    createPatch("LocalCellBoundary", partitionPatch);
-    comm->printf("Finished initializing local patches.\n");
-    comm->printf("Finished partitioning grid.\n");
-    comm_ = comm;
-}
+        //- Send to the adjacent proc how many items should be sent
+        comm_->ssend(proc, bufferCellZones_[proc].size(), comm_->rank());
+    }
+    comm_->waitAll();
 
-void FiniteVolumeGrid2D::addNeighbouringProc(int procNo,
-                                             const std::vector<Label> &sendOrder,
-                                             const std::vector<Label> &recvOrder)
-{
-    neighbouringProcs_.push_back(procNo);
-    std::shared_ptr<CellGroup> sendCellGroup(new CellGroup("SendCellGroupProc" + std::to_string(procNo)));
+    vector<vector<Label>> sendOrders(comm_->nProcs());
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    {
+        if(sendSizes[proc] == 0)
+            continue;
 
-    for (Label id: sendOrder)
-        sendCellGroup->add(cells_[id]);
+        //- Resize the send order and post it for receiving
+        sendOrders[proc].resize(sendSizes[proc]);
+        comm_->irecv(proc, sendOrders[proc], proc);
+    }
 
-    std::shared_ptr<CellZone> bufferCellZone(new CellZone("RecvCellZoneProc" + std::to_string(procNo), cellZoneRegistry_));
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    {
+        if(recvOrders[proc].size() == 0)
+            continue;
 
-    for (Label id: recvOrder)
-        bufferCellZone->add(cells_[id]);
+        //- Send the receive order to the adjacent proc
+        comm_->ssend(proc, recvOrders[proc], comm_->rank());
+    }
+    comm_->waitAll();
 
-    sendCellGroups_.push_back(sendCellGroup);
-    bufferCellZones_.push_back(bufferCellZone);
+    //- Init the send cell group
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+        for(Label gid: sendOrders[proc])
+            sendCellGroups_[proc].add(cells_[cellGlobalToLocalIdMap[gid]]);
 
-    setCellsLocallyInactive(recvOrder);
+    computeGlobalOrdering();
 }
 
 void FiniteVolumeGrid2D::computeGlobalOrdering()
@@ -701,18 +597,24 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
     sendMessages(globalIndices[2]);
 
     //- Set global ids for the buffer zones
-    for (const std::shared_ptr<CellZone> &bufferZone: bufferCellZones_)
-        for (const Cell &cell: *bufferZone)
+    for (CellZone &bufferZone: bufferCellZones_)
+        for (const Cell &cell: bufferZone)
         {
             cells_[cell.id()].setNumIndices(4);
             cells_[cell.id()].index(0) = -1;
             cells_[cell.id()].index(1) = globalIndices[0][cell.id()];
             cells_[cell.id()].index(2) = globalIndices[1][cell.id()];
             cells_[cell.id()].index(3) = globalIndices[2][cell.id()];
+
+            if(globalIndices[0][cell.id()] != -1)
+                globalActiveCells_.add(cell);
+            else
+                globalInactiveCells_.add(cell);
         }
 
     nActiveCellsGlobal_ = comm_->sum(nLocalActiveCells());
-    comm_->printf("Num local cells main proc = %d\nNum global cells = %d\n", nLocalCells[comm_->rank()],
+    comm_->printf("Num local cells main proc = %d\nNum global cells = %d\n",
+                  nLocalCells[comm_->rank()],
                   nActiveCellsGlobal_);
 }
 
@@ -769,7 +671,7 @@ void FiniteVolumeGrid2D::initCells()
             }
     }
 
-    setAllCellsActive();
+    setCellsActive(cells_.begin(), cells_.end());
 }
 
 void FiniteVolumeGrid2D::initConnectivity()

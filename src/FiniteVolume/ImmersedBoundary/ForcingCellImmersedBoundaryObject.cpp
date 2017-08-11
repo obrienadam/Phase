@@ -61,10 +61,10 @@ void ForcingCellImmersedBoundaryObject::updateCells()
                 break;
             }
 
-    grid_.setCellsActive(*fluid_);
-    grid_.setCellsActive(ibCells_);
-    grid_.setCellsActive(pseudoFluidPoints_);
-    grid_.setCellsInactive(solidCells_);
+    grid_.setCellsActive(fluid_->begin(), fluid_->end());
+    grid_.setCellsActive(ibCells_.begin(), ibCells_.end());
+    grid_.setCellsActive(pseudoFluidPoints_.begin(), pseudoFluidPoints_.end());
+    grid_.setCellsInactive(solidCells_.begin(), solidCells_.end());
     constructStencils();
 }
 

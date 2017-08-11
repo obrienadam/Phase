@@ -51,8 +51,8 @@ void LeastSquaresImmersedBoundaryObject::updateCells()
                 ibCells_.add(nb.cell());
             }
 
-    grid_.setCellsActive(ibCells_);
-    grid_.setCellsInactive(solidCells_);
+    grid_.setCellsActive(ibCells_.begin(), ibCells_.end());
+    grid_.setCellsInactive(solidCells_.begin(), solidCells_.end());
     constructStencils();
     updateCellsCalled_ = true;
 }

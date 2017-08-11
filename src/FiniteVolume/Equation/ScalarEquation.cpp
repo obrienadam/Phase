@@ -5,9 +5,10 @@ Equation<Scalar>::Equation(ScalarFiniteVolumeField &field, const std::string &na
         :
         name(name),
         field_(field),
-        nActiveCells_(field.grid().nLocalActiveCells()),
-        coeffs_(nActiveCells_),
-        sources_(nActiveCells_)
+        nLocalActiveCells_(field.grid().nLocalActiveCells()),
+        nGlobalActiveCells_(field.grid().nActiveCellsGlobal()),
+        coeffs_(nLocalActiveCells_),
+        sources_(nLocalActiveCells_)
 {
     for (auto &coeff: coeffs_)
         coeff.reserve(5);
@@ -91,5 +92,5 @@ Equation<Scalar> &Equation<Scalar>::operator-=(const ScalarFiniteVolumeField &rh
 template<>
 Size Equation<Scalar>::getRank() const
 {
-    return nActiveCells_;
+    return nLocalActiveCells_;
 }

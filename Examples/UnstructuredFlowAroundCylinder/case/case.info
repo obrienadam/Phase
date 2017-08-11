@@ -20,22 +20,16 @@ LinearAlgebra
 {
 	uEqn
 	{
-	  lib hypre
-	  preconditioner sor
-	  maxIterations 50
-	  tolerance 1e-2
+	  lib trilinos
 	  iluFill 0
-	  maxPreconditionerUses 20
+	  tolerance 1e-14
 	}
 
 	pEqn
 	{
-	  lib hypre
-	  preconditioner pilut
-	  maxIterations 300
-	  tolerance 1e-2
+	  lib trilinos
 	  iluFill 2
-	  maxPreconditionerUses 20
+	  tolerance 1e-14
 	}
 }
 

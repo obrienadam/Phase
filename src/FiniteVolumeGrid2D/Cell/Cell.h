@@ -41,17 +41,8 @@ public:
     { indices_.clear(); }
 
     //- Ids
-    Label globalId() const
-    { return globalId_; }
-
-    Label setGlobalId(Label id)
-    { return globalId_ = id; }
-
     Label id() const
     { return id_; }
-
-    void setId(Label id)
-    { id_ = id; }
 
     //- Connectivity links, should really only be done by grid classes
     void addDiagonalLink(const Cell &cell);
@@ -103,7 +94,7 @@ public:
 private:
 
     std::vector<Index> indices_; // Indices for linear algebra. May change depending on problem
-    Label id_, globalId_; // Indices for identification. Should not normally be changed
+    Label id_; // Indices for identification. Should not normally be changed
 
     Polygon cellShape_;
 

@@ -16,7 +16,9 @@ public:
             const VectorFiniteVolumeField &u,
             const ScalarGradient &gradGamma);
 
-    virtual void compute();
+    void computeFaces();
+
+    void compute();
 
     void compute(const ImmersedBoundary& ib);
 
@@ -39,8 +41,6 @@ protected:
     void constructGammaTildeMatrices();
 
     void constructKappaMatrices();
-
-    const Scalar eps_ = 1e-10;
 
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 };

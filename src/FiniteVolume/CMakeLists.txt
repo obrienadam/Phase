@@ -5,6 +5,7 @@ set(HEADERS Discretization/CrankNicolson.h
         Discretization/Hric.h
         Discretization/Slic.h
         Discretization/Plic.h
+        Equation/IndexMap.h
         Equation/Equation.h
         Equation/FiniteVolumeEquation.h
         Equation/TimeDerivative.h
@@ -46,6 +47,7 @@ set(SOURCES Discretization/CrankNicolson.cpp
         Discretization/Hric.cpp
         Discretization/Slic.cpp
         Discretization/Plic.cpp
+        Equation/IndexMap.cpp
         Equation/Equation.tpp
         Equation/ScalarEquation.cpp
         Equation/VectorEquation.cpp

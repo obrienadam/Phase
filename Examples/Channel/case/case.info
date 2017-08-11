@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent Off
 	maxIterations 100
-	timeStep 1e-3
+	timeStep 5e-4
 	maxTime 1
 	maxCo 0.8
 
@@ -20,18 +20,20 @@ LinearAlgebra
 {
   uEqn
   {
-    lib eigen
+    lib trilinos
     solver BiCGSTAB
     preconditioner RILUK
     iluFill 0
+    tolerance 1e-14
   }
 
   pEqn
   {
-    lib eigen
+    lib trilinos
     solver BiCGSTAB
     preconditioner RILUK
-    iluFill 4
+    iluFill 6
+    tolerance 1e-14
   }
 }
 
@@ -46,8 +48,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 320
-	nCellsY 160
+	nCellsX 640
+	nCellsY 320
 
 	; Rectilinear parameters
 	width 0.8

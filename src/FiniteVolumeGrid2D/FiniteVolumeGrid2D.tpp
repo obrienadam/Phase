@@ -1,49 +1,49 @@
 #include "FiniteVolumeGrid2D.h"
 
-template<typename T>
-std::vector<Label> FiniteVolumeGrid2D::getCellIds(const T &cells)
-{
-    std::vector<Label> ids(cells.size());
-
-    std::transform(cells.begin(), cells.end(), ids.begin(),
-                   [](const Cell &cell) -> Label { return cell.id(); });
-
-    return ids;
-}
-
-template<typename T>
+template<class T>
 void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data) const
 {
-    if(!comm_) return;
+    if(!comm_ || comm_->nProcs() == 1)
+        return;
 
-    std::vector<std::vector<T>> recvBuffers(neighbouringProcs_.size());
+    std::vector<std::vector<T>> recvBuffers(comm_->nProcs());
 
     //- Post recvs first (non-blocking)
-    for (int i = 0; i < neighbouringProcs_.size(); ++i)
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        recvBuffers[i].resize(bufferCellZones_[i]->size());
-        comm_->irecv(neighbouringProcs_[i], recvBuffers[i], comm_->rank());
+        if(bufferCellZones_[proc].empty())
+            continue;
+
+        recvBuffers[proc].resize(bufferCellZones_[proc].size());
+        comm_->irecv(proc, recvBuffers[proc], proc);
     }
 
     //- Send data (blocking sends)
     std::vector<T> sendBuffer;
-    for (int i = 0; i < neighbouringProcs_.size(); ++i)
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
+        if(sendCellGroups_[proc].empty())
+            continue;
 
-        sendBuffer.resize(sendCellGroups_[i]->size());
-        std::transform(sendCellGroups_[i]->begin(), sendCellGroups_[i]->end(),
-                       sendBuffer.begin(), [&data](const Cell &cell) { return data[cell.id()]; });
+        sendBuffer.resize(sendCellGroups_[proc].size());
 
-        comm_->ssend(neighbouringProcs_[i], sendBuffer, neighbouringProcs_[i]);
+        std::transform(sendCellGroups_[proc].begin(),
+                       sendCellGroups_[proc].end(),
+                       sendBuffer.begin(),
+                       [&data](const Cell& cell) { return data[cell.id()]; });
+
+        comm_->ssend(proc, sendBuffer, comm_->rank());
     }
-
     comm_->waitAll();
 
     //- Unload recv buffers
-    for (int i = 0; i < neighbouringProcs_.size(); ++i)
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        int j = 0;
-        for (const Cell &cell: *bufferCellZones_[i])
-            data[cell.id()] = recvBuffers[i][j++];
+        if(recvBuffers[proc].empty())
+            continue;
+
+        int i = 0;
+        for(const Cell& cell: bufferCellZones_[proc])
+            data[cell.id()] = recvBuffers[proc][i++];
     }
 }

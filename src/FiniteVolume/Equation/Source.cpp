@@ -100,7 +100,7 @@ VectorFiniteVolumeField src::ftc(const ScalarFiniteVolumeField& cellWeight,
 
 VectorFiniteVolumeField src::ftc(const ScalarFiniteVolumeField& weight,
                                  const VectorFiniteVolumeField& field,
-                                 const CellGroup& cells)
+                                 const CellGroup& cells )
 {
     return ftc(weight, weight, field, cells);
 }

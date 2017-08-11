@@ -16,7 +16,7 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
 
     auto map = rcp(new TpetraMap(OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
 
-    if(map_.is_null() || !map_->isSameAs(*map))
+    if(map_.is_null() || !map_->isSameAs(*map)) //- Check if a new map is needed
     {
         map_ = map;
         mat_ = rcp(new TpetraCrsMatrix(map_, 5, Tpetra::DynamicProfile));
@@ -54,12 +54,7 @@ void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientL
             mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
     }
 
-    bool initPrecon = mat_->getProfileType() == Tpetra::DynamicProfile;
-
     mat_->fillComplete();
-
-    if(initPrecon)
-        precon_->initialize();
 }
 
 void TrilinosBelosSparseMatrixSolver::setGuess(const Vector &x0)
@@ -74,12 +69,15 @@ void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
 {
-    if(nPreconUses_++ == maxPreconUses_)
+    if(nPreconUses_++ >= maxPreconUses_)
     {
+        comm_.printf("Ifpack2: Computing preconditioner...\n");
+        precon_->initialize();
         precon_->compute();
         nPreconUses_ = 1;
     }
 
+    comm_.printf("Belos: Performing BiCGSTAB iterations...\n");
     linearProblem_->setProblem();
     solver_->solve();
 

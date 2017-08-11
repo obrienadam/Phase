@@ -29,8 +29,6 @@ public:
 
     void clear();
 
-    void setRegistry(std::shared_ptr<ZoneRegistry>& registry);
-
     std::shared_ptr<ZoneRegistry> registry() const
     { return registry_; }
 

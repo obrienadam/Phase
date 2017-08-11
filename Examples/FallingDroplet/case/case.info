@@ -44,11 +44,11 @@ LinearAlgebra
 
 Properties
 {
-	rho1 50
+	rho1 758
 	rho2 998
- 	mu1 9e-3
-	mu2 9e-3
-	sigma 0.0262
+ 	mu1 1e-3
+	mu2 8.94e-4
+	sigma 0.1
 	g (0,-9.8065)
 
 	advancingContactAngle 90
@@ -83,6 +83,6 @@ Integrators
 
 System
 {
-  fileWriteFrequency 1
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

@@ -55,33 +55,4 @@ Boundaries
       value 0
     }
   }
-
-  ; This is just so the poisson solver can be tested using this case
-
-  phi
-  {
-    x-
-    {
-      type fixed;
-      value 1;
-    }
-
-    x+
-    {
-      type fixed;
-      value 0;
-    }
-
-    y-
-    {
-      type fixed;
-      value 0;
-    }
-
-    y+
-    {
-      type normal_gradient;
-      value 2;
-    }
-  }
 }

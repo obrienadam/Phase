@@ -10,7 +10,7 @@ namespace fv
     Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
-        const ScalarFiniteVolumeField& gamma0 = gamma.oldField(0);
+        const ScalarFiniteVolumeField &gamma0 = gamma.oldField(0);
 
         for (const Cell &cell: phi.grid().cellZone("fluid"))
         {
@@ -18,9 +18,8 @@ namespace fv
             {
                 Scalar coeff = gamma(nb.face()) * dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
                 Scalar coeff0 = gamma0(nb.face()) * dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
-
-                eqn.add(cell, nb.cell(), theta * coeff);
                 eqn.add(cell, cell, theta * -coeff);
+                eqn.add(cell, nb.cell(), theta * coeff);
                 eqn.addSource(cell, (1. - theta) * coeff0 * (phi(nb.cell()) - phi(cell)));
             }
 
