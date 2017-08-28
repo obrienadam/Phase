@@ -37,8 +37,14 @@ public:
     std::shared_ptr<ScalarFiniteVolumeField> kappaPtr() const
     { return kappa_; }
 
+    std::shared_ptr<ScalarFiniteVolumeField> gammaTildePtr() const
+    { return gammaTilde_; }
+
     std::shared_ptr<VectorFiniteVolumeField> nPtr() const
     { return n_; }
+
+    std::shared_ptr<VectorFiniteVolumeField> gradGammaTildePtr() const
+    { return gradGammaTilde_; }
 
     //- Return properties
     Scalar sigma() const

@@ -29,18 +29,7 @@ public:
 
     virtual void mapSolution(VectorFiniteVolumeField &field) = 0;
 
-    virtual void setPreconditioner(const std::string &preconditioner)
-    {}
-
-    virtual void setMaxIters(int maxIters) = 0;
-
-    virtual void setToler(Scalar toler) = 0;
-
-    virtual void setDropToler(Scalar toler) = 0;
-
-    virtual void setFillFactor(int fill) = 0;
-
-    virtual void setMaxPreconditionerUses(int maxPreconditionerUses);
+    virtual void setup(const boost::property_tree::ptree& parameters) {}
 
     virtual int nIters() const = 0;
 

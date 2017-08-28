@@ -42,13 +42,13 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 
 template<>
 template<>
-void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, const Vector2D &val)
+void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Vector2D val)
 {
-    setValue(cell.index(0),
+    addValue(cell.index(0),
              nb.index(2),
              val.x);
 
-    setValue(cell.index(0) + nLocalActiveCells_,
+    addValue(cell.index(0) + nLocalActiveCells_,
              nb.index(3),
              val.y);
 }
@@ -64,6 +64,19 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &v
     addValue(cell.index(0) + nLocalActiveCells_,
              nb.index(3),
              val.y);
+}
+
+template<>
+template<>
+void Equation<Vector2D>::addCoupling(const Cell &cell, const Cell &nb, const Vector2D &val)
+{
+    addValue(cell.index(0),
+             nb.index(3),
+             val.y);
+
+    addValue(cell.index(0) + nLocalActiveCells_,
+             nb.index(2),
+             val.x);
 }
 
 template<>
@@ -167,5 +180,5 @@ Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField
 template<>
 Size Equation<Vector2D>::getRank() const
 {
-    return 2 * nLocalActiveCells_;
+    return 2 * field_.grid().localActiveCells().size();
 }

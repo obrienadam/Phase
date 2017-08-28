@@ -138,6 +138,11 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
                 boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
                 ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
             }
+            else if (type == "partial_slip")
+            {
+                boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "unrecognized boundary type \"" + type + "\".");
 
@@ -175,7 +180,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             );
         }
         else if(motionType == "none")
-        {}
+        {
+            motion = nullptr;
+        }
         else
             throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
 
@@ -196,6 +203,16 @@ void ImmersedBoundary::initCellZones(CellZone& zone)
     }
 
     setCellStatus();
+    solver_.grid().computeGlobalOrdering();
+}
+
+void ImmersedBoundary::clearCellZones()
+{
+    for(auto &ibObj: ibObjs_)
+    {
+        ibObj->clear();
+    }
+
     solver_.grid().computeGlobalOrdering();
 }
 

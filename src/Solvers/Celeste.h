@@ -18,13 +18,13 @@ public:
 
     void computeFaces();
 
+    void computeFaces(const ImmersedBoundary& ib);
+
     void compute();
 
     void compute(const ImmersedBoundary& ib);
 
     void constructMatrices();
-
-    void constructMatrices(const ImmersedBoundary& ib);
 
 protected:
 
@@ -36,12 +36,13 @@ protected:
 
     Matrix leastSquaresMatrix(const Cell& cell, bool weighted = false);
 
-    Matrix leastSquaresMatrix(const ImmersedBoundary& ib, const Cell& cell, bool weighted = false);
+    Matrix leastSquaresMatrix(const ImmersedBoundaryObject& ibObj, const Cell& cell, bool weighted = false);
 
     void constructGammaTildeMatrices();
 
     void constructKappaMatrices();
 
+    std::vector<bool> modifiedStencil_;
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
 };
 

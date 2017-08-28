@@ -4,7 +4,7 @@
 #include "Source.h"
 
 FractionalStepIncremental::FractionalStepIncremental(const Input &input,
-                               std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                                     std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
@@ -33,7 +33,8 @@ void FractionalStepIncremental::initialize()
 
 std::string FractionalStepIncremental::info() const
 {
-    return Solver::info();
+    return "Fractional-step\n"
+            "An incremental fractional-step projection method\n";
 }
 
 Scalar FractionalStepIncremental::solve(Scalar timeStep)
@@ -42,7 +43,7 @@ Scalar FractionalStepIncremental::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_.update(timeStep);
+    //ib_.update(timeStep);
 
     printf("Max Co = %lf\n", maxCourantNumber(timeStep));
     printf("Max divergence error = %.4e\n", maxDivergenceError());
@@ -55,7 +56,7 @@ Scalar FractionalStepIncremental::solve(Scalar timeStep)
 Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u)
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_.solidVelocity(u)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();

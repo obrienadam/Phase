@@ -92,5 +92,5 @@ Equation<Scalar> &Equation<Scalar>::operator-=(const ScalarFiniteVolumeField &rh
 template<>
 Size Equation<Scalar>::getRank() const
 {
-    return nLocalActiveCells_;
+    return field_.grid().localActiveCells().size();
 }

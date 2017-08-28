@@ -7,8 +7,6 @@
 #include "TensorFiniteVolumeField.h"
 #include "SparseMatrixSolver.h"
 #include "ImmersedBoundary.h"
-#include "VolumeIntegrator.h"
-#include "ForceIntegrator.h"
 
 class Solver
 {
@@ -18,7 +16,8 @@ public:
            std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     //- Info
-    virtual std::string info() const;
+    virtual std::string info() const
+    { return ""; }
 
     //- Print
     void printf(const char* format, ...) const;
@@ -123,19 +122,6 @@ public:
 
     virtual void initialize() {}
 
-    //- Integrators
-    const std::vector<VolumeIntegrator> &volumeIntegrators() const
-    { return volumeIntegrators_; }
-
-    std::vector<VolumeIntegrator> &volumeIntegrators()
-    { return volumeIntegrators_; }
-
-    const std::vector<ForceIntegrator> &forceIntegrators() const
-    { return forceIntegrators_; }
-
-    std::vector<ForceIntegrator> &forceIntegrators()
-    { return forceIntegrators_; }
-
 protected:
 
     void setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolumeField &field);
@@ -162,12 +148,9 @@ protected:
     mutable std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
     mutable std::map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
-    Scalar timeStepRelaxation_, maxTimeStep_;
+    Scalar maxTimeStep_;
 
     ImmersedBoundary ib_;
-
-    std::vector<VolumeIntegrator> volumeIntegrators_;
-    std::vector<ForceIntegrator> forceIntegrators_;
 };
 
 #endif

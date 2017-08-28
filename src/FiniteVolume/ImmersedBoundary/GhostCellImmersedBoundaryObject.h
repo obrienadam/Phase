@@ -3,6 +3,7 @@
 
 #include "ImmersedBoundaryObject.h"
 #include "GhostCellStencil.h"
+#include "Celeste.h"
 
 class GhostCellImmersedBoundaryObject: public ImmersedBoundaryObject
 {
@@ -19,6 +20,8 @@ public:
     Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const;
 
     Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const;
+
+    Equation<Scalar> bcs(ScalarFiniteVolumeField& gamma, const Celeste& fst) const;
 
     Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
 

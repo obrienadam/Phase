@@ -3,7 +3,10 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <MueLu.hpp>
+#include <MueLu_TpetraOperator.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <BelosTpetraAdapter.hpp>
+#include <BelosSolverFactory.hpp>
 
 #include "SparseMatrixSolver.h"
 
@@ -11,7 +14,7 @@ class TrilinosMueluSparseMatrixSolver: public SparseMatrixSolver
 {
 public:
 
-    TrilinosMueluSparseMatrixSolver(const Communicator& comm, const std::string& xmlFileName);
+    TrilinosMueluSparseMatrixSolver(const Communicator& comm);
 
     void setRank(int rank);
 
@@ -29,15 +32,7 @@ public:
 
     void mapSolution(VectorFiniteVolumeField &field);
 
-    void setMaxIters(int maxIters);
-
-    void setToler(Scalar toler);
-
-    void setDropToler(Scalar toler);
-
-    void setFillFactor(int fill);
-
-    void setMaxPreconditionerUses(int maxPreconditionerUses);
+    void setup(const boost::property_tree::ptree& parameters);
 
     int nIters() const;
 
@@ -54,15 +49,24 @@ private:
     typedef Tpetra::CrsMatrix<Scalar, Index, Index> TpetraCrsMatrix;
     typedef Tpetra::Vector<Scalar, Index, Index> TpetraVector;
     typedef Tpetra::MultiVector<Scalar, Index, Index> TpetraMultiVector;
-    typedef Tpetra::Operator<Scalar, Index, Index> Operator;
-    typedef Belos::LinearProblem<Scalar, TpetraMultiVector, Operator> LinearProblem;
+    typedef Tpetra::Operator<Scalar, Index, Index> TpetraOperator;
+    typedef Belos::LinearProblem<Scalar, TpetraMultiVector, TpetraOperator> LinearProblem;
+    typedef Belos::SolverManager<Scalar, TpetraMultiVector, TpetraOperator> Solver;
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> Factory;
+    typedef MueLu::TpetraOperator<Scalar, Index, Index> MueLuTpetraOperator;
 
     const Communicator& comm_;
     Teuchos::RCP<TeuchosComm> Tcomm_;
     Teuchos::RCP<TpetraMap> map_;
 
-    Teuchos::RCP<Teuchos::ParameterList> mueluParameters_;
+    Teuchos::RCP<Teuchos::ParameterList> mueluParams_, belosParams_;
+    Teuchos::RCP<MueLuTpetraOperator> precon_;
 
+    Teuchos::RCP<TpetraVector> x_, b_;
+    Teuchos::RCP<TpetraCrsMatrix> mat_;
+
+    Teuchos::RCP<LinearProblem> linearProblem_;
+    Teuchos::RCP<Solver> solver_;
 };
 
 #endif

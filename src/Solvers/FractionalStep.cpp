@@ -5,7 +5,7 @@
 #include "QuadraticIbm.h"
 
 FractionalStep::FractionalStep(const Input &input,
-                                           std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                               std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
         u(addVectorField(input, "u")),
@@ -34,10 +34,9 @@ void FractionalStep::initialize()
 
 std::string FractionalStep::info() const
 {
-    return Solver::info()
-           + "Fractional-step (Simple)\n"
-           + "A simple 1-step fractional-step projection method\n"
-           + "May not produce accurate results near boundaries\n";
+    return "Fractional-step\n"
+            "A simple 1-step fractional-step projection method\n"
+            "May not produce accurate results near boundaries\n";
 }
 
 Scalar FractionalStep::solve(Scalar timeStep)
@@ -115,8 +114,7 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
     //- Gradient
     p.setBoundaryFaces();
-    gradP.compute(fluid_);
-    grid_->sendMessages(gradP);
+    gradP.computeFaces();
 
     return error;
 }

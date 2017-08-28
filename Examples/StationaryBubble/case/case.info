@@ -6,16 +6,16 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-5
+	timeStep 1e-3
 	maxCo 0.25
-	maxTime 2.5e-2
+	maxTime 0.25
 
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 1
 	numPressureCorrections 2
 
-	smoothingKernelRadius 0.0001
+	smoothingKernelRadius 0.02
 	surfaceTensionModel CELESTE
 }
 
@@ -46,7 +46,7 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,n
+	vectorFields u,n,gradgammaTilde
 	scalarFields p,pCorr,m,gamma,rho,mu,kappa,gammaTilde
 }
 

@@ -55,7 +55,7 @@ void SurfaceTensionForce::computeInterfaceNormals()
     const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
     VectorFiniteVolumeField &n = *n_;
 
-    for(const Cell& cell: grid_->localActiveCells())
+    for (const Cell &cell: grid_->cellZone("fluid"))
         n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
     //- Boundary faces set from contact line orientation
@@ -70,22 +70,68 @@ void SurfaceTensionForce::computeInterfaceNormals()
             else
             {
                 Vector2D t = face.norm().tangentVec().unitVec();
-                n(face) = t.rotate(dot(n(face.lCell()), t) > 0. ? M_PI_2 - theta : 3 * M_PI_2 - theta);
+                t = dot(t, n(face.lCell())) > 0. ? t : -t;
+                Scalar phi = cross(t, face.outwardNorm()) < 0. ? M_PI_2 - theta : theta - M_PI_2;
+                n(face) = t.rotate(phi);
             }
         }
     }
+
+    grid_->sendMessages(n);
 }
 
 Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
                                                 const Cell &rCell,
                                                 const ImmersedBoundaryObject &ibObj)
 {
-    LineSegment2D ln = ibObj.intersectionLine(lCell.centroid(), rCell.centroid());
+    LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
+    Vector2D en = ibObj.nearestEdgeNormal(ln.ptB());
+
+    const VectorFiniteVolumeField &n = *n_;
+
+    if(n(lCell) == Vector2D(0., 0.))
+        return Vector2D(0., 0.);
+
+    Vector2D t = en.tangentVec().unitVec();
+    Scalar theta = getTheta(ibObj);
+
+    t = dot(t, n(lCell)) > 0. ? t : -t;
+    Scalar phi = cross(t, en) < 0. ? M_PI_2 - theta : theta - M_PI_2;
+    return t.rotate(phi);
 }
 
 void SurfaceTensionForce::smoothGammaField()
 {
-    smooth(gamma_, grid().localActiveCells(), kernelWidth_, *gammaTilde_);
+//    smooth(gamma_, grid().localActiveCells(), kernelWidth_, *gammaTilde_,
+//           [](const Cell& cell, const Cell& kCell, Scalar e) {
+//               Vector2D r = (cell.centroid() - kCell.centroid()).abs() / e;
+//               Scalar dx = r.x < 1. ? pow(r.x, 4) - 2*pow(r.x, 2) + 1. : 0.;
+//               Scalar dy = r.y < 1. ? pow(r.y, 4) - 2*pow(r.y, 2) + 1. : 0.;
+//               return dx * dy;
+//           });
+
+//    smooth(gamma_,
+//           grid().localActiveCells(),
+//           grid().globalActiveCells(),
+//           kernelWidth_,
+//           *gammaTilde_,
+//           [](const Cell& cell, const Cell& kCell, Scalar e) {
+//               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+//               return r < 1. ? pow(r, 4) - 2 * pow(r, 2) + 1 : 0.;
+//           });
+
+//    smooth(gamma_, grid().localActiveCells(), kernelWidth_, *gammaTilde_,
+//    [](const Cell& cell, const Cell &kCell, Scalar e) {
+//        Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+//        return r < 1. ? pow(1. - r*r, 3) : 0.;
+//    });
+    //- This kernel is better
+    smooth(gamma_, grid().localActiveCells(), grid().globalActiveCells(), kernelWidth_, *gammaTilde_,
+           [](const Cell &cell, const Cell &kCell, Scalar e) {
+               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+               return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
+           });
+
     grid_->sendMessages(*gammaTilde_);
     gammaTilde_->setBoundaryFaces();
 }

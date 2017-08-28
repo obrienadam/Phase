@@ -34,18 +34,6 @@ public:
 
     void mapSolution(VectorFiniteVolumeField &field);
 
-    void setMaxIters(int maxIters)
-    { }
-
-    void setToler(Scalar toler)
-    { }
-
-    void setDropToler(Scalar toler)
-    { }
-
-    void setFillFactor(int fill)
-    { }
-
     int nIters() const
     { return 1; }
 

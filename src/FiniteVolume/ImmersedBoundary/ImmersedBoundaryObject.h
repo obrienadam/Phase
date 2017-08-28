@@ -9,7 +9,7 @@ class ImmersedBoundaryObject
 {
 public:
 
-    enum BoundaryType{FIXED, NORMAL_GRADIENT};
+    enum BoundaryType{FIXED, NORMAL_GRADIENT, PARTIAL_SLIP};
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
@@ -29,8 +29,6 @@ public:
 
     //- Motion
     void setMotion(std::shared_ptr<Motion> motion);
-
-    virtual void setMotionType(const std::map<std::string, std::string>& properties);
 
     std::shared_ptr<Motion> motion()
     { return motion_; }
@@ -56,7 +54,7 @@ public:
     { return *fluid_; }
 
     //- Operations
-    LineSegment2D intersectionLine(const Point2D& ptA, const Point2D& ptB) const;
+    LineSegment2D intersectionLine(const LineSegment2D& ln) const;
 
     Vector2D nearestEdgeNormal(const Point2D& pt) const;
 

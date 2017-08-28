@@ -98,7 +98,7 @@ void FiniteVolumeGrid2D::reset()
     patches_.clear();
 
     bBox_ = BoundingBox(Point2D(0., 0.), Point2D(0., 0.));
-    nodeSearch_.clear();
+    nodeGroup_.clear();
 }
 
 //- size info
@@ -339,17 +339,7 @@ const std::vector<Ref<const Patch> > FiniteVolumeGrid2D::patches() const
 
 const Node &FiniteVolumeGrid2D::findNearestNode(const Point2D &pt) const
 {
-    return nodes_[nodeSearch_.kNearestNeighbourSearch(pt, 1)[0]];
-}
-
-std::vector<Ref<Node> > FiniteVolumeGrid2D::nodesInShape(const Shape2D &shape)
-{
-    return getNodes(nodeSearch_.rangeSearch(shape));
-}
-
-std::vector<Ref<const Node> > FiniteVolumeGrid2D::nodesInShape(const Shape2D &shape) const
-{
-    return getNodes(nodeSearch_.rangeSearch(shape));
+    return nodeGroup_.nearestItems(pt, 1)[0];
 }
 
 std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementConnectivity() const
@@ -622,7 +612,8 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
 
 void FiniteVolumeGrid2D::initNodes()
 {
-    nodeSearch_.constructRTree(coords());
+    nodeGroup_.clear();
+    nodeGroup_.add(nodes_.begin(), nodes_.end());
 }
 
 void FiniteVolumeGrid2D::initCells()

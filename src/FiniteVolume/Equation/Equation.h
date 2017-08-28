@@ -4,6 +4,7 @@
 #include "FiniteVolumeGrid2D.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
+#include "IndexMap.h"
 #include "SparseMatrixSolver.h"
 #include "Communicator.h"
 
@@ -32,6 +33,18 @@ public:
 
     template<typename T2>
     void add(const Cell &cell, const Cell &nb, T2 val);
+
+    template<typename T2>
+    void add(const Cell& cell, const std::vector<Ref<const Cell>>& nbs, const std::vector<T2>& vals)
+    {
+        size_t i = 0;
+        for(const Cell& nb: nbs)
+            add(cell, nb, vals[i++]);
+    }
+
+    template<typename T2>
+    void addCoupling(const Cell &cell, const Cell &nb, T2 val)
+    { throw Exception("Equation<T>", "addCoupling", "not implemented for specified equation type."); }
 
     T get(const Cell &cell, const Cell &nb);
 
@@ -104,10 +117,12 @@ protected:
     Scalar &coeffRef(Index i, Index j);
 
     Size nLocalActiveCells_, nGlobalActiveCells_; // Cached for efficiency
-    std::pair<Index, Index> indexRange_;
 
     CoefficientList coeffs_;
+
     Vector sources_;
+
+    std::shared_ptr<IndexMap> indexMap_;
 
     std::shared_ptr<SparseMatrixSolver> spSolver_;
 

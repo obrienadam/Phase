@@ -17,7 +17,8 @@ public:
 
 private:
 
-    Size nCells_ = 0;
+    Size nCells_ = 0, nIndexSets_ = 0;
+    std::pair<Index, Index> range_ = std::make_pair(0, 0);
     std::vector<Index> localIndices_, globalIndices_;
 };
 

@@ -33,9 +33,11 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
 
     nLocalActiveCells_ = rhs.nLocalActiveCells_;
     nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
-    indexRange_ = rhs.indexRange_;
     coeffs_ = rhs.coeffs_;
     sources_ = rhs.sources_;
+
+    if(rhs.indexMap_)
+        indexMap_ = rhs.indexMap_;
 
     if (rhs.spSolver_) // Prevent a sparse solver from being accidently destroyed if the rhs solver doesn't exist
         spSolver_ = rhs.spSolver_;
@@ -51,7 +53,6 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
 
     nLocalActiveCells_ = rhs.nLocalActiveCells_;
     nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
-    indexRange_ = rhs.indexRange_;
     coeffs_ = std::move(rhs.coeffs_);
     sources_ = std::move(rhs.sources_);
 
@@ -164,10 +165,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     else if(lib == "trilinos" || lib == "belos")
         spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
     else if(lib == "muelu")
-    {
-        std::string xmlFileName = input.caseInput().get<std::string>("LinearAlgebra." + name + ".xmlFileName");
-        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, xmlFileName);
-    }
+        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm);
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
@@ -175,12 +173,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
                                                                 "\" does not support multiple processes in its current configuration.");
 
-    spSolver_->setMaxIters(input.caseInput().get<int>("LinearAlgebra." + name + ".maxIterations", 500));
-    spSolver_->setToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".tolerance", 1e-6));
-    spSolver_->setFillFactor(input.caseInput().get<int>("LinearAlgebra." + name + ".iluFill", 2));
-    spSolver_->setDropToler(input.caseInput().get<Scalar>("LinearAlgebra." + name + ".dropTolerance", 0));
-    spSolver_->setMaxPreconditionerUses(
-            input.caseInput().get<int>("LinearAlgebra." + name + ".maxPreconditionerUses", 1));
+    spSolver_->setup(input.caseInput().get_child("LinearAlgebra." + name));
 
     comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());
 }

@@ -58,7 +58,25 @@ Boundaries
   
   gamma
   {
-    *
+    x+
+    {
+      type normal_gradient
+      value 0
+    }
+
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y+
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y-
     {
       type normal_gradient
       value 0
@@ -86,6 +104,12 @@ ImmersedBoundaries
     }
 
     p
+    {
+      type normal_gradient
+      value 0
+    }
+
+    gamma
     {
       type normal_gradient
       value 0

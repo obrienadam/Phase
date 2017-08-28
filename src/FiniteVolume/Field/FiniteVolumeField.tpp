@@ -2,6 +2,7 @@
 #include "Exception.h"
 
 #include <boost/algorithm/string.hpp>
+#include <fstream>
 
 //- Constructors
 
@@ -277,6 +278,19 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(Scalar rhs)
     return self;
 }
 
+//- Debug
+
+template<class T>
+void FiniteVolumeField<T>::writeToFile(const std::string &filename) const
+{
+    std::ofstream fout(filename);
+
+    for(const T& val: *this)
+        fout << val << "\n";
+
+    fout.close();
+}
+
 //- Protected methods
 
 template<class T>
@@ -369,32 +383,29 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
 }
 
 //- External functions
-template<class T>
-void smooth(const FiniteVolumeField<T>& field, const CellGroup& cells, Scalar epsilon, FiniteVolumeField<T>& smoothedField)
+
+template<class T, class TFunc>
+void smooth(const FiniteVolumeField<T>& field,
+            const CellGroup& cellsToSmooth,
+            const CellGroup& cells,
+            Scalar epsilon,
+            FiniteVolumeField<T>& smoothedField,
+            const TFunc& kernel)
 {
-    Scalar A = 1.;
-    Scalar epsilonSqr = epsilon * epsilon;
-
-//    auto K = [&A](Scalar rSqr, Scalar eSqr){ return rSqr < eSqr ? A*pow(eSqr - rSqr, 3) : 0.; };
-    auto K = [&A](Scalar r, Scalar e)
-    { // This smoothing kernel appears to be slightly better
-        return r < e ? A / (2. * e) * (1. + cos(M_PI * r / e)) : 0.;
-    };
-
-    for (const Cell &cell: cells)
+    for (const Cell &cell: cellsToSmooth)
     {
         //- Determine the normalizing constant for this kernel
         Scalar integralK = 0.;
-        A = 1.;
 
         auto kCells = cells.itemsWithin(Circle(cell.centroid(), epsilon));
 
         for (const Cell &kCell: kCells)
-            integralK += K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
+            integralK += kernel(cell, kCell, epsilon) * kCell.volume();
 
-        A = 1. / integralK;
-
+        Scalar tilde = 0.;
         for (const Cell &kCell: kCells)
-            smoothedField(cell) += field(kCell) * K((kCell.centroid() - cell.centroid()).mag(), epsilon) * kCell.volume();
+            tilde += field(kCell) * kernel(cell, kCell, epsilon) * kCell.volume();
+
+        smoothedField(cell) = tilde / integralK;
     }
 }

@@ -60,14 +60,12 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, Scalar rho, Scalar t
             for (const GhostCellStencil &st: gcIbObj.stencils())
             {
                 Scalar dPdN = -rho*dot(ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
-
-                pEqn.add(st.cell(), st.cell(), 1. / st.length());
                 pEqn.addSource(st.cell(), -dPdN);
 
-                std::vector<Scalar> coeffs = st.ipCoeffs();
+                std::vector<Scalar> coeffs = st.neumannCoeffs();
                 int i = 0;
-                for (const Cell &ipCell: st.ipCells())
-                    pEqn.add(st.cell(), ipCell, -coeffs[i++] / st.length());
+                for (const Cell &ipCell: st.cells())
+                    pEqn.add(st.cell(), ipCell, -coeffs[i++]);
             }
         }
         catch (std::bad_cast e)
@@ -228,14 +226,12 @@ Equation<Scalar> seo::laplacian(const ImmersedBoundary &ib, const ScalarFiniteVo
             {
                 Scalar rhoF = st.ipValue(rho);
                 Scalar dPdN = -rhoF * dot(ibObj.acceleration(st.boundaryPoint()), st.unitNormal());
-
-                pEqn.add(st.cell(), st.cell(), 1. / st.length());
                 pEqn.addSource(st.cell(), -dPdN);
 
-                std::vector<Scalar> coeffs = st.ipCoeffs();
+                std::vector<Scalar> coeffs = st.neumannCoeffs();
                 int i = 0;
-                for (const Cell &ipCell: st.ipCells())
-                    pEqn.add(st.cell(), ipCell, -coeffs[i++] / st.length());
+                for (const Cell &ipCell: st.cells())
+                    pEqn.add(st.cell(), ipCell, -coeffs[i++]);
             }
         }
         catch (std::bad_cast e)

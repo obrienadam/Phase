@@ -3,9 +3,9 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <BelosBiCGStabSolMgr.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <Ifpack2_Factory.hpp>
+#include <BelosSolverManager.hpp>
+#include <Ifpack2_Preconditioner.hpp>
 
 #include "SparseMatrixSolver.h"
 
@@ -28,13 +28,7 @@ public:
 
     void mapSolution(VectorFiniteVolumeField &field);
 
-    void setMaxIters(int maxIters);
-
-    void setToler(Scalar toler);
-
-    void setDropToler(Scalar toler);
-
-    void setFillFactor(int fill);
+    void setup(const boost::property_tree::ptree& parameters);
 
     int nIters() const;
 
@@ -49,14 +43,13 @@ private:
 
     typedef Teuchos::MpiComm<Index> TeuchosComm;
     typedef Tpetra::Map<Index, Index> TpetraMap;
-    typedef Tpetra::RowMatrix<Scalar, Index, Index> TpetraRowMatrix;
     typedef Tpetra::CrsMatrix<Scalar, Index, Index> TpetraCrsMatrix;
     typedef Tpetra::Vector<Scalar, Index, Index> TpetraVector;
     typedef Tpetra::MultiVector<Scalar, Index, Index> TpetraMultiVector;
     typedef Tpetra::Operator<Scalar, Index, Index> Operator;
     typedef Belos::LinearProblem<Scalar, TpetraMultiVector, Operator> LinearProblem;
-    typedef Belos::BiCGStabSolMgr<Scalar, TpetraMultiVector, Operator> Solver;
-    typedef Ifpack2::RILUK<TpetraRowMatrix> Preconditioner;
+    typedef Belos::SolverManager<Scalar, TpetraMultiVector, Operator> Solver;
+    typedef Ifpack2::Preconditioner<Scalar, Index, Index> Preconditioner;
 
     //- Communication objects
     const Communicator &comm_;
@@ -64,7 +57,7 @@ private:
     Teuchos::RCP<TpetraMap> map_;
 
     //- Parameters
-    Teuchos::RCP<Teuchos::ParameterList> belosParameters_, ifpackParameters_;
+    Teuchos::RCP<Teuchos::ParameterList> belosParams_, ifpackParams_, schwarzParams_;
 
     //- Matrix data structures
     Teuchos::RCP<TpetraCrsMatrix> mat_;

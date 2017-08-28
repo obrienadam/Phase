@@ -64,6 +64,10 @@ public:
 
     std::vector<Ref<const T> > itemsWithin(const Box &box) const;
 
+    std::vector<Ref<const T> > itemsCoveredBy(const Circle& circle) const;
+
+    std::vector<Ref<const T> > itemsCoveredBy(const Box &box) const;
+
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
     //- Iterators

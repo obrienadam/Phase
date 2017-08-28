@@ -6,7 +6,7 @@
 #else
 extern "C"
 {
-#define lapack_complex_float float _Complex
+#define lapack_complex_float float _Complex // Fixes the world's most ridiculous bug
 #define lapack_complex_double double _Complex
 #include <lapacke.h>
 #include <cblas.h>
@@ -42,6 +42,14 @@ void Matrix::init(const Scalar *begin, const Scalar *end)
     });
 }
 
+void Matrix::scaleRow(Size i, Scalar factor)
+{
+    auto itr = begin() + i * n_;
+    std::transform(itr, itr + n_, itr, [factor](Scalar val) {
+        return factor * val;
+    });
+}
+
 Scalar &Matrix::operator()(Size i, Size j)
 {
     return std::vector<Scalar>::operator[](i * n_ + j);
@@ -54,7 +62,7 @@ Scalar Matrix::operator()(Size i, Size j) const
 
 Matrix &Matrix::operator=(const std::initializer_list<Scalar> &coeffs)
 {
-    if(m_*n_ != coeffs.size())
+    if (m_ * n_ != coeffs.size())
         throw Exception("Matrix", "operator=", "dimension mismatch.");
 
     assign(coeffs);
@@ -85,7 +93,7 @@ Matrix &Matrix::operator-=(const Matrix &rhs)
 
 Matrix &Matrix::operator*=(Scalar rhs)
 {
-    std::transform(begin(), end(), begin(), [rhs](Scalar a){
+    std::transform(begin(), end(), begin(), [rhs](Scalar a) {
         return a * rhs;
     });
 
@@ -94,7 +102,7 @@ Matrix &Matrix::operator*=(Scalar rhs)
 
 Matrix &Matrix::operator/=(Scalar rhs)
 {
-    std::transform(begin(), end(), begin(), [rhs](Scalar a){
+    std::transform(begin(), end(), begin(), [rhs](Scalar a) {
         return a / rhs;
     });
 
@@ -216,6 +224,7 @@ Matrix transpose(Matrix mat)
 
 Matrix inverse(Matrix mat)
 {
+    auto old = mat;
     return mat.invert();
 }
 

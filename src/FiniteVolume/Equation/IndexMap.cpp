@@ -3,34 +3,28 @@
 IndexMap::IndexMap(const FiniteVolumeGrid2D &grid, Size nIndexSets)
     :
     nCells_(grid.nCells()),
-    localIndices_(2 * nIndexSets, INACTIVE),
-    globalIndices_(2 * nIndexSets, INACTIVE)
+    nIndexSets_(nIndexSets),
+    localIndices_(nIndexSets_ * grid.nCells(), INACTIVE),
+    globalIndices_(nIndexSets_ * grid.nCells(), INACTIVE)
 {
-    const CellZone& localActiveCells = grid.localActiveCells();
-    std::vector<Size> nIndicesProc = grid.comm().allGather(localActiveCells.size());
-
-    for(Size &nIndices: nIndicesProc)
-        nIndices *= nIndexSets;
-
-    Size nIndicesThisProc = nIndicesProc[grid.comm().rank()];
-    Size globalIndexStart = 0;
+    auto nUnknowns = grid.comm().allGather(nIndexSets_ * grid.nLocalActiveCells());
 
     for(int proc = 0; proc < grid.comm().rank(); ++proc)
-        globalIndexStart += nIndicesProc[proc];
+        range_.first += nUnknowns[proc];
+    range_.second = range_.first + nUnknowns[grid.comm().rank()];
 
-    for(Size indexSet = 0; indexSet < nIndexSets; ++indexSet)
+    for(Size indexSet = 0; indexSet < nIndexSets_; ++indexSet)
     {
         Index idx = 0;
-        for(const Cell& cell: localActiveCells)
-            localIndices_[nCells_ * indexSet + cell.id()] = indexSet*nIndicesThisProc + idx++;
-
-        idx = 0;
-
-        for(const Cell& cell: localActiveCells)
-            globalIndices_[nCells_ * indexSet + cell.id()] = globalIndexStart + indexSet*nIndicesThisProc + idx++;
-
-        // grid.sendMessagesIt(globalIndices_.begin());
+        for(const Cell& cell: grid.localActiveCells())
+        {
+            localIndices_[indexSet * nCells_ + cell.id()] = idx;
+            globalIndices_[indexSet * nCells_ + cell.id()] = range_.first + idx++;
+        }
     }
+
+    //- Communicate global indices to other procs
+    grid.sendMessages(globalIndices_, nIndexSets_);
 }
 
 Index IndexMap::local(const Cell& cell, int set) const

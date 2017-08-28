@@ -67,7 +67,9 @@ public:
             (*this)(face) = fcn(face);
     }
 
-    void faceToCell(const FiniteVolumeField<Scalar> &cellWeight, const FiniteVolumeField<Scalar> &faceWeight);
+    void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
+                    const FiniteVolumeField<Scalar> &faceWeight,
+                    const CellGroup& cells);
 
     void setPatch(const Patch &patch, const std::function<T(const Face &face)> &fcn)
     {
@@ -210,6 +212,9 @@ public:
     const FiniteVolumeGrid2D &grid() const
     { return *grid_; }
 
+    //- Debug
+    void writeToFile(const std::string& filename) const;
+
 protected:
 
     typedef std::pair<Scalar, FiniteVolumeField<T>> PreviousField;
@@ -231,22 +236,6 @@ protected:
 
     std::shared_ptr<FiniteVolumeField<T>> previousIteration_;
 };
-
-template<class T>
-void smooth(const FiniteVolumeField<T> &field,
-            const CellGroup &cells,
-            Scalar epsilon,
-            FiniteVolumeField<T> &smoothedField);
-
-template<class T>
-FiniteVolumeField<T> smooth(const FiniteVolumeField<T> &field,
-                            const CellGroup &cells,
-                            Scalar epsilon)
-{
-    FiniteVolumeField<T> smoothedField(field.gridPtr(), field.name() + "Tilde");
-    smooth(field, cells, epsilon, smoothedField);
-    return smoothedField;
-}
 
 #include "FiniteVolumeField.tpp"
 

@@ -132,6 +132,34 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Box &box) const
 }
 
 template <class T>
+std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Circle& circle) const
+{
+    std::vector<Value> result;
+
+    auto isCoveredByCircle = [&circle](const Value& val)
+    {
+        return circle.isCovered(val.first);
+    };
+
+    rTree_.query(boost::geometry::index::covered_by(circle.boundingBox()) &&
+                 boost::geometry::index::satisfies(isCoveredByCircle),
+                 std::back_inserter(result));
+
+    return getRefs(result);
+}
+
+template <class T>
+std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Box& box) const
+{
+    std::vector<Value> result;
+
+    rTree_.query(boost::geometry::index::covered_by(box.boundingBox()),
+                 std::back_inserter(result));
+
+    return getRefs(result);
+}
+
+template <class T>
 std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) const
 {
     std::vector<Value> result;

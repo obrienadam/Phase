@@ -12,7 +12,6 @@
 #include "Face.h"
 #include "Patch.h"
 #include "BoundingBox.h"
-#include "Search.h"
 #include "Communicator.h"
 #include "Input.h"
 
@@ -191,10 +190,6 @@ public:
     //- Entity searches
     const Node &findNearestNode(const Point2D &pt) const;
 
-    std::vector<Ref<Node>> nodesInShape(const Shape2D &shape);
-
-    std::vector<Ref<const Node>> nodesInShape(const Shape2D &shape) const;
-
     //- Parallel/paritioning
     const Communicator &comm() const
     { return *comm_; }
@@ -205,6 +200,9 @@ public:
 
     template<class T>
     void sendMessages(std::vector<T> &data) const;
+
+    template<class T>
+    void sendMessages(std::vector<T> &data, Size nSets) const;
 
     //- Active cell ordering, required for lineary algebra!
     void computeGlobalOrdering();
@@ -264,7 +262,7 @@ protected:
     BoundingBox bBox_;
 
     //- For node searches
-    Search nodeSearch_;
+    Group<Node> nodeGroup_;
 };
 
 #include "FiniteVolumeGrid2D.tpp"

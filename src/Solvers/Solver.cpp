@@ -12,16 +12,7 @@ Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D>& grid)
         grid_(grid)
 {
     //- Set simulation time options
-    timeStepRelaxation_ = input.caseInput().get<Scalar>("Solver.timeStepRelaxation", 1.);
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
-
-    //- Set voluem integrators
-    volumeIntegrators_ = VolumeIntegrator::initVolumeIntegrators(input, *this);
-}
-
-std::string Solver::info() const
-{
-    return "SOLVER INFO\n";
 }
 
 void Solver::printf(const char* format, ...) const

@@ -48,11 +48,8 @@ Properties
 	rho2 998
  	mu1 1e-3
 	mu2 8.94e-4
-	sigma 0.1
+	sigma 0.01
 	g (0,-9.8065)
-
-	advancingContactAngle 90
-	recedingContactAngle 90
 }
 
 Grid
@@ -62,7 +59,6 @@ Grid
 	nCellsY 50
 	width 0.005
 	height 0.0025
-	partitionBufferWidth 2
 }
 
 Viewer
@@ -83,6 +79,6 @@ Integrators
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 20
   consoleOutputFrequency 1
 }

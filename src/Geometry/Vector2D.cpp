@@ -70,8 +70,8 @@ bool Vector2D::isParallel(const Vector2D &other) const
 
 Vector2D Vector2D::rotate(Scalar theta) const
 {
-    Scalar cosTheta = cos(theta), sinTheta = sin(theta);
-    return Vector2D(x * cosTheta - y * sinTheta, x * sinTheta + y * cosTheta);
+    Scalar ct = std::cos(theta), st = std::sin(theta);
+    return Vector2D(x * ct - y * st, x * st + y * ct);
 }
 
 Vector2D Vector2D::transform(const Vector2D &uPrime) const
@@ -198,9 +198,9 @@ Scalar cross(const Vector2D &u, const Vector2D &v)
     return u.x * v.y - u.y * v.x;
 }
 
-Vector2D pointwise(const Vector2D& u, const Vector2D &v)
+Vector2D pointwise(const Vector2D &u, const Vector2D &v)
 {
-    return Vector2D(u.x*v.x, u.y*v.y);
+    return Vector2D(u.x * v.x, u.y * v.y);
 }
 
 std::string std::to_string(const Vector2D &vec)

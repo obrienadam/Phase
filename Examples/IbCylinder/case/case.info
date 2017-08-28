@@ -9,7 +9,7 @@ Solver
 	timeStep 1.5e-3
 	maxCo 0.5
 	maxTime 200
-
+	smoothingKernelRadius 0
 	momentumRelaxation 1
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
@@ -23,13 +23,23 @@ LinearAlgebra
 		lib trilinos
 		iluFill 0
 		tolerance 1e-14
+		schwarzIters 1
 	}
 
 	pEqn
 	{
 		lib trilinos
-		iluFill 6
+		solver "BICGSTAB"
+		iluFill 4
 		tolerance 1e-14
+		schwarzIters 2
+		combineMode ADD
+		schwarzOverlap 0
+	}
+
+	gammaEqn
+	{
+		lib eigen
 	}
 }
 
@@ -38,18 +48,19 @@ Properties
 	rho 1
 	mu 0.01 ; Re = 100
 	g (0,0)
+	sigma 0
 }
 
 Grid
 {
 	type rectilinear
-	nCellsX 600
-	nCellsY 300
+	nCellsX 300
+	nCellsY 150
 
 	; Rectilinear parameters
 	width 10
 	height 5
-	partitionBufferWidth 3
+	minBufferWidth 0.05
 
 	refineX (1,3)
 	refineY (1.5,3.5)
@@ -64,6 +75,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 30
+  fileWriteFrequency 10
   consoleOutputFrequency 1
 }

@@ -21,7 +21,7 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
             if(ibObj)
             {
                 const Cell &stCell = fluid.nearestItems(2*cell.centroid() - nb.cell().centroid(), 1)[0];
-                LineSegment2D ln = ibObj->intersectionLine(cell.centroid(), nb.cell().centroid());
+                LineSegment2D ln = ibObj->intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
 
                 Vector2D eta = nb.rCellVec().unitVec();
                 Scalar eta1 = dot(stCell.centroid(), eta);
@@ -88,7 +88,7 @@ Equation<Vector2D> qibm::laplacian(Scalar mu,
             if(ibObj)
             {
                 const Cell &stCell = fluid.nearestItems(2*cell.centroid() - nb.cell().centroid(), 1)[0];
-                LineSegment2D ln = ibObj->intersectionLine(cell.centroid(), nb.cell().centroid());
+                LineSegment2D ln = ibObj->intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
 
                 Vector2D eta = nb.rCellVec().unitVec();
                 Scalar eta1 = dot(stCell.centroid(), eta);
@@ -140,7 +140,7 @@ void qibm::computeFaceVelocities(VectorFiniteVolumeField& u, const ImmersedBound
 
     auto ibInterpolate = [&u, &fluid](const Cell& cell2, const Cell& cell3, const ImmersedBoundaryObject& ibObj) {
         const Cell& cell1 = fluid.nearestItems(2*cell2.centroid() - cell3.centroid(), 1)[0];
-        LineSegment2D ln = ibObj.intersectionLine(cell2.centroid(), cell3.centroid());
+        LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(cell2.centroid(), cell3.centroid()));
 
         Vector2D eta = (cell3.centroid() - cell2.centroid()).unitVec();
         Scalar eta1 = dot(cell1.centroid(), eta);

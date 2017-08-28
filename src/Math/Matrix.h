@@ -5,7 +5,7 @@
 
 #include "Types.h"
 
-class Matrix : protected std::vector<Scalar>
+class Matrix : public std::vector<Scalar>
 {
 public:
 
@@ -25,6 +25,8 @@ public:
 
     bool isSquare() const
     { return m_ == n_; }
+
+    void scaleRow(Size i, Scalar factor);
 
     Scalar &operator()(Size i, Size j);
 

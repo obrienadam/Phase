@@ -1,3 +1,6 @@
+#include <BelosSolverFactory.hpp>
+#include <Ifpack2_Factory.hpp>
+
 #include "TrilinosBelosSparseMatrixSolver.h"
 
 TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communicator &comm)
@@ -5,9 +8,9 @@ TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communica
         comm_(comm)
 {
     Tcomm_ = rcp(new TeuchosComm(comm.communicator()));
-    belosParameters_ = rcp(new Teuchos::ParameterList());
-    ifpackParameters_ = rcp(new Teuchos::ParameterList());
-    solver_ = rcp(new Solver(rcp(new LinearProblem()), belosParameters_));
+    belosParams_ = rcp(new Teuchos::ParameterList());
+    ifpackParams_ = rcp(new Teuchos::ParameterList());
+    schwarzParams_ = rcp(new Teuchos::ParameterList());
 }
 
 void TrilinosBelosSparseMatrixSolver::setRank(int rank)
@@ -16,27 +19,37 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
 
     auto map = rcp(new TpetraMap(OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
 
-    if(map_.is_null() || !map_->isSameAs(*map)) //- Check if a new map is needed
+    if (map_.is_null() || !map_->isSameAs(*map)) //- Check if a new map is needed
     {
         map_ = map;
         mat_ = rcp(new TpetraCrsMatrix(map_, 5, Tpetra::DynamicProfile));
         x_ = rcp(new TpetraVector(map_, true));
         b_ = rcp(new TpetraVector(map_, true));
-        precon_ = rcp(new Preconditioner(rcp_static_cast<const TpetraRowMatrix>(mat_)));
-        precon_->setParameters(*ifpackParameters_);
+
+        Ifpack2::Factory factory;
+
+        precon_ = factory.create("SCHWARZ", rcp_static_cast<const TpetraCrsMatrix>(mat_));
+        schwarzParams_->set("schwarz: inner preconditioner parameters", *ifpackParams_);
+        precon_->setParameters(*schwarzParams_);
         nPreconUses_ = maxPreconUses_; //- Ensure preconditioner gets recomputed
+
         linearProblem_ = rcp(new LinearProblem(mat_, x_, b_));
         linearProblem_->setRightPrec(precon_);
         solver_->setProblem(linearProblem_);
+        solver_->setParameters(belosParams_);
     }
 }
 
 void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
 {
+    using namespace Teuchos;
+
     Index minGlobalIndex = map_->getMinGlobalIndex();
 
+    bool newMat = !mat_->isFillComplete();
+
     mat_->resumeFill();
-    mat_->setAllToScalar(0);
+    mat_->setAllToScalar(0.);
     for (Index localRow = 0, nLocalRows = eqn.size(); localRow < nLocalRows; ++localRow)
     {
         std::vector<Index> cols;
@@ -48,10 +61,10 @@ void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientL
             vals.push_back(entry.second);
         }
 
-        if(mat_->getProfileType() == Tpetra::StaticProfile)
-            mat_->replaceGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
-        else
+        if(newMat)
             mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
+        else
+            mat_->replaceGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
     }
 
     mat_->fillComplete();
@@ -69,7 +82,7 @@ void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
 {
-    if(nPreconUses_++ >= maxPreconUses_)
+    if (nPreconUses_++ >= maxPreconUses_)
     {
         comm_.printf("Ifpack2: Computing preconditioner...\n");
         precon_->initialize();
@@ -79,7 +92,18 @@ Scalar TrilinosBelosSparseMatrixSolver::solve()
 
     comm_.printf("Belos: Performing BiCGSTAB iterations...\n");
     linearProblem_->setProblem();
-    solver_->solve();
+
+    try
+    {
+        solver_->solve();
+    }
+    catch (const Belos::StatusTestError &e)
+    {
+        comm_.printf("Error detected! Setting solution vector to 0 and attempting to resolve...\n");
+        comm_.barrier();
+        x_->putScalar(0.);
+        solve();
+    }
 
     return error();
 }
@@ -103,26 +127,22 @@ void TrilinosBelosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field
     }
 }
 
-void TrilinosBelosSparseMatrixSolver::setMaxIters(int maxIters)
+void TrilinosBelosSparseMatrixSolver::setup(const boost::property_tree::ptree& parameters)
 {
-    belosParameters_->set("Maximum Iterations", maxIters);
-    solver_->setParameters(belosParameters_);
-}
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, Operator> SolverFactory;
 
-void TrilinosBelosSparseMatrixSolver::setToler(Scalar toler)
-{
-    belosParameters_->set("Convergence Tolerance", toler);
-    solver_->setParameters(belosParameters_);
-}
+    SolverFactory factory;
 
-void TrilinosBelosSparseMatrixSolver::setDropToler(Scalar toler)
-{
-    ifpackParameters_->set("fact: relax value", toler);
-}
+    belosParams_->set("Maximum Iterations", parameters.get<int>("maxIters", 500));
+    belosParams_->set("Convergence Tolerance", parameters.get<Scalar>("tolerance", 1e-8));
+    solver_ = factory.create(parameters.get<std::string>("solver", "BICGSTAB"), belosParams_);
 
-void TrilinosBelosSparseMatrixSolver::setFillFactor(int fill)
-{
-    ifpackParameters_->set("fact: iluk level-of-fill", fill);
+    ifpackParams_->set("fact: iluk level-of-fill", parameters.get<Scalar>("iluFill", 0.));
+    ifpackParams_->set("fact: ilut level-of-fill", parameters.get<Scalar>("iluFill", 1.));
+    schwarzParams_->set("schwarz: inner preconditioner name", parameters.get<std::string>("innerPreconditioner", "RILUK"));
+    schwarzParams_->set("schwarz: num iterations", parameters.get<int>("schwarzIters", 1));
+    schwarzParams_->set("schwarz: combine mode", parameters.get<std::string>("schwarzCombineMode", "ADD"));
+    schwarzParams_->set("schwarz: overlap level", parameters.get<int>("schwarzOverlap", 0));
 }
 
 int TrilinosBelosSparseMatrixSolver::nIters() const
@@ -137,5 +157,5 @@ Scalar TrilinosBelosSparseMatrixSolver::error() const
 
 void TrilinosBelosSparseMatrixSolver::printStatus(const std::string &msg) const
 {
-    comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), "BiCGSTAB", nIters(), error());
+    comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), "Krylov", nIters(), error());
 }

@@ -5,47 +5,50 @@ cmake_minimum_required(VERSION 3.6.0)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
-# Look for OpenBLAS by default (includes CBLAS)
-set(BLA_VENDOR OpenBLAS)
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG")
+
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+        message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
+    endif ()
+
+    # Look for OpenBLAS by default (includes CBLAS)
+    set(BLA_VENDOR OpenBLAS)
+
+    # Check for lapacke/cblas availability
+    find_path(OPENBLAS_INCLUDE_DIRS NAMES "lapacke.h" "cblas.h" PATH_SUFFIXES "openblas")
+    if (NOT OPENBLAS_INCLUDE_DIRS)
+        message(FATAL_ERROR "lapacke.h and/or cblas.h headers not found.")
+    endif ()
+
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -mkl -qopenmp -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost -DNDEBUG")
+
+    # Look for mkl by default
+    set(BLA_VENDOR Intel)
+
+    # Check for lapacke/cblas availability
+    find_path(MKL_INCLUDE_DIRS NAMES "mkl_lapacke.h" "mkl_cblas.h" PATH_SUFFIXES "mkl")
+    if (NOT MKL_INCLUDE_DIRS)
+        message(FATAL_ERROR "lapacke.h and/or cblas.h headers not found.")
+    endif ()
+endif ()
 
 # find required packages
-find_package(Boost REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(Boost REQUIRED)
 find_package(MPI REQUIRED)
-find_package(Trilinos REQUIRED)
+find_package(Trilinos REQUIRED COMPONENTS Tpetra Belos MueLu)
 find_package(HDF5 REQUIRED)
-
-include_directories(${MPI_C_INCLUDE_PATH})
-include_directories(${Trilinos_INCLUDE_DIRS})
-
-# Check for lapacke availability
-find_path(LAPACKE_INCLUDE_PATH "lapacke.h" PATHS "/usr/include/lapacke" "/usr/include/openblas")
-if(NOT LAPACKE_INCLUDE_PATH)
-    message(FATAL_ERROR "lapacke.h header not found.")
-endif()
-
-include_directories(${LAPACKE_INCLUDE_PATH})
 
 # Compiler configuration
 set(CMAKE_CXX_STANDARD 11)
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG")
-
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
-        message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
-    endif()
-
-elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -mkl -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost -DNDEBUG")
-endif()
-
-
 # Includes
-set(INCLUDE_DIR src/Types
+set(PHASE_INCLUDE_DIRS src/Types
         src/System
         src/Math
         src/Geometry
@@ -62,9 +65,13 @@ set(INCLUDE_DIR src/Types
         src/Solvers
         src/Communicator
         src/Viewers
-        src/Utilities)
+        src/PostProcessing)
 
-include_directories(${INCLUDE_DIR})
+include_directories(${OPENBLAS_INCLUDE_DIRS})
+include_directories(${MKL_INCLUDE_DIRS})
+include_directories(${MPI_C_INCLUDE_PATH})
+include_directories(${Trilinos_INCLUDE_DIRS})
+include_directories(${PHASE_INCLUDE_DIRS})
 
 message(STATUS "Build configuration: " ${CMAKE_BUILD_TYPE})
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER_ID}")
@@ -81,7 +88,7 @@ message(STATUS "MPI include directory: " ${MPI_CXX_INCLUDE_PATH})
 message(STATUS "MPI libraries: " ${MPI_C_LIBRARIES})
 message(STATUS "Trilinos directory: " ${Trilinos_DIR})
 
-set(PHASE_LIBRARIES Solvers FiniteVolumeGrid2D FiniteVolume System Viewers Utilities Geometry Math Communicator)
+set(PHASE_LIBRARIES Solvers FiniteVolumeGrid2D FiniteVolume System Viewers PostProcessing Geometry Math Communicator)
 
 add_subdirectory(src)
 add_subdirectory(modules)

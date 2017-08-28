@@ -24,8 +24,7 @@ set(SOURCES Matrix.cpp
 
 add_library(Math ${HEADERS} ${SOURCES})
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-    target_link_libraries(Math ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-endif()
-
-target_link_libraries(Math ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+target_link_libraries(Math ${BLAS_LIBRARIES}
+        ${LAPACK_LIBRARIES}
+        ${Trilinos_LIBRARIES}
+        ${Trilinos_TPL_LIBRARIES})

@@ -22,18 +22,17 @@ LinearAlgebra
   {
     lib trilinos
     solver BiCGSTAB
-    preconditioner RILUK
     iluFill 0
     tolerance 1e-14
   }
 
   pEqn
   {
-    lib trilinos
-    solver BiCGSTAB
-    preconditioner RILUK
+    lib muelu
+    solver GMRES
     iluFill 6
     tolerance 1e-14
+    parameterFile mg.xml
   }
 }
 
@@ -48,8 +47,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 640
-	nCellsY 320
+	nCellsX 300
+	nCellsY 150
 
 	; Rectilinear parameters
 	width 0.8

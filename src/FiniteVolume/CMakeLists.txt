@@ -1,5 +1,4 @@
-set(HEADERS Discretization/CrankNicolson.h
-        Discretization/FaceInterpolation.h
+set(HEADERS Discretization/FaceInterpolation.h
         Field/ScalarGradient.h
         Discretization/Cicsam.h
         Discretization/Hric.h
@@ -39,8 +38,7 @@ set(HEADERS Discretization/CrankNicolson.h
         ImmersedBoundary/SeoMittal.h
         ImmersedBoundary/QuadraticIbm.h)
 
-set(SOURCES Discretization/CrankNicolson.cpp
-        Discretization/FaceInterpolation.tpp
+set(SOURCES Discretization/FaceInterpolation.tpp
         Discretization/FaceInterpolation.cpp
         Field/ScalarGradient.cpp
         Discretization/Cicsam.cpp

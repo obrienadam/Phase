@@ -95,7 +95,7 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
             if(isInIb(nb.cell().centroid()))
             {
                 const Cell &stCell = fluid_->nearestItems(2*cell.centroid() - nb.cell().centroid(), 1)[0];
-                LineSegment2D lnb = intersectionLine(cell.centroid(), nb.cell().centroid());
+                LineSegment2D lnb = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
 
                 Vector2D rvA = lnb.ptB() - cell.centroid();
                 Vector2D rvB = nb.cell().centroid() - lnb.ptB();

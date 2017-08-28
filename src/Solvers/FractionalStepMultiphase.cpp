@@ -1,6 +1,5 @@
 #include "FractionalStepMultiphase.h"
 #include "Source.h"
-#include "CrankNicolson.h"
 #include "Cicsam.h"
 #include "Hric.h"
 #include "SeoMittal.h"
@@ -168,7 +167,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         return u(face.lCell()) - dot(u(face.lCell()), nw) * nw / nw.magSqr();
     });
 
-    gradP.faceToCell(rho, rho);
+    gradP.faceToCell(rho, rho, fluid_);
 
     for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho(cell) * gradP(cell);
@@ -196,7 +195,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
     for (const Face &face: grid_->faces())
         sg(face) = -dot(g_, face.centroid()) * gradRho(face);
 
-    sg.faceToCell(rho, rho);
+    sg.faceToCell(rho, rho, fluid_);
 
     //- Update viscosity
     mu.savePreviousTimeStep(timeStep, 1);

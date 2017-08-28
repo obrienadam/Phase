@@ -34,22 +34,23 @@ Vector VectorFiniteVolumeField::vectorize() const
 
 template<>
 void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
-                                         const FiniteVolumeField<Scalar> &faceWeight)
+                                         const FiniteVolumeField<Scalar> &faceWeight,
+                                         const CellGroup &cells)
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid_->cells())
+    for (const Cell &cell: cells)
     {
         Vector2D sumSf(0., 0.), tmp(0., 0.);
 
-        for(const InteriorLink& nb: cell.neighbours())
+        for (const InteriorLink &nb: cell.neighbours())
         {
             Vector2D sf = nb.outwardNorm().abs();
             tmp += pointwise(self(nb.face()), sf) / faceWeight(nb.face());
             sumSf += sf;
         }
 
-        for(const BoundaryLink& bd: cell.boundaries())
+        for (const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D sf = bd.outwardNorm().abs();
             tmp += pointwise(self(bd.face()), sf) / faceWeight(bd.face());

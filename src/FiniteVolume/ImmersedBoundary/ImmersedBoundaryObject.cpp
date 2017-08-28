@@ -14,7 +14,7 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
 {
     cells_ = CellZone("Cells", grid.cellZoneRegistry());
 
-    zoneRegistry_ = std::shared_ptr<CellZone::ZoneRegistry>(new CellZone::ZoneRegistry());
+    zoneRegistry_ = std::make_shared<CellZone::ZoneRegistry>();
     ibCells_ = CellZone("IbCells", zoneRegistry_);
     solidCells_ = CellZone("SolidCells", zoneRegistry_);
     freshCells_ = CellZone("FreshCells", zoneRegistry_);
@@ -40,37 +40,6 @@ void ImmersedBoundaryObject::setMotion(std::shared_ptr<Motion> motion)
     motion_ = motion;
 }
 
-void ImmersedBoundaryObject::setMotionType(const std::map<std::string, std::string> &properties)
-{
-    std::string type = properties.find("type")->second;
-
-    if(type == "none")
-        motion_ = nullptr;
-    else if(type == "translating")
-    {
-        Vector2D vel = properties.find("velocity")->second;
-        Vector2D acc = properties.find("acceleration")->second;
-
-        motion_ = std::shared_ptr<TranslatingMotion>(new TranslatingMotion(shapePtr_->centroid(), vel, acc));
-    }
-    else if(type == "oscillating")
-    {
-        Vector2D freq = properties.find("frequency")->second;
-        Vector2D amp = properties.find("amplitude")->second;
-        Vector2D phase = properties.find("phase")->second;
-
-        motion_ = std::shared_ptr<OscillatingMotion>(new OscillatingMotion(shapePtr_->centroid(), freq, amp, phase, 0.));
-    }
-    else if(type == "solidBody")
-    {
-        Scalar materialDensity = std::stod(properties.find("materialDensity")->second);
-        Vector2D vel = properties.find("velocity")->second;
-        Scalar omega = std::stod(properties.find("angularVelocity")->second);
-    }
-    else
-        throw Exception("ImmersedBoundaryObject", "update", "invalid motion type \"" + type + "\".");
-}
-
 void ImmersedBoundaryObject::setZone(CellZone &zone)
 {
     fluid_ = &zone;
@@ -87,11 +56,21 @@ void ImmersedBoundaryObject::clear()
     grid_.setCellsActive(fluid_->begin(), fluid_->end());
 }
 
-LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const
+LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D& ln) const
 {
-    LineSegment2D ln(ptA, ptB);
     auto xc = shapePtr_->intersections(ln);
     return xc.empty() ? ln: LineSegment2D(ln.ptA(), xc[0]);
+}
+
+Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
+{
+    switch(shapePtr_->type())
+    {
+        case Shape2D::CIRCLE:
+            return (shapePtr_->centroid() - pt).unitVec();
+        default:
+            throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
+    }
 }
 
 std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
