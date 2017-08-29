@@ -22,18 +22,14 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
         message(FATAL_ERROR "lapacke.h and/or cblas.h headers not found.")
     endif ()
 
+    include_directories(${OPENBLAS_INCLUDE_DIRS})
+
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -mkl -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-mkl -qopenmp -O3 -xHost -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xhost -DNDEBUG")
 
     # Look for mkl by default
-    set(BLA_VENDOR Intel)
-
-    # Check for lapacke/cblas availability
-    find_path(MKL_INCLUDE_DIRS NAMES "mkl_lapacke.h" "mkl_cblas.h" PATH_SUFFIXES "mkl")
-    if (NOT MKL_INCLUDE_DIRS)
-        message(FATAL_ERROR "lapacke.h and/or cblas.h headers not found.")
-    endif ()
+    set(BLA_VENDOR Intel10_64lp)
 endif ()
 
 # find required packages
@@ -67,8 +63,6 @@ set(PHASE_INCLUDE_DIRS src/Types
         src/Viewers
         src/PostProcessing)
 
-include_directories(${OPENBLAS_INCLUDE_DIRS})
-include_directories(${MKL_INCLUDE_DIRS})
 include_directories(${MPI_C_INCLUDE_PATH})
 include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${PHASE_INCLUDE_DIRS})
