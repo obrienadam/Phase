@@ -132,6 +132,9 @@ Scalar FractionalStepIncrementalMultiphase::solveUEqn(Scalar timeStep)
 {
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
     const VectorFiniteVolumeField &ft0 = ft.oldField(0);
+
+    gradP.faceToCell(rho, rho.oldField(0), fluid_);
+
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.solidVelocity(u)
              == fv::laplacian(mu, u, 0.5) - src::src(gradP - sg0 - ft0, fluid_));
@@ -186,7 +189,6 @@ Scalar FractionalStepIncrementalMultiphase::solvePEqn(Scalar timeStep)
 
     gradP.savePreviousTimeStep(timeStep, 1);
     gradP.computeFaces();
-    gradP.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
     gradP.faceToCell(rho, rho, fluid_);
 
     return error;

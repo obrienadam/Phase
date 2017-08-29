@@ -2,11 +2,9 @@
 #define TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
 
 #include <Teuchos_DefaultMpiComm.hpp>
-#include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <BelosSolverFactory.hpp>
 
 #include "SparseMatrixSolver.h"
 
@@ -45,14 +43,12 @@ private:
 
     typedef Teuchos::MpiComm<Index> TeuchosComm;
     typedef Tpetra::Map<Index, Index> TpetraMap;
-    typedef Tpetra::RowMatrix<Scalar, Index, Index> TpetraRowMatrix;
     typedef Tpetra::CrsMatrix<Scalar, Index, Index> TpetraCrsMatrix;
     typedef Tpetra::Vector<Scalar, Index, Index> TpetraVector;
     typedef Tpetra::MultiVector<Scalar, Index, Index> TpetraMultiVector;
     typedef Tpetra::Operator<Scalar, Index, Index> TpetraOperator;
     typedef Belos::LinearProblem<Scalar, TpetraMultiVector, TpetraOperator> LinearProblem;
     typedef Belos::SolverManager<Scalar, TpetraMultiVector, TpetraOperator> Solver;
-    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> Factory;
     typedef MueLu::TpetraOperator<Scalar, Index, Index> MueLuTpetraOperator;
 
     const Communicator& comm_;

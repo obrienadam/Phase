@@ -1,4 +1,6 @@
 #include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <BelosSolverFactory.hpp>
+
 #include "TrilinosMueluSparseMatrixSolver.h"
 
 TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm)
@@ -122,7 +124,8 @@ void TrilinosMueluSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field
 
 void TrilinosMueluSparseMatrixSolver::setup(const boost::property_tree::ptree &parameters)
 {
-    Factory factory;
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
+    SolverFactory factory;
 
     belosParams_->set("Maximum Iterations", parameters.get<int>("maxIters", 500));
     belosParams_->set("Convergence Tolerance", parameters.get<Scalar>("tolerance", 1e-8));

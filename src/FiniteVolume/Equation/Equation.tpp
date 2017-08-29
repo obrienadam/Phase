@@ -164,8 +164,8 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
     else if(lib == "trilinos" || lib == "belos")
         spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
-    else if(lib == "muelu")
-        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm);
+    //else if(lib == "muelu")
+    //    spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm);
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
