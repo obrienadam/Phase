@@ -24,6 +24,48 @@ void Equation<T>::clear()
 }
 
 template<class T>
+Scalar Equation<T>::minDiagonal() const
+{
+    Scalar minDiagonal = std::numeric_limits<Scalar>::infinity();
+
+    int rowNo = 0;
+    for(const auto& row: coeffs_)
+    {
+        Scalar diagonal = 0.;
+        for (const auto &entry: row)
+            if(rowNo == entry.first)
+                diagonal += entry.second;
+
+        minDiagonal = std::abs(diagonal) < std::abs(minDiagonal) ? diagonal: minDiagonal;
+        rowNo++;
+    }
+
+    return minDiagonal;
+}
+
+template<class T>
+Scalar Equation<T>::minDiagonalDominance() const
+{
+    Scalar minDiagonalDominance = std::numeric_limits<Scalar>::infinity();
+
+    int rowNo = 0;
+    for(const auto& row: coeffs_)
+    {
+        Scalar diagonal = 0., offDiagonalSum = 0.;
+        for (const auto &entry: row)
+            if(rowNo == entry.first)
+                diagonal += std::abs(entry.second);
+            else
+                offDiagonalSum += std::abs(entry.second);
+
+        minDiagonalDominance = std::min(diagonal / offDiagonalSum, minDiagonalDominance);
+        rowNo++;
+    }
+
+    return minDiagonalDominance;
+}
+
+template<class T>
 Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
 {
     if (this == &rhs)

@@ -73,7 +73,7 @@ public:
 
     Vector2D contactLineNormal(const Cell& lCell,
                                const Cell& rCell,
-                               const ImmersedBoundaryObject& ibObj);
+                               const ImmersedBoundaryObject& ibObj) const;
 
     void smoothGammaField();
 

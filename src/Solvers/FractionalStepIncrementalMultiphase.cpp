@@ -4,7 +4,7 @@
 #include "Hric.h"
 #include "FaceInterpolation.h"
 #include "Source.h"
-#include "GhostCellImmersedBoundaryObject.h"
+#include "GhostCellImmersedBoundaryObjectContactLineTracker.h"
 
 FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const Input &input,
                                                                          std::shared_ptr<FiniteVolumeGrid2D> &grid)
@@ -256,6 +256,10 @@ void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
 
     //- Update viscosity from kinematic viscosity
     mu.savePreviousTimeStep(timeStep, 1);
+    mu.computeCells([this](const Cell &cell) {
+        Scalar g = gamma(cell);
+        return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+    });
     mu.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
         return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);

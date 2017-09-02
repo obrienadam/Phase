@@ -65,6 +65,11 @@ public:
     //- Clear equations
     void clear();
 
+    //- Misc
+    Scalar minDiagonal() const;
+
+    Scalar minDiagonalDominance() const;
+
     //- Operators
     Equation<T> &operator=(const Equation<T> &rhs);
 

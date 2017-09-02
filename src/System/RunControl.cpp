@@ -1,5 +1,6 @@
 #include "RunControl.h"
 #include "IbViewer.h"
+#include "PostProcessing.h"
 
 void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 {
@@ -26,31 +27,34 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     solver.initialize();
 
     time_.start();
-    for(
-        time = 0., iterNo = 0;
-        time < maxTime;
-        time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
-        )
+    for (
+            time = 0., iterNo = 0;
+            time < maxTime;
+            time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
+            )
     {
-        if(iterNo%fileWriteFrequency == 0)
+        if (iterNo % fileWriteFrequency == 0)
         {
             viewer.write(time);
             ibViewer.write(time);
 
-          //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
-          //      vi.integrate();
+            //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
+            //      vi.integrate();
 
-          //  for(ForceIntegrator &fi: solver.forceIntegrators())
-          //      fi.integrate();
+            //  for(ForceIntegrator &fi: solver.forceIntegrators())
+            //      fi.integrate();
 
-          //  viewer.write(solver.volumeIntegrators());
+            //  viewer.write(solver.volumeIntegrators());
         }
 
         solver.solve(timeStep);
+        solver.postProcess(time + timeStep);
+
         time_.stop();
+
         solver.printf("Time step: %.2e s\n", timeStep);
-        solver.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time, time/maxTime*100);
-        solver.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds()/(iterNo + 1));
+        solver.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time + timeStep, (time + timeStep) / maxTime * 100);
+        solver.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds() / (iterNo + 1));
         solver.printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
     }
     time_.stop();

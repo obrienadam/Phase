@@ -78,34 +78,34 @@ std::vector<Point2D> Box::intersections(const LineSegment2D &line) const
 
 Point2D Box::nearestIntersect(const Point2D &point) const
 {
-    Point2D xc;
+    Point2D nearestXc;
     Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
 
     for (const LineSegment2D &edge: edges())
     {
-        if (!edge.isBounded(point))
-            continue;
+        Vector2D rxc;
 
-        Vector2D t = edge.ptB() - edge.ptA();
-        t = dot(point - edge.ptA(), t) * t / t.magSqr();
-
-        Vector2D n = point - edge.ptA() - t;
-
-        if (n.magSqr() < minDistSqr)
+        if(edge.isBounded(point))
         {
-            minDistSqr = n.magSqr();
-            xc = edge.ptA() + t;
+            Vector2D r = point - edge.ptA();
+            Vector2D t = edge.ptB() - edge.ptA();
+            rxc = edge.ptA() + dot(r, t) * t / t.magSqr() - point;
+        }
+        else
+        {
+            rxc = ((edge.ptA() - point).magSqr() < (edge.ptB() - point).magSqr() ? edge.ptA(): edge.ptB()) - point;
+        }
+
+        Scalar distSqr = rxc.magSqr();
+
+        if(distSqr < minDistSqr)
+        {
+            nearestXc = point + rxc;
+            minDistSqr = distSqr;
         }
     }
 
-    for (const Point2D &vertex: vertices())
-        if ((point - vertex).magSqr() < minDistSqr)
-        {
-            minDistSqr = (point - vertex).magSqr();
-            xc = vertex;
-        }
-
-    return xc;
+    return nearestXc;
 }
 
 LineSegment2D Box::nearestEdge(const Point2D &point) const
@@ -115,18 +115,23 @@ LineSegment2D Box::nearestEdge(const Point2D &point) const
 
     for (const LineSegment2D &edge: edges())
     {
-        if (!edge.isBounded(point))
-            continue;
+        Scalar distSqr;
 
-        Vector2D t = edge.ptB() - edge.ptA();
-        t = dot(point - edge.ptA(), t) * t / t.magSqr();
+        if(edge.isBounded(point))
+        {
+            Vector2D r = point - edge.ptA();
+            Vector2D t = edge.ptB() - edge.ptA();
+            distSqr = (r - dot(r, t) * t / t.magSqr()).magSqr();
+        }
+        else
+        {
+            distSqr = std::min((edge.ptA() - point).magSqr(), (edge.ptB() - point).magSqr());
+        }
 
-        Vector2D n = point - edge.ptA() - t;
-
-        if (n.magSqr() < minDistSqr)
+        if(distSqr < minDistSqr)
         {
             nearestEdge = edge;
-            minDistSqr = n.magSqr();
+            minDistSqr = distSqr;
         }
     }
 

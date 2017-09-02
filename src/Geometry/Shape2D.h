@@ -55,7 +55,6 @@ public:
     virtual void rotate(Scalar theta) = 0;
 
     //- Translations
-
     virtual Shape2D &move(const Point2D& pos) = 0;
 
     virtual Shape2D &operator+=(const Vector2D &vec) = 0;

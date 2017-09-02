@@ -38,6 +38,8 @@ public:
     Scalar area() const
     { return area_; }
 
+    Polygon convexHull() const;
+
     Scalar momentOfInertia() const
     { throw Exception("Polygon", "momentOfInertia", "not implemented."); }
 

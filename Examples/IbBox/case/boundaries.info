@@ -70,7 +70,7 @@ ImmersedBoundaries
 {
   Box1
   {
-    method least-squares
+    method ghost-cell
 
     geometry
     {

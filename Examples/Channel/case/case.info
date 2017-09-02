@@ -28,11 +28,12 @@ LinearAlgebra
 
   pEqn
   {
-    lib muelu
+    lib trilinos
     solver GMRES
-    iluFill 6
+    iluFill 4
+    schwarzIters 2
+    schwarzCombineMode ADD
     tolerance 1e-14
-    parameterFile mg.xml
   }
 }
 

@@ -4,8 +4,6 @@
 #include "Solver.h"
 #include "StepImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
-#include "ForcingCellImmersedBoundaryObject.h"
-#include "LeastSquaresImmersedBoundaryObject.h"
 #include "TranslatingMotion.h"
 #include "OscillatingMotion.h"
 #include "SolidBodyMotion.h"
@@ -37,10 +35,6 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             ibObject = std::shared_ptr<StepImmersedBoundaryObject>(new StepImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
         else if(method == "ghost-cell")
             ibObject = std::shared_ptr<GhostCellImmersedBoundaryObject>(new GhostCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
-        else if(method == "forcing-cell")
-            ibObject = std::shared_ptr<ForcingCellImmersedBoundaryObject>(new ForcingCellImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
-        else if(method == "least-squares")
-            ibObject = std::shared_ptr<LeastSquaresImmersedBoundaryObject>(new LeastSquaresImmersedBoundaryObject(ibObjectInput.first, id++, solver.grid()));
         else
             throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid immersed boundary method \"" + method + "\".");
 
@@ -234,6 +228,16 @@ const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string& name) c
     throw Exception("ImmersedBoundary", "ibObj", "no immersed boundary object named \"" + name + "\".");
 }
 
+std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
+{
+    std::vector<Ref<const ImmersedBoundaryObject>> refs;
+
+    std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
+                   [](const std::shared_ptr<ImmersedBoundaryObject> &ptr) { return std::cref(*ptr); });
+
+    return refs;
+}
+
 void ImmersedBoundary::update(Scalar timeStep)
 {
     for (auto &ibObj: ibObjs_)
@@ -289,16 +293,6 @@ std::vector<CutCell> ImmersedBoundary::constructCutCells(const CellGroup &cellGr
     }
 
     return cutCells;
-}
-
-std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
-{
-    std::vector<Ref<const ImmersedBoundaryObject>> refs;
-
-    std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
-                   [](const std::shared_ptr<ImmersedBoundaryObject> &ptr) { return std::cref(*ptr); });
-
-    return refs;
 }
 
 bool ImmersedBoundary::isIbCell(const Cell &cell) const

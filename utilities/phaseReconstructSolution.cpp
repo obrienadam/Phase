@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Point;
+typedef std::set<boost::filesystem::path, std::function<bool(const boost::filesystem::path&, const boost::filesystem::path&)>> PathSet;
 
 struct Section
 {
@@ -74,46 +75,50 @@ int main(int argc, char *argv[])
     using namespace std;
     using namespace boost::filesystem;
 
-    regex re("Proc[0-9]+"); // Check a processor directory
-    set<path> gridDirs;
+    regex re("Proc([0-9]+)"); // Check a processor directory
+    PathSet gridDirs([re](const path& p1, const path& p2){
+        smatch matches[2];
+        std::regex_search(p1.string(), matches[0], re);
+        std::regex_search(p2.string(), matches[1], re);
+        return stoi(matches[0][1].str()) < stoi(matches[1][1].str());
+    });
 
     //- Load the global grids first
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
-        if (regex_match(dir->path().filename().c_str(), re))
+        if (regex_match(dir->path().filename().string(), re))
         {
             path gridFile = dir->path();
             gridDirs.insert(gridFile /= "Grid.cgns");
         }
 
+    //- Sort the grid dirs by proc (important)
+
     vector<Base> procGrids;
-    for (path p: gridDirs)
+    for (const path &p: gridDirs)
         procGrids.push_back(loadGrid(p.c_str()));
 
     //- Load transient solution data
     re = regex("[0-9]+\\.[0-9]+");
-
-    std::vector<path> solutionDirs;
-    for (directory_iterator end, dir("./solution"); dir != end; ++dir)
-        if (regex_match(dir->path().filename().c_str(), re))
-            solutionDirs.push_back(dir->path());
-
-    std::sort(solutionDirs.begin(), solutionDirs.end(), [](const path& p1, const path& p2){
-        double t1 = stod(p1.filename().c_str());
-        double t2 = stod(p2.filename().c_str());
-
-        return t1 < t2;
+    PathSet solutionDirs([re](const path& p1, const path& p2){
+        smatch matches[2];
+        std::regex_search(p1.string(), matches[0], re);
+        std::regex_search(p2.string(), matches[1], re);
+        return stod(matches[0][0].str()) < stod(matches[1][0].str());
     });
+
+    for (directory_iterator end, dir("./solution"); dir != end; ++dir)
+        if (regex_match(dir->path().filename().string(), re))
+            solutionDirs.insert(dir->path());
 
     vector<double> timeSteps;
     vector<vector<Solution>> procSolutions(procGrids.size());
-
-    for (path solutionDir: solutionDirs)
+    for (const path &solutionDir: solutionDirs)
     {
         int proc = 0;
         for (path procDir: gridDirs)
         {
             procDir = solutionDir / procDir.parent_path().filename() / "Solution.cgns";
-            procSolutions[proc++].push_back(loadSolution(procDir.c_str()));
+            procSolutions[proc++].push_back(loadSolution(procDir.string()));
         }
 
         timeSteps.push_back(stod(solutionDir.filename().c_str()));
@@ -281,7 +286,6 @@ Solution loadSolution(const std::string &filename)
     std::cout << "Loading solution \"" << filename << "\"...\n";
 
     cg_open(filename.c_str(), CG_MODE_READ, &fid);
-
     cg_sol_info(fid, 1, 1, 1, solution.name, &solution.location);
 
     int datadim;

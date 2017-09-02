@@ -22,6 +22,8 @@ public:
 
     Point2D intersection(const Line2D& other) const;
 
+    Point2D nearestPoint(const Point2D& pt) const;
+
     const Point2D &r0() const
     { return r0_; }
 

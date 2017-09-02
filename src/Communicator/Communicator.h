@@ -23,6 +23,8 @@ public:
 
     int printf(const char *format, ...) const;
 
+    int printf(const std::string& format, ...) const;
+
     //- Info
     int rank() const;
 
@@ -34,7 +36,7 @@ public:
     bool isMainProc() const
     { return rank() == mainProcNo(); }
 
-    MPI_Comm communicator() const
+    const MPI_Comm& communicator() const
     { return comm_; }
 
     //- Sync

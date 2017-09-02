@@ -7,6 +7,7 @@
 #include "TensorFiniteVolumeField.h"
 #include "SparseMatrixSolver.h"
 #include "ImmersedBoundary.h"
+#include "PostProcessing.h"
 
 class Solver
 {
@@ -77,13 +78,13 @@ public:
     }
 
     //- Field data structures
-    const std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> >& integerFields() const
+    const std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>> >& integerFields() const
     { return integerFields_; }
 
-    const std::map<std::string, std::shared_ptr<ScalarFiniteVolumeField>>& scalarFields() const
+    const std::unordered_map<std::string, std::shared_ptr<ScalarFiniteVolumeField>>& scalarFields() const
     { return scalarFields_; }
 
-    const std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>>& vectorFields() const
+    const std::unordered_map<std::string, std::shared_ptr<VectorFiniteVolumeField>>& vectorFields() const
     { return vectorFields_; }
 
     //- Field lookup
@@ -122,6 +123,13 @@ public:
 
     virtual void initialize() {}
 
+    //- Post-processing
+    void postProcess(Scalar time)
+    {
+        for(auto ppObj: postProcessingObjs_)
+            ppObj->compute(time);
+    }
+
 protected:
 
     void setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolumeField &field);
@@ -143,14 +151,19 @@ protected:
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
 
     //- Fields and geometries
-    mutable std::map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
-    mutable std::map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> scalarFields_;
-    mutable std::map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
-    mutable std::map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
+    mutable std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
+    mutable std::unordered_map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> scalarFields_;
+    mutable std::unordered_map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
+    mutable std::unordered_map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
+    //- Solver parameters
     Scalar maxTimeStep_;
 
+    //- Immersed boundary manager
     ImmersedBoundary ib_;
+
+    //- Post processing
+    std::vector<std::shared_ptr<PostProcessing>> postProcessingObjs_;
 };
 
 #endif

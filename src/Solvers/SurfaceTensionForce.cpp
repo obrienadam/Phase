@@ -82,7 +82,7 @@ void SurfaceTensionForce::computeInterfaceNormals()
 
 Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
                                                 const Cell &rCell,
-                                                const ImmersedBoundaryObject &ibObj)
+                                                const ImmersedBoundaryObject &ibObj) const
 {
     LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
     Vector2D en = ibObj.nearestEdgeNormal(ln.ptB());
@@ -126,7 +126,7 @@ void SurfaceTensionForce::smoothGammaField()
 //        return r < 1. ? pow(1. - r*r, 3) : 0.;
 //    });
     //- This kernel is better
-    smooth(gamma_, grid().localActiveCells(), grid().globalActiveCells(), kernelWidth_, *gammaTilde_,
+    smooth(gamma_, grid().cellZone("fluid"), grid().globalActiveCells(), kernelWidth_, *gammaTilde_,
            [](const Cell &cell, const Cell &kCell, Scalar e) {
                Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
                return r < 1. ? std::cos(M_PI * r) + 1. : 0.;

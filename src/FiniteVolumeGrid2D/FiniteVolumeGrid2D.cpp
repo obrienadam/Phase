@@ -342,6 +342,11 @@ const Node &FiniteVolumeGrid2D::findNearestNode(const Point2D &pt) const
     return nodeGroup_.nearestItems(pt, 1)[0];
 }
 
+std::vector<Ref<const Node>> FiniteVolumeGrid2D::findNearestNodes(const Point2D& pt, int nNodes) const
+{
+    return nodeGroup_.nearestItems(pt, nNodes);
+}
+
 std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementConnectivity() const
 {
     using namespace std;
@@ -581,6 +586,9 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
         globalIndices[2][cell.id()] = cell.index(3);
     }
 
+    std::cout << "Proc " << comm_->rank() << " index range: " << localActiveCells_.begin()->get().index(1)
+              << " -- " << (localActiveCells_.end() - 1)->get().index(1) << std::endl;
+
     //- Must communicate new global indices to neighbours
     sendMessages(globalIndices[0]);
     sendMessages(globalIndices[1]);
@@ -603,9 +611,15 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
         }
 
     nActiveCellsGlobal_ = comm_->sum(nLocalActiveCells());
+
     comm_->printf("Num local cells main proc = %d\nNum global cells = %d\n",
                   nLocalCells[comm_->rank()],
                   nActiveCellsGlobal_);
+}
+
+void FiniteVolumeGrid2D::computeParMetisGlobalOrdering()
+{
+
 }
 
 //- Protected methods

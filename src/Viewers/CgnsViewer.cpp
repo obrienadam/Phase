@@ -210,7 +210,9 @@ void CgnsViewer::linkGrid(int fid, int bid, int zid, const Communicator& comm)
     cg_goto(fid, bid, "Zone_t", zid, "end");
     cg_link_write("GridCoordinates", filename, ("/" + filename_ + "/Cells/GridCoordinates").c_str());
     cg_link_write("GridElements", filename, ("/" + filename_ + "/Cells/GridElements").c_str());
-    cg_link_write("ZoneBC", filename, ("/" + filename_ + "/Cells/ZoneBC").c_str());
+
+    if(!solver_.grid().patches().empty())
+        cg_link_write("ZoneBC", filename, ("/" + filename_ + "/Cells/ZoneBC").c_str());
 
     for(const Patch& patch: solver_.grid().patches())
     {

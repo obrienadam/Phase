@@ -56,18 +56,25 @@ void ImmersedBoundaryObject::clear()
     grid_.setCellsActive(fluid_->begin(), fluid_->end());
 }
 
-LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D& ln) const
+LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) const
 {
     auto xc = shapePtr_->intersections(ln);
-    return xc.empty() ? ln: LineSegment2D(ln.ptA(), xc[0]);
+    return xc.empty() ? ln : LineSegment2D(ln.ptA(), xc[0]);
 }
 
 Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
 {
-    switch(shapePtr_->type())
+    switch (shapePtr_->type())
     {
         case Shape2D::CIRCLE:
             return (shapePtr_->centroid() - pt).unitVec();
+        case Shape2D::BOX:
+        case Shape2D::POLYGON:
+        {
+            auto edge = shapePtr_->nearestEdge(pt);
+            return dot(edge.norm(), shapePtr_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
+                                                                                : -edge.norm().unitVec();
+        }
         default:
             throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
     }
@@ -140,27 +147,27 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, const 
 
 Vector2D ImmersedBoundaryObject::acceleration() const
 {
-    return motion_ ? motion_->acceleration(): Vector2D(0., 0.);
+    return motion_ ? motion_->acceleration() : Vector2D(0., 0.);
 }
 
 Vector2D ImmersedBoundaryObject::acceleration(const Point2D &point) const
 {
-    return motion_ ? motion_->acceleration(point): Vector2D(0., 0.);
+    return motion_ ? motion_->acceleration(point) : Vector2D(0., 0.);
 }
 
 Vector2D ImmersedBoundaryObject::velocity() const
 {
-    return motion_ ? motion_->velocity(): Vector2D(0., 0.);
+    return motion_ ? motion_->velocity() : Vector2D(0., 0.);
 }
 
 Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
 {
-    return motion_ ? motion_->velocity(point): Vector2D(0., 0.);
+    return motion_ ? motion_->velocity(point) : Vector2D(0., 0.);
 }
 
 void ImmersedBoundaryObject::update(Scalar timeStep)
 {
-    if(motion_)
+    if (motion_)
     {
         motion_->update(*this, timeStep);
         updateCells();
@@ -200,7 +207,7 @@ Equation<Vector2D> ImmersedBoundaryObject::solidVelocity(VectorFiniteVolumeField
 {
     Equation<Vector2D> eqn(u);
 
-    for(const Cell& cell: solidCells_)
+    for (const Cell &cell: solidCells_)
     {
         eqn.add(cell, cell, 1.);
         eqn.addSource(cell, -velocity(cell.centroid()));

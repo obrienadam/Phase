@@ -146,27 +146,6 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     return eqn;
 }
 
-Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField& gamma, const Celeste& fst) const
-{
-    Equation<Scalar> eqn(gamma);
-
-    std::vector<GhostCellStencil> stencils;
-    int i = 0;
-    for(const Cell& cell: ibCells_)
-        stencils.push_back(GhostCellStencil(cell, *this, grid_, fst.getTheta(*this), -stencils_[i++].ipGrad(gamma)));
-
-    for(const GhostCellStencil& st: stencils)
-    {
-        eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
-        eqn.addSource(st.cell(), 0.);
-    }
-
-    for(const Cell& cell: solidCells_)
-        eqn.add(cell, cell, 1.);
-
-    return eqn;
-}
-
 Equation<Vector2D> GhostCellImmersedBoundaryObject::solidVelocity(VectorFiniteVolumeField &u) const
 {
     Equation<Vector2D> eqn(u);

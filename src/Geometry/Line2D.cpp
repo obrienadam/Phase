@@ -8,11 +8,12 @@ Line2D::Line2D()
 }
 
 Line2D::Line2D(const Point2D &r0, const Vector2D &n)
-    :
-      r0_(r0),
-      n_(n.unitVec())
+        :
+        r0_(r0),
+        n_(n.unitVec()),
+        d_(n_.tangentVec())
 {
-    d_ = n_.tangentVec();
+
 }
 
 Point2D Line2D::operator()(Scalar t) const
@@ -38,7 +39,12 @@ bool Line2D::isBelowLine(const Point2D &pt) const
 
 Point2D Line2D::intersection(const Line2D &other) const
 {
-    return (*this)(cross(other.r0_ - r0_, -other.d_)/cross(d_, -other.d_));
+    return (*this)(cross(other.r0_ - r0_, -other.d_) / cross(d_, -other.d_));
+}
+
+Point2D Line2D::nearestPoint(const Point2D &pt) const
+{
+    return pt - dot(pt - r0_, n_) * n_;
 }
 
 //- Static functions

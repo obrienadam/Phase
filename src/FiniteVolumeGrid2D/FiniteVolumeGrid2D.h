@@ -190,6 +190,8 @@ public:
     //- Entity searches
     const Node &findNearestNode(const Point2D &pt) const;
 
+    std::vector<Ref<const Node>> findNearestNodes(const Point2D& pt, int nNodes) const;
+
     //- Parallel/paritioning
     const Communicator &comm() const
     { return *comm_; }
@@ -206,6 +208,8 @@ public:
 
     //- Active cell ordering, required for lineary algebra!
     void computeGlobalOrdering();
+
+    void computeParMetisGlobalOrdering();
 
     //- Misc
     const BoundingBox &boundingBox() const

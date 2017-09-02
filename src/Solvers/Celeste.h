@@ -3,6 +3,7 @@
 
 #include "SurfaceTensionForce.h"
 #include "Matrix.h"
+#include "GhostCellStencil.h"
 
 class Celeste : public SurfaceTensionForce
 {
@@ -30,6 +31,8 @@ protected:
 
     virtual void computeGradGammaTilde();
 
+    virtual void computeGradGammaTilde(const ImmersedBoundary& ib);
+
     virtual void computeCurvature();
 
     void computeCurvature(const ImmersedBoundary& ib);
@@ -44,6 +47,7 @@ protected:
 
     std::vector<bool> modifiedStencil_;
     std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
+    std::vector<std::pair<GhostCellStencil, GhostCellStencil>> clStencils_;
 };
 
 #endif

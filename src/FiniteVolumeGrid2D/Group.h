@@ -85,6 +85,15 @@ public:
 
     bool isInGroup(const T &item) const;
 
+    template <class const_iterator>
+    bool isInGroup(const_iterator begin, const_iterator end) const
+    {
+        for(const_iterator it = begin; it != end; ++it)
+            if(!isInGroup(*it))
+                return false;
+        return true;
+    }
+
 protected:
 
     typedef std::pair<Point2D, Label> Value;

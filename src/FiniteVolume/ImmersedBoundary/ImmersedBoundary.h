@@ -22,12 +22,26 @@ public:
     const CellZone& zone() const
     { return *zone_; }
 
+    //- Immersed boundary object access
     std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D& pt) const;
+
+    const std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjPtrs() const
+    { return ibObjs_; }
 
     const ImmersedBoundaryObject &ibObj(const std::string& name) const;
 
+    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
+
+    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator begin() const
+    { return ibObjs_.begin(); }
+
+    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator end() const
+    { return ibObjs_.end(); }
+
+    //- Updates
     void update(Scalar timeStep);
 
+    //- Boundary conditions
     template<class T>
     void copyBoundaryTypes(const FiniteVolumeField<T>& srcField, const FiniteVolumeField<T>& destField)
     {
@@ -51,14 +65,6 @@ public:
     void clearFreshCells();
 
     std::vector<CutCell> constructCutCells(const CellGroup& cellGroup) const;
-
-    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
-
-    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator begin() const
-    { return ibObjs_.begin(); }
-
-    std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator end() const
-    { return ibObjs_.end(); }
 
     bool isIbCell(const Cell &cell) const;
 

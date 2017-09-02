@@ -15,27 +15,18 @@ Solver
 	pressureCorrectionRelaxation 0.5
 	numInnerIterations 2
 	numPressureCorrections 1
-	smoothingKernelRadius 0.0401
 }
 
 LinearAlgebra
 {
 	uEqn
 	{
-		lib trilinos
-		solver BiCGSTAB
-		preconditioner DIAGONAL
-		tolerance 1e-3
+		lib eigen
 	}
 
 	pEqn
 	{
-		lib trilinos
-		solver GMRES
-		preconditioner RILUK
-		iluFill 4
-		tolerance 1e-3
-		maxPreconditionerUses 10
+		lib eigen
 	}
 }
 

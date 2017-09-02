@@ -1,8 +1,14 @@
-set(HEADERS ContactLineTracker.h
+set(HEADERS PostProcessing.h
+        ReynoldsNumber.h
+        GhostCellImmersedBoundaryObjectContactLineTracker.h
+        ContactLineTracker.h
         ForceIntegrator.h
         IbTracker.h)
 
-set(SOURCE ContactLineTracker.cpp
+set(SOURCE PostProcessing.cpp
+        ReynoldsNumber.cpp
+        GhostCellImmersedBoundaryObjectContactLineTracker.cpp
+        ContactLineTracker.cpp
         ForceIntegrator.cpp
         IbTracker.cpp)
 
