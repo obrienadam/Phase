@@ -586,9 +586,6 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
         globalIndices[2][cell.id()] = cell.index(3);
     }
 
-    std::cout << "Proc " << comm_->rank() << " index range: " << localActiveCells_.begin()->get().index(1)
-              << " -- " << (localActiveCells_.end() - 1)->get().index(1) << std::endl;
-
     //- Must communicate new global indices to neighbours
     sendMessages(globalIndices[0]);
     sendMessages(globalIndices[1]);

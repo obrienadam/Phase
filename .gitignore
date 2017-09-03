@@ -103,6 +103,7 @@ lib
 *.mp4
 *.log
 *.cbp
+submit.sh
 
 # Video files
 *.wmv
