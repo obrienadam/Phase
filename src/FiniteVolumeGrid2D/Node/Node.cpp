@@ -67,3 +67,12 @@ std::vector<Scalar> Node::distanceWeights() const
 
     return weights;
 }
+
+bool Node::cellBounded(const Point2D &pt) const
+{
+    std::vector<Point2D> centroids;
+    for(const Cell& cell: cells())
+        centroids.push_back(cell.centroid());
+
+    return Polygon::convexHull(centroids.begin(), centroids.end()).isInside(pt);
+}

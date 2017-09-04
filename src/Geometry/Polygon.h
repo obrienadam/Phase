@@ -13,6 +13,15 @@ class Polygon : public Shape2D
 {
 public:
 
+    template <class const_iterator>
+    static Polygon convexHull(const_iterator begin, const_iterator end)
+    {
+        boost::geometry::model::ring<Point2D, false, true> poly;
+        boost::geometry::model::multi_point<Point2D> pts(begin, end);
+        boost::geometry::convex_hull(pts, poly);
+        return Polygon(poly);
+    }
+
     Polygon();
 
     template<class const_iterator>

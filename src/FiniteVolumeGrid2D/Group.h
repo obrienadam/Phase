@@ -49,7 +49,9 @@ public:
 
     virtual void remove(const Group<T>& other);
 
-    virtual void merge(Group<T> &other);
+    Group<T>& operator+=(const Group<T>& rhs);
+
+    Group<T>& operator-=(const Group<T>& rhs);
 
     Group<T> intersection(const Group<T>& other) const;
 
@@ -97,15 +99,14 @@ public:
 protected:
 
     typedef std::pair<Point2D, Label> Value;
-
     typedef boost::geometry::index::rtree<Value, boost::geometry::index::quadratic<16> > Rtree;
 
     std::vector<Ref<const T> > getRefs(const std::vector<Value> &vals) const;
 
+    //- Data
     std::string name_;
     std::unordered_map<Label, Ref<const T> > itemSet_; // Allows cell lookup via an id
     std::vector<Ref<const T> > items_; // Used for faster iteration over all cells
-
     Rtree rTree_; //- For searching
 };
 

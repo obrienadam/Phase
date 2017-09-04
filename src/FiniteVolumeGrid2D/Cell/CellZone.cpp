@@ -7,7 +7,7 @@ CellZone::CellZone(const std::string &name,
     :
       Group(name)
 {
-    registry_ = registry ? registry: std::make_shared<ZoneRegistry>();
+    registry_ = registry;
 }
 
 CellZone::~CellZone()

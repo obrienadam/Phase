@@ -1,7 +1,7 @@
 #include <fstream>
 
 #include "ImmersedBoundary.h"
-#include "Solver.h"
+#include "SurfaceTensionForce.h"
 #include "StepImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
 #include "TranslatingMotion.h"
@@ -210,6 +210,26 @@ void ImmersedBoundary::clearCellZones()
     solver_.grid().computeGlobalOrdering();
 }
 
+CellGroup ImmersedBoundary::ibCells() const
+{
+    CellGroup ibCellGroup;
+
+    for(const auto& ibObj: ibObjs_)
+        ibCellGroup += ibObj->ibCells();
+
+    return ibCellGroup;
+}
+
+CellGroup ImmersedBoundary::solidCells() const
+{
+    CellGroup solidCellGroup;
+
+    for(const auto& ibObj: ibObjs_)
+        solidCellGroup += ibObj->solidCells();
+
+    return solidCellGroup;
+}
+
 std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Point2D& pt) const
 {
     for(const auto& ibObj: ibObjs_)
@@ -253,6 +273,16 @@ Equation<Vector2D> ImmersedBoundary::solidVelocity(VectorFiniteVolumeField& u) c
 
     for(const auto& ibObj: ibObjs_)
         eqn += ibObj->solidVelocity(u);
+
+    return eqn;
+}
+
+Equation<Scalar> ImmersedBoundary::contactLineBcs(const SurfaceTensionForce& fst, ScalarFiniteVolumeField &gamma) const
+{
+    Equation<Scalar> eqn(gamma);
+
+    for(const auto& ibObj: ibObjs_)
+        eqn += ibObj->contactLineBcs(gamma, fst.getTheta(*ibObj));
 
     return eqn;
 }

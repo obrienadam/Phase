@@ -37,6 +37,8 @@ public:
     const Point2D &centroid() const //- For compatibility with Groups
     { return *this; }
 
+    bool cellBounded(const Point2D& pt) const;
+
 protected:
 
     Label id_;

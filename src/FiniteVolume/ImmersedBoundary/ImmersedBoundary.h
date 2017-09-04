@@ -5,6 +5,7 @@
 #include "CutCell.h"
 
 class Solver;
+class SurfaceTensionForce;
 
 class ImmersedBoundary
 {
@@ -21,6 +22,10 @@ public:
 
     const CellZone& zone() const
     { return *zone_; }
+
+    CellGroup ibCells() const;
+
+    CellGroup solidCells() const;
 
     //- Immersed boundary object access
     std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D& pt) const;
@@ -61,6 +66,8 @@ public:
     }
 
     Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+
+    Equation<Scalar> contactLineBcs(const SurfaceTensionForce& fst, ScalarFiniteVolumeField& gamma) const;
 
     void clearFreshCells();
 

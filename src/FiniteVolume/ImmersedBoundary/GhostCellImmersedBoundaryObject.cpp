@@ -1,4 +1,5 @@
 #include "GhostCellImmersedBoundaryObject.h"
+#include "ContactLineGhostCellStencil.h"
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id,
                                                                  FiniteVolumeGrid2D &grid)
@@ -160,41 +161,6 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::solidVelocity(VectorFiniteVo
             }
             break;
         case PARTIAL_SLIP:
-//            for (const QuadraticGhostCellStencil &st: stencils_)
-//            {
-//                Vector2D wn = nearestEdgeNormal(st.boundaryPoint());
-//                Vector2D wt = wn.tangentVec();
-//                Scalar l = st.length();
-//                Scalar lambda = 0.001;
-//
-//                eqn.add(st.cell(), st.cell(), Vector2D(
-//                        wn.x,
-//                        (1. - 2 * lambda / l) * wt.y
-//                ));
-//
-//                eqn.addCoupling(st.cell(), st.cell(), Vector2D(
-//                        (1. - 2 * lambda / l) * wt.x,
-//                        wn.y
-//                ));
-//
-//                for (int i = 0; i < 4; ++i)
-//                {
-//                    eqn.add(st.cell(), st.ipCells()[i], Vector2D(
-//                            wn.x * st.ipCoeffs()[i],
-//                            (1. + 2 * lambda / l) * wt.y * st.ipCoeffs()[i]
-//                    ));
-//
-//                    eqn.addCoupling(st.cell(), st.ipCells()[i], Vector2D(
-//                            (1. + 2 * lambda / l) * wt.x * st.ipCoeffs()[i],
-//                            wn.y * st.ipCoeffs()[i]
-//                    ));
-//                }
-//
-//                eqn.addSource(st.cell(), Vector2D(
-//                        -2 * dot(velocity(st.boundaryPoint()), wn),
-//                        0.
-//                ));
-//            }
             break;
     }
 
@@ -203,6 +169,22 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::solidVelocity(VectorFiniteVo
         eqn.add(cell, cell, 1.);
         eqn.addSource(cell, -velocity(cell.centroid()));
     }
+
+    return eqn;
+}
+
+Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const
+{
+    Equation<Scalar> eqn(gamma);
+
+    for(const GhostCellStencil& st: stencils_)
+    {
+        auto clStencil = ContactLineGhostCellStencil(st.cell(), *this, gamma, theta);
+        eqn.add(clStencil.cell(), clStencil.cells(), clStencil.neumannCoeffs());
+    }
+
+    for (const Cell &cell: solidCells_)
+        eqn.add(cell, cell, 1.);
 
     return eqn;
 }

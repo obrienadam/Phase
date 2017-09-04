@@ -30,7 +30,7 @@ void Celeste::computeFaces()
 
 void Celeste::computeFaces(const ImmersedBoundary &ib)
 {
-    computeGradGammaTilde();
+    computeGradGammaTilde(ib);
     computeInterfaceNormals();
     computeCurvature(ib);
 
@@ -57,7 +57,7 @@ void Celeste::compute()
 
 void Celeste::compute(const ImmersedBoundary &ib)
 {
-    computeGradGammaTilde(ib);
+    computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature(ib);
 
@@ -128,104 +128,12 @@ void Celeste::computeGradGammaTilde()
 
 void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
 {
-    smoothGammaField();
+    smoothGammaField(ib);
 
     auto &gammaTilde = *gammaTilde_;
-
-    for (const auto ibObj: ib.ibObjPtrs())
-    {
-        auto gcIbObj = std::static_pointer_cast<GhostCellImmersedBoundaryObject>(ibObj);
-        Scalar theta = getTheta(*gcIbObj);
-
-        for (const GhostCellStencil &st: gcIbObj->stencils())
-        {
-            gammaTilde(st.cell()) = 0.;
-
-            //- Produce characteristic lines d1 and d2
-            Vector2D nb = -gcIbObj->nearestEdgeNormal(st.boundaryPoint());
-            Line2D d1(st.cell().centroid(), nb.rotate(M_PI_2 - theta).normalVec());
-            Line2D d2(st.cell().centroid(), nb.rotate(theta - M_PI_2).normalVec());
-
-            //- Track whether the line has been constructed
-            bool isConstructed[2] = {false, false};
-            std::vector<Ref<const Cell>> dCells[2];
-            Point2D ip[2];
-
-            const CellZone &fluid = grid_->cellZone("fluid");
-
-            //- Look for stencil candidates
-            int nNodes = 1;
-            while (!isConstructed[0] || !isConstructed[1])
-            {
-                //- Find candidate nodes
-                for (const Node &node: grid_->findNearestNodes(st.boundaryPoint(), nNodes++))
-                {
-                    auto cells = node.cells();
-
-                    if (fluid.isInGroup(cells.begin(), cells.end()))
-                    {
-                        Polygon bilinearStencil = Polygon({
-                                cells[0].get().centroid(),
-                                cells[1].get().centroid(),
-                                cells[2].get().centroid(),
-                                cells[3].get().centroid()
-                        }).convexHull();
-
-                        if (!isConstructed[0])
-                        {
-                            ip[0] = d1.nearestPoint(bilinearStencil.centroid());
-                            if (bilinearStencil.isInside(ip[0]))
-                            {
-                                dCells[0] = cells;
-                                isConstructed[0] = true;
-                            }
-                        }
-
-                        if (!isConstructed[1])
-                        {
-                            ip[1] = d2.nearestPoint(bilinearStencil.centroid());
-                            if (bilinearStencil.isInside(ip[1]))
-                            {
-                                dCells[1] = cells;
-                                isConstructed[1] = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            //- Stencils now constructed
-            for (int i = 0; i < 2; ++i)
-            {
-                Point2D x[] = {
-                        dCells[i][0].get().centroid(),
-                        dCells[i][1].get().centroid(),
-                        dCells[i][2].get().centroid(),
-                        dCells[i][3].get().centroid()
-                };
-
-                Matrix A(4, 4, {
-                        x[0].x * x[0].y, x[0].x, x[0].y, 1.,
-                        x[1].x * x[1].y, x[1].x, x[1].y, 1.,
-                        x[2].x * x[2].y, x[2].x, x[2].y, 1.,
-                        x[3].x * x[3].y, x[3].x, x[3].y, 1.
-                });
-
-                Matrix b(4, 1, {
-                        gammaTilde(dCells[i][0]),
-                        gammaTilde(dCells[i][1]),
-                        gammaTilde(dCells[i][2]),
-                        gammaTilde(dCells[i][3])
-                });
-
-                gammaTilde(st.cell()) += (Matrix(1, 4, {ip[i].x * ip[i].y, ip[i].x, ip[i].y, 1.}) * A.solve(b))(0, 0);
-                gammaTilde(st.cell()) = clamp(gammaTilde(st.cell()), 0., 1.);
-            }
-        }
-    }
-
     auto &gradGammaTilde = *gradGammaTilde_;
-    gradGammaTilde.fill(Vector2D(0., 0.));
+
+    gradGammaTilde_->fill(Vector2D(0., 0.));
     Matrix b(8, 1);
 
     for (const Cell &cell: gradGamma_.grid().cellZone("fluid"))

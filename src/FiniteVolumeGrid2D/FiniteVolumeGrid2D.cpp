@@ -249,6 +249,27 @@ void FiniteVolumeGrid2D::setCellInactive(const Cell& cell)
     globalInactiveCells_.add(cell);
 }
 
+CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
+{
+    std::vector<int> isInGlobalGroup(cells_.size(), 0);
+    CellGroup globalGroup(localGroup.name());
+
+    for(const Cell& cell: localGroup)
+    {
+        isInGlobalGroup[cell.id()] = 1;
+        globalGroup.add(cell);
+    }
+
+    sendMessages(isInGlobalGroup);
+
+    for(const CellZone& bufferZone: bufferZones())
+        for(const Cell& cell: bufferZone)
+            if(isInGlobalGroup[cell.id()])
+                globalGroup.add(cell);
+
+    return globalGroup;
+}
+
 CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string& name)
 {
     return cellGroups_[name] = CellGroup(name);

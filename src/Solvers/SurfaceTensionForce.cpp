@@ -126,7 +126,24 @@ void SurfaceTensionForce::smoothGammaField()
 //        return r < 1. ? pow(1. - r*r, 3) : 0.;
 //    });
     //- This kernel is better
-    smooth(gamma_, grid().localActiveCells(), grid().globalActiveCells(), kernelWidth_, *gammaTilde_,
+    smooth(gamma_, grid().localActiveCells(), grid_->cellZone("fluid"), kernelWidth_, *gammaTilde_,
+           [](const Cell &cell, const Cell &kCell, Scalar e) {
+               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+               return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
+           });
+
+    grid_->sendMessages(*gammaTilde_);
+    gammaTilde_->setBoundaryFaces();
+}
+
+void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary& ib)
+{
+    CellGroup cellsToSmooth = grid_->cellZone("fluid") + ib.ibCells();
+
+    smooth(gamma_, cellsToSmooth,
+           grid_->globalCellGroup(cellsToSmooth),
+           kernelWidth_,
+           *gammaTilde_,
            [](const Cell &cell, const Cell &kCell, Scalar e) {
                Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
                return r < 1. ? std::cos(M_PI * r) + 1. : 0.;

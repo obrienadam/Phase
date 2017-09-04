@@ -1,6 +1,6 @@
 #include "Group.h"
 
-template <class T>
+template<class T>
 void Group<T>::clear()
 {
     items_.clear();
@@ -8,94 +8,99 @@ void Group<T>::clear()
     rTree_.clear();
 }
 
-template <class T>
+template<class T>
 void Group<T>::add(const T &item)
 {
-    if(itemSet_.insert(std::make_pair(item.id(), std::cref(item))).second)
+    if (itemSet_.insert(std::make_pair(item.id(), std::cref(item))).second)
     {
         items_.push_back(std::cref(item));
         rTree_.insert(Value(item.centroid(), item.id()));
     }
 }
 
-template <class T>
+template<class T>
 void Group<T>::add(const Group<T> &other)
 {
-    for(const T& item: other)
+    for (const T &item: other)
         add(item);
 }
 
-template <class T>
+template<class T>
 void Group<T>::remove(const T &item)
 {
     auto entry = itemSet_.find(item.id());
 
-    if(entry != itemSet_.end())
+    if (entry != itemSet_.end())
     {
         itemSet_.erase(entry);
-        items_.erase(std::remove_if(items_.begin(), items_.end(), [&item](const T& i){ return item.id() == i.id(); }));
+        items_.erase(std::remove_if(items_.begin(), items_.end(), [&item](const T &i) { return item.id() == i.id(); }));
         rTree_.remove(Value(item.centroid(), item.id()));
     }
 }
 
-template <class T>
-void Group<T>::remove(const Group<T>& other)
+template<class T>
+void Group<T>::remove(const Group<T> &other)
 {
-    for(const T& item: other)
+    for (const T &item: other)
         remove(item);
 }
 
-template <class T>
-void Group<T>::merge(Group<T> &other)
+template<class T>
+Group<T> &Group<T>::operator+=(const Group<T> &rhs)
 {
-    for(const T& item: other.items())
-    {
-        other.remove(item);
-        add(item);
-    }
+    if (this != &rhs)
+        add(rhs.begin(), rhs.end());
+    return *this;
 }
 
-template <class T>
+template<class T>
+Group<T> &Group<T>::operator-=(const Group<T> &rhs)
+{
+    remove(rhs);
+    return *this;
+}
+
+template<class T>
 Group<T> Group<T>::intersection(const Group<T> &other) const
 {
     Group<T> result;
 
-    for(const T& item: items_)
-        if(other.isInGroup(item))
+    for (const T &item: items_)
+        if (other.isInGroup(item))
             result.add(item);
 
     return result;
 }
 
-template <class T>
+template<class T>
 Group<T> Group<T>::difference(const Group<T> &other) const
 {
     Group<T> result;
 
-    for(const T& item: items_)
-        if(!other.isInGroup(item))
+    for (const T &item: items_)
+        if (!other.isInGroup(item))
             result.add(item);
 
     return result;
 }
 
-template <class T>
+template<class T>
 Group<T> Group<T>::symmetricDifference(const Group<T> &other) const
 {
     Group<T> result;
 
-    for(const T& item: items_)
-        if(!other.isInGroup(item))
+    for (const T &item: items_)
+        if (!other.isInGroup(item))
             result.add(item);
 
-    for(const T& item: other.items_)
-        if(!isInGroup(item))
+    for (const T &item: other.items_)
+        if (!isInGroup(item))
             result.add(item);
 
     return result;
 }
 
-template <class T>
+template<class T>
 std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
 {
     std::vector<Value> result;
@@ -105,11 +110,10 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
     return getRefs(result);
 }
 
-template <class T>
+template<class T>
 std::vector<Ref<const T> > Group<T>::itemsWithin(const Circle &circle) const
 {
-    auto isInCircle = [&circle](const Value& val)
-    {
+    auto isInCircle = [&circle](const Value &val) {
         return circle.isInside(val.first);
     };
 
@@ -121,7 +125,7 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Circle &circle) const
     return getRefs(result);
 }
 
-template <class T>
+template<class T>
 std::vector<Ref<const T> > Group<T>::itemsWithin(const Box &box) const
 {
     std::vector<Value> result;
@@ -131,13 +135,12 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Box &box) const
     return getRefs(result);
 }
 
-template <class T>
-std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Circle& circle) const
+template<class T>
+std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Circle &circle) const
 {
     std::vector<Value> result;
 
-    auto isCoveredByCircle = [&circle](const Value& val)
-    {
+    auto isCoveredByCircle = [&circle](const Value &val) {
         return circle.isCovered(val.first);
     };
 
@@ -148,8 +151,8 @@ std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Circle& circle) const
     return getRefs(result);
 }
 
-template <class T>
-std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Box& box) const
+template<class T>
+std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Box &box) const
 {
     std::vector<Value> result;
 
@@ -159,7 +162,7 @@ std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Box& box) const
     return getRefs(result);
 }
 
-template <class T>
+template<class T>
 std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) const
 {
     std::vector<Value> result;
@@ -170,43 +173,36 @@ std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) c
     return getRefs(result);
 }
 
-template <class T>
+template<class T>
 bool Group<T>::isInGroup(const T &item) const
 {
     return itemSet_.find(item.id()) != itemSet_.end();
 }
 
 //- Private helper methods
-template <class T>
+template<class T>
 std::vector<Ref<const T> > Group<T>::getRefs(const std::vector<Group::Value> &vals) const
 {
     std::vector<Ref<const T> > refs;
     refs.reserve(vals.size());
 
-    std::transform(vals.begin(), vals.end(), std::back_inserter(refs), [this](const Value& v){ return itemSet_.find(v.second)->second; });
+    std::transform(vals.begin(), vals.end(), std::back_inserter(refs),
+                   [this](const Value &v) { return itemSet_.find(v.second)->second; });
 
     return refs;
 }
 
 //- Some useful operators
 template<class T>
-Group<T> operator+(const Group<T>& lhs, const Group<T>& rhs)
+Group<T> operator+(Group<T> lhs, const Group<T> &rhs)
 {
-    Group<T> result;
-
-    result.add(lhs);
-    result.add(rhs);
-
-    return result;
+    lhs += rhs;
+    return lhs;
 }
 
 template<class T>
-Group<T> operator-(const Group<T>& lhs, const Group<T>& rhs)
+Group<T> operator-(Group<T> lhs, const Group<T> &rhs)
 {
-    Group<T> result;
-
-    result.add(lhs);
-    result.remove(rhs);
-
-    return result;
+    lhs -= rhs;
+    return lhs;
 }

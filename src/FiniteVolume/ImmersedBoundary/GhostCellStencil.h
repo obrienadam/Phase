@@ -13,9 +13,9 @@ class GhostCellStencil: public ImmersedBoundaryStencil
 {
 public:
 
-    GhostCellStencil(const Cell &cell, const GhostCellImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
+    GhostCellStencil(const Cell& cell): ImmersedBoundaryStencil(cell) {}
 
-    GhostCellStencil(const Cell &cell, const Point2D& bp, const Point2D& ip, const FiniteVolumeGrid2D &grid);
+    GhostCellStencil(const Cell &cell, const GhostCellImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
 
     const Point2D &boundaryPoint() const
     { return bp_; }

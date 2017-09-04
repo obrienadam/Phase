@@ -10,7 +10,7 @@ public:
     typedef std::unordered_map<Label, Ref<CellZone>> ZoneRegistry;
 
     CellZone(const std::string &name = "N/A",
-             const std::shared_ptr<ZoneRegistry>& registry = nullptr);
+             const std::shared_ptr<ZoneRegistry>& registry = std::make_shared<ZoneRegistry>());
 
     ~CellZone();
 

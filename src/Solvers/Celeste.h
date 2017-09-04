@@ -31,7 +31,7 @@ protected:
 
     virtual void computeGradGammaTilde();
 
-    virtual void computeGradGammaTilde(const ImmersedBoundary& ib);
+    void computeGradGammaTilde(const ImmersedBoundary& ib);
 
     virtual void computeCurvature();
 

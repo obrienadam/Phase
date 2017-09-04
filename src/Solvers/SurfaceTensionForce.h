@@ -77,6 +77,8 @@ public:
 
     void smoothGammaField();
 
+    void smoothGammaField(const ImmersedBoundary& ib);
+
 protected:
 
     Scalar sigma_, kernelWidth_;

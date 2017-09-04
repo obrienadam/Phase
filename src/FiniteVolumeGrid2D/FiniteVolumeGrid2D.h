@@ -118,6 +118,8 @@ public:
     const CellZone &cellZone(const std::string &name) const
     { return cellZones_.find(name)->second; }
 
+    CellGroup globalCellGroup(const CellGroup& localGroup) const;
+
     CellGroup &createCellGroup(const std::string& name);
 
     CellZone &createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry = nullptr);

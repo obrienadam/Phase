@@ -36,6 +36,18 @@ public:
     bool isInIb(const Point2D &pt) const
     { return shapePtr_->isInside(pt); }
 
+    bool isInIb(const Cell& cell) const
+    { return shapePtr_->isInside(cell.centroid()); }
+
+    template <class const_iterator>
+    bool noneInIb(const_iterator begin, const_iterator end) const
+    {
+        for(const_iterator it = begin; it != end; ++it)
+            if(isInIb(*it))
+                return false;
+        return true;
+    }
+
     Shape2D &shape()
     { return *shapePtr_; }
 
@@ -55,6 +67,9 @@ public:
 
     //- Operations
     LineSegment2D intersectionLine(const LineSegment2D& ln) const;
+
+    Point2D nearestIntersect(const Point2D& pt) const
+    { return shapePtr_->nearestIntersect(pt); }
 
     Vector2D nearestEdgeNormal(const Point2D& pt) const;
 
@@ -125,6 +140,9 @@ public:
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
 
     virtual Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+
+    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const
+    { return bcs(gamma); }
 
     void clearFreshCells();
 

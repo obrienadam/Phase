@@ -52,30 +52,6 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
     }
 }
 
-GhostCellStencil::GhostCellStencil(const Cell &cell, const Point2D& bp, const Point2D& ip, const FiniteVolumeGrid2D &grid)
-        :
-        ImmersedBoundaryStencil(cell),
-        bp_(bp),
-        ip_(ip)
-{
-    cells_ = grid.findNearestNode(ip_).cells();
-
-    if (cells_.size() != 4)
-        throw Exception("GhostCellStencil", "GhostCellStencil", "number of image point cells must be 4.");
-
-    Point2D x1 = cells_[0].get().centroid();
-    Point2D x2 = cells_[1].get().centroid();
-    Point2D x3 = cells_[2].get().centroid();
-    Point2D x4 = cells_[3].get().centroid();
-
-    A_ = Matrix(4, 4, {
-            x1.x * x1.y, x1.x, x1.y, 1.,
-            x2.x * x2.y, x2.x, x2.y, 1.,
-            x3.x * x3.y, x3.x, x3.y, 1.,
-            x4.x * x4.y, x4.x, x4.y, 1.,
-    }).invert();
-}
-
 Scalar GhostCellStencil::ipValue(const ScalarFiniteVolumeField &field) const
 {
     Matrix c = A_ * Matrix(4, 1, {
