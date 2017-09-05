@@ -9,7 +9,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     Scalar maxCo = input.caseInput().get<Scalar>("Solver.maxCo");
 
     //- Time
-    Scalar time = 0.;
+    Scalar time = solver.getStartTime(input);
     Scalar timeStep = input.caseInput().get<Scalar>("Solver.initialTimeStep", solver.maxTimeStep());
 
     //- Write control
@@ -25,10 +25,11 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     //- Initial conditions
     solver.setInitialConditions(input);
     solver.initialize();
+    solver.printf("Starting simulation time: %.2lf s\n", time);
 
     time_.start();
     for (
-            time = 0., iterNo = 0;
+            iterNo = 0;
             time < maxTime;
             time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
             )

@@ -32,6 +32,8 @@ public:
 
 protected:
 
+    virtual void restartSolution();
+
     virtual Scalar solveUEqn(Scalar timeStep);
 
     virtual Scalar solvePEqn(Scalar timeStep);

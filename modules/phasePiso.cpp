@@ -19,8 +19,7 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> grid(constructGrid(input));
-    grid->partition(input, std::make_shared<Communicator>());
+    shared_ptr<FiniteVolumeGrid2D> grid = constructGrid(input, std::make_shared<Communicator>());
 
     Piso solver(input, grid);
     CgnsViewer viewer(input, solver);

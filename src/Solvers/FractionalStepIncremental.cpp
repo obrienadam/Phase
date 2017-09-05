@@ -53,6 +53,13 @@ Scalar FractionalStepIncremental::solve(Scalar timeStep)
 
 //- Protected methods
 
+void FractionalStepIncremental::restartSolution()
+{
+    Solver::restartSolution();
+    u.interpolateFaces();
+    p.interpolateFaces();
+}
+
 Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);

@@ -22,7 +22,7 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
 
     gridfile_ = filename;
 
-    int fid, bid, zid;
+    int fid, bid, zid, sid;
     cg_open(filename, CG_MODE_WRITE, &fid);
     bid = createBase(fid, filename_);
     zid = createZone(fid, bid, solver_.grid(), "Cells");
@@ -30,6 +30,30 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
     writeConnectivity(fid, bid, zid, solver_.grid());
     writeBoundaryConnectivity(fid, bid, zid, solver_.grid());
     //writeImmersedBoundaries(fid, solver_);
+
+    //- Write data necessary to reuse partitioned grid
+    cg_sol_write(fid, bid, zid, "Info", CGNS_ENUMV(CellCenter), &sid);
+
+    std::vector<int> procNo(solver.grid().cells().size(), solver.grid().comm().rank());
+    for(int proc = 0; proc < solver.grid().comm().nProcs(); ++proc)
+        for(const Cell& cell: solver.grid().bufferZones()[proc])
+            procNo[cell.id()] = proc;
+
+    int fieldId;
+    cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "ProcNo", procNo.data(), &fieldId);
+
+    std::vector<int> globalId(solver.grid().cells().size(), -1);
+    std::vector<int> globalIdStart(1, 0);
+    CellGroup localCells = solver.grid().localActiveCells() + solver.grid().localInactiveCells();
+    for(int size: solver.grid().comm().allGather(localCells.size()))
+        globalIdStart.push_back(globalIdStart.back() + size);
+
+    int id = globalIdStart[solver.grid().comm().rank()];
+    for(const Cell& cell: localCells)
+        globalId[cell.id()] = id++;
+
+    solver.grid().sendMessages(globalId);
+    cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "GlobalID", globalId.data(), &fieldId);
     cg_close(fid);
 }
 

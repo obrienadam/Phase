@@ -5,10 +5,19 @@
 #include "CgnsUnstructuredGrid.h"
 #include "Exception.h"
 
-std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input)
+std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input, std::shared_ptr<Communicator> comm)
 {
     using namespace std;
 
+    //- Check if a grid nees to be loaded
+    if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
+    {
+        auto grid = std::make_shared<CgnsUnstructuredGrid>();
+        grid->loadPartitionedGrid(comm);
+        return grid;
+    }
+
+    //- Grid must be constructed
     string gridType = input.caseInput().get<string>("Grid.type");
 
     if (gridType == "rectilinear")
@@ -27,15 +36,20 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input)
         tmp = input.caseInput().get<string>("Grid.refineY", "(0,0)");
         yDimRefinements.push_back(make_pair(tmp.x, tmp.y));
 
-        return shared_ptr<FiniteVolumeGrid2D>(new StructuredRectilinearGrid(width, height,
-                                                                            nCellsX, nCellsY,
-                                                                            convertToMeters,
-                                                                            xDimRefinements,
-                                                                            yDimRefinements));
+        auto grid = std::make_shared<StructuredRectilinearGrid>(width, height,
+                                                                nCellsX, nCellsY,
+                                                                convertToMeters,
+                                                                xDimRefinements,
+                                                                yDimRefinements);
+
+        grid->partition(input, comm);
+        return grid;
     }
     else if (gridType == "cgns")
     {
-        return shared_ptr<FiniteVolumeGrid2D>(new CgnsUnstructuredGrid(input));
+        auto grid = std::make_shared<CgnsUnstructuredGrid>(input);
+        grid->partition(input, comm);
+        return grid;
     }
     else
     {

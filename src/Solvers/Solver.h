@@ -32,6 +32,8 @@ public:
     Scalar maxTimeStep() const
     { return maxTimeStep_; }
 
+    Scalar getStartTime(const Input& input) const;
+
     //- Field management
 
     FiniteVolumeField<int> &addIntegerField(const std::string &name);
@@ -147,6 +149,8 @@ protected:
 
     void setRotating(const std::string &xFunction, const std::string &yFunction, const Vector2D &amplitude,
                      const Vector2D &center, VectorFiniteVolumeField &field);
+
+    virtual void restartSolution();
 
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
 

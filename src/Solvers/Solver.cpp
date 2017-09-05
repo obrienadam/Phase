@@ -1,12 +1,15 @@
 #include <math.h>
+#include <regex>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <cgnslib.h>
 
 #include "Solver.h"
 #include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
 
-Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D>& grid)
+Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         ib_(input, *this),
         grid_(grid)
@@ -15,20 +18,47 @@ Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D>& grid)
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 }
 
-void Solver::printf(const char* format, ...) const
+void Solver::printf(const char *format, ...) const
 {
     va_list argsPtr;
     va_start(argsPtr, format);
 
-    if(grid_->comm().isMainProc())
+    if (grid_->comm().isMainProc())
         vfprintf(stdout, format, argsPtr);
 
     va_end(argsPtr);
 }
 
+Scalar Solver::getStartTime(const Input &input) const
+{
+    if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
+    {
+        using namespace std;
+        using namespace boost::filesystem;
+
+        std::regex re("[0-9]+\\.[0-9]+");
+        Scalar maxTime = 0.;
+
+        for (directory_iterator end, dir("./solution"); dir != end; ++dir)
+            if (regex_match(dir->path().filename().string(), re))
+            {
+                std::smatch match;
+                std::regex_search(dir->path().filename().string(), match, re);
+                Scalar time = std::stod(match.str());
+
+                maxTime = std::max(time, maxTime);
+            }
+
+        return maxTime;
+    }
+
+    return 0.;
+}
+
 FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 {
-    auto insert = integerFields_.insert(std::make_pair(name, std::make_shared<FiniteVolumeField<int>>(grid_, name)));
+    auto insert = integerFields_.insert(std::make_pair(name, std::make_shared<FiniteVolumeField < int>>
+    (grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
@@ -38,7 +68,8 @@ FiniteVolumeField<int> &Solver::addIntegerField(const std::string &name)
 
 ScalarFiniteVolumeField &Solver::addScalarField(const Input &input, const std::string &name)
 {
-    auto insert = scalarFields_.insert(std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name)));
+    auto insert = scalarFields_.insert(
+            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -59,7 +90,8 @@ ScalarFiniteVolumeField &Solver::addScalarField(const std::string &name)
 
 VectorFiniteVolumeField &Solver::addVectorField(const Input &input, const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name)));
+    auto insert = vectorFields_.insert(
+            std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name)));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
@@ -81,6 +113,12 @@ void Solver::setInitialConditions(const Input &input)
 {
     using namespace std;
     using namespace boost::property_tree;
+
+    if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
+    {
+        restartSolution();
+        return;
+    }
 
     for (const auto &child: input.initialConditionInput().get_child("InitialConditions"))
     {
@@ -371,4 +409,60 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
         field.faces()[face.id()].x = amplitude.x * xFunc(theta);
         field.faces()[face.id()].y = amplitude.y * yFunc(theta);
     }
+}
+
+void Solver::restartSolution()
+{
+    using namespace std;
+    using namespace boost::filesystem;
+
+    std::regex re("[0-9]+\\.[0-9]+");
+    Scalar maxTime = 0.;
+    path path;
+
+    for (directory_iterator end, dir("./solution"); dir != end; ++dir)
+        if (regex_match(dir->path().filename().string(), re))
+        {
+            std::smatch match;
+            std::regex_search(dir->path().filename().string(), match, re);
+            Scalar time = std::stod(match.str());
+
+            if (time > maxTime)
+            {
+                path = dir->path();
+                maxTime = time;
+            }
+        }
+
+    path /= ("Proc" + std::to_string(grid_->comm().rank())) / "Solution.cgns";
+
+    //- Check to make sure the restart can be done
+    if(!exists(path))
+        throw Exception("Solver", "restartSolution", "no file \"" + path.string() + "\" needed for restart.");
+
+    int fn;
+    cg_open(path.c_str(), CG_MODE_READ, &fn);
+
+    std::vector<Scalar> buffer(grid_->cells().size());
+    cgsize_t rmin = 1, rmax = buffer.size();
+
+    for (const auto &field: scalarFields_)
+    {
+        cg_field_read(fn, 1, 1, 1, field.first.c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, field.second->data());
+    }
+
+    for (const auto &field: vectorFields_)
+    {
+        cg_field_read(fn, 1, 1, 1, (field.first + "X").c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
+
+        for (int i = 0; i < buffer.size(); ++i)
+            (*field.second)[i].x = buffer[i];
+
+        cg_field_read(fn, 1, 1, 1, (field.first + "Y").c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
+
+        for (int i = 0; i < buffer.size(); ++i)
+            (*field.second)[i].y = buffer[i];
+    }
+
+    cg_close(fn);
 }

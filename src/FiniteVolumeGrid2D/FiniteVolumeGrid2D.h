@@ -249,7 +249,7 @@ protected:
 
     //- Communication zones
     std::shared_ptr<Communicator> comm_;
-    std::vector<CellGroup> sendCellGroups_; // shared pointers are used so that zones can be moveable!
+    std::vector<CellGroup> sendCellGroups_;
     std::vector<CellZone> bufferCellZones_;
 
     //- Face related data
