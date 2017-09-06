@@ -53,29 +53,6 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
     return beta;
 }
 
-ScalarFiniteVolumeField cicsam::massFluxes(Scalar rho1,
-                                           Scalar rho2,
-                                           const VectorFiniteVolumeField &u,
-                                           const ScalarFiniteVolumeField &beta,
-                                           const ScalarFiniteVolumeField &gamma,
-                                           Scalar theta)
-{
-    ScalarFiniteVolumeField rhoU(gamma.gridPtr(), "rhoU");
-    rhoU.savePreviousTimeStep(0, 1);
-
-    for (const Face &face: gamma.grid().interiorFaces())
-    {
-
-    }
-
-    for (const Patch &patch: gamma.grid().patches())
-    {
-
-    }
-
-    return rhoU;
-}
-
 Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                              const ScalarFiniteVolumeField &beta,
                              ScalarFiniteVolumeField &gamma,

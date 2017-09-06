@@ -15,13 +15,6 @@ namespace cicsam
                                  Scalar timeStep,
                                  Scalar k = 1.);
 
-    ScalarFiniteVolumeField massFluxes(Scalar rho1,
-                                       Scalar rho2,
-                                       const VectorFiniteVolumeField& u,
-                                       const ScalarFiniteVolumeField& beta,
-                                       const ScalarFiniteVolumeField& gamma,
-                                       Scalar theta);
-
     Equation<Scalar> div(const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField& beta,
                          ScalarFiniteVolumeField &gamma,

@@ -1,5 +1,7 @@
 #include <vector>
 #include <unordered_map>
+#include <set>
+
 #include <regex>
 #include <iostream>
 
@@ -7,77 +9,16 @@
 #include <boost/geometry.hpp>
 #include <boost/filesystem.hpp>
 
-typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Point;
-typedef std::set<boost::filesystem::path, std::function<bool(const boost::filesystem::path&, const boost::filesystem::path&)>> PathSet;
-
-struct Section
-{
-    char name[32];
-    std::vector<cgsize_t> elements;
-    CGNS_ENUMT(ElementType_t) type;
-    cgsize_t start, end, parentData;
-    int nbndry, parentFlag;
-};
-
-struct Field
-{
-    char name[32];
-    std::vector<double> scalarData;
-    std::vector<int> integerData;
-    CGNS_ENUMT(DataType_t) type;
-};
-
-struct Solution
-{
-    char name[32];
-    std::vector<Field> fields;
-    CGNS_ENUMT(GridLocation_t) location;
-};
-
-struct Zone
-{
-    char name[32];
-    cgsize_t sizes[3];
-    std::vector<Point> nodes;
-    std::vector<Section> sections;
-    Solution solution;
-    CGNS_ENUMT(ZoneType_t) type;
-};
-
-struct Base
-{
-    char name[32];
-    int cellDim, physDim;
-    std::vector<Zone> zones;
-};
-
-Base loadGrid(const std::string &filename);
-
-Solution loadSolution(const std::string &filename);
-
-void mergeGrids(const std::vector<Base> &grids,
-                const std::vector<std::vector<Solution>> &solutions,
-                std::vector<Point> &nodes, std::vector<cgsize_t> &elements, int nTimeSteps,
-                std::map<std::string, std::vector<Field>> &fields);
-
-std::vector<cgsize_t> getNodeMergeList(const std::vector<Point> &nodes);
-
-std::vector<Point> mergeNodes(const std::vector<Point> &nodes,
-                              const std::vector<cgsize_t> &nodeMergeList,
-                              std::vector<cgsize_t> &elements);
-
-std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
-                                    const std::vector<cgsize_t> &elements,
-                                    int &nElements,
-                                    std::map<std::string, std::vector<Field> > &fields);
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Node;
 
 int main(int argc, char *argv[])
 {
     using namespace std;
     using namespace boost::filesystem;
 
+    //- Build directory lists
     regex re("Proc([0-9]+)"); // Check a processor directory
-    PathSet gridDirs([re](const path& p1, const path& p2){
+    set<path, std::function<bool(const path &, const path &)>> gridDirs([re](const path &p1, const path &p2) {
         smatch matches[2];
         std::regex_search(p1.string(), matches[0], re);
         std::regex_search(p2.string(), matches[1], re);
@@ -87,20 +28,11 @@ int main(int argc, char *argv[])
     //- Load the global grids first
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
         if (regex_match(dir->path().filename().string(), re))
-        {
-            path gridFile = dir->path();
-            gridDirs.insert(gridFile /= "Grid.cgns");
-        }
-
-    //- Sort the grid dirs by proc (important)
-
-    vector<Base> procGrids;
-    for (const path &p: gridDirs)
-        procGrids.push_back(loadGrid(p.c_str()));
+            gridDirs.insert(dir->path());
 
     //- Load transient solution data
     re = regex("[0-9]+\\.[0-9]+");
-    PathSet solutionDirs([re](const path& p1, const path& p2){
+    set<path, std::function<bool(const path &, const path &)>> solutionDirs([re](const path &p1, const path &p2) {
         smatch matches[2];
         std::regex_search(p1.string(), matches[0], re);
         std::regex_search(p2.string(), matches[1], re);
@@ -111,557 +43,267 @@ int main(int argc, char *argv[])
         if (regex_match(dir->path().filename().string(), re))
             solutionDirs.insert(dir->path());
 
-    vector<double> timeSteps;
-    vector<vector<Solution>> procSolutions(procGrids.size());
-    for (const path &solutionDir: solutionDirs)
-    {
-        int proc = 0;
-        for (path procDir: gridDirs)
-        {
-            procDir = solutionDir / procDir.parent_path().filename() / "Solution.cgns";
-            procSolutions[proc++].push_back(loadSolution(procDir.string()));
-        }
+    //- Read in global node/elements
+    std::vector<Node> nodes;
+    std::vector<cgsize_t> elements;
+    cgsize_t nElements = 0;
 
-        timeSteps.push_back(stod(solutionDir.filename().c_str()));
+    for (const auto &path: gridDirs)
+    {
+        int fn;
+        cg_open((path / "Grid.cgns").c_str(), CG_MODE_READ, &fn);
+
+        char name[256];
+        cgsize_t sizes[3];
+        cg_zone_read(fn, 1, 1, name, sizes);
+
+        cgsize_t rmin = 1, rmax = sizes[0];
+        std::vector<double> buffer[] = {std::vector<double>(sizes[0]), std::vector<double>(sizes[0])};
+
+        cg_coord_read(fn, 1, 1, "CoordinateX", CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer[0].data());
+        cg_coord_read(fn, 1, 1, "CoordinateY", CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer[1].data());
+
+        cgsize_t offset = nodes.size();
+
+        std::transform(buffer[0].begin(), buffer[0].end(),
+                       buffer[1].begin(), std::back_inserter(nodes), [](double x, double y) -> Node {
+                    return Node(x, y);
+                });
+
+        cgsize_t elementDataSize, parentData;
+        cg_ElementDataSize(fn, 1, 1, 1, &elementDataSize);
+
+        std::vector<cgsize_t> elementBuffer(elementDataSize);
+        cg_elements_read(fn, 1, 1, 1, elementBuffer.data(), &parentData);
+
+        for (int i = 0; i < elementBuffer.size();)
+        {
+            elements.push_back(elementBuffer[i]);
+            switch (elementBuffer[i++])
+            {
+                case CGNS_ENUMV(TRI_3):
+                    for (int j = 0; j < 3; ++j)
+                        elements.push_back(elementBuffer[i++] + offset);
+                    break;
+                case CGNS_ENUMV(QUAD_4):
+                    for (int j = 0; j < 4; ++j)
+                        elements.push_back(elementBuffer[i++] + offset);
+                    break;
+            }
+
+            ++nElements;
+        }
+        cg_close(fn);
     }
 
-    vector<Point> nodes;
-    vector<cgsize_t> elements;
-    map<string, vector<Field>> fields;
+    //- Compute merges
+    std::vector<cgsize_t> nodeIds(nodes.size(), -1);
 
-    mergeGrids(procGrids, procSolutions, nodes, elements, timeSteps.size(), fields);
-    nodes = mergeNodes(nodes, getNodeMergeList(nodes), elements);
-
-    int nElements;
-    elements = mergeElements(nodes.size(), elements, nElements, fields);
-
-    cout << "Writing a new .cgns file...\n";
-
-    //- Write a new merged cgns file
-
-    cgsize_t sizes[3];
-    sizes[0] = nodes.size();
-    sizes[1] = nElements;
-    sizes[2] = 0;
-
-    int fid;
-    cg_open("solution.cgns", CG_MODE_WRITE, &fid);
-
-    int bid;
-    cg_base_write(fid, "Base", 2, 2, &bid);
-
-    int zid;
-    cg_zone_write(fid, bid, "Cells", sizes, CGNS_ENUMT(Unstructured), &zid);
-
-    vector<double> xCoords(sizes[0]), yCoords(sizes[0]);
-    std::transform(nodes.begin(), nodes.end(), xCoords.begin(), [](const Point &pt) { return pt.get<0>(); });
-    std::transform(nodes.begin(), nodes.end(), yCoords.begin(), [](const Point &pt) { return pt.get<1>(); });
-
-    int xid;
-    cg_coord_write(fid, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateX", xCoords.data(), &xid);
-    cg_coord_write(fid, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateY", yCoords.data(), &xid);
-
-    int sid;
-    cg_section_write(fid, bid, zid, "Cells", CGNS_ENUMV(MIXED), 1, sizes[1], 0, elements.data(), &sid);
-
-    ostringstream sout;
-
-    for (int i = 0; i < timeSteps.size(); ++i)
     {
-        int solId;
+        boost::geometry::index::rtree<pair<Node, cgsize_t>, boost::geometry::index::quadratic<32>> rtree;
 
-        string flowSolutionPointer = "FlowSolution" + to_string(i + 1);
+        cgsize_t id = 1;
+        for (const Node &node: nodes)
+            rtree.insert(std::make_pair(node, id++));
 
-        cg_sol_write(fid, bid, zid, flowSolutionPointer.c_str(), CGNS_ENUMV(CellCenter), &solId);
+        double tolerance = 1e-15;
+        std::vector<Node> tmp;
 
-        for (const auto &field: fields)
+        id = 1;
+        for (const auto &node: rtree)
         {
-            int fieldId;
+            if (nodeIds[node.second - 1] != -1) // Node already has id
+                continue;
 
-            switch (field.second[i].type)
+            boost::geometry::model::box<Node> box(
+                    Node(node.first.get<0>() - tolerance, node.first.get<1>() - tolerance),
+                    Node(node.first.get<0>() + tolerance, node.first.get<1>() + tolerance)
+            );
+
+            std::vector<std::pair<Node, cgsize_t>> mergeToNode;
+            rtree.query(boost::geometry::index::covered_by(box), std::back_inserter(mergeToNode));
+
+            for (const auto &mNode: mergeToNode)
+                nodeIds[mNode.second - 1] = id;
+
+            tmp.push_back(node.first);
+            ++id;
+        }
+
+        std::cout << "Number of nodes: " << nodes.size() << std::endl
+                  << "Number of unique nodes: " << tmp.size()
+                  << std::endl;
+
+        nodes = tmp;
+    }
+
+    std::vector<cgsize_t> elementIds(nElements, -1);
+
+    {
+        std::map<std::set<cgsize_t>, cgsize_t> elementSet;
+        std::vector<cgsize_t> tmp;
+        cgsize_t id = 1;
+        cgsize_t nUniqueElements = 0;
+        for (int i = 0; i < elements.size();)
+        {
+            std::vector<cgsize_t> element(1, elements[i]);
+
+            switch (elements[i++])
             {
-                case CGNS_ENUMV(Integer):
-                    cg_field_write(fid, bid, zid, solId, CGNS_ENUMV(Integer), field.first.c_str(),
-                                   field.second[i].integerData.data(), &fieldId);
+                case CGNS_ENUMV(TRI_3):
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        elements[i] = nodeIds[elements[i] - 1];
+                        element.push_back(elements[i++]);
+                    }
                     break;
-                case CGNS_ENUMV(RealDouble):
-                    cg_field_write(fid, bid, zid, solId, CGNS_ENUMV(RealDouble), field.first.c_str(),
-                                   field.second[i].scalarData.data(), &fieldId);
+                case CGNS_ENUMV(QUAD_4):
+                    for (int j = 0; j < 4; ++j)
+                    {
+                        elements[i] = nodeIds[elements[i] - 1];
+                        element.push_back(elements[i++]);
+                    }
                     break;
+            }
+
+            auto insert = elementSet.insert(std::make_pair(std::set<cgsize_t>(element.begin() + 1, element.end()), id));
+
+            if (insert.second)
+            {
+                elementIds[id++ - 1] = ++nUniqueElements;
+                tmp.insert(tmp.end(), element.begin(), element.end());
+            }
+            else
+            {
+                elementIds[id++ - 1] = elementIds[insert.first->second - 1];
             }
         }
 
-        sout.width(32);
-        sout << left << setfill(' ') << flowSolutionPointer;
+        std::cout << "Number of elements: " << nElements << std::endl
+                  << "Number of unique elements: " << nUniqueElements << std::endl;
+
+        nElements = nUniqueElements;
+        elements = tmp;
+    }
+
+    //- Write the grid
+    int fn, bid, zid, xid, sid;
+    cg_open("solution.cgns", CG_MODE_WRITE, &fn);
+    cg_base_write(fn, "Base", 2, 2, &bid);
+
+    cgsize_t sizes[] = {(cgsize_t) nodes.size(), nElements, 0};
+    cg_zone_write(fn, bid, "Cells", sizes, CGNS_ENUMT(Unstructured), &zid);
+
+    std::vector<double> buffer(nodes.size());
+
+    std::transform(nodes.begin(), nodes.end(), buffer.begin(), [](const Node &node) { return node.get<0>(); });
+    cg_coord_write(fn, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateX", buffer.data(), &xid);
+
+    std::transform(nodes.begin(), nodes.end(), buffer.begin(), [](const Node &node) { return node.get<1>(); });
+    cg_coord_write(fn, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateY", buffer.data(), &xid);
+
+    cg_section_write(fn, bid, zid, "Cells", CGNS_ENUMV(MIXED), 1, sizes[1], sizes[2], elements.data(), &sid);
+
+    //- Write solutions
+    int indexStart = 0;
+    std::vector<double> timeValues;
+    std::ostringstream flowSolutionPtrs;
+
+    int solutionNo = 1;
+
+    for (const auto &path: solutionDirs)
+    {
+        double time = std::stod(path.filename().string());
+        timeValues.push_back(time);
+
+        std::unordered_map<std::string, std::vector<double>> doubleFields;
+        std::unordered_map<std::string, std::vector<int>> intFields;
+
+        for (const auto &subpath: gridDirs)
+        {
+            std::cout << "Loading: " << path / subpath.filename() / "Solution.cgns" << "..." << std::endl;
+
+            int fn2;
+            cg_open((path / subpath.filename() / "Solution.cgns").c_str(), CG_MODE_READ, &fn2);
+
+            char name[256];
+            cg_zone_read(fn2, 1, 1, name, sizes);
+
+            int nfields = 0;
+            cg_nfields(fn2, 1, 1, 1, &nfields);
+
+            for (int field = 1; field <= nfields; ++field)
+            {
+                CGNS_ENUMT(DataType_t) type;
+                cg_field_info(fn2, 1, 1, 1, field, &type, name);
+                cgsize_t rmin = 1, rmax = sizes[1];
+
+                switch (type)
+                {
+                    case CGNS_ENUMV(Integer):
+                    {
+                        std::vector<int> buffer(sizes[1]);
+                        cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(Integer), &rmin, &rmax, buffer.data());
+                        intFields[name].insert(intFields[name].end(), buffer.begin(), buffer.end());
+                    }
+                        break;
+                    case CGNS_ENUMV(RealDouble):
+                    {
+                        std::vector<double> buffer(sizes[1]);
+                        cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
+                        doubleFields[name].insert(doubleFields[name].end(), buffer.begin(), buffer.end());
+                    }
+                        break;
+                }
+            }
+
+            cg_close(fn2);
+        }
+
+        std::string flowSolutionPtr = "FlowSolution" + std::to_string(solutionNo);
+        flowSolutionPtrs << setw(32) << setfill(' ') << left << flowSolutionPtr;
+
+        int sid;
+        cg_sol_write(fn, 1, 1, flowSolutionPtr.c_str(), CGNS_ENUMV(CellCenter), &sid);
+
+        for (const auto &field: intFields)
+        {
+            int fieldId;
+            std::vector<int> buffer(nElements);
+            for(int i = 0; i < field.second.size(); ++i)
+                buffer[elementIds[i] - 1] = field.second[i];
+
+            cg_field_write(fn, 1, 1, sid, CGNS_ENUMV(Integer), field.first.c_str(), buffer.data(), &fieldId);
+        }
+
+        for (const auto &field: doubleFields)
+        {
+            int fieldId;
+            std::vector<double> buffer(nElements);
+            for(int i = 0; i < field.second.size(); ++i)
+                buffer[elementIds[i] - 1] = field.second[i];
+
+            cg_field_write(fn, 1, 1, sid, CGNS_ENUMV(RealDouble), field.first.c_str(), buffer.data(), &fieldId);
+        }
+
+        ++solutionNo;
     }
 
     //- Write zone iterative data
-    cg_ziter_write(fid, bid, zid, "ZoneIterativeData");
-    cg_goto(fid, bid, "Zone_t", zid, "ZoneIterativeData_t", 1, "end");
-
+    cg_ziter_write(fn, 1, 1, "ZoneIterativeData");
+    cg_goto(fn, 1, "Zone_t", 1, "ZoneIterativeData_t", 1, "end");
     sizes[0] = 32;
-    sizes[1] = timeSteps.size();
-
-    cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, sizes, sout.str().c_str());
+    sizes[1] = timeValues.size();
+    cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, sizes, flowSolutionPtrs.str().c_str());
 
     //- Write base iterative data
-    cg_biter_write(fid, bid, "TimeIterValues", timeSteps.size());
-    cg_goto(fid, bid, "BaseIterativeData_t", 1, "end");
+    cg_biter_write(fn, 1, "TimeIterValues", timeValues.size());
+    cg_goto(fn, 1, "BaseIterativeData_t", 1, "end");
+    cg_array_write("TimeValues", CGNS_ENUMV(RealDouble), 1, &sizes[1], timeValues.data());
+    cg_simulation_type_write(fn, 1, CGNS_ENUMV(TimeAccurate));
 
-    cg_array_write("TimeValues", CGNS_ENUMV(RealDouble), 1, &sizes[1], timeSteps.data());
-
-    cg_simulation_type_write(fid, bid, CGNS_ENUMV(TimeAccurate));
-
-    cg_close(fid);
-
-    cout << "Solution successfully reconstructed.\n";
+    //- Finalize
+    cg_close(fn);
 
     return 0;
-}
-
-Base loadGrid(const std::string &filename)
-{
-    int fid;
-
-    std::cout << "Loading grid \"" << filename << "\"...\n";
-
-    cg_open(filename.c_str(), CG_MODE_READ, &fid);
-
-    Base base;
-
-    cg_base_read(fid, 1, base.name, &base.cellDim, &base.physDim);
-
-    int nZones;
-    cg_nzones(fid, 1, &nZones);
-
-    for (int zid = 1; zid <= nZones; ++zid)
-    {
-        base.zones.push_back(Zone());
-        Zone &zone = base.zones.back();
-
-        cg_zone_read(fid, 1, zid, zone.name, zone.sizes);
-        cg_zone_type(fid, 1, zid, &zone.type);
-
-        std::vector<double> xCoords(zone.sizes[0]), yCoords(zone.sizes[0]);
-
-        cgsize_t rmin = 1, rmax = zone.sizes[0];
-        cg_coord_read(fid, 1, zid, "CoordinateX", CGNS_ENUMV(RealDouble), &rmin, &rmax, xCoords.data());
-        cg_coord_read(fid, 1, zid, "CoordinateY", CGNS_ENUMV(RealDouble), &rmin, &rmax, yCoords.data());
-
-        zone.nodes.resize(zone.sizes[0]);
-        std::transform(xCoords.begin(), xCoords.end(), yCoords.begin(), zone.nodes.begin(),
-                       [](double x, double y) { return Point(x, y); });
-
-        int nSections;
-        cg_nsections(fid, 1, zid, &nSections);
-
-        for (int sid = 1; sid <= nSections; ++sid)
-        {
-            zone.sections.push_back(Section());
-            Section &section = zone.sections.back();
-
-            cg_section_read(fid, 1, zid, sid, section.name, &section.type, &section.start, &section.end,
-                            &section.nbndry, &section.parentFlag);
-
-            cgsize_t elementDataSize;
-            cg_ElementDataSize(fid, 1, zid, sid, &elementDataSize);
-
-            section.elements.resize(elementDataSize);
-            cg_elements_read(fid, 1, zid, sid, section.elements.data(), &section.parentData);
-        }
-
-        int nbocos;
-        cg_nbocos(fid, 1, zid, &nbocos);
-    }
-
-    cg_close(fid);
-
-    return base;
-}
-
-Solution loadSolution(const std::string &filename)
-{
-    Solution solution;
-    int fid;
-
-    std::cout << "Loading solution \"" << filename << "\"...\n";
-
-    cg_open(filename.c_str(), CG_MODE_READ, &fid);
-    cg_sol_info(fid, 1, 1, 1, solution.name, &solution.location);
-
-    int datadim;
-    cgsize_t dimvals[3];
-    cg_sol_size(fid, 1, 1, 1, &datadim, dimvals);
-
-    if (datadim != 1)
-    {
-        std::cout << "Solution data dimension is not 1, exiting...\n";
-        exit(-1);
-    }
-
-    cgsize_t rmin = 1, rmax = dimvals[0];
-
-    int nfields;
-    cg_nfields(fid, 1, 1, 1, &nfields);
-
-    for (int fieldid = 1; fieldid <= nfields; ++fieldid)
-    {
-        solution.fields.push_back(Field());
-        Field &field = solution.fields.back();
-
-        cg_field_info(fid, 1, 1, 1, fieldid, &field.type, field.name);
-
-        switch (field.type)
-        {
-            case CGNS_ENUMV(Integer):
-                field.integerData.resize(dimvals[0]);
-                cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.integerData.data());
-                break;
-            case CGNS_ENUMV(RealDouble):
-                field.scalarData.resize(dimvals[0]);
-                cg_field_read(fid, 1, 1, 1, field.name, field.type, &rmin, &rmax, field.scalarData.data());
-                break;
-            default:
-                std::cout << "Urecognized datat type.\n";
-                exit(-1);
-        }
-    }
-
-    cg_close(fid);
-
-    return solution;
-}
-
-void mergeGrids(const std::vector<Base> &grids,
-                const std::vector<std::vector<Solution>> &solutions,
-                std::vector<Point> &nodes, std::vector<cgsize_t> &elements,
-                int nTimeSteps,
-                std::map<std::string, std::vector<Field> > &fields)
-{
-    using namespace std;
-
-    nodes.clear();
-    elements.clear();
-    fields.clear();
-
-    int gridNo = 0;
-    for (const Base &grid: grids)
-        for (const Zone &zone: grid.zones)
-        {
-            cgsize_t offset = nodes.size();
-            nodes.insert(nodes.end(), zone.nodes.begin(), zone.nodes.end());
-
-            for (const Section &section: zone.sections)
-            {
-                if (section.type != CGNS_ENUMV(MIXED))
-                    continue;
-
-                for (cgsize_t i = 0; i < section.elements.size();)
-                {
-                    cgsize_t type = section.elements[i++];
-                    elements.push_back(type);
-
-                    switch (type)
-                    {
-                        case CGNS_ENUMV(TRI_3):
-
-                            for (cgsize_t j = 0; j < 3; ++j, ++i)
-                                elements.push_back(section.elements[i] + offset);
-
-                            break;
-                        case CGNS_ENUMV(QUAD_4):
-                            for (cgsize_t j = 0; j < 4; ++j, ++i)
-                                elements.push_back(section.elements[i] + offset);
-
-                            break;
-                        default:
-                        {
-                            cout << "Invalid element type. Exiting...\n";
-                            exit(-1);
-                        }
-                    };
-                }
-
-                int timeStepNo = 0;
-                for (const Solution &soln: solutions[gridNo++])
-                {
-                    for (const Field &field: soln.fields)
-                    {
-                        vector<Field> &globalField = fields[field.name];
-
-                        if (globalField.size() < nTimeSteps)
-                            globalField.resize(nTimeSteps);
-
-                        globalField[timeStepNo].type = field.type;
-
-                        switch (field.type)
-                        {
-                            case CGNS_ENUMV(Integer):
-                                globalField[timeStepNo].integerData.insert(globalField[timeStepNo].integerData.end(),
-                                                                           field.integerData.begin(),
-                                                                           field.integerData.end());
-                                break;
-                            case CGNS_ENUMV(RealDouble):
-                                globalField[timeStepNo].scalarData.insert(globalField[timeStepNo].scalarData.end(),
-                                                                          field.scalarData.begin(),
-                                                                          field.scalarData.end());
-                                break;
-                        }
-                    }
-
-                    ++timeStepNo;
-                }
-            }
-        }
-}
-
-std::vector<cgsize_t> getNodeMergeList(const std::vector<Point> &nodes)
-{
-    using namespace std;
-
-    double tolerance = 1e-15;
-
-    cout << "Searching " << nodes.size() << " nodes for duplicates, tolerance = " << tolerance << "...\n";
-
-    //- Construct a searchable tree
-    boost::geometry::index::rtree<pair<Point, cgsize_t>, boost::geometry::index::quadratic<32>> rtree;
-
-    cgsize_t id = 1;
-    for (const Point &node: nodes)
-        rtree.insert(make_pair(node, id++));
-
-    //- Find nodes that are the same within some tolerance, mark them for merging
-    vector<cgsize_t> nodeMerges(nodes.size(), 0);
-    int nDuplicates = 0;
-
-    id = 0;
-    for (const Point &node: nodes)
-    {
-        ++id;
-
-        if (nodeMerges[id - 1] != 0) // Node is already marked for merging
-            continue;
-
-        boost::geometry::model::box<Point> box(
-                Point(node.get<0>() - tolerance, node.get<1>() - tolerance),
-                Point(node.get<0>() + tolerance, node.get<1>() + tolerance)
-        );
-
-        std::vector<pair<Point, cgsize_t>> result;
-        rtree.query(boost::geometry::index::covered_by(box), back_inserter(result));
-
-        for (const auto &val: result)
-        {
-            if (val.second == id)
-                continue;
-
-            if (nodeMerges[val.second - 1] != 0)
-                continue;
-
-            nodeMerges[val.second - 1] = id; // Works because the rtree returns all the nodes at this location
-
-            ++nDuplicates;
-        }
-    }
-
-    cout << "Found " << nDuplicates << " duplicate nodes.\n";
-
-    return nodeMerges;
-}
-
-std::vector<Point>
-mergeNodes(const std::vector<Point> &nodes, const std::vector<cgsize_t> &nodeMergeList, std::vector<cgsize_t> &elements)
-{
-    //- Merge the nodes that have been marked. Update the elements list accordingly
-    std::vector<Point> mergedNodes;
-    std::vector<cgsize_t> mergedNodeIds(nodes.size(), 0);
-
-    cgsize_t id = 1;
-    for (int i = 0; i < nodes.size(); ++i)
-        if (nodeMergeList[i] == 0) // not merged into another node, gets a new id
-        {
-            mergedNodeIds[i] = id++;
-            mergedNodes.push_back(nodes[i]);
-        }
-
-    for (cgsize_t i = 0; i < elements.size();)
-    {
-        cgsize_t type = elements[i++];
-
-        cgsize_t nVerts;
-
-        switch (type)
-        {
-            case CGNS_ENUMV(TRI_3):
-                nVerts = 3;
-                break;
-            case CGNS_ENUMV(QUAD_4):
-                nVerts = 4;
-                break;
-            default:
-                std::cout << "Invalid element type. Exiting...\n";
-                exit(-1);
-        }
-
-        for (cgsize_t j = 0; j < nVerts; ++j, ++i)
-        {
-            if (nodeMergeList[elements[i] - 1])
-                elements[i] = mergedNodeIds[nodeMergeList[elements[i] - 1] - 1];
-            else
-                elements[i] = mergedNodeIds[elements[i] - 1];
-        }
-    }
-
-    return mergedNodes;
-}
-
-std::vector<cgsize_t> mergeElements(cgsize_t nNodes,
-                                    const std::vector<cgsize_t> &elements, int &nElements,
-                                    std::map<std::string, std::vector<Field> > &fields)
-{
-    using namespace std;
-
-    cout << "Searching for duplicate elements...\n";
-
-    //- Merge duplicate elements
-    //- Construct a node to element map
-    vector<vector<cgsize_t>> nodeToElements(nNodes);
-    vector<vector<cgsize_t>> elementToNodes;
-
-    cgsize_t id = 1;
-    for (cgsize_t i = 0; i < elements.size(); ++id)
-    {
-        cgsize_t type = elements[i++];
-
-        cgsize_t nVerts;
-
-        switch (type)
-        {
-            case CGNS_ENUMV(TRI_3):
-                nVerts = 3;
-                break;
-            case CGNS_ENUMV(QUAD_4):
-                nVerts = 4;
-                break;
-            default:
-                cout << "Invalid element type. Exiting...\n";
-                exit(-1);
-        }
-
-        elementToNodes.push_back(vector<cgsize_t>());
-
-        for (cgsize_t j = 0; j < nVerts; ++j, ++i)
-        {
-            nodeToElements[elements[i] - 1].push_back(id);
-            elementToNodes[id - 1].push_back(elements[i]);
-        }
-    }
-
-    //- Loop over each node, check for duplicate elements and mark them for removal
-    vector<bool> removeElement(elementToNodes.size(), false);
-    int nDuplicates = 0;
-    for (const vector<cgsize_t> &elements: nodeToElements)
-    {
-        for (cgsize_t ele1: elements)
-        {
-            if (removeElement[ele1 - 1]) // don't check elements marked for removal
-                continue;
-
-            for (cgsize_t ele2: elements)
-            {
-                if (ele1 == ele2 || removeElement[ele2 - 1])
-                    continue;
-
-                bool duplicate = true;
-
-                for (cgsize_t node1: elementToNodes[ele1 - 1])
-                    duplicate &= find(elementToNodes[ele2 - 1].begin(), elementToNodes[ele2 - 1].end(), node1) !=
-                                 elementToNodes[ele2 - 1].end();
-
-                if (duplicate)
-                {
-                    removeElement[ele2 - 1] = true;
-                    ++nDuplicates;
-                }
-            }
-        }
-    }
-
-    cout << "Found " << nDuplicates << " duplicate elements.\n";
-
-    //- Construct new element list
-    vector<cgsize_t> newElements;
-    id = 1;
-    nElements = 0;
-    for (cgsize_t i = 0; i < elements.size(); ++id)
-    {
-        cgsize_t type = elements[i++];
-
-        cgsize_t nVerts;
-
-        switch (type)
-        {
-            case CGNS_ENUMV(TRI_3):
-                nVerts = 3;
-                break;
-            case CGNS_ENUMV(QUAD_4):
-                nVerts = 4;
-                break;
-            default:
-                cout << "Invalid element type. Exiting...\n";
-                exit(-1);
-        }
-
-        if (removeElement[id - 1])
-        {
-            i += nVerts;
-            continue;
-        }
-
-        newElements.push_back(type);
-
-        for (cgsize_t j = 0; j < nVerts; ++j, ++i)
-            newElements.push_back(elements[i]);
-
-        ++nElements;
-    }
-
-    //- Modify field data
-    for (auto &field: fields)
-    {
-        for (Field &timeStep: field.second)
-        {
-            switch (timeStep.type)
-            {
-                case CGNS_ENUMV(Integer):
-                {
-                    vector<int> newTimeStep;
-
-                    auto removeItr = removeElement.begin();
-
-                    for (int val: timeStep.integerData)
-                        if (!*(removeItr++))
-                            newTimeStep.push_back(val);
-
-                    timeStep.integerData = newTimeStep;
-                }
-                    break;
-                case CGNS_ENUMV(RealDouble):
-                {
-                    vector<double> newTimeStep;
-
-                    auto removeItr = removeElement.begin();
-
-                    for (double val: timeStep.scalarData)
-                        if (!*(removeItr++))
-                            newTimeStep.push_back(val);
-
-                    timeStep.scalarData = newTimeStep;
-                }
-                    break;
-            }
-        }
-    }
-
-    return newElements;
 }
