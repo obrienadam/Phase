@@ -1,4 +1,6 @@
 set(HEADERS PostProcessing.h
+        PostProcessingObject.h
+        VolumeIntegrator.h
         ReynoldsNumber.h
         GhostCellImmersedBoundaryObjectContactLineTracker.h
         ContactLineTracker.h
@@ -6,6 +8,8 @@ set(HEADERS PostProcessing.h
         IbTracker.h)
 
 set(SOURCE PostProcessing.cpp
+        PostProcessingObject.cpp
+        VolumeIntegrator.cpp
         ReynoldsNumber.cpp
         GhostCellImmersedBoundaryObjectContactLineTracker.cpp
         ContactLineTracker.cpp

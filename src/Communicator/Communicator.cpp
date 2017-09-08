@@ -165,6 +165,12 @@ void Communicator::ssend(int dest, unsigned long val, int tag) const
     MPI_Ssend(&val, 1, MPI_UNSIGNED_LONG, dest, tag, comm_);
 }
 
+void Communicator::recv(int source, std::vector<Vector2D> &vals, int tag) const
+{
+    MPI_Status status;
+    MPI_Recv(vals.data(), vals.size(), MPI_VECTOR2D_, source, tag, comm_, &status);
+}
+
 void Communicator::irecv(int source, std::vector<int> &vals, int tag) const
 {
     MPI_Request request;
@@ -219,6 +225,26 @@ void Communicator::waitAll() const
     MPI_Waitall(currentRequests_.size(), currentRequests_.data(), statuses.data());
 
     currentRequests_.clear();
+}
+
+template <>
+int Communicator::probeSize<double>(int source, int tag) const
+{
+    MPI_Status status;
+    int count;
+    MPI_Probe(source, tag, comm_, &status);
+    MPI_Get_count(&status, MPI_DOUBLE, &count);
+    return count;
+}
+
+template <>
+int Communicator::probeSize<Vector2D>(int source, int tag) const
+{
+    MPI_Status status;
+    int count;
+    MPI_Probe(source, tag, comm_, &status);
+    MPI_Get_count(&status, MPI_VECTOR2D_, &count);
+    return count;
 }
 
 long Communicator::sum(long val) const

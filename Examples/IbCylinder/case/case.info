@@ -29,7 +29,7 @@ LinearAlgebra
 	pEqn
 	{
 		lib trilinos
-		solver "BICGSTAB"
+		solver "TFQMR"
 		iluFill 4
 		tolerance 1e-14
 		schwarzIters 2

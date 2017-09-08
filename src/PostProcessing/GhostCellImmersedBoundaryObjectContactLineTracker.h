@@ -3,19 +3,18 @@
 
 #include <memory>
 
-#include "PostProcessing.h"
+#include "PostProcessingObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
 
-class GhostCellImmersedBoundaryObjectContactLineTracker: public PostProcessing
+class GhostCellImmersedBoundaryObjectContactLineTracker: public PostProcessingObject
 {
 public:
-    GhostCellImmersedBoundaryObjectContactLineTracker(const Solver& solver,
-                                                      std::shared_ptr<ImmersedBoundaryObject> gIbObj);
+    GhostCellImmersedBoundaryObjectContactLineTracker(const Solver& solver);
 
     void compute(Scalar time);
 
 private:
-    std::shared_ptr<GhostCellImmersedBoundaryObject> gIbObj_;
+    std::vector<std::weak_ptr<GhostCellImmersedBoundaryObject>> gcIbObjs_;
 };
 
 

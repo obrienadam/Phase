@@ -7,7 +7,6 @@
 #include "TensorFiniteVolumeField.h"
 #include "SparseMatrixSolver.h"
 #include "ImmersedBoundary.h"
-#include "PostProcessing.h"
 
 class Solver
 {
@@ -102,6 +101,12 @@ public:
     const ScalarFiniteVolumeField& scalarField(const std::string& name) const
     { return *scalarFields_.find(name)->second; }
 
+    std::shared_ptr<ScalarFiniteVolumeField> scalarFieldPtr(const std::string& name)
+    { return scalarFields_.find(name)->second; }
+
+    std::shared_ptr<const ScalarFiniteVolumeField> scalarFieldPtr(const std::string& name) const
+    { return scalarFields_.find(name)->second; }
+
     VectorFiniteVolumeField& vectorField(const std::string& name)
     { return *vectorFields_.find(name)->second; }
 
@@ -124,13 +129,6 @@ public:
     { return ib_.ibObjs(); }
 
     virtual void initialize() {}
-
-    //- Post-processing
-    void postProcess(Scalar time)
-    {
-        for(auto ppObj: postProcessingObjs_)
-            ppObj->compute(time);
-    }
 
 protected:
 
@@ -165,9 +163,6 @@ protected:
 
     //- Immersed boundary manager
     ImmersedBoundary ib_;
-
-    //- Post processing
-    std::vector<std::shared_ptr<PostProcessing>> postProcessingObjs_;
 };
 
 #endif

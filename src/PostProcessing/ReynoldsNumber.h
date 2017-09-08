@@ -3,14 +3,14 @@
 
 #include <fstream>
 
-#include "PostProcessing.h"
+#include "PostProcessingObject.h"
 #include "Cell.h"
 
-class ReynoldsNumber: public PostProcessing
+class ReynoldsNumber: public PostProcessingObject
 {
 public:
 
-    ReynoldsNumber(const Input& input, const Solver& solver, const Cell& cell);
+    ReynoldsNumber(const Solver& solver, const Cell& cell);
 
     void compute(Scalar time);
 

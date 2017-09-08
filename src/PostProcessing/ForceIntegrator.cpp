@@ -1,11 +1,13 @@
 #include "ForceIntegrator.h"
 
-ForceIntegrator::ForceIntegrator(const Patch &patch,
+ForceIntegrator::ForceIntegrator(const Solver &solver,
+                                 const Patch &patch,
                                  const VectorFiniteVolumeField &u,
                                  const ScalarFiniteVolumeField &rho,
                                  const ScalarFiniteVolumeField &mu,
                                  const ScalarFiniteVolumeField &p)
         :
+        PostProcessingObject(solver),
         patch_(patch),
         u_(u),
         rho_(rho),
@@ -42,13 +44,13 @@ void ForceIntegrator::write() const
          << "variables = \"time\", \"force_x\", \"force_y\"\n"
          << "zone I = " << time_.size() << ", F=BLOCK\n";
 
-    for(Scalar time: time_)
+    for (Scalar time: time_)
         fout << time << "\n";
 
-    for(const Vector2D& f: force_)
+    for (const Vector2D &f: force_)
         fout << f.x << "\n";
 
-    for(const Vector2D& f: force_)
+    for (const Vector2D &f: force_)
         fout << f.y << "\n";
 
     fout.close();

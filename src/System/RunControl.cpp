@@ -1,5 +1,4 @@
 #include "RunControl.h"
-#include "IbViewer.h"
 #include "PostProcessing.h"
 
 void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
@@ -15,8 +14,6 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     //- Write control
     size_t fileWriteFrequency = input.caseInput().get<size_t>("System.fileWriteFrequency"), iterNo;
 
-    IbViewer ibViewer(input, solver);
-
     //- Print the solver info
     solver.printf("%s\n", (std::string(96, '-')).c_str());
     solver.printf("%s", solver.info().c_str());
@@ -26,6 +23,9 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     solver.setInitialConditions(input);
     solver.initialize();
     solver.printf("Starting simulation time: %.2lf s\n", time);
+
+    //- Post-processing
+    PostProcessing postProcessing(input, solver);
 
     time_.start();
     for (
@@ -37,7 +37,6 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
         if (iterNo % fileWriteFrequency == 0)
         {
             viewer.write(time);
-            ibViewer.write(time);
 
             //  for(VolumeIntegrator &vi: solver.volumeIntegrators())
             //      vi.integrate();
@@ -49,7 +48,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
         }
 
         solver.solve(timeStep);
-        solver.postProcess(time + timeStep);
+        postProcessing.compute(time + timeStep);
 
         time_.stop();
 

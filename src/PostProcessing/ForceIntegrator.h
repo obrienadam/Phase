@@ -1,19 +1,21 @@
 #ifndef FORCE_INTEGRATOR_H
 #define FORCE_INTEGRATOR_H
 
+#include "PostProcessingObject.h"
 #include "Patch.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 
-class ForceIntegrator
+class ForceIntegrator : public PostProcessingObject
 {
 public:
 
-    ForceIntegrator(const Patch& patch,
-                    const VectorFiniteVolumeField& u,
-                    const ScalarFiniteVolumeField& rho,
-                    const ScalarFiniteVolumeField& mu,
-                    const ScalarFiniteVolumeField& p);
+    ForceIntegrator(const Solver &solver,
+                    const Patch &patch,
+                    const VectorFiniteVolumeField &u,
+                    const ScalarFiniteVolumeField &rho,
+                    const ScalarFiniteVolumeField &mu,
+                    const ScalarFiniteVolumeField &p);
 
     void compute(Scalar time);
 
@@ -21,8 +23,8 @@ public:
 
 private:
 
-    const Patch& patch_;
-    const VectorFiniteVolumeField& u_;
+    const Patch &patch_;
+    const VectorFiniteVolumeField &u_;
     const ScalarFiniteVolumeField &rho_, &mu_, &p_;
 
     std::vector<Scalar> time_;

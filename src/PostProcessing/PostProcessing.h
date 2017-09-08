@@ -2,27 +2,22 @@
 #define POST_PROCESSING_H
 
 #include <memory>
-#include <vector>
 
-#include "Types.h"
+#include "PostProcessingObject.h"
 #include "Input.h"
-
-class Solver;
 
 class PostProcessing
 {
+
 public:
 
-    static std::vector<std::shared_ptr<PostProcessing>> initPostProcessing(const Input& input, const Solver& solver);
+    PostProcessing(const Input &input, const Solver &solver);
 
-    PostProcessing(const Solver& solver);
+    void compute(Scalar time) const;
 
-    virtual void compute(Scalar time) = 0;
+private:
 
-protected:
-
-    const Solver& solver_;
+    std::vector<std::shared_ptr<PostProcessingObject>> postProcessingObjs_;
 };
-
 
 #endif

@@ -1,8 +1,8 @@
 #include "ReynoldsNumber.h"
 
-ReynoldsNumber::ReynoldsNumber(const Input& input, const Solver& solver, const Cell& cell)
+ReynoldsNumber::ReynoldsNumber(const Solver &solver, const Cell &cell)
         :
-        PostProcessing(solver),
+        PostProcessingObject(solver),
         cell_(cell)
 {
     fout_.open("Re_cell_" + std::to_string(cell_.id()) + ".dat");

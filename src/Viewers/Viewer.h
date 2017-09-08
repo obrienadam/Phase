@@ -26,6 +26,5 @@ protected:
 };
 
 #include "CgnsViewer.h"
-#include "IbViewer.h"
 
 #endif
