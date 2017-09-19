@@ -2,6 +2,8 @@
 
 InitialConditions
 {
+  type restart
+
   u
   {
     velocity

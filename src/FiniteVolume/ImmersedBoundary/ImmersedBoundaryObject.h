@@ -75,6 +75,7 @@ public:
 
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
+
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
     void addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue);

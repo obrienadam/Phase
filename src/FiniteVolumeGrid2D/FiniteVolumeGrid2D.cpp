@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include <cgnslib.h>
 #include <metis.h>
 
@@ -520,58 +522,29 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
         if(cellProc[cell.id()] != comm_->rank())
             bufferCellZones_[cellProc[cell.id()]].add(cell);
 
-    //- Initialize the receive orders
-    vector<vector<Label>> recvOrders(comm_->nProcs());
-    vector<unsigned  long> sendSizes(comm_->nProcs(), 0);
+    //- Initialize all buffers
+    std::vector<std::vector<unsigned long>> recvOrders(comm_->nProcs());
 
     for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        if(proc == comm_->rank())
-            continue;
+        std::transform(bufferCellZones_[proc].begin(), bufferCellZones_[proc].end(),
+                       std::back_inserter(recvOrders[proc]), [&cellLocalToGlobalIdMap](const Cell &cell) {
+                    return cellLocalToGlobalIdMap[cell.id()];
+                });
 
-        for (const Cell &cell: bufferCellZones_[proc])
-            recvOrders[proc].push_back(cellLocalToGlobalIdMap[cell.id()]);
-
-        //- From the adjacent proc, get the number of items expected
-        comm_->irecv(proc, sendSizes[proc], proc);
+        comm_->isend(proc, recvOrders[proc], proc);
     }
 
     for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        if(proc == comm_->rank())
-            continue;
+        std::vector<unsigned long> sendOrder(comm_->probeSize<unsigned long>(proc, comm_->rank()));
+        comm_->recv(proc, sendOrder, comm_->rank());
 
-        //- Send to the adjacent proc how many items should be sent
-        comm_->ssend(proc, bufferCellZones_[proc].size(), comm_->rank());
-    }
-    comm_->waitAll();
-
-    vector<vector<Label>> sendOrders(comm_->nProcs());
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
-    {
-        if(sendSizes[proc] == 0)
-            continue;
-
-        //- Resize the send order and post it for receiving
-        sendOrders[proc].resize(sendSizes[proc]);
-        comm_->irecv(proc, sendOrders[proc], proc);
-    }
-
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
-    {
-        if(recvOrders[proc].size() == 0)
-            continue;
-
-        //- Send the receive order to the adjacent proc
-        comm_->ssend(proc, recvOrders[proc], comm_->rank());
-    }
-    comm_->waitAll();
-
-    //- Init the send cell group
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
-        for(Label gid: sendOrders[proc])
+        for(Label gid: sendOrder)
             sendCellGroups_[proc].add(cells_[cellGlobalToLocalIdMap[gid]]);
+    }
 
+    comm_->waitAll();
     computeGlobalOrdering();
 }
 
@@ -581,10 +554,7 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
      * This is a requirement for the majority of sparse linear solvers. */
 
     std::vector<Size> nLocalCells = comm_->allGather(nLocalActiveCells());
-
-    Index globalIndexStart = 0;
-    for (int proc = 0; proc < comm_->rank(); ++proc)
-        globalIndexStart += nLocalCells[proc];
+    Index globalIndexStart = std::accumulate(nLocalCells.begin(), nLocalCells.begin() + comm_->rank(), 0);
 
     std::vector<Index> globalIndices[] = {
             std::vector<Index>(nCells(), -1),

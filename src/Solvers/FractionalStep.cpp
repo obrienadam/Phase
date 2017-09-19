@@ -90,8 +90,8 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    //gradU.compute(fluid_);
-    //grid_->sendMessages(gradU);
+    gradU.compute(fluid_);
+    grid_->sendMessages(gradU);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u) == fv::laplacian(mu_ / rho_, u, 0.5));
 

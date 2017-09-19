@@ -54,11 +54,24 @@ public:
     void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
 
     //- Collectives
+
+    //- Scatter
     int scatter(int root, const std::vector<int> &send) const;
 
+    //- Allgather
     std::vector<int> allGather(int val) const;
 
     std::vector<unsigned long> allGather(unsigned long val) const;
+
+    //- gather
+    std::vector<int> gather(int root, int val) const;
+
+    std::vector<unsigned long> gather(int root, unsigned long val) const;
+
+    //- gatherv
+    std::vector<double> gatherv(int root, const std::vector<double>& vals) const;
+
+    std::vector<Vector2D> gatherv(int root, const std::vector<Vector2D>& vals) const;
 
     //- Blocking point-to-point communication
     void ssend(int dest, const std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
@@ -73,9 +86,14 @@ public:
 
     void ssend(int dest, unsigned long val, int tag = MPI_ANY_TAG) const;
 
+    void recv(int source, std::vector<unsigned long>& vals, int tag = MPI_ANY_TAG) const;
+
     void recv(int source, std::vector<Vector2D>& vals, int tag = MPI_ANY_TAG) const;
 
     //- Non-blocking point-to-point communication
+
+    void isend(int dest, const std::vector<unsigned long>& vals, int tag = MPI_ANY_TAG) const;
+
     void irecv(int source, std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
 
     void irecv(int source, std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
@@ -101,6 +119,8 @@ public:
     unsigned long sum(unsigned long val) const;
 
     double sum(double val) const;
+
+    Vector2D sum(const Vector2D& val) const;
 
     int min(int val) const;
 

@@ -1,6 +1,7 @@
 #include "PostProcessing.h"
 #include "VolumeIntegrator.h"
 #include "IbTracker.h"
+#include "GhostCellImmersedBoundaryObjectForceIntegrator.h"
 #include "GhostCellImmersedBoundaryObjectContactLineTracker.h"
 
 PostProcessing::PostProcessing(const Input &input, const Solver &solver)
@@ -28,6 +29,10 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
                         postProcessingObjectInput.second.get<double>("lineThickness", 0.4),
                         postProcessingObjectInput.second.get<std::string>("fillColor", "CUST2")
                 );
+            }
+            else if(postProcessingObjectInput.first == "GhostCellImmersedBoundaryObjectForceIntegrator")
+            {
+                postProcessingObj = std::make_shared<GhostCellImmersedBoundaryObjectForceIntegrator>(solver);
             }
             else if (postProcessingObjectInput.first == "GhostCellImmersedBoundaryObjectContactLineTracker")
             {

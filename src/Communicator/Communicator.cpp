@@ -1,4 +1,5 @@
 #include <cstdarg>
+#include <numeric>
 
 #include <mpi.h>
 
@@ -135,6 +136,42 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
     return result;
 }
 
+std::vector<int> Communicator::gather(int root, int val) const
+{
+    std::vector<int> result(nProcs());
+    MPI_Gather(&val, 1, MPI_INT, result.data(), 1, MPI_INT, root, comm_);
+    return result;
+}
+
+std::vector<unsigned long> Communicator::gather(int root, unsigned long val) const
+{
+    std::vector<unsigned long> result(nProcs());
+    MPI_Gather(&val, 1, MPI_UNSIGNED_LONG, result.data(), 1, MPI_UNSIGNED_LONG, root, comm_);
+    return result;
+}
+
+std::vector<double> Communicator::gatherv(int root, const std::vector<double> &vals) const
+{
+    std::vector<int> sizes = gather(root, (int)vals.size());
+    std::vector<double > result(std::accumulate(sizes.begin(), sizes.end(), 0));
+    std::vector<int> displs(1, 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+
+    MPI_Gatherv(vals.data(), vals.size(), MPI_DOUBLE, result.data(), sizes.data(), displs.data(), MPI_DOUBLE, root, comm_);
+    return result;
+}
+
+std::vector<Vector2D> Communicator::gatherv(int root, const std::vector<Vector2D>& vals) const
+{
+    std::vector<int> sizes = gather(root, (int)vals.size());
+    std::vector<Vector2D> result(std::accumulate(sizes.begin(), sizes.end(), 0));
+    std::vector<int> displs(1, 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+
+    MPI_Gatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_, root, comm_);
+    return result;
+}
+
 void Communicator::ssend(int dest, const std::vector<int> &vals, int tag) const
 {
     MPI_Ssend(vals.data(), vals.size(), MPI_INT, dest, tag, comm_);
@@ -165,10 +202,23 @@ void Communicator::ssend(int dest, unsigned long val, int tag) const
     MPI_Ssend(&val, 1, MPI_UNSIGNED_LONG, dest, tag, comm_);
 }
 
+void Communicator::recv(int source, std::vector<unsigned long> &vals, int tag) const
+{
+    MPI_Status status;
+    MPI_Recv(vals.data(), vals.size(), MPI_UNSIGNED_LONG, source, tag, comm_, &status);
+}
+
 void Communicator::recv(int source, std::vector<Vector2D> &vals, int tag) const
 {
     MPI_Status status;
     MPI_Recv(vals.data(), vals.size(), MPI_VECTOR2D_, source, tag, comm_, &status);
+}
+
+void Communicator::isend(int dest, const std::vector<unsigned long> &vals, int tag) const
+{
+    MPI_Request request;
+    MPI_Isend(vals.data(), vals.size(), MPI_UNSIGNED_LONG, dest, tag, comm_, &request);
+    currentRequests_.push_back(request);
 }
 
 void Communicator::irecv(int source, std::vector<int> &vals, int tag) const
@@ -227,6 +277,16 @@ void Communicator::waitAll() const
     currentRequests_.clear();
 }
 
+template<>
+int Communicator::probeSize<unsigned long>(int source, int tag) const
+{
+    MPI_Status status;
+    int count;
+    MPI_Probe(source, tag, comm_, &status);
+    MPI_Get_count(&status, MPI_UNSIGNED_LONG, &count);
+    return count;
+}
+
 template <>
 int Communicator::probeSize<double>(int source, int tag) const
 {
@@ -267,6 +327,13 @@ double Communicator::sum(double val) const
 {
     double result;
     MPI_Allreduce(&val, &result, 1, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+Vector2D Communicator::sum(const Vector2D& val) const
+{
+    Vector2D result;
+    MPI_Allreduce(&val, &result, 1, MPI_VECTOR2D_, MPI_SUM, comm_);
     return result;
 }
 

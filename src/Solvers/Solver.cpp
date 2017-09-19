@@ -272,20 +272,20 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
 void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar thetaMax, Scalar innerValue,
                              ScalarFiniteVolumeField &field)
 {
-    thetaMin *= M_PI / 180;
-    thetaMax *= M_PI / 180;
+    thetaMin *= M_PI / 180.;
+    thetaMax *= M_PI / 180.;
 
-    while (thetaMin > 2 * M_PI)
-        thetaMin -= 2 * M_PI;
+    while (thetaMin > 2. * M_PI)
+        thetaMin -= 2. * M_PI;
 
     while (thetaMin < 0.)
-        thetaMin += 2 * M_PI;
+        thetaMin += 2. * M_PI;
 
-    while (thetaMax > 2 * M_PI)
-        thetaMax -= 2 * M_PI;
+    while (thetaMax > 2. * M_PI)
+        thetaMax -= 2. * M_PI;
 
     while (thetaMax < 0.)
-        thetaMax += 2 * M_PI;
+        thetaMax += 2. * M_PI;
 
     std::vector<Point2D> vtx;
     const int nPts = 400;
@@ -294,7 +294,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
     for (int i = 0; i < nPts; ++i)
     {
         const Scalar theta = thetaMin + i * dTheta;
-        const Vector2D rVec(circle.radius() * cos(theta), circle.radius() * sin(theta));
+        const Vector2D rVec(circle.radius() * std::cos(theta), circle.radius() * std::sin(theta));
 
         vtx.push_back(circle.centroid() + rVec);
     }

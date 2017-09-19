@@ -112,42 +112,28 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
     for (int id = 0; id < globalIds.size(); ++id)
         globalToLocalIdMap[globalIds[id]] = id;
 
-    //- Send orders
-    std::vector<Size> sendSizes(comm_->nProcs());
-
-    for (int proc = 0; proc < comm_->nProcs(); ++proc)
-        comm_->irecv(proc, sendSizes[proc], proc);
-
-    for (int proc = 0; proc < comm_->nProcs(); ++proc)
-        comm_->ssend(proc, bufferCellZones_[proc].size(), comm_->rank());
-
-    comm_->waitAll();
-
-    std::vector<std::vector<int>> sendOrders(comm_->nProcs());
-
+    //- Communicate send orders
+    std::vector<std::vector<unsigned long>> recvOrders(comm_->nProcs());
     for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        sendOrders[proc].resize(sendSizes[proc]);
-        if (!sendOrders[proc].empty())
-            comm_->irecv(proc, sendOrders[proc], proc);
+        std::transform(bufferCellZones_[proc].begin(), bufferCellZones_[proc].end(),
+                       std::back_inserter(recvOrders[proc]), [&globalIds](const Cell &cell) {
+                    return globalIds[cell.id()];
+                });
+
+        comm_->isend(proc, recvOrders[proc], proc);
     }
 
-    for (int proc = 0; proc < comm_->nProcs(); ++proc)
+    for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        std::vector<int> sendOrder;
-        for (const Cell &cell: bufferCellZones_[proc])
-            sendOrder.push_back(globalIds[cell.id()]);
+        std::vector<unsigned long> sendOrder(comm_->probeSize<unsigned long>(proc, comm_->rank()));
+        comm_->recv(proc, sendOrder, comm_->rank());
 
-        if (!sendOrder.empty())
-            comm_->ssend(proc, sendOrder, comm_->rank());
+        for(Label gid: sendOrder)
+            sendCellGroups_[proc].add(cells_[globalToLocalIdMap[gid]]);
     }
 
     comm_->waitAll();
-
-    for (int proc = 0; proc < comm_->nProcs(); ++proc)
-        for (int id: sendOrders[proc])
-            sendCellGroups_[proc].add(cells_[globalToLocalIdMap[id]]);
-
     computeGlobalOrdering();
 }
 
