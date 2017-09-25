@@ -46,7 +46,7 @@ Scalar FractionalStep::solve(Scalar timeStep)
     correctVelocity(timeStep);
 
     //ib_.computeForce(rho_, mu_, u, p);
-    //ib_.update(timeStep);
+    ib_.update(timeStep);
 
     printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -90,8 +90,8 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    gradU.compute(fluid_);
-    grid_->sendMessages(gradU);
+    //gradU.compute(fluid_);
+    //grid_->sendMessages(gradU);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u) == fv::laplacian(mu_ / rho_, u, 0.5));
 
@@ -105,7 +105,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.bcs(p) == src::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.pressureBcs(rho_, p) == src::div(u));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);

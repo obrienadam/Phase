@@ -83,7 +83,7 @@ Scalar FractionalStepIncrementalMultiphase::solveGammaEqn(Scalar timeStep)
     auto beta = cicsam::beta(u, gradGamma, gamma, timeStep);
 
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) + ib_.bcs(gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) + ib_.contactLineBcs(ft, gamma) == 0.);
 
     //- Solve and update faces
     Scalar error = gammaEqn_.solve();
@@ -168,10 +168,7 @@ Scalar FractionalStepIncrementalMultiphase::solveUEqn(Scalar timeStep)
                 break;
             case VectorFiniteVolumeField::SYMMETRY:
                 for (const Face &f: patch)
-                {
-                    const Vector2D &n = f.norm();
                     u(f) = u(f.lCell()) - dot(u(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
-                }
                 break;
         }
 
@@ -219,10 +216,7 @@ void FractionalStepIncrementalMultiphase::correctVelocity(Scalar timeStep)
                 break;
             case VectorFiniteVolumeField::SYMMETRY:
                 for (const Face &f: patch)
-                {
-                    const Vector2D &n = f.norm();
                     u(f) = u(f.lCell()) - dot(u(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
-                }
                 break;
         }
 

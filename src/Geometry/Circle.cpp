@@ -35,17 +35,17 @@ std::vector<Point2D> Circle::intersections(const Line2D &line) const
     Vector2D r = line.r0() - center_;
 
     Scalar a = line.d().magSqr();
-    Scalar b = 2*dot(r, line.d());
-    Scalar c = r.magSqr() - radius_*radius_;
-    Scalar disc = b*b - 4*a*c;
+    Scalar b = 2 * dot(r, line.d());
+    Scalar c = r.magSqr() - radius_ * radius_;
+    Scalar disc = b * b - 4 * a * c;
 
-    if(disc < 0.)
+    if (disc < 0.)
         return std::vector<Point2D>();
-    else if(disc == 0.)
-        return std::vector<Point2D>({line(-b/(2.*a))});
+    else if (disc == 0.)
+        return std::vector<Point2D>({line(-b / (2. * a))});
 
-    Scalar t1 = (-b - sqrt(disc))/(2*a);
-    Scalar t2 = (-b + sqrt(disc))/(2*a);
+    Scalar t1 = (-b - sqrt(disc)) / (2 * a);
+    Scalar t2 = (-b + sqrt(disc)) / (2 * a);
 
     return std::vector<Point2D>({line(t1), line(t2)});
 }
@@ -54,11 +54,44 @@ std::vector<Point2D> Circle::intersections(const LineSegment2D &line) const
 {
     std::vector<Point2D> xc;
 
-    for(const Point2D& pt: intersections(Line2D(line.ptA(), (line.ptB() - line.ptA()).normalVec())))
-        if(line.isBounded(pt))
+    for (const Point2D &pt: intersections(Line2D(line.ptA(), (line.ptB() - line.ptA()).normalVec())))
+        if (line.isBounded(pt))
             xc.push_back(pt);
 
     return xc;
+}
+
+std::vector<Point2D> Circle::intersections(const Ray2D &ray) const
+{
+    Vector2D r = ray.x0() - center_;
+
+    Scalar a = ray.r().magSqr();
+    Scalar b = 2 * dot(r, ray.r());
+    Scalar c = r.magSqr() - radius_ * radius_;
+    Scalar disc = b * b - 4 * a * c;
+
+    if (disc == 0. && b < 0.)
+    {
+        return {ray(-b / (2. * a))};
+    }
+    else if (disc > 0.)
+    {
+        Scalar t1 = (-b - sqrt(disc)) / (2 * a);
+        Scalar t2 = (-b + sqrt(disc)) / (2 * a);
+
+        std::vector<Point2D> xc;
+        xc.reserve(2);
+
+        if (t1 > 0.)
+            xc.push_back(ray(t1));
+
+        if (t2 > 0.)
+            xc.push_back(ray(t2));
+
+        return xc;
+    }
+
+    return {};
 }
 
 Point2D Circle::nearestIntersect(const Point2D &point) const
@@ -91,7 +124,7 @@ void Circle::scale(Scalar factor)
 }
 
 //- Translations
-Circle &Circle::move(const Point2D& pos)
+Circle &Circle::move(const Point2D &pos)
 {
     center_ = pos;
     return *this;

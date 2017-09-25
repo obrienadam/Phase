@@ -8,9 +8,7 @@ namespace src
 {
     ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
 
-    VectorFiniteVolumeField div(const ScalarFiniteVolumeField &rho,
-                                const VectorFiniteVolumeField &u,
-                                const VectorFiniteVolumeField &field);
+    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field, const CellGroup &cells);
 
     ScalarFiniteVolumeField laplacian(Scalar gamma,
                                       const ScalarFiniteVolumeField &phi);

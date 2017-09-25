@@ -277,6 +277,16 @@ Equation<Vector2D> ImmersedBoundary::solidVelocity(VectorFiniteVolumeField& u) c
     return eqn;
 }
 
+Equation<Scalar> ImmersedBoundary::pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const
+{
+    Equation<Scalar> eqn(p);
+
+    for(const auto& ibObj: ibObjs_)
+        eqn += ibObj->pressureBcs(rho, p);
+
+    return eqn;
+}
+
 Equation<Scalar> ImmersedBoundary::contactLineBcs(const SurfaceTensionForce& fst, ScalarFiniteVolumeField &gamma) const
 {
     Equation<Scalar> eqn(gamma);

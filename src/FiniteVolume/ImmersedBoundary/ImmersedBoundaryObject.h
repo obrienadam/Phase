@@ -65,6 +65,9 @@ public:
     const CellZone& cellZone() const
     { return *fluid_; }
 
+    const FiniteVolumeGrid2D& grid() const
+    { return grid_; }
+
     //- Operations
     LineSegment2D intersectionLine(const LineSegment2D& ln) const;
 
@@ -141,6 +144,9 @@ public:
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
 
     virtual Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+
+    virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const
+    { throw Exception("ImmersedBoundaryObject", "pressureBcs", "not implemented."); }
 
     virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const
     { return bcs(gamma); }

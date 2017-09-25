@@ -23,6 +23,8 @@ public:
 
     Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
 
+    Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const;
+
     Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const;
 
     Vector2D normalForce() const

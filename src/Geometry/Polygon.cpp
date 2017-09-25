@@ -68,13 +68,13 @@ std::vector<Point2D> Polygon::intersections(const Line2D &line) const
 
     for (const LineSegment2D &edge: edges())
     {
-        Vector2D r2 = edge.ptB() - edge.ptA();
-        Vector2D dr0 = edge.ptA() - line.r0();
+        Vector2D r2 = edge.rVec();
+        Vector2D b = edge.ptA() - line.r0();
 
-        Scalar t2 = cross(line.d(), dr0) / cross(line.d(), -r2);
+        Scalar t = cross(line.d(), b) / cross(line.d(), -r2);
 
-        if (edge.isBounded(edge.ptA() + t2 * r2))
-            intersections.push_back(edge.ptA() + t2 * r2);
+        if (t >= 0. && t <= 1.)
+            intersections.push_back(edge.ptA() + t * r2);
     }
 
     return intersections;
@@ -82,19 +82,40 @@ std::vector<Point2D> Polygon::intersections(const Line2D &line) const
 
 std::vector<Point2D> Polygon::intersections(const LineSegment2D &line) const
 {
-    Vector2D r1 = line.ptB() - line.ptA();
+    Vector2D r1 = line.rVec();
     std::vector<Point2D> intersections;
 
     for (const LineSegment2D &edge: edges())
     {
-        Vector2D r2 = edge.ptB() - edge.ptA();
-        Vector2D dr0 = edge.ptA() - line.ptA();
+        Vector2D r2 = edge.rVec();
+        Vector2D b = edge.ptA() - line.ptA();
 
-        Scalar t1 = cross(dr0, -r2) / cross(r1, -r2);
-        Scalar t2 = cross(r1, dr0) / cross(r1, -r2);
+        Scalar detA = cross(r1, -r2);
 
-        if (line.isBounded(line.ptA() + t1 * r1) && edge.isBounded(edge.ptA() + t2 * r2))
+        Scalar t1 = cross(b, -r2) / detA;
+        Scalar t2 = cross(r1, b) / detA;
+
+        if ((t1 >= 0. && t1 <= 1.) && (t2 >= 0. && t2 <= 0.))
             intersections.push_back(line.ptA() + t1 * r1);
+    }
+
+    return intersections;
+}
+
+std::vector<Point2D> Polygon::intersections(const Ray2D &ray) const
+{
+    std::vector<Point2D> intersections;
+
+    for (const LineSegment2D &edge: edges())
+    {
+        Scalar detA = cross(ray.r(), -edge.rVec());
+        Vector2D b = edge.ptA() - ray.x0();
+
+        Scalar t1 = cross(b, -edge.rVec()) / detA;
+        Scalar t2 = cross(ray.r(), b) / detA;
+
+        if (t1 > 0. && (t2 >= 0. && t2 <= 1.))
+            intersections.push_back(ray(t1));
     }
 
     return intersections;

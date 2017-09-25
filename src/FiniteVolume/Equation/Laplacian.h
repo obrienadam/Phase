@@ -50,11 +50,11 @@ namespace fv
     }
 
     template<typename T>
-    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
+    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, const CellGroup& cells, Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
 
-        for (const Cell &cell: phi.grid().cellZone("fluid"))
+        for (const Cell &cell: cells)
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -89,6 +89,11 @@ namespace fv
         return eqn;
     }
 
+    template<typename T>
+    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
+    {
+        return laplacian(gamma, phi, phi.grid().cellZone("fluid"), theta);
+    }
 }
 
 #endif

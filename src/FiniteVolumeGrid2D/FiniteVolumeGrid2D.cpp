@@ -4,7 +4,6 @@
 #include <metis.h>
 
 #include "FiniteVolumeGrid2D.h"
-#include "Exception.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D()
         :
@@ -555,6 +554,7 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
 
     std::vector<Size> nLocalCells = comm_->allGather(nLocalActiveCells());
     Index globalIndexStart = std::accumulate(nLocalCells.begin(), nLocalCells.begin() + comm_->rank(), 0);
+    nActiveCellsGlobal_ = std::accumulate(nLocalCells.begin(), nLocalCells.end(), 0);
 
     std::vector<Index> globalIndices[] = {
             std::vector<Index>(nCells(), -1),
@@ -597,8 +597,6 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
             else
                 globalInactiveCells_.add(cell);
         }
-
-    nActiveCellsGlobal_ = comm_->sum(nLocalActiveCells());
 
     comm_->printf("Num local cells main proc = %d\nNum global cells = %d\n",
                   nLocalCells[comm_->rank()],

@@ -67,6 +67,8 @@ public:
 
     Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
 
+    Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const;
+
     Equation<Scalar> contactLineBcs(const SurfaceTensionForce& fst, ScalarFiniteVolumeField& gamma) const;
 
     void clearFreshCells();

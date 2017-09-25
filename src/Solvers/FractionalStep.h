@@ -10,6 +10,8 @@ class FractionalStep: public Solver
 {
 public:
 
+    enum{};
+
     FractionalStep(const Input& input,
                          std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
@@ -30,11 +32,11 @@ public:
 
 protected:
 
-    Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
 
-    Scalar solvePEqn(Scalar timeStep);
+    virtual Scalar solvePEqn(Scalar timeStep);
 
-    void correctVelocity(Scalar timeStep);
+    virtual void correctVelocity(Scalar timeStep);
 
     Scalar maxDivergenceError();
 

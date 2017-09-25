@@ -3,9 +3,14 @@
 
 ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField &field)
 {
+    return div(field, field.grid().cellZone("fluid"));
+}
+
+ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField& field, const CellGroup &cells)
+{
     ScalarFiniteVolumeField divF(field.gridPtr(), "divF", 0., false, false);
 
-    for (const Cell &cell: field.grid().cellZone("fluid"))
+    for (const Cell &cell: cells)
     {
         Scalar div = 0.;
 

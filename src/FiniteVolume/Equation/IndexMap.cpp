@@ -1,25 +1,30 @@
+#include <numeric>
+
 #include "IndexMap.h"
 
 IndexMap::IndexMap(const FiniteVolumeGrid2D &grid, Size nIndexSets)
-    :
-    nCells_(grid.nCells()),
-    nIndexSets_(nIndexSets),
-    localIndices_(nIndexSets_ * grid.nCells(), INACTIVE),
-    globalIndices_(nIndexSets_ * grid.nCells(), INACTIVE)
 {
-    auto nUnknowns = grid.comm().allGather(nIndexSets_ * grid.nLocalActiveCells());
+    init(grid, nIndexSets);
+}
 
-    for(int proc = 0; proc < grid.comm().rank(); ++proc)
-        range_.first += nUnknowns[proc];
-    range_.second = range_.first + nUnknowns[grid.comm().rank()];
+void IndexMap::init(const FiniteVolumeGrid2D &grid, Size nIndexSets)
+{
+    nCells_ = grid.nCells();
+    nIndexSets_ = nIndexSets;
+    localIndices_.resize(nIndexSets*nCells_, INACTIVE);
+    globalIndices_.resize(nIndexSets*nCells_, INACTIVE);
 
-    for(Size indexSet = 0; indexSet < nIndexSets_; ++indexSet)
+    auto nLocalUnknowns = grid.comm().allGather(nIndexSets_ * grid.nLocalActiveCells());
+    range_.first = std::accumulate(nLocalUnknowns.begin(), nLocalUnknowns.begin() + grid.comm().rank(), 0);
+    range_.second = range_.first + nLocalUnknowns[grid.comm().rank()];
+
+    for (Size indexSet = 0; indexSet < nIndexSets_; ++indexSet)
     {
-        Index idx = 0;
-        for(const Cell& cell: grid.localActiveCells())
+        Index localIndex = 0;
+        for (const Cell &cell: grid.localActiveCells())
         {
-            localIndices_[indexSet * nCells_ + cell.id()] = idx;
-            globalIndices_[indexSet * nCells_ + cell.id()] = range_.first + idx++;
+            localIndices_[indexSet * nCells_ + cell.id()] = localIndex;
+            globalIndices_[indexSet * nCells_ + cell.id()] = range_.first + localIndex++;
         }
     }
 
@@ -27,12 +32,22 @@ IndexMap::IndexMap(const FiniteVolumeGrid2D &grid, Size nIndexSets)
     grid.sendMessages(globalIndices_, nIndexSets_);
 }
 
-Index IndexMap::local(const Cell& cell, int set) const
+Index IndexMap::local(const Cell &cell, int set) const
 {
-    return localIndices_[set*nCells_ + cell.id()];
+    return localIndices_[set * nCells_ + cell.id()];
 }
 
-Index IndexMap::global(const Cell& cell, int set) const
+Index IndexMap::global(const Cell &cell, int set) const
 {
-    return globalIndices_[set*nCells_ + cell.id()];
+    return globalIndices_[set * nCells_ + cell.id()];
+}
+
+bool IndexMap::isLocallyActive(const Cell& cell) const
+{
+    return local(cell) != INACTIVE;
+}
+
+bool IndexMap::isGloballyActive(const Cell& cell) const
+{
+    return global(cell) != INACTIVE;
 }

@@ -1,5 +1,4 @@
 #include "GhostCellImmersedBoundaryObject.h"
-#include "ContactLineGhostCellStencil.h"
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id,
                                                                  FiniteVolumeGrid2D &grid)
@@ -173,14 +172,56 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::solidVelocity(VectorFiniteVo
     return eqn;
 }
 
-Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const
+Equation<Scalar> GhostCellImmersedBoundaryObject::pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
+{
+    Equation<Scalar> eqn(p);
+
+    for (const GhostCellStencil &st: stencils_)
+        eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
+
+    if (motion_)
+        for (const GhostCellStencil &st: stencils_)
+        {
+            Scalar dUdN = dot(acceleration(st.boundaryPoint()), nearestEdgeNormal(st.boundaryPoint()).unitVec());
+            eqn.addSource(st.cell(), rho * dUdN);
+        }
+
+    for (const Cell &cell: solidCells())
+    {
+        eqn.add(cell, cell, 1.);
+    }
+
+    return eqn;
+}
+
+Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
 {
     Equation<Scalar> eqn(gamma);
 
-    for(const GhostCellStencil& st: stencils_)
+    for (const GhostCellStencil &st: stencils_)
     {
-        auto clStencil = ContactLineGhostCellStencil(st.cell(), *this, gamma, theta);
-        eqn.add(clStencil.cell(), clStencil.cells(), clStencil.neumannCoeffs());
+        Vector2D wn = -nearestEdgeNormal(st.boundaryPoint());
+
+        Ray2D r1 = Ray2D(st.cell().centroid(), wn.rotate(M_PI_2 - theta));
+        Ray2D r2 = Ray2D(st.cell().centroid(), wn.rotate(theta - M_PI_2));
+
+        GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), grid_);
+        GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), grid_);
+
+        if (theta < M_PI_2)
+        {
+            if (m1.ipValue(gamma) > m2.ipValue(gamma))
+                eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+            else
+                eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+        }
+        else
+        {
+            if (m1.ipValue(gamma) < m2.ipValue(gamma))
+                eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+            else
+                eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+        }
     }
 
     for (const Cell &cell: solidCells_)

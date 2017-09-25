@@ -47,6 +47,58 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
         dirichletCoeffs_ = 0.5 * Matrix(1, 4, {ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_;
         dirichletCoeffs_.push_back(0.5);
 
+        neumannCoeffs_ = Matrix(1, 4, {ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / -length();
+        neumannCoeffs_.push_back(1. / length());
+    }
+}
+
+GhostCellStencil::GhostCellStencil(const Cell &cell,
+                                   const Point2D& bp,
+                                   const Vector2D& cl,
+                                   const FiniteVolumeGrid2D &grid)
+        :
+        ImmersedBoundaryStencil(cell)
+{
+    bp_ = bp;
+    ip_ = 2. * bp_ - cell.centroid();
+    cells_ = grid.findNearestNode(ip_).cells();
+
+    if (cells_.size() != 4)
+        throw Exception("GhostCellStencil", "GhostCellStencil", "number of image point cells must be 4.");
+
+    Point2D x1 = cells_[0].get().centroid();
+    Point2D x2 = cells_[1].get().centroid();
+    Point2D x3 = cells_[2].get().centroid();
+    Point2D x4 = cells_[3].get().centroid();
+
+    bool ghostCellInStencil = false;
+    for (const Cell &cell: cells_)
+        if (cell_.get().id() == cell.id())
+        {
+            ghostCellInStencil = true;
+            break;
+        }
+
+    A_ = Matrix(4, 4, {
+            x1.x * x1.y, x1.x, x1.y, 1.,
+            x2.x * x2.y, x2.x, x2.y, 1.,
+            x3.x * x3.y, x3.x, x3.y, 1.,
+            x4.x * x4.y, x4.x, x4.y, 1.,
+    }).invert();
+
+    if (ghostCellInStencil)
+    {
+        Vector2D n = cl.unitVec();
+        dirichletCoeffs_ = Matrix(1, 4, {bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * A_;
+        neumannCoeffs_ = Matrix(1, 4, {bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}) * A_;
+    }
+    else
+    {
+        cells_.push_back(cell_);
+
+        dirichletCoeffs_ = 0.5 * Matrix(1, 4, {ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_;
+        dirichletCoeffs_.push_back(0.5);
+
         neumannCoeffs_ = Matrix(1, 4, {ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / length();
         neumannCoeffs_.push_back(-1. / length());
     }

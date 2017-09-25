@@ -7,7 +7,9 @@
 class IbTracker : public PostProcessingObject
 {
 public:
-    IbTracker(const Solver &solver, double lineThickness = 0.4, const std::string &fillColor = "CUST2");
+    IbTracker(const Solver &solver,
+              double lineThickness = 0.4,
+              const std::string &fillColor = "CUST2");
 
     void compute(Scalar time);
 

@@ -73,6 +73,8 @@ public:
 
     std::vector<Point2D> intersections(const LineSegment2D &line) const;
 
+    std::vector<Point2D> intersections(const Ray2D& ray) const;
+
     Point2D nearestIntersect(const Point2D &point) const;
 
     LineSegment2D nearestEdge(const Point2D &point) const;

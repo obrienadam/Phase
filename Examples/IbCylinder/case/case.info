@@ -29,17 +29,12 @@ LinearAlgebra
 	pEqn
 	{
 		lib trilinos
-		solver "TFQMR"
+		solver TFQMR
 		iluFill 4
 		tolerance 1e-14
 		schwarzIters 2
 		combineMode ADD
 		schwarzOverlap 0
-	}
-
-	gammaEqn
-	{
-		lib eigen
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "Point2D.h"
 #include "Line2D.h"
 #include "LineSegment2D.h"
+#include "Ray2D.h"
 
 class Polygon;
 
@@ -42,6 +43,8 @@ public:
     virtual std::vector<Point2D> intersections(const Line2D &line) const = 0;
 
     virtual std::vector<Point2D> intersections(const LineSegment2D &line) const = 0;
+
+    virtual std::vector<Point2D> intersections(const Ray2D& ray) const = 0;
 
     virtual Point2D nearestIntersect(const Point2D &point) const = 0;
 
