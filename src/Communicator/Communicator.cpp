@@ -136,6 +136,28 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
     return result;
 }
 
+std::vector<Scalar> Communicator::allGatherv(const std::vector<double>& vals) const
+{
+    std::vector<int> sizes = allGather((int)vals.size());
+    std::vector<double> result(std::accumulate(sizes.begin(), sizes.end(), 0));
+    std::vector<int> displs(1, 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+    MPI_Allgatherv(vals.data(), vals.size(), MPI_DOUBLE, result.data(), sizes.data(), displs.data(), MPI_DOUBLE, comm_);
+
+    return result;
+}
+
+std::vector<Vector2D> Communicator::allGatherv(const std::vector<Vector2D>& vals) const
+{
+    std::vector<int> sizes = allGather((int)vals.size());
+    std::vector<Vector2D> result(std::accumulate(sizes.begin(), sizes.end(), 0));
+    std::vector<int> displs(1, 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+    MPI_Allgatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_, comm_);
+
+    return result;
+}
+
 std::vector<int> Communicator::gather(int root, int val) const
 {
     std::vector<int> result(nProcs());
@@ -153,7 +175,7 @@ std::vector<unsigned long> Communicator::gather(int root, unsigned long val) con
 std::vector<double> Communicator::gatherv(int root, const std::vector<double> &vals) const
 {
     std::vector<int> sizes = gather(root, (int)vals.size());
-    std::vector<double > result(std::accumulate(sizes.begin(), sizes.end(), 0));
+    std::vector<double> result(std::accumulate(sizes.begin(), sizes.end(), 0));
     std::vector<int> displs(1, 0);
     std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
 

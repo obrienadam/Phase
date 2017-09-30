@@ -23,7 +23,6 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
     rho2_ = input.caseInput().get<Scalar>("Properties.rho2", rho_);
     mu1_ = input.caseInput().get<Scalar>("Properties.mu1", mu_);
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2", mu_);
-    g_ = input.caseInput().get<std::string>("Properties.g", "(0,0)");
 
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
     for (const Face &face: grid_->interiorFaces())

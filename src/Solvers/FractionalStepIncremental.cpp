@@ -63,7 +63,7 @@ void FractionalStepIncremental::restartSolution()
 Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_.solidVelocity(u)
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_.velocityBcs(u)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();

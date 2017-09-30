@@ -34,12 +34,17 @@ public:
     template<typename T2>
     void add(const Cell &cell, const Cell &nb, T2 val);
 
+    template<typename cell_iterator, typename coeff_iterator>
+    void add(const Cell& cell, cell_iterator cellBegin, cell_iterator cellEnd, coeff_iterator coeff)
+    {
+        for(cell_iterator itr = cellBegin; itr != cellEnd; ++itr, ++coeff)
+            add(cell, *itr, *coeff);
+    };
+
     template<typename T2>
     void add(const Cell& cell, const std::vector<Ref<const Cell>>& nbs, const std::vector<T2>& vals)
     {
-        size_t i = 0;
-        for(const Cell& nb: nbs)
-            add(cell, nb, vals[i++]);
+        add(cell, nbs.begin(), nbs.end(), vals.begin());
     }
 
     template<typename T2>

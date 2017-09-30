@@ -22,7 +22,7 @@ Scalar FractionalStepQuadraticIbm::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.solidVelocity(u) == qibm::laplacian(mu_ / rho_, u, ib_));
+    uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.velocityBcs(u) == qibm::laplacian(mu_ / rho_, u, ib_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);

@@ -1,7 +1,7 @@
 #include "IbTracker.h"
 #include "Solver.h"
 
-IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::string& fillColor)
+IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::string &fillColor)
         :
         PostProcessingObject(solver),
         lineThickness_(lineThickness),
@@ -82,9 +82,11 @@ void IbTracker::compute(Scalar time)
 
                 fout.close();
 
-                fout.open((outputDir_ / (ibObj->name() + "_timeSeriesPlot.dat")).string());
+                fout.open((outputDir_ / (ibObj->name() + "_timeSeriesPlot.dat")).string(),
+                          std::ofstream::out | std::ofstream::app);
                 fout << time << "," << ibObj->position().x << "," << ibObj->position().y << ","
-                     << ibObj->velocity().x << "," << ibObj->velocity().y << "\n";
+                     << ibObj->velocity().x << "," << ibObj->velocity().y << ","
+                     << ibObj->force().x << "," << ibObj->force().y << "\n";
                 fout.close();
             }
 

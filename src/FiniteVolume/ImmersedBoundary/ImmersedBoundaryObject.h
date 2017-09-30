@@ -9,7 +9,10 @@ class ImmersedBoundaryObject
 {
 public:
 
-    enum BoundaryType{FIXED, NORMAL_GRADIENT, PARTIAL_SLIP};
+    enum BoundaryType
+    {
+        FIXED, NORMAL_GRADIENT, PARTIAL_SLIP
+    };
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
@@ -24,28 +27,7 @@ public:
     template<class const_iterator>
     void initPolygon(const_iterator begin, const_iterator end)
     {
-        shapePtr_ = std::shared_ptr<Polygon>(new Polygon(begin, end));
-    }
-
-    //- Motion
-    void setMotion(std::shared_ptr<Motion> motion);
-
-    std::shared_ptr<Motion> motion()
-    { return motion_; }
-
-    bool isInIb(const Point2D &pt) const
-    { return shapePtr_->isInside(pt); }
-
-    bool isInIb(const Cell& cell) const
-    { return shapePtr_->isInside(cell.centroid()); }
-
-    template <class const_iterator>
-    bool noneInIb(const_iterator begin, const_iterator end) const
-    {
-        for(const_iterator it = begin; it != end; ++it)
-            if(isInIb(*it))
-                return false;
-        return true;
+        shapePtr_ = std::make_shared<Polygon>(begin, end);
     }
 
     Shape2D &shape()
@@ -54,27 +36,58 @@ public:
     const Shape2D &shape() const
     { return *shapePtr_; }
 
+    bool isInIb(const Point2D &pt) const
+    { return shapePtr_->isInside(pt); }
+
+    template<class T>
+    bool isInIb(const T &item) const
+    { return shapePtr_->isInside(item.centroid()); }
+
+    template<class const_iterator>
+    bool allInIb(const_iterator begin, const_iterator end) const
+    {
+        for (const_iterator it = begin; it != end; ++it)
+            if (!isInIb(*it))
+                return false;
+        return true;
+    }
+
+    template<class const_iterator>
+    bool noneInIb(const_iterator begin, const_iterator end) const
+    {
+        for (const_iterator it = begin; it != end; ++it)
+            if (isInIb(*it))
+                return false;
+        return true;
+    }
+
+    //- Motion
+    void setMotion(std::shared_ptr<Motion> motion);
+
+    std::shared_ptr<Motion> motion()
+    { return motion_; }
+
     //- Set/get primary cell zone
-    void setZone(CellZone& zone);
+    void setZone(CellZone &zone);
 
     void clear();
 
-    CellZone& cellZone()
+    CellZone &cellZone()
     { return *fluid_; }
 
-    const CellZone& cellZone() const
+    const CellZone &cellZone() const
     { return *fluid_; }
 
-    const FiniteVolumeGrid2D& grid() const
+    const FiniteVolumeGrid2D &grid() const
     { return grid_; }
 
     //- Operations
-    LineSegment2D intersectionLine(const LineSegment2D& ln) const;
+    LineSegment2D intersectionLine(const LineSegment2D &ln) const;
 
-    Point2D nearestIntersect(const Point2D& pt) const
+    Point2D nearestIntersect(const Point2D &pt) const
     { return shapePtr_->nearestIntersect(pt); }
 
-    Vector2D nearestEdgeNormal(const Point2D& pt) const;
+    Vector2D nearestEdgeNormal(const Point2D &pt) const;
 
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
@@ -112,7 +125,8 @@ public:
     T getBoundaryRefValue(const std::string &name) const;
 
     //- Motion info if applicable
-    const Vector2D& position() const { return shape().centroid(); }
+    const Vector2D &position() const
+    { return shape().centroid(); }
 
     virtual Vector2D acceleration() const;
 
@@ -122,33 +136,44 @@ public:
 
     virtual Vector2D velocity(const Point2D &point) const;
 
-    const Vector2D& force() const
-    { return force_; }
+    virtual void computeForce(Scalar rho,
+                              Scalar mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.));
 
-    Scalar torque() const
-    { return torque_; }
+    virtual void computeForce(const ScalarFiniteVolumeField &rho,
+                              const ScalarFiniteVolumeField &mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.));
 
-    virtual void computeForce(Scalar rho, Scalar mu, const VectorFiniteVolumeField& u, const ScalarFiniteVolumeField& p)
-    {
-        force_ = Vector2D(0., 0.);
-        torque_ = 0.;
-    }
+    Scalar mass() const
+    { return rho * shapePtr_->area(); }
 
-    //- Update (must to be overriden)
-    virtual void update(Scalar timeStep);
+    Scalar momentOfInertia() const
+    { return rho * shapePtr_->momentOfInertia(); }
+
+    const Vector2D &force() const;
+
+    Scalar torque() const;
+
+    //- Update
+    void update(Scalar timeStep);
 
     virtual void updateCells();
 
-    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const = 0;
+    //- Boundary conditions
+    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const = 0;
 
-    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const = 0;
+    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const = 0;
 
-    virtual Equation<Vector2D> solidVelocity(VectorFiniteVolumeField& u) const;
+    virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const
+    virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
     { throw Exception("ImmersedBoundaryObject", "pressureBcs", "not implemented."); }
 
-    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const
+    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
     { return bcs(gamma); }
 
     void clearFreshCells();
@@ -158,6 +183,9 @@ public:
 
     Label id() const
     { return id_; }
+
+    //- Public properties
+    Scalar rho = 0.;
 
 protected:
 

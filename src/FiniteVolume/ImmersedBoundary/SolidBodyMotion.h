@@ -9,17 +9,14 @@ class SolidBodyMotion: public Motion
 {
 public:
 
-    SolidBodyMotion(const Vector2D& pos,
-                    Scalar materialDensity);
+    SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj);
 
-    void update(ImmersedBoundaryObject& ibObj, Scalar timeStep);
+    void update(Scalar timeStep);
 
 private:
 
-    Scalar materialDensity_; // object properties
+    Vector2D force_;
 
-    Vector2D force_, force0_, g_;
-    Scalar torque_, torque0_;
 };
 
 #endif

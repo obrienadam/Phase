@@ -8,13 +8,13 @@ class OscillatingMotion: public Motion
 {
 public:
 
-    OscillatingMotion(const Point2D& pos,
+    OscillatingMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj,
                       const Vector2D& freq,
                       const Vector2D& amp,
                       const Vector2D& phase = Vector2D(0, 0),
                       Scalar time = 0);
 
-    void update(ImmersedBoundaryObject &ibObj, Scalar timeStep);
+    void update(Scalar timeStep);
 
 private:
     Vector2D freq_, amp_, phase_;

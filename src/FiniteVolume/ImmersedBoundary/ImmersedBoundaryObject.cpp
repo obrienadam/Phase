@@ -13,26 +13,28 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
         id_(id)
 {
     cells_ = CellZone("Cells", grid.cellZoneRegistry());
-
     zoneRegistry_ = std::make_shared<CellZone::ZoneRegistry>();
     ibCells_ = CellZone("IbCells", zoneRegistry_);
     solidCells_ = CellZone("SolidCells", zoneRegistry_);
     freshCells_ = CellZone("FreshCells", zoneRegistry_);
     deadCells_ = CellZone("DeadCells", zoneRegistry_);
+
+    force_ = Vector2D(0., 0.);
+    torque_ = 0.;
 }
 
 void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
 {
-    shapePtr_ = std::shared_ptr<Circle>(new Circle(center, radius));
+    shapePtr_ = std::make_shared<Circle>(center, radius);
 }
 
 
 void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar height)
 {
-    shapePtr_ = std::shared_ptr<Box>(new Box(
+    shapePtr_ = std::make_shared<Box>(
             Point2D(center.x - width / 2., center.y - height / 2.),
             Point2D(center.x + width / 2., center.y + height / 2.)
-    ));
+    );
 }
 
 void ImmersedBoundaryObject::setMotion(std::shared_ptr<Motion> motion)
@@ -59,7 +61,14 @@ void ImmersedBoundaryObject::clear()
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) const
 {
     auto xc = shapePtr_->intersections(ln);
-    return xc.empty() ? ln : LineSegment2D(ln.ptA(), xc[0]);
+
+    if (xc.empty())
+    {
+        Point2D pts[] = {ln.ptA(), ln.ptB()};
+        xc.push_back(shapePtr_->closest(pts, pts + 2));
+    }
+
+    return LineSegment2D(ln.ptA(), xc[0]);
 }
 
 Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
@@ -165,11 +174,39 @@ Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
     return motion_ ? motion_->velocity(point) : Vector2D(0., 0.);
 }
 
+void ImmersedBoundaryObject::computeForce(Scalar rho,
+                                          Scalar mu,
+                                          const VectorFiniteVolumeField &u,
+                                          const ScalarFiniteVolumeField &p,
+                                          const Vector2D &g)
+{
+
+}
+
+void ImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
+                                          const ScalarFiniteVolumeField &mu,
+                                          const VectorFiniteVolumeField &u,
+                                          const ScalarFiniteVolumeField &p,
+                                          const Vector2D &g)
+{
+    throw Exception("ImmersedBoundaryObject", "computeForce", "not implemented.");
+}
+
+const Vector2D &ImmersedBoundaryObject::force() const
+{
+    return force_;
+}
+
+Scalar ImmersedBoundaryObject::torque() const
+{
+    return torque_;
+}
+
 void ImmersedBoundaryObject::update(Scalar timeStep)
 {
     if (motion_)
     {
-        motion_->update(*this, timeStep);
+        motion_->update(timeStep);
         updateCells();
     }
 }
@@ -203,7 +240,7 @@ void ImmersedBoundaryObject::updateCells()
     solidCells_.add(cells_); //- By default solid cells are not made inactive
 }
 
-Equation<Vector2D> ImmersedBoundaryObject::solidVelocity(VectorFiniteVolumeField &u) const
+Equation<Vector2D> ImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
     Equation<Vector2D> eqn(u);
 

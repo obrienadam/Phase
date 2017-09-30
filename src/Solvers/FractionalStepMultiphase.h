@@ -35,7 +35,6 @@ private:
 
     //- Properties
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
-    Vector2D g_;
 
     //- Equations
     Equation<Scalar> gammaEqn_;

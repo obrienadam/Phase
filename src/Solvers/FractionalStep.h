@@ -44,6 +44,7 @@ protected:
     Equation<Scalar> pEqn_;
 
     Scalar rho_, mu_;
+    Vector2D g_;
 
     CellZone &fluid_;
 };

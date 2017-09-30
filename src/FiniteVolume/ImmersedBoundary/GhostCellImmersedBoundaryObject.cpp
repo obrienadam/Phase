@@ -8,25 +8,16 @@ GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::stri
 
 }
 
-void GhostCellImmersedBoundaryObject::update(Scalar timeStep)
-{
-    if (motion_)
-    {
-        motion_->update(*this, timeStep);
-        updateCells();
-    }
-}
-
 void GhostCellImmersedBoundaryObject::updateCells()
 {
     if (motion_)
     {
-        fluid_->add(freshCells_);
-        freshCells_.clear();
-
-        for (const Cell &cell: cells_)
-            if (!isInIb(cell.centroid()))
-                freshCells_.add(cell);
+//        fluid_->add(freshCells_);
+//        freshCells_.clear();
+//
+//        for (const Cell &cell: cells_)
+//            if (!isInIb(cell.centroid()))
+//                freshCells_.add(cell);
     }
 
     fluid_->add(cells_);
@@ -146,7 +137,7 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     return eqn;
 }
 
-Equation<Vector2D> GhostCellImmersedBoundaryObject::solidVelocity(VectorFiniteVolumeField &u) const
+Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
     Equation<Vector2D> eqn(u);
 

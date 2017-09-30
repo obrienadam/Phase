@@ -16,6 +16,9 @@ public:
     Scalar zeta() const
     { return zeta_; }
 
+    const Vector2D& xc() const
+    { return xc_; }
+
     Vector2D fluidNorm() const
     { return zeta_ * outwardNorm_; }
 
@@ -37,6 +40,7 @@ public:
 private:
 
     Scalar zeta_;
+    Point2D xc_;
     LineSegment2D fluidFace_, solidFace_;
     Vector2D fluidRFaceVec_, solidRFaceVec_;
 };

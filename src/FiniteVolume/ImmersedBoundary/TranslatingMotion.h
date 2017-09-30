@@ -8,9 +8,11 @@ class TranslatingMotion: public Motion
 {
 public:
 
-    TranslatingMotion(const Point2D& pos, const Vector2D& vel, const Vector2D& acc = Vector2D(0., 0.));
+    TranslatingMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj,
+                      const Vector2D& vel,
+                      const Vector2D& acc = Vector2D(0., 0.));
 
-    void update(ImmersedBoundaryObject &ibObj, Scalar timeStep);
+    void update(Scalar timeStep);
 };
 
 #endif

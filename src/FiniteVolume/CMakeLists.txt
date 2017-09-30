@@ -32,7 +32,9 @@ set(HEADERS Discretization/FaceInterpolation.h
         ImmersedBoundary/OscillatingMotion.h
         ImmersedBoundary/SolidBodyMotion.h
         ImmersedBoundary/SeoMittal.h
-        ImmersedBoundary/QuadraticIbm.h)
+        ImmersedBoundary/LeeYou.h
+        ImmersedBoundary/QuadraticIbm.h
+        ImmersedBoundary/CollisionModel.h)
 
 set(SOURCES Discretization/FaceInterpolation.tpp
         Discretization/FaceInterpolation.cpp
@@ -70,6 +72,8 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         ImmersedBoundary/OscillatingMotion.cpp
         ImmersedBoundary/SolidBodyMotion.cpp
         ImmersedBoundary/SeoMittal.cpp
-        ImmersedBoundary/QuadraticIbm.cpp)
+        ImmersedBoundary/LeeYou.cpp
+        ImmersedBoundary/QuadraticIbm.cpp
+        ImmersedBoundary/CollisionModel.cpp)
 
 add_library(FiniteVolume ${HEADERS} ${SOURCES})

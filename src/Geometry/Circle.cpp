@@ -99,6 +99,12 @@ Point2D Circle::nearestIntersect(const Point2D &point) const
     return (point - center_).unitVec() * radius_ + center_;
 }
 
+Point2D Circle::nearestPoint(const Shape2D& shape) const
+{
+    Point2D pt = shape.nearestIntersect(center_);
+    return isInside(pt) ? pt : nearestIntersect(pt);
+}
+
 LineSegment2D Circle::nearestEdge(const Point2D &point) const
 {
     const Point2D xc = nearestIntersect(point);

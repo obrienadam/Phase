@@ -1,27 +1,31 @@
 #include "SolidBodyMotion.h"
 #include "ImmersedBoundaryObject.h"
 
-SolidBodyMotion::SolidBodyMotion(const Vector2D& pos,
-                                 Scalar materialDensity)
+SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj)
         :
-        Motion(pos),
-        materialDensity_(materialDensity)
+        Motion(ibObj)
 {
-
+    if(ibObj.lock()->mass() <= 0.)
+        throw Exception("SolidBodyMotion",
+                        "SolidBodyMotion",
+                        "must specify a non-zero density for immersed boundary object \"" + ibObj.lock()->name() + "\".");
 }
 
-void SolidBodyMotion::update(ImmersedBoundaryObject &ibObj, Scalar timeStep)
+void SolidBodyMotion::update(Scalar timeStep)
 {
-    force0_ = force_;
-    force_ = ibObj.force();
-    Scalar mass = ibObj.shape().area() * materialDensity_;
+    auto ibObj = ibObj_.lock();
 
-    vel_ += g_*timeStep + timeStep/(2*mass) * (force0_ + force_);
+    Vector2D f0 = force_;
+    force_ = ibObj->force();
 
-    torque0_ = torque_;
-    torque_ = ibObj.torque();
+    Vector2D v0 = vel_;
+    vel_ += timeStep / (2. * ibObj->mass()) * (force_ + f0);
+    pos_ += timeStep / 2. * (vel_ + v0);
 
-    Scalar I = ibObj.shape().momentOfInertia() * materialDensity_;
+//    torque0_ = torque_;
+//    torque_ = ibObj->torque();
+//
+//    omega_ += timeStep / (2 * ibObj->momentOfInertia()) * (torque0_ + torque_);
 
-    omega_ += timeStep/(2*I) * (torque0_ + torque_);
+    ibObj->shape().move(pos_);
 }

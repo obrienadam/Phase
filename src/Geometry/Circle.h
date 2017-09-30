@@ -50,6 +50,8 @@ public:
 
     Point2D nearestIntersect(const Point2D &point) const;
 
+    Point2D nearestPoint(const Shape2D& shape) const;
+
     LineSegment2D nearestEdge(const Point2D &point) const; // returns a unit tangent edge instead
 
     bool intersects(const Shape2D &shape) const;

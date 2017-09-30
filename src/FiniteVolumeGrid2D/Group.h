@@ -8,7 +8,7 @@
 #include "Circle.h"
 #include "Box.h"
 
-template <class T>
+template<class T>
 class Group
 {
 public:
@@ -36,28 +36,28 @@ public:
     //- Adding/removing items
     virtual void add(const T &item);
 
-    virtual void add(const Group<T>& other);
+    virtual void add(const Group<T> &other);
 
-    template <class const_iterator>
+    template<class const_iterator>
     void add(const_iterator begin, const_iterator end)
     {
-        for(const_iterator itr = begin; itr != end; ++itr)
+        for (const_iterator itr = begin; itr != end; ++itr)
             add(*itr);
     }
 
     virtual void remove(const T &item);
 
-    virtual void remove(const Group<T>& other);
+    virtual void remove(const Group<T> &other);
 
-    Group<T>& operator+=(const Group<T>& rhs);
+    Group<T> &operator+=(const Group<T> &rhs);
 
-    Group<T>& operator-=(const Group<T>& rhs);
+    Group<T> &operator-=(const Group<T> &rhs);
 
-    Group<T> intersection(const Group<T>& other) const;
+    Group<T> intersection(const Group<T> &other) const;
 
-    Group<T> difference(const Group<T>& other) const;
+    Group<T> difference(const Group<T> &other) const;
 
-    Group<T> symmetricDifference(const Group<T>& other) const;
+    Group<T> symmetricDifference(const Group<T> &other) const;
 
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;
@@ -66,11 +66,13 @@ public:
 
     std::vector<Ref<const T> > itemsWithin(const Box &box) const;
 
-    std::vector<Ref<const T> > itemsCoveredBy(const Circle& circle) const;
+    std::vector<Ref<const T> > itemsCoveredBy(const Circle &circle) const;
 
     std::vector<Ref<const T> > itemsCoveredBy(const Box &box) const;
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
+
+    const T &nearestItem(const Point2D &pt) const;
 
     //- Iterators
     typename std::vector<Ref<const T> >::iterator begin()
@@ -87,11 +89,11 @@ public:
 
     bool isInGroup(const T &item) const;
 
-    template <class const_iterator>
+    template<class const_iterator>
     bool isInGroup(const_iterator begin, const_iterator end) const
     {
-        for(const_iterator it = begin; it != end; ++it)
-            if(!isInGroup(*it))
+        for (const_iterator it = begin; it != end; ++it)
+            if (!isInGroup(*it))
                 return false;
         return true;
     }

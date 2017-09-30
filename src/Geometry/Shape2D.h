@@ -39,6 +39,23 @@ public:
 
     virtual bool isCovered(const Point2D &point) const = 0;
 
+    template <class const_iterator>
+    Point2D closest(const_iterator begin, const_iterator end) const
+    {
+        Point2D pt;
+        Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
+
+        for(const_iterator itr = begin; itr != end; ++itr)
+        {
+            Scalar distSqr = (nearestIntersect(*itr) - *itr).magSqr();
+
+            if(distSqr < minDistSqr)
+                pt = *itr;
+        }
+
+        return pt;
+    }
+
     //- Intersections
     virtual std::vector<Point2D> intersections(const Line2D &line) const = 0;
 
@@ -47,6 +64,8 @@ public:
     virtual std::vector<Point2D> intersections(const Ray2D& ray) const = 0;
 
     virtual Point2D nearestIntersect(const Point2D &point) const = 0;
+
+    virtual Point2D nearestPoint(const Shape2D& shape) const;
 
     virtual LineSegment2D nearestEdge(const Point2D &point) const = 0;
 

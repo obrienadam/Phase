@@ -11,8 +11,6 @@ class CutCell
 {
 public:
 
-    CutCell(const Cell &cell);
-
     CutCell(const Cell &cell, const ImmersedBoundaryObject& ibObj);
 
     const Cell& cell() const { return cell_; }

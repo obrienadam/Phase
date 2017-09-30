@@ -1,8 +1,7 @@
 #include "FractionalStep.h"
 #include "FaceInterpolation.h"
 #include "Source.h"
-#include "SeoMittal.h"
-#include "QuadraticIbm.h"
+#include "LeeYou.h"
 
 FractionalStep::FractionalStep(const Input &input,
                                std::shared_ptr<FiniteVolumeGrid2D> &grid)
@@ -18,6 +17,7 @@ FractionalStep::FractionalStep(const Input &input,
 {
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);
+    g_ = input.caseInput().get<std::string>("Properties.g", "(0,0)");
 
     //- All active cells to fluid cells
     fluid_.add(grid_->localActiveCells());
@@ -45,11 +45,11 @@ Scalar FractionalStep::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    //ib_.computeForce(rho_, mu_, u, p);
-    ib_.update(timeStep);
-
     printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
+
+    ib_.update(timeStep);
+    ib_.computeForce(rho_, mu_, u, p, g_);
 
     return 0;
 }
@@ -93,10 +93,14 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.solidVelocity(u) == fv::laplacian(mu_ / rho_, u, 0.5));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.velocityBcs(u) == fv::laplacian(mu_ / rho_, u, 0.5));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
+
+    for(auto ibObj: ib_)
+        for(const Cell& cell: ibObj->ibCells())
+            u(cell) = ibObj->velocity(cell.centroid());
 
     u.interpolateFaces();
 
@@ -105,7 +109,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.pressureBcs(rho_, p) == src::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.bcs(p) == src::div(u) - lee::massSrc(u, ib_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
