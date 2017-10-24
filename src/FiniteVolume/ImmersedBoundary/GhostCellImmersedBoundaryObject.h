@@ -13,6 +13,9 @@ public:
                                     Label id,
                                     FiniteVolumeGrid2D &grid);
 
+    Type type() const
+    { return GHOST_CELL; }
+
     void updateCells();
 
     Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const;

@@ -136,6 +136,13 @@ std::vector<unsigned long> Communicator::allGather(unsigned long val) const
     return result;
 }
 
+std::vector<Vector2D> Communicator::allGather(const Vector2D &val) const
+{
+    std::vector<Vector2D> result(nProcs());
+    MPI_Allgather(&val, 1, MPI_VECTOR2D_, result.data(), 1, MPI_VECTOR2D_, comm_);
+    return result;
+}
+
 std::vector<Scalar> Communicator::allGatherv(const std::vector<double>& vals) const
 {
     std::vector<int> sizes = allGather((int)vals.size());
@@ -354,9 +361,8 @@ double Communicator::sum(double val) const
 
 Vector2D Communicator::sum(const Vector2D& val) const
 {
-    Vector2D result;
-    MPI_Allreduce(&val, &result, 1, MPI_VECTOR2D_, MPI_SUM, comm_);
-    return result;
+    std::vector<Vector2D> vals = allGather(val);
+    return std::accumulate(vals.begin(), vals.end(), Vector2D(0., 0.));
 }
 
 int Communicator::min(int val) const

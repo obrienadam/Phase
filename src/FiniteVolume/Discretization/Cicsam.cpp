@@ -1,18 +1,6 @@
 #include "Cicsam.h"
 #include "Algorithm.h"
 
-Scalar cicsam::hc(Scalar gammaDTilde, Scalar coD)
-{
-    return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
-}
-
-Scalar cicsam::uq(Scalar gammaDTilde, Scalar coD)
-{
-    return gammaDTilde >= 0 && gammaDTilde <= 1 ?
-           std::min((8. * coD * gammaDTilde + (1. - coD) * (6. * gammaDTilde + 3.)) / 8., hc(gammaDTilde, coD))
-                                                : gammaDTilde;
-}
-
 ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
                                      const VectorFiniteVolumeField &gradGamma,
                                      const ScalarFiniteVolumeField &gamma,
@@ -20,6 +8,16 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
                                      Scalar k)
 {
     ScalarFiniteVolumeField beta(gamma.gridPtr(), "beta");
+
+    auto hc = [](Scalar gammaDTilde, Scalar coD) {
+        return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
+    };
+
+    auto uq = [&hc](Scalar gammaDTilde, Scalar coD) {
+        return gammaDTilde >= 0 && gammaDTilde <= 1 ?
+               std::min((8. * coD * gammaDTilde + (1. - coD) * (6. * gammaDTilde + 3.)) / 8., hc(gammaDTilde, coD)) :
+               gammaDTilde;
+    };
 
     for (const Face &face: gamma.grid().interiorFaces())
     {
@@ -56,11 +54,12 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
 Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                              const ScalarFiniteVolumeField &beta,
                              ScalarFiniteVolumeField &gamma,
+                             const CellGroup &cells,
                              Scalar theta)
 {
     Equation<Scalar> eqn(gamma);
 
-    for (const Cell &cell: gamma.grid().cellZone("fluid"))
+    for (const Cell &cell: cells)
     {
         for (const InteriorLink &nb: cell.neighbours())
         {
@@ -102,4 +101,12 @@ Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
     }
 
     return eqn;
+}
+
+Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
+                             const ScalarFiniteVolumeField &beta,
+                             ScalarFiniteVolumeField &gamma,
+                             Scalar theta)
+{
+    return div(u, beta, gamma, gamma.grid().cellZone("fluid"), theta);
 }

@@ -1,4 +1,5 @@
-set(HEADERS Matrix.h
+set(HEADERS StaticMatrix.h
+        Matrix.h
         SparseMatrixSolver.h
         EigenSparseMatrixSolver.h
         TrilinosBelosSparseMatrixSolver.h

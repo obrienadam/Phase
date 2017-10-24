@@ -63,6 +63,8 @@ public:
 
     std::vector<unsigned long> allGather(unsigned long val) const;
 
+    std::vector<Vector2D> allGather(const Vector2D& val) const;
+
     //- Allgatherv
     std::vector<Scalar> allGatherv(const std::vector<double>& vals) const;
 

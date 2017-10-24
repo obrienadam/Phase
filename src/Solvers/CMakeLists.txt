@@ -9,6 +9,8 @@ set(HEADERS Solver.h
         CoupledEquation.h
         PisoMultiphase.h
         FractionalStepIncrementalMultiphase.h
+        FractionalStepMultiphase.h
+        FractionalStepMultiphaseQuadraticIbm.h
         SurfaceTensionForce.h
         Celeste.h)
 
@@ -23,7 +25,9 @@ set(SOURCES Solver.cpp
         PisoMultiphase.cpp
         FractionalStepIncrementalMultiphase.cpp
         FractionalStepMultiphase.cpp
+        FractionalStepMultiphaseQuadraticIbm.cpp
         SurfaceTensionForce.cpp
-        Celeste.cpp)
+        Celeste.cpp
+        CelesteStencil.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})

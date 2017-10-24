@@ -1,5 +1,5 @@
-#ifndef PISO_Multiphase_H
-#define PISO_Multiphase_H
+#ifndef PISO_MULTIPHASE_H
+#define PISO_MULTIPHASE_H
 
 #include "Piso.h"
 #include "SurfaceTensionForce.h"
@@ -10,11 +10,7 @@ public:
 
     enum InterfaceAdvection
     {
-        CICSAM, PLIC
-    };
-    enum CurvatureEvaluation
-    {
-        CSF, HF, CELESTE
+        CICSAM
     };
 
     PisoMultiphase(const Input &input,
@@ -49,7 +45,7 @@ protected:
     Equation<Scalar> gammaEqn_;
 
     InterfaceAdvection interfaceAdvectionMethod_;
-    CurvatureEvaluation curvatureEvaluationMethod_;
+    //CurvatureEvaluation curvatureEvaluationMethod_;
 };
 
 #endif

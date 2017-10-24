@@ -205,7 +205,6 @@ int main(int argc, char *argv[])
     cg_section_write(fn, bid, zid, "Cells", CGNS_ENUMV(MIXED), 1, sizes[1], sizes[2], elements.data(), &sid);
 
     //- Write solutions
-    int indexStart = 0;
     std::vector<double> timeValues;
     std::ostringstream flowSolutionPtrs;
 

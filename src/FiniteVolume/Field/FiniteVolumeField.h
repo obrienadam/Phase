@@ -25,14 +25,16 @@ public:
                                const std::string &name,
                                const T &val = T(),
                                bool faces = true,
-                               bool nodes = false);
+                               bool nodes = false,
+                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr);
 
     explicit FiniteVolumeField(const Input &input,
                                const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                const std::string &name,
                                const T &val = T(),
                                bool faces = true,
-                               bool nodes = false);
+                               bool nodes = false,
+                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr);
 
     //- Initialization
     void fill(const T &val);
@@ -69,7 +71,7 @@ public:
 
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,
-                    const CellGroup& cells);
+                    const CellGroup &cells);
 
     void setPatch(const Patch &patch, const std::function<T(const Face &face)> &fcn)
     {
@@ -169,6 +171,19 @@ public:
     const T &operator()(const Node &node) const
     { return nodes_[node.id()]; }
 
+    //- Cell group access (by default returns local active cells)
+    const CellGroup &cells() const
+    { return cellGroup_ ? *cellGroup_ : grid_->localActiveCells(); }
+
+    void setCellGroup(const CellGroup& cellGroup)
+    { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
+
+    void setCellGroup(CellGroup&& cellGroup)
+    { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
+
+    void setCellGroup(const std::shared_ptr<const CellGroup>& cellGroup)
+    { cellGroup_ = cellGroup; }
+
     //- Field history
     FiniteVolumeField &savePreviousTimeStep(Scalar timeStep, int nPreviousFields);
 
@@ -213,7 +228,7 @@ public:
     { return *grid_; }
 
     //- Debug
-    void writeToFile(const std::string& filename) const;
+    void writeToFile(const std::string &filename) const;
 
 protected:
 
@@ -227,6 +242,9 @@ protected:
 
     //- Grid
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
+
+    //- Main cell group
+    std::shared_ptr<const CellGroup> cellGroup_;
 
     //- Misc data
     std::vector<T> faces_, nodes_;

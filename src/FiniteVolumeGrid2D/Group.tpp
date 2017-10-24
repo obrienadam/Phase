@@ -19,13 +19,6 @@ void Group<T>::add(const T &item)
 }
 
 template<class T>
-void Group<T>::add(const Group<T> &other)
-{
-    for (const T &item: other)
-        add(item);
-}
-
-template<class T>
 void Group<T>::remove(const T &item)
 {
     auto entry = itemSet_.find(item.id());
@@ -104,63 +97,59 @@ template<class T>
 std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
 {
     std::vector<Value> result;
-    rTree_.query(boost::geometry::index::within(shape.polygonize().boostRing()),
-                 std::back_inserter(result));
+
+    namespace bgi = boost::geometry::index;
+
+    switch (shape.type())
+    {
+        case Shape2D::CIRCLE:
+        {
+            const Circle &c = static_cast<const Circle &>(shape);
+            auto covered = [&c](const Value &v) { return c.isInside(v.first); };
+            rTree_.query(bgi::within(c.boundingBox()) && bgi::satisfies(covered), std::back_inserter(result));
+        }
+            break;
+
+        case Shape2D::BOX:
+            rTree_.query(bgi::within(shape.boundingBox()), std::back_inserter(result));
+            break;
+        case Shape2D::POLYGON:
+            rTree_.query(bgi::within(static_cast<const Polygon &>(shape).boostRing()), std::back_inserter(result));
+            break;
+    }
+
 
     return getRefs(result);
 }
 
 template<class T>
-std::vector<Ref<const T> > Group<T>::itemsWithin(const Circle &circle) const
+std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Shape2D &shape) const
 {
-    auto isInCircle = [&circle](const Value &val) {
-        return circle.isInside(val.first);
-    };
-
     std::vector<Value> result;
-    rTree_.query(boost::geometry::index::within(circle.boundingBox()) &&
-                 boost::geometry::index::satisfies(isInCircle),
-                 std::back_inserter(result));
+
+    namespace bgi = boost::geometry::index;
+
+    switch (shape.type())
+    {
+        case Shape2D::CIRCLE:
+        {
+            const Circle &c = static_cast<const Circle &>(shape);
+            auto covered = [&c](const Value &v) { return c.isCovered(v.first); };
+            rTree_.query(bgi::covered_by(c.boundingBox()) && bgi::satisfies(covered), std::back_inserter(result));
+        }
+            break;
+
+        case Shape2D::BOX:
+            rTree_.query(bgi::covered_by(shape.boundingBox()), std::back_inserter(result));
+            break;
+        case Shape2D::POLYGON:
+            rTree_.query(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing()), std::back_inserter(result));
+            break;
+    }
 
     return getRefs(result);
 }
 
-template<class T>
-std::vector<Ref<const T> > Group<T>::itemsWithin(const Box &box) const
-{
-    std::vector<Value> result;
-    rTree_.query(boost::geometry::index::within(box.boundingBox()),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
-
-template<class T>
-std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Circle &circle) const
-{
-    std::vector<Value> result;
-
-    auto isCoveredByCircle = [&circle](const Value &val) {
-        return circle.isCovered(val.first);
-    };
-
-    rTree_.query(boost::geometry::index::covered_by(circle.boundingBox()) &&
-                 boost::geometry::index::satisfies(isCoveredByCircle),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
-
-template<class T>
-std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Box &box) const
-{
-    std::vector<Value> result;
-
-    rTree_.query(boost::geometry::index::covered_by(box.boundingBox()),
-                 std::back_inserter(result));
-
-    return getRefs(result);
-}
 
 template<class T>
 std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) const
@@ -174,9 +163,36 @@ std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) c
 }
 
 template<class T>
+std::vector<Ref<const T>> Group<T>::nearestItems(const Shape2D &shape, size_t k) const
+{
+    std::vector<Value> result;
+
+    switch (shape.type())
+    {
+        case Shape2D::CIRCLE:
+
+            rTree_.query(boost::geometry::index::nearest(shape.centroid(), k),
+                         std::back_inserter(result));
+
+            break;
+
+        default:
+            throw Exception("Group<T>", "nearestItems", "shape type not supported.");
+    }
+
+    return getRefs(result);
+}
+
+template<class T>
 const T &Group<T>::nearestItem(const Point2D &pt) const
 {
     return nearestItems(pt, 1)[0];
+}
+
+template<class T>
+const T &Group<T>::nearestItem(const Shape2D &shape) const
+{
+    return nearestItems(shape, 1)[0];
 }
 
 template<class T>

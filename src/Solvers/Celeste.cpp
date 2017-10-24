@@ -1,10 +1,11 @@
+#include <ImmersedBoundary/QuadraticImmersedBoundaryObject.h>
 #include "Celeste.h"
 #include "Algorithm.h"
 #include "GhostCellImmersedBoundaryObject.h"
 
 Celeste::Celeste(const Input &input,
                  const ImmersedBoundary &ib,
-                 const ScalarFiniteVolumeField &gamma,
+                 ScalarFiniteVolumeField &gamma,
                  const ScalarFiniteVolumeField &rho,
                  const ScalarFiniteVolumeField &mu,
                  const VectorFiniteVolumeField &u,
@@ -74,27 +75,100 @@ void Celeste::compute(const ImmersedBoundary &ib)
 
 void Celeste::constructMatrices()
 {
-    constructGammaTildeMatrices();
-    constructKappaMatrices();
+    kappaStencils_.resize(grid_->cells().size());
+    gradGammaTildeStencils_.resize(grid_->cells().size());
+
+    for (const Cell &cell: grid_->localActiveCells())
+    {
+        kappaStencils_[cell.id()] = CelesteStencil(cell, false);
+        gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
+    }
+}
+
+Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
+{
+    Equation<Scalar> eqn(gamma_);
+
+    for (auto ibObj: ib)
+    {
+        switch (ibObj->type())
+        {
+            case ImmersedBoundaryObject::GHOST_CELL:
+                for (const GhostCellStencil &st: std::static_pointer_cast<GhostCellImmersedBoundaryObject>(
+                        ibObj)->stencils())
+                {
+                    Vector2D wn = -ibObj->nearestEdgeNormal(st.boundaryPoint());
+
+                    Scalar theta = getTheta(*ibObj);
+
+                    Ray2D r1 = Ray2D(st.cell().centroid(), wn.rotate(M_PI_2 - theta));
+                    Ray2D r2 = Ray2D(st.cell().centroid(), wn.rotate(theta - M_PI_2));
+
+                    GhostCellStencil m1(st.cell(), ibObj->shape().intersections(r1)[0], r1.r(), grid());
+                    GhostCellStencil m2(st.cell(), ibObj->shape().intersections(r2)[0], r2.r(), grid());
+
+                    if (theta < M_PI_2)
+                    {
+                        if (m1.ipValue(gamma_) > m2.ipValue(gamma_))
+                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                        else
+                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                    }
+                    else
+                    {
+                        if (m1.ipValue(gamma_) < m2.ipValue(gamma_))
+                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                        else
+                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                    }
+                }
+
+                for (const Cell &cell: ibObj->solidCells())
+                    eqn.add(cell, cell, 1.);
+
+                break;
+            case ImmersedBoundaryObject::QUADRATIC:
+                for (const Cell &cell: ibObj->ibCells())
+                {
+                    Vector2D wn = -ibObj->nearestEdgeNormal(ibObj->nearestIntersect(cell.centroid()));
+
+                    Scalar theta = getTheta(*ibObj);
+
+                    Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
+                    Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
+
+                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), grid());
+                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), grid());
+
+                    if (theta < M_PI_2)
+                    {
+                        if (m1.ipValue(gamma_) > m2.ipValue(gamma_))
+                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                        else
+                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                    }
+                    else
+                    {
+                        if (m1.ipValue(gamma_) < m2.ipValue(gamma_))
+                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                        else
+                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                    }
+                }
+
+                for (const Cell &cell: ibObj->solidCells())
+                    eqn.add(cell, cell, 1.);
+
+                break;
+            default:
+                throw Exception("Celeste", "contactLineBcs", "unrecognized immersed boundary object type.");
+        }
+    }
+
+    return eqn;
 }
 
 //- Protected methods
-
-void Celeste::constructGammaTildeMatrices()
-{
-    gradGammaTildeMatrices_.resize(grid_->cells().size());
-
-    for (const Cell &cell: grid_->localActiveCells())
-        gradGammaTildeMatrices_[cell.id()] = leastSquaresMatrix(cell, true);
-}
-
-void Celeste::constructKappaMatrices()
-{
-    kappaMatrices_.resize(grid_->cells().size());
-
-    for (const Cell &cell: grid_->cellZone("fluid"))
-        kappaMatrices_[cell.id()] = leastSquaresMatrix(cell, false);
-}
 
 void Celeste::computeGradGammaTilde()
 {
@@ -104,26 +178,8 @@ void Celeste::computeGradGammaTilde()
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde_->fill(Vector2D(0., 0.));
-    Matrix b(8, 1);
-
     for (const Cell &cell: gradGamma_.grid().cellZone("fluid"))
-    {
-        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-        b.resize(stencilSize, 1);
-
-        int i = 0;
-        for (const InteriorLink &nb: cell.neighbours())
-            b(i++, 0) = (gammaTilde(nb.cell()) - gammaTilde(cell)) / nb.rCellVec().magSqr();
-
-        for (const DiagonalCellLink &dg: cell.diagonals())
-            b(i++, 0) = (gammaTilde(dg.cell()) - gammaTilde(cell)) / dg.rCellVec().magSqr();
-
-        for (const BoundaryLink &bd: cell.boundaries())
-            b(i++, 0) = (gammaTilde(bd.face()) - gammaTilde(cell)) / bd.rFaceVec().magSqr();
-
-        b = gradGammaTildeMatrices_[cell.id()] * b;
-        gradGammaTilde(cell) = Vector2D(b(0, 0), b(1, 0));
-    }
+        gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
 void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
@@ -134,26 +190,8 @@ void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde_->fill(Vector2D(0., 0.));
-    Matrix b(8, 1);
-
     for (const Cell &cell: gradGamma_.grid().cellZone("fluid"))
-    {
-        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-        b.resize(stencilSize, 1);
-
-        int i = 0;
-        for (const InteriorLink &nb: cell.neighbours())
-            b(i++, 0) = (gammaTilde(nb.cell()) - gammaTilde(cell)) / nb.rCellVec().magSqr();
-
-        for (const DiagonalCellLink &dg: cell.diagonals())
-            b(i++, 0) = (gammaTilde(dg.cell()) - gammaTilde(cell)) / dg.rCellVec().magSqr();
-
-        for (const BoundaryLink &bd: cell.boundaries())
-            b(i++, 0) = (gammaTilde(bd.face()) - gammaTilde(cell)) / bd.rFaceVec().magSqr();
-
-        b = gradGammaTildeMatrices_[cell.id()] * b;
-        gradGammaTilde(cell) = Vector2D(b(0, 0), b(1, 0));
-    }
+        gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
 void Celeste::computeCurvature()
@@ -162,57 +200,8 @@ void Celeste::computeCurvature()
     auto &n = *n_;
     auto &kappa = *kappa_;
 
-    kappa.fill(0.);
     for (const Cell &cell: grid_->cellZone("fluid"))
-    {
-        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-        bx.resize(stencilSize, 1);
-        by.resize(stencilSize, 1);
-
-        if (n(cell) == Vector2D(0., 0.))
-            continue;
-
-        bool compute = true;
-
-        int i = 0;
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Vector2D dn = n(nb.cell()) - n(cell);
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-
-            if (n(nb.cell()) == Vector2D(0., 0.))
-                compute = false;
-        }
-
-        for (const DiagonalCellLink &dg: cell.diagonals())
-        {
-            Vector2D dn = n(dg.cell()) - n(cell);
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-
-            if (n(dg.cell()) == Vector2D(0., 0.))
-                compute = false;
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            Vector2D dn = n(bd.face()) - n(cell);
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-
-            if (n(bd.face()) == Vector2D(0., 0.))
-                compute = false;
-        }
-
-        if (compute)
-        {
-            bx = kappaMatrices_[cell.id()] * bx;
-            by = kappaMatrices_[cell.id()] * by;
-
-            kappa(cell) = bx(0, 0) + by(1, 0);
-        }
-    }
+        kappa(cell) = kappaStencils_[cell.id()].div(n);
 
     grid_->sendMessages(kappa);
     kappa.interpolateFaces();
@@ -220,160 +209,43 @@ void Celeste::computeCurvature()
 
 void Celeste::computeCurvature(const ImmersedBoundary &ib)
 {
-    Matrix bx(8, 1), by(8, 1);
+    updateStencils(ib);
     kappa_->fill(0.);
 
     auto &n = *n_;
     auto &kappa = *kappa_;
-
-    if (modifiedStencil_.empty())
-        modifiedStencil_.resize(grid_->nCells(), false);
-
-    auto modifyStencil = [&ib](const Cell &cell) -> std::shared_ptr<const ImmersedBoundaryObject> {
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            auto ibObj = ib.ibObj(nb.cell().centroid());
-            if (ibObj)
-                return ibObj;
-        }
-
-        for (const DiagonalCellLink &dg: cell.diagonals())
-        {
-            auto ibObj = ib.ibObj(dg.cell().centroid());
-            if (ibObj)
-                return ibObj;
-        }
-        return nullptr;
-    };
+    const auto &gradGammaTilde = *gradGammaTilde_;
 
     for (const Cell &cell: grid_->cellZone("fluid"))
-    {
-        if (n(cell) == Vector2D(0., 0.))
-            continue;
-
-        Size stencilSize = cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size();
-        bx.resize(stencilSize, 1);
-        by.resize(stencilSize, 1);
-
-        //- Determine if ls stencil needs to be modified
-        auto ibObj = modifyStencil(cell);
-
-        if (ibObj)
-        {
-            kappaMatrices_[cell.id()] = leastSquaresMatrix(*ibObj, cell, false);
-            modifiedStencil_[cell.id()] = true;
-        }
-        else if (modifiedStencil_[cell.id()])
-        {
-            kappaMatrices_[cell.id()] = leastSquaresMatrix(cell, false);
-            modifiedStencil_[cell.id()] = false;
-        }
-
-        int i = 0;
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Vector2D dn = n(nb.cell()) - n(cell);
-
-            if (ibObj)
-                dn = contactLineNormal(cell, nb.cell(), *ibObj) - n(cell);
-
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-        }
-
-        for (const DiagonalCellLink &dg: cell.diagonals())
-        {
-            Vector2D dn = n(dg.cell()) - n(cell);
-
-            if (ibObj)
-                dn = contactLineNormal(cell, dg.cell(), *ibObj) - n(cell);
-
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            Vector2D dn = n(bd.face()) - n(cell);
-
-            bx(i, 0) = dn.x;
-            by(i++, 0) = dn.y;
-        }
-
-        bx = kappaMatrices_[cell.id()] * bx;
-        by = kappaMatrices_[cell.id()] * by;
-
-        kappa(cell) = bx(0, 0) + by(1, 0);
-    }
+        if (gradGammaTilde(cell).magSqr() > 0.)
+            kappa(cell) = kappaStencils_[cell.id()].kappa(n, ib, *this);
 
     grid_->sendMessages(kappa);
     kappa.interpolateFaces();
 }
 
-Matrix Celeste::leastSquaresMatrix(const Cell &cell, bool weighted)
+void Celeste::updateStencils(const ImmersedBoundary &ib)
 {
-    Matrix A(
-            cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size(),
-            5
-    );
+    auto updateRequired = [&ib](const CelesteStencil &st) {
+        if (st.truncated())
+            return true;
 
-    auto addRow = [&A, weighted](int row, const Vector2D &r) {
-        Scalar w = weighted ? r.magSqr() : 1.;
+        for (const InteriorLink &nb: st.cell().neighbours())
+            if (ib.ibObj(nb.cell().centroid()))
+                return true;
 
-        A(row, 0) = r.x / w;
-        A(row, 1) = r.y / w;
-        A(row, 2) = r.x * r.x / (2. * w);
-        A(row, 3) = r.y * r.y / (2. * w);
-        A(row, 4) = r.x * r.y / w;
+        for (const DiagonalCellLink &dg: st.cell().diagonals())
+            if (ib.ibObj(dg.cell().centroid()))
+                return true;
+
+        return false;
     };
 
-    int row = 0;
+    for (const Cell &cell: grid_->cellZone("fluid"))
+    {
+        CelesteStencil &st = kappaStencils_[cell.id()];
 
-    for (const InteriorLink &nb: cell.neighbours())
-        addRow(row++, nb.rCellVec());
-
-    for (const DiagonalCellLink &dg: cell.diagonals())
-        addRow(row++, dg.rCellVec());
-
-    for (const BoundaryLink &bd: cell.boundaries())
-        addRow(row++, bd.rFaceVec());
-
-    return inverse(transpose(A) * A) * transpose(A);
+        if (updateRequired(st))
+            st.init(ib);
+    }
 }
-
-Matrix Celeste::leastSquaresMatrix(const ImmersedBoundaryObject &ibObj, const Cell &cell, bool weighted)
-{
-    Matrix A(
-            cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size(),
-            5
-    );
-
-    auto addRow = [&ibObj, &A, weighted](int row, const Point2D &ptA, const Point2D &ptB) {
-        Vector2D r = ibObj.intersectionLine(LineSegment2D(ptA, ptB)).ptB() - ptA;
-
-        //- Soften r
-        r = r.magSqr() < (ptB - ptA).magSqr() / 100. ? (ptB - ptA) / 10. : r;
-
-        Scalar w = weighted ? r.magSqr() : 1.;
-
-        A(row, 0) = r.x / w;
-        A(row, 1) = r.y / w;
-        A(row, 2) = r.x * r.x / (2. * w);
-        A(row, 3) = r.y * r.y / (2. * w);
-        A(row, 4) = r.x * r.y / w;
-    };
-
-    int row = 0;
-
-    for (const InteriorLink &nb: cell.neighbours())
-        addRow(row++, cell.centroid(), nb.cell().centroid());
-
-    for (const DiagonalCellLink &dg: cell.diagonals())
-        addRow(row++, cell.centroid(), dg.cell().centroid());
-
-    for (const BoundaryLink &bd: cell.boundaries())
-        addRow(row++, cell.centroid(), bd.face().centroid());
-
-    return inverse(transpose(A) * A) * transpose(A);
-}
-

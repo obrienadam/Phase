@@ -273,12 +273,12 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
 
 CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string& name)
 {
-    return cellGroups_[name] = CellGroup(name);
+    return *(cellGroups_[name] = std::make_shared<CellGroup>(name));
 }
 
 CellZone &FiniteVolumeGrid2D::createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry)
 {
-    return cellZones_[name] = CellZone(name, registry ? registry: cellZoneRegistry_);
+    return *(cellZones_[name] = std::make_shared<CellZone>(name, registry ? registry: cellZoneRegistry_));
 }
 
 //- Face related methods

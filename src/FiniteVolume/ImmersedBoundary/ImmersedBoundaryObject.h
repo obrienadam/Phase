@@ -9,6 +9,11 @@ class ImmersedBoundaryObject
 {
 public:
 
+    enum Type
+    {
+        GHOST_CELL, STEP, QUADRATIC
+    };
+
     enum BoundaryType
     {
         FIXED, NORMAL_GRADIENT, PARTIAL_SLIP
@@ -18,6 +23,8 @@ public:
     ImmersedBoundaryObject(const std::string &name,
                            Label id,
                            FiniteVolumeGrid2D &grid);
+
+    virtual Type type() const = 0;
 
     //- The shape
     void initCircle(const Point2D &center, Scalar radius);
@@ -84,6 +91,8 @@ public:
     //- Operations
     LineSegment2D intersectionLine(const LineSegment2D &ln) const;
 
+    LineSegment2D intersectionLine(const Point2D &ptA, const Point2D &ptB) const;
+
     Point2D nearestIntersect(const Point2D &pt) const
     { return shapePtr_->nearestIntersect(pt); }
 
@@ -93,6 +102,8 @@ public:
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
 
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
+
+    void addBoundaryType(const std::string &name, const std::string &boundaryType);
 
     void addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue);
 
@@ -125,16 +136,25 @@ public:
     T getBoundaryRefValue(const std::string &name) const;
 
     //- Motion info if applicable
+    bool isMoving() const
+    { return (bool) motion_; }
+
     const Vector2D &position() const
     { return shape().centroid(); }
 
-    virtual Vector2D acceleration() const;
+    Vector2D acceleration() const;
 
-    virtual Vector2D acceleration(const Point2D &point) const;
+    Vector2D acceleration(const Point2D &point) const;
 
-    virtual Vector2D velocity() const;
+    Vector2D velocity() const;
 
-    virtual Vector2D velocity(const Point2D &point) const;
+    Vector2D velocity(const Point2D &point) const;
+
+    Scalar theta() const;
+
+    Scalar omega() const;
+
+    Scalar alpha() const;
 
     virtual void computeForce(Scalar rho,
                               Scalar mu,
@@ -148,15 +168,22 @@ public:
                               const ScalarFiniteVolumeField &p,
                               const Vector2D &g = Vector2D(0., 0.));
 
+    void addForce(const Vector2D &force)
+    {
+        force_ += force;
+    }
+
     Scalar mass() const
     { return rho * shapePtr_->area(); }
 
     Scalar momentOfInertia() const
     { return rho * shapePtr_->momentOfInertia(); }
 
-    const Vector2D &force() const;
+    const Vector2D &force() const
+    { return force_; }
 
-    Scalar torque() const;
+    Scalar torque() const
+    { return torque_; }
 
     //- Update
     void update(Scalar timeStep);

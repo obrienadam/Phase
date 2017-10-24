@@ -4,32 +4,34 @@
 #include "FractionalStep.h"
 #include "Celeste.h"
 
-class FractionalStepMultiphase: public FractionalStep
+class FractionalStepMultiphase : public FractionalStep
 {
 public:
-    FractionalStepMultiphase(const Input& input,
-                                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepMultiphase(const Input &input,
+                             std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     void initialize();
 
     Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    Scalar solve(Scalar timeStep);
+    virtual Scalar solve(Scalar timeStep);
 
     ScalarFiniteVolumeField &rho, &mu, &gamma;
     ScalarGradient &gradGamma, &gradRho;
     VectorFiniteVolumeField &rhoU, &sg;
-    Celeste& ft;
+    Celeste &ft;
 
-private:
+protected:
 
-    Scalar solveGammaEqn(Scalar timeStep);
+    virtual Scalar solveGammaEqn(Scalar timeStep);
 
-    Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep);
 
-    Scalar solvePEqn(Scalar timeStep);
+    virtual Scalar solvePEqn(Scalar timeStep);
 
-    void correctVelocity(Scalar timeStep);
+    virtual void correctVelocity(Scalar timeStep);
+
+    void computeMomentumFlux(const ScalarFiniteVolumeField &beta, Scalar timeStep);
 
     void updateProperties(Scalar timeStep);
 

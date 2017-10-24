@@ -9,6 +9,9 @@ public:
 
     using ImmersedBoundaryObject::ImmersedBoundaryObject;
 
+    Type type() const
+    { return STEP; }
+
     virtual void updateCells();
 
     virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const;

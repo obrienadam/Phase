@@ -13,7 +13,7 @@ public:
     //- Constructor
     SurfaceTensionForce(const Input &input,
                         const ImmersedBoundary &ib,
-                        const ScalarFiniteVolumeField& gamma,
+                        ScalarFiniteVolumeField& gamma,
                         const ScalarFiniteVolumeField& rho,
                         const ScalarFiniteVolumeField& mu,
                         const VectorFiniteVolumeField& u,
@@ -79,6 +79,9 @@ public:
 
     void smoothGammaField(const ImmersedBoundary& ib);
 
+    //- Misc special gamma boundary equations
+    virtual Equation<Scalar> contactLineBcs(const ImmersedBoundary& ib) = 0;
+
 protected:
 
     Scalar sigma_, kernelWidth_;
@@ -86,7 +89,7 @@ protected:
     std::unordered_map<Label, Scalar> ibContactAngles_;
     std::unordered_map<Label, Scalar> patchContactAngles_;
 
-    const ScalarFiniteVolumeField &gamma_;
+    ScalarFiniteVolumeField &gamma_;
     const ScalarFiniteVolumeField &rho_;
     const ScalarFiniteVolumeField &mu_;
     const VectorFiniteVolumeField &u_;

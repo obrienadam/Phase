@@ -26,22 +26,7 @@ void GhostCellImmersedBoundaryObject::updateCells()
     solidCells_.clear();
     deadCells_.clear();
 
-    switch (shapePtr_->type())
-    {
-        case Shape2D::CIRCLE:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Circle>(shapePtr_))) //- The circle method is much more efficient
-                cells_.add(cell);
-            break;
-        case Shape2D::BOX:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Box>(shapePtr_))) //- The box method is much more efficient
-                cells_.add(cell);
-            break;
-        default:
-            for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
-                cells_.add(cell);
-    }
+    cells_.addAll(fluid_->itemsWithin(*shapePtr_));
 
     auto isIbCell = [this](const Cell &cell) {
         if (!isInIb(cell.centroid()))
@@ -73,30 +58,35 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
-    for (const GhostCellStencil &st: stencils_)
+    switch (bType)
     {
-        //- Boundary assembly
-        switch (bType)
-        {
-            case FIXED:
+        case FIXED:
+            for (const GhostCellStencil &st: stencils_)
+            {
                 eqn.add(st.cell(), st.cells(), st.dirichletCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
-                break;
+            }
 
-            case ImmersedBoundaryObject::NORMAL_GRADIENT:
+            for (const Cell &cell: solidCells_)
+            {
+                eqn.add(cell, cell, 1.);
+                eqn.addSource(cell, -bRefValue);
+            }
+
+            break;
+        case NORMAL_GRADIENT:
+            for (const GhostCellStencil &st: stencils_)
+            {
                 eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
-                break;
+            }
 
-            default:
-                throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
-        }
-    }
+            for (const Cell &cell: solidCells_)
+                eqn.add(cell, cell, 1.);
+            break;
 
-    for (const Cell &cell: solidCells_)
-    {
-        eqn.add(cell, cell, 1.);
-        eqn.addSource(cell, -bRefValue);
+        default:
+            throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
     }
 
     return eqn;

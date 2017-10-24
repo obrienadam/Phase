@@ -20,6 +20,9 @@ target_link_libraries(phaseFractionalStepQuadraticIbm ${PHASE_LIBRARIES})
 add_executable(phaseFractionalStepMultiphase phaseFractionalStepMultiphase.cpp)
 target_link_libraries(phaseFractionalStepMultiphase ${PHASE_LIBRARIES})
 
+add_executable(phaseFractionalStepMultiphaseQuadraticIbm phaseFractionalStepMultiphaseQuadraticIbm.cpp)
+target_link_libraries(phaseFractionalStepMultiphaseQuadraticIbm ${PHASE_LIBRARIES})
+
 add_executable(phaseFractionalStepIncremental phaseFractionalStepIncremental.cpp)
 target_link_libraries(phaseFractionalStepIncremental ${PHASE_LIBRARIES})
 

@@ -106,22 +106,32 @@ public:
         globalInactiveCells_.add(begin, end);
     }
 
+    //- Cell group access
     CellGroup &cellGroup(const std::string &name)
-    { return cellGroups_.find(name)->second; }
+    { return *cellGroups_.find(name)->second; }
 
     const CellGroup &cellGroup(const std::string &name) const
+    { return *cellGroups_.find(name)->second; }
+
+    std::shared_ptr<CellGroup>& cellGroupPtr(const std::string& name)
     { return cellGroups_.find(name)->second; }
 
+    //- Cell zone access
     CellZone &cellZone(const std::string &name)
-    { return cellZones_.find(name)->second; }
+    { return *cellZones_.find(name)->second; }
 
-    const CellZone &cellZone(const std::string &name) const
+    const CellZone &cellZone(const std::string& name) const
+    { return *cellZones_.find(name)->second; }
+
+    std::shared_ptr<CellZone>& cellZonePtr(const std::string& name)
     { return cellZones_.find(name)->second; }
 
     CellGroup globalCellGroup(const CellGroup& localGroup) const;
 
+    //- Cell group creation
     CellGroup &createCellGroup(const std::string& name);
 
+    //- Cell zone creation
     CellZone &createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry = nullptr);
 
     const std::shared_ptr<CellZone::ZoneRegistry>& cellZoneRegistry() const
@@ -244,8 +254,8 @@ protected:
 
     //- User defined cell groups/zones
     std::shared_ptr<CellZone::ZoneRegistry> cellZoneRegistry_;
-    std::unordered_map<std::string, CellGroup> cellGroups_;
-    std::unordered_map<std::string, CellZone> cellZones_;
+    std::unordered_map<std::string, std::shared_ptr<CellGroup>> cellGroups_;
+    std::unordered_map<std::string, std::shared_ptr<CellZone>> cellZones_;
 
     //- Communication zones
     std::shared_ptr<Communicator> comm_;

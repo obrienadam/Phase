@@ -11,7 +11,7 @@ public:
 
     Celeste(const Input &input,
             const ImmersedBoundary &ib,
-            const ScalarFiniteVolumeField &gamma,
+            ScalarFiniteVolumeField &gamma,
             const ScalarFiniteVolumeField &rho,
             const ScalarFiniteVolumeField &mu,
             const VectorFiniteVolumeField &u,
@@ -19,35 +19,69 @@ public:
 
     void computeFaces();
 
-    void computeFaces(const ImmersedBoundary& ib);
+    void computeFaces(const ImmersedBoundary &ib);
 
     void compute();
 
-    void compute(const ImmersedBoundary& ib);
+    void compute(const ImmersedBoundary &ib);
 
     void constructMatrices();
 
+    Equation<Scalar> contactLineBcs(const ImmersedBoundary& ib);
+
 protected:
+
+    class CelesteStencil
+    {
+    public:
+
+        CelesteStencil() {}
+
+        CelesteStencil(const Cell& cell, bool weighted);
+
+        CelesteStencil(const Cell& cell, const ImmersedBoundary& ib, bool weighted);
+
+        void init(bool weighted = false);
+
+        void init(const ImmersedBoundary& ib, bool weighted = false);
+
+        const Cell& cell() const
+        { return *cellPtr_; }
+
+        bool weighted() const
+        { return weighted_; }
+
+        bool truncated() const
+        { return truncated_; }
+
+        Vector2D grad(const ScalarFiniteVolumeField& phi) const;
+
+        Scalar div(const VectorFiniteVolumeField& u) const;
+
+        Scalar kappa(const VectorFiniteVolumeField& n, const ImmersedBoundary& ib, const Celeste& fst) const;
+
+    private:
+
+        const Cell* cellPtr_ = nullptr;
+
+        bool truncated_, weighted_;
+
+        Matrix pInv_;
+
+    };
 
     virtual void computeGradGammaTilde();
 
-    void computeGradGammaTilde(const ImmersedBoundary& ib);
+    void computeGradGammaTilde(const ImmersedBoundary &ib);
 
     virtual void computeCurvature();
 
-    void computeCurvature(const ImmersedBoundary& ib);
+    void computeCurvature(const ImmersedBoundary &ib);
 
-    Matrix leastSquaresMatrix(const Cell& cell, bool weighted = false);
-
-    Matrix leastSquaresMatrix(const ImmersedBoundaryObject& ibObj, const Cell& cell, bool weighted = false);
-
-    void constructGammaTildeMatrices();
-
-    void constructKappaMatrices();
+    void updateStencils(const ImmersedBoundary& ib);
 
     std::vector<bool> modifiedStencil_;
-    std::vector<Matrix> kappaMatrices_, gradGammaTildeMatrices_;
-    std::vector<std::pair<GhostCellStencil, GhostCellStencil>> clStencils_;
+    std::vector<CelesteStencil> kappaStencils_, gradGammaTildeStencils_;
 };
 
 #endif

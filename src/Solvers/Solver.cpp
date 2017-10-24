@@ -254,7 +254,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
 
 void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
-    const Polygon pgn = circle.polygonize(400);
+    const Polygon pgn = circle.polygonize(1000);
 
     for (const Cell &cell: field.grid().cells())
     {

@@ -15,7 +15,7 @@ public:
     virtual Scalar solve(Scalar timeStep);
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
-    { return INFINITY; }
+    { return std::numeric_limits<Scalar>::infinity(); }
 
     ScalarFiniteVolumeField &phi, &gamma;
 

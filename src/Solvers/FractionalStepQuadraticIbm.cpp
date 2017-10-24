@@ -1,18 +1,17 @@
 #include "FractionalStepQuadraticIbm.h"
 #include "QuadraticIbm.h"
 #include "Source.h"
-#include "StepImmersedBoundaryObject.h"
 
 FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         FractionalStep(input, grid)
 {
-    for(auto ibObjPtr: ib_.ibObjPtrs())
+    for (auto ibObj: ib_.ibObjPtrs())
     {
-        if(!std::dynamic_pointer_cast<StepImmersedBoundaryObject>(ibObjPtr))
+        if (ibObj->type() != ImmersedBoundaryObject::QUADRATIC)
             throw Exception("FractionalStepQuadraticIbm",
                             "FractionalStepQuadraticIbm",
-                            "must use \"step\" immersed boundary method for this solver.");
+                            "immersed boundary object \"" + ibObj->name() + "\" is not type \"quadratic\".");
     }
 }
 

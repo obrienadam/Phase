@@ -6,6 +6,7 @@
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 #include "ImmersedBoundaryStencil.h"
+#include "StaticMatrix.h"
 
 class GhostCellImmersedBoundaryObject;
 
@@ -17,7 +18,10 @@ public:
 
     GhostCellStencil(const Cell &cell, const GhostCellImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
 
-    GhostCellStencil(const Cell& cell, const Point2D& bp, const Vector2D& cl, const FiniteVolumeGrid2D &grid);
+    GhostCellStencil(const Cell& cell,
+                     const Point2D& bp,
+                     const Vector2D& cl,
+                     const FiniteVolumeGrid2D &grid);
 
     const Point2D &boundaryPoint() const
     { return bp_; }
@@ -50,7 +54,7 @@ public:
 
 protected:
 
-    Matrix A_;
+    StaticMatrix<4, 4> A_;
     Point2D ip_, bp_;
 };
 

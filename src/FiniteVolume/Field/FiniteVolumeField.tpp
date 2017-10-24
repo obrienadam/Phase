@@ -7,15 +7,18 @@
 //- Constructors
 
 template<class T>
-FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                         const std::string &name,
-                                        const T& val,
+                                        const T &val,
                                         bool faces,
-                                        bool nodes)
+                                        bool nodes,
+                                        const std::shared_ptr<const CellGroup>& cellGroup)
         :
         Field<T>::Field(grid->cells().size(), val, name),
         grid_(grid)
 {
+    cellGroup_ = cellGroup;
+
     if (faces)
         faces_.resize(grid_->faces().size(), val);
 
@@ -25,13 +28,14 @@ FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolume
 
 template<class T>
 FiniteVolumeField<T>::FiniteVolumeField(const Input &input,
-                                        const std::shared_ptr<const FiniteVolumeGrid2D>& grid,
+                                        const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                         const std::string &name,
-                                        const T& val,
+                                        const T &val,
                                         bool faces,
-                                        bool nodes)
+                                        bool nodes,
+                                        const std::shared_ptr<const CellGroup>& cellGroup)
         :
-        FiniteVolumeField(grid, name, val, faces, nodes)
+        FiniteVolumeField(grid, name, val, faces, nodes, cellGroup)
 {
     setBoundaryTypes(input);
     setBoundaryRefValues(input);
@@ -52,15 +56,15 @@ void FiniteVolumeField<T>::fillInterior(const T &val)
 {
     std::fill(this->begin(), this->end(), val);
 
-    if(!faces_.empty())
+    if (!faces_.empty())
     {
         for (const Face &face: grid().interiorFaces())
             faces_[face.id()] = val;
     }
 
-    if(!nodes_.empty())
+    if (!nodes_.empty())
     {
-        for(const Node& node: grid().interiorNodes())
+        for (const Node &node: grid().interiorNodes())
             nodes_[node.id()] = val;
     }
 }
@@ -75,7 +79,7 @@ template<class T>
 typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Patch &patch) const
 {
     auto it = patchBoundaries_.find(patch.id());
-    return it == patchBoundaries_.end() ? NORMAL_GRADIENT: it->second.first;
+    return it == patchBoundaries_.end() ? NORMAL_GRADIENT : it->second.first;
 }
 
 template<class T>
@@ -95,7 +99,7 @@ void FiniteVolumeField<T>::setBoundaryFaces()
 {
     auto &self = *this;
 
-    for(const Patch& patch: grid().patches())
+    for (const Patch &patch: grid().patches())
     {
         switch (boundaryType(patch))
         {
@@ -104,20 +108,20 @@ void FiniteVolumeField<T>::setBoundaryFaces()
             case NORMAL_GRADIENT:
             case SYMMETRY:
                 for(const Face& face: patch)
-                    self(face) = self(face.lCell());
+                    faces_[face.id()] = self[face.lCell().id()];
                 break;
         }
     }
 }
 
 template<class T>
-void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::function<T(const Face& face)>& fcn)
+void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::function<T(const Face &face)> &fcn)
 {
     auto &self = *this;
-    for(const Patch& patch: grid_->patches())
+    for (const Patch &patch: grid_->patches())
     {
-        if(boundaryType(patch) == bType)
-            for(const Face& face: patch)
+        if (boundaryType(patch) == bType)
+            for (const Face &face: patch)
                 self(face) = fcn(face);
     }
 }
@@ -169,15 +173,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator+=(const FiniteVolumeField &
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) += rhs(cell);
 
-    if(!faces_.empty() && rhs.hasFaces())
-        for(const Face& face: grid().faces())
+    if (!faces_.empty() && rhs.hasFaces())
+        for (const Face &face: grid().faces())
             self(face) += rhs(face);
 
-    if(!nodes_.empty() && rhs.hasNodes())
-        for(const Node& node: grid().nodes())
+    if (!nodes_.empty() && rhs.hasNodes())
+        for (const Node &node: grid().nodes())
             self(node) += rhs(node);
 
     return self;
@@ -188,15 +192,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator-=(const FiniteVolumeField &
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) -= rhs(cell);
 
-    if(!faces_.empty() && rhs.hasFaces())
-        for(const Face& face: grid().faces())
+    if (!faces_.empty() && rhs.hasFaces())
+        for (const Face &face: grid().faces())
             self(face) -= rhs(face);
 
-    if(!nodes_.empty() && rhs.hasNodes())
-        for(const Node& node: grid().nodes())
+    if (!nodes_.empty() && rhs.hasNodes())
+        for (const Node &node: grid().nodes())
             self(node) -= rhs(node);
 
     return self;
@@ -207,15 +211,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator*=(const FiniteVolumeField<S
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) *= rhs(cell);
 
-    if(!faces_.empty() && rhs.hasFaces())
-        for(const Face& face: grid().faces())
+    if (!faces_.empty() && rhs.hasFaces())
+        for (const Face &face: grid().faces())
             self(face) *= rhs(face);
 
-    if(!nodes_.empty() && rhs.hasNodes())
-        for(const Node& node: grid().nodes())
+    if (!nodes_.empty() && rhs.hasNodes())
+        for (const Node &node: grid().nodes())
             self(node) *= rhs(node);
 
     return self;
@@ -226,15 +230,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(const FiniteVolumeField<S
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) /= rhs(cell);
 
-    if(hasFaces() && rhs.hasFaces())
-        for(const Face& face: grid().faces())
+    if (hasFaces() && rhs.hasFaces())
+        for (const Face &face: grid().faces())
             self(face) /= rhs(face);
 
-    if(hasNodes() && rhs.hasNodes())
-        for(const Node& node: grid().nodes())
+    if (hasNodes() && rhs.hasNodes())
+        for (const Node &node: grid().nodes())
             self(node) /= rhs(node);
 
     return self;
@@ -245,15 +249,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator*=(Scalar rhs)
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) *= rhs;
 
-    if(!faces_.empty())
-        for(const Face& face: grid().faces())
+    if (!faces_.empty())
+        for (const Face &face: grid().faces())
             self(face) *= rhs;
 
-    if(!nodes_.empty())
-        for(const Node& node: grid().nodes())
+    if (!nodes_.empty())
+        for (const Node &node: grid().nodes())
             self(node) *= rhs;
 
     return self;
@@ -264,15 +268,15 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(Scalar rhs)
 {
     auto &self = *this;
 
-    for(const Cell& cell: grid().cells())
+    for (const Cell &cell: grid().cells())
         self(cell) /= rhs;
 
-    if(!faces_.empty())
-        for(const Face& face: grid().faces())
+    if (!faces_.empty())
+        for (const Face &face: grid().faces())
             self(face) /= rhs;
 
-    if(!nodes_.empty())
-        for(const Node& node: grid().nodes())
+    if (!nodes_.empty())
+        for (const Node &node: grid().nodes())
             self(node) /= rhs;
 
     return self;
@@ -285,7 +289,7 @@ void FiniteVolumeField<T>::writeToFile(const std::string &filename) const
 {
     std::ofstream fout(filename);
 
-    for(const T& val: *this)
+    for (const T &val: *this)
         fout << val << "\n";
 
     fout.close();
@@ -316,16 +320,17 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        for (const Patch& patch: grid().patches())
+        for (const Patch &patch: grid().patches())
         {
             patchBoundaries_[patch.id()] = std::make_pair(boundaryType, T());
         }
     }
 
-    for (const Patch& patch: grid().patches())
+    for (const Patch &patch: grid().patches())
     {
-        typeStr = input.boundaryInput().get<std::string>("Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
-                                                         "");
+        typeStr = input.boundaryInput().get<std::string>(
+                "Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
+                "");
 
         if (typeStr.empty())
             continue;
@@ -385,12 +390,12 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
 //- External functions
 
 template<class T, class TFunc>
-void smooth(const FiniteVolumeField<T>& field,
-            const CellGroup& cellsToSmooth,
-            const CellGroup& cells,
+void smooth(const FiniteVolumeField<T> &field,
+            const CellGroup &cellsToSmooth,
+            const CellGroup &cells,
             Scalar epsilon,
-            FiniteVolumeField<T>& smoothedField,
-            const TFunc& kernel)
+            FiniteVolumeField<T> &smoothedField,
+            const TFunc &kernel)
 {
     for (const Cell &cell: cellsToSmooth)
     {

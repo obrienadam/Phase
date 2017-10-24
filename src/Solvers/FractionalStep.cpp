@@ -7,13 +7,13 @@ FractionalStep::FractionalStep(const Input &input,
                                std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
+        fluid_(grid->createCellZone("fluid")),
         u(addVectorField(input, "u")),
         p(addScalarField(input, "p")),
         gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
         gradU(addTensorField(std::make_shared<JacobianField>(u))),
         uEqn_(input, u, "uEqn"),
-        pEqn_(input, p, "pEqn"),
-        fluid_(grid->createCellZone("fluid"))
+        pEqn_(input, p, "pEqn")
 {
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);

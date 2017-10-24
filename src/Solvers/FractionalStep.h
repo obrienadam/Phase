@@ -19,7 +19,7 @@ public:
 
     std::string info() const;
 
-    Scalar solve(Scalar timeStep);
+    virtual Scalar solve(Scalar timeStep);
 
     Scalar maxCourantNumber(Scalar timeStep) const;
 

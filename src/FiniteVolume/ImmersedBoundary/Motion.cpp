@@ -7,4 +7,8 @@ Motion::Motion(std::weak_ptr<ImmersedBoundaryObject> ibObj)
     acc_ = Vector2D(0., 0.);
     vel_ = Vector2D(0., 0.);
     pos_ = ibObj_.lock()->position();
+
+    alpha_ = 0.;
+    omega_ = 0.;
+    theta_ = 0.;
 }

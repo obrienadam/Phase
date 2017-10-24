@@ -26,6 +26,8 @@ public:
     bool isSquare() const
     { return m_ == n_; }
 
+    void setRow(int i, const std::initializer_list<Scalar>& coeffs);
+
     void scaleRow(Size i, Scalar factor);
 
     Scalar &operator()(Size i, Size j);
@@ -94,6 +96,8 @@ Matrix operator*(Scalar lhs, Matrix rhs);
 Matrix operator*(const Matrix &lhs, const Matrix &rhs);
 
 Matrix operator/(Matrix lhs, Scalar rhs);
+
+Matrix multiply(const Matrix &A, const Matrix &B, bool transA = false, bool transB = false);
 
 std::ostream &operator<<(std::ostream &os, const Matrix &mat);
 

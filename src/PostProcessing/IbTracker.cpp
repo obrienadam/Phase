@@ -32,9 +32,14 @@ void IbTracker::compute(Scalar time)
     //- Remove invalid objects
     if (iterNo_++ % fileWriteFrequency_ == 0)
     {
-        ibObjs_.erase(std::remove_if(ibObjs_.begin(), ibObjs_.end(), [](std::weak_ptr<ImmersedBoundaryObject> ibObj) {
-            return !ibObj.lock();
-        }), ibObjs_.end());
+        ibObjs_.erase(
+                std::remove_if(
+                        ibObjs_.begin(),
+                        ibObjs_.end(),
+                        [](std::weak_ptr<ImmersedBoundaryObject> ibObj) {
+                            return !ibObj.lock();
+                        }),
+                ibObjs_.end());
 
         //- Loop over remaining
         if (solver_.grid().comm().isMainProc())
@@ -84,9 +89,18 @@ void IbTracker::compute(Scalar time)
 
                 fout.open((outputDir_ / (ibObj->name() + "_timeSeriesPlot.dat")).string(),
                           std::ofstream::out | std::ofstream::app);
-                fout << time << "," << ibObj->position().x << "," << ibObj->position().y << ","
-                     << ibObj->velocity().x << "," << ibObj->velocity().y << ","
-                     << ibObj->force().x << "," << ibObj->force().y << "\n";
+
+                fout << time << ","
+                     << ibObj->position().x << ","
+                     << ibObj->position().y << ","
+                     << ibObj->theta() << ","
+                     << ibObj->velocity().x << ","
+                     << ibObj->velocity().y << ","
+                     << ibObj->omega() << ","
+                     << ibObj->force().x << ","
+                     << ibObj->force().y << ","
+                     << ibObj->torque() << "\n";
+
                 fout.close();
             }
 

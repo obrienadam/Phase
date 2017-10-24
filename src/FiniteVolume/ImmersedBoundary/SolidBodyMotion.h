@@ -16,6 +16,7 @@ public:
 private:
 
     Vector2D force_;
+    Scalar torque_;
 
 };
 

@@ -23,16 +23,24 @@ void CellZone::add(const Cell &cell)
         CellGroup::add(cell);
     else
     {
-        insertion.first->second.get().remove(cell); //- This will remove the cell from the registry
-        add(cell); //- Recursive call
+        insertion.first->second.get().CellGroup::remove(cell);
+        insertion.first->second = std::ref(*this);
+        CellGroup::add(cell);
     }
 }
 
 void CellZone::add(const CellGroup &cells)
 {
+    for(const Cell& cell: cells)
+        add(cell);
+}
+
+void CellZone::add(const CellZone& cells)
+{
     //- Must construct a temporary container since moving cells will modify the original
     //  container
-    for(const Cell& cell: cells.items())
+
+    for(const Cell &cell: cells.items())
         add(cell);
 }
 

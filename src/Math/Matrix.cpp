@@ -42,6 +42,11 @@ void Matrix::init(const Scalar *begin, const Scalar *end)
     });
 }
 
+void Matrix::setRow(int i, const std::initializer_list<Scalar> &coeffs)
+{
+    std::transform(coeffs.begin(), coeffs.end(), begin() + n_ * i, [](Scalar v) { return v; });
+}
+
 void Matrix::scaleRow(Size i, Scalar factor)
 {
     auto itr = begin() + i * n_;
@@ -224,7 +229,6 @@ Matrix transpose(Matrix mat)
 
 Matrix inverse(Matrix mat)
 {
-    auto old = mat;
     return mat.invert();
 }
 
@@ -275,6 +279,23 @@ Matrix operator*(const Matrix &A, const Matrix &B)
 Matrix operator/(Matrix lhs, Scalar rhs)
 {
     return lhs /= rhs;
+}
+
+Matrix multiply(const Matrix &A, const Matrix &B, bool transA, bool transB)
+{
+    Matrix C(A.m(), B.n());
+
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+                A.m(), B.n(), A.n(), 1.,
+                A.data(), A.n(),
+                B.data(), B.n(), 1.,
+                C.data(), C.n());
+//
+//    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans,
+//                A.m(), B.n(), A.n(), 1., A.data(), A.n(),
+//                B.data(), B.n(), 1., C.data(), C.n());
+
+    return C;
 }
 
 std::ostream &operator<<(std::ostream &os, const Matrix &mat)

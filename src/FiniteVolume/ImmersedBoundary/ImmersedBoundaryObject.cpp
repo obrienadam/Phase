@@ -71,6 +71,11 @@ LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) 
     return LineSegment2D(ln.ptA(), xc[0]);
 }
 
+LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const Point2D &ptB) const
+{
+    return intersectionLine(LineSegment2D(ptA, ptB));
+}
+
 Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
 {
     switch (shapePtr_->type())
@@ -117,6 +122,20 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
 {
     boundaryTypes_[name] = boundaryType;
+}
+
+void ImmersedBoundaryObject::addBoundaryType(const std::string &name, const std::string &boundaryType)
+{
+    if (boundaryType == "fixed")
+        addBoundaryType(name, FIXED);
+    else if (boundaryType == "normal_gradient")
+        addBoundaryType(name, NORMAL_GRADIENT);
+    else if (boundaryType == "partial_slip")
+        addBoundaryType(name, PARTIAL_SLIP);
+    else
+        throw Exception("ImmersedBoundaryObject",
+                        "ImmersedBoundaryObject",
+                        "invalid boundary type \"" + boundaryType + "\".");
 }
 
 template<>
@@ -174,6 +193,21 @@ Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
     return motion_ ? motion_->velocity(point) : Vector2D(0., 0.);
 }
 
+Scalar ImmersedBoundaryObject::theta() const
+{
+    return motion_ ? motion_->theta() : 0.;
+}
+
+Scalar ImmersedBoundaryObject::omega() const
+{
+    return motion_ ? motion_->omega() : 0.;
+}
+
+Scalar ImmersedBoundaryObject::alpha() const
+{
+    return motion_ ? motion_->alpha() : 0.;
+}
+
 void ImmersedBoundaryObject::computeForce(Scalar rho,
                                           Scalar mu,
                                           const VectorFiniteVolumeField &u,
@@ -190,16 +224,6 @@ void ImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
                                           const Vector2D &g)
 {
     throw Exception("ImmersedBoundaryObject", "computeForce", "not implemented.");
-}
-
-const Vector2D &ImmersedBoundaryObject::force() const
-{
-    return force_;
-}
-
-Scalar ImmersedBoundaryObject::torque() const
-{
-    return torque_;
 }
 
 void ImmersedBoundaryObject::update(Scalar timeStep)

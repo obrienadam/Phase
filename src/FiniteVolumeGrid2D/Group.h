@@ -36,7 +36,12 @@ public:
     //- Adding/removing items
     virtual void add(const T &item);
 
-    virtual void add(const Group<T> &other);
+    template<class T2>
+    void addAll(const T2& container)
+    {
+        for(const T& item: container)
+            add(item);
+    }
 
     template<class const_iterator>
     void add(const_iterator begin, const_iterator end)
@@ -62,17 +67,15 @@ public:
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;
 
-    std::vector<Ref<const T> > itemsWithin(const Circle &circle) const;
-
-    std::vector<Ref<const T> > itemsWithin(const Box &box) const;
-
-    std::vector<Ref<const T> > itemsCoveredBy(const Circle &circle) const;
-
-    std::vector<Ref<const T> > itemsCoveredBy(const Box &box) const;
+    std::vector<Ref<const T> > itemsCoveredBy(const Shape2D& shape) const;
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
+    std::vector<Ref<const T> > nearestItems(const Shape2D& shape, size_t k) const;
+
     const T &nearestItem(const Point2D &pt) const;
+
+    const T &nearestItem(const Shape2D& shape) const;
 
     //- Iterators
     typename std::vector<Ref<const T> >::iterator begin()
@@ -111,6 +114,12 @@ protected:
     std::vector<Ref<const T> > items_; // Used for faster iteration over all cells
     Rtree rTree_; //- For searching
 };
+
+template<class T>
+Group<T> operator+(Group<T> lhs, const Group<T> &rhs);
+
+template<class T>
+Group<T> operator-(Group<T> lhs, const Group<T> &rhs);
 
 #include "Group.tpp"
 

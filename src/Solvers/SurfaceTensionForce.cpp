@@ -2,7 +2,7 @@
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const ImmersedBoundary &ib,
-                                         const ScalarFiniteVolumeField &gamma,
+                                         ScalarFiniteVolumeField &gamma,
                                          const ScalarFiniteVolumeField &rho,
                                          const ScalarFiniteVolumeField &mu,
                                          const VectorFiniteVolumeField &u,
@@ -138,7 +138,7 @@ void SurfaceTensionForce::smoothGammaField()
 
 void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary& ib)
 {
-    CellGroup cellsToSmooth = grid_->cellZone("fluid") + ib.ibCells();
+    CellGroup cellsToSmooth = grid_->localActiveCells() - ib.solidCells();
 
     smooth(gamma_, cellsToSmooth,
            grid_->globalCellGroup(cellsToSmooth),

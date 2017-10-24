@@ -1,9 +1,7 @@
 #include "PisoMultiphase.h"
 #include "Cicsam.h"
-#include "Plic.h"
 #include "Celeste.h"
 #include "FaceInterpolation.h"
-#include "ScalarGradient.h"
 #include "Source.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input,
@@ -158,7 +156,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
     {
         case CICSAM:
             gammaEqn_ = (
-                    fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma) +
+                    fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) +
                     ib_.bcs(gamma) == 0.);
     }
 

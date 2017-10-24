@@ -41,8 +41,8 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
     }
 
     capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
-    printf("CICSAM blending constant (k): %.2f\n", cicsamBlending_);
-    printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
+    grid_->comm().printf("CICSAM blending constant (k): %.2f\n", cicsamBlending_);
+    grid_->comm().printf("Maximum capillary-wave constrained time-step: %.2e\n", capillaryTimeStep_);
 }
 
 void FractionalStepIncrementalMultiphase::initialize()

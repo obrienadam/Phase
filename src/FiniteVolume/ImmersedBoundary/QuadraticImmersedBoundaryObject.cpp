@@ -1,40 +1,53 @@
-#include <math.h>
-
-#include "StepImmersedBoundaryObject.h"
+#include "QuadraticImmersedBoundaryObject.h"
 #include "Matrix.h"
 
-void StepImmersedBoundaryObject::updateCells()
+QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::string &name,
+                                                                 Label id,
+                                                                 FiniteVolumeGrid2D &grid)
+        :
+        ImmersedBoundaryObject(name, id, grid)
 {
-    fluid_->add(cells_);
 
-    switch (shapePtr_->type())
-    {
-        case Shape2D::CIRCLE:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Circle>(shapePtr_))) //- The circle method is much more efficient
-                cells_.add(cell);
-            break;
-        case Shape2D::BOX:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Box>(shapePtr_))) //- The box method is much more efficient
-                cells_.add(cell);
-            break;
-        default:
-            for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
-                cells_.add(cell);
-    }
-
-    solidCells_.clear();
-    solidCells_.add(cells_);
-
-    ibCells_.clear();
-    for (const Cell &cell: solidCells_)
-        for (const InteriorLink &nb: cell.neighbours())
-            if (!isInIb(nb.cell().centroid()))
-                ibCells_.add(nb.cell()); //- Note: these should still be fluid cells
 }
 
-Equation<Scalar> StepImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
+//- Update
+void QuadraticImmersedBoundaryObject::updateCells()
+{
+    fluid_->add(cells_);
+    cells_.addAll(fluid_->itemsWithin(*shapePtr_));
+
+    auto isIbCell = [this](const Cell &cell) {
+        for (const InteriorLink &nb: cell.neighbours())
+            if (!isInIb(nb.cell()))
+                return true;
+
+        for (const DiagonalCellLink &dg: cell.diagonals())
+            if (!isInIb(dg.cell()))
+                return true;
+
+        return false;
+    };
+
+    solidCells_.clear();
+    ibCells_.clear();
+
+    for (const Cell &cell: cells_)
+    {
+        if (isIbCell(cell))
+            ibCells_.add(cell);
+        else
+            solidCells_.add(cell);
+    }
+
+    forcingCells_.clear();
+    for (const Cell &cell: ibCells_)
+        for (const InteriorLink &nb: cell.neighbours())
+            if (!isInIb(nb.cell()))
+                forcingCells_.add(nb.cell());
+}
+
+//- Boundary conditions
+Equation<Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
 {
     Equation<Scalar> eqn(field);
 
@@ -44,54 +57,90 @@ Equation<Scalar> StepImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field)
     switch (bType)
     {
         case FIXED:
-            for (const Cell &cell: cells_)
+            for (const Cell &cell: solidCells_)
             {
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -bRefValue);
             }
-            break;
-        case NORMAL_GRADIENT:
-            for(const Cell& cell: cells_)
+            
+            for(const Cell &cell: ibCells_)
             {
                 eqn.add(cell, cell, 1.);
-                eqn.addSource(cell, -1.);
+                eqn.addSource(cell, -bRefValue);
             }
+
+            break;
+        default:
+            throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
     }
 
     return eqn;
 }
 
-Equation<Vector2D> StepImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
+Equation<Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
 {
     Equation<Vector2D> eqn(field);
 
     auto bType = boundaryType(field.name());
+    auto bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
     switch (bType)
     {
         case FIXED:
-            for (const Cell &cell: cells_)
+            for (const Cell &cell: solidCells_)
             {
                 eqn.add(cell, cell, 1.);
-                eqn.addSource(cell, -velocity(cell.centroid()));
+                eqn.addSource(cell, -bRefValue);
             }
-            break;
-        case NORMAL_GRADIENT:
-            for (const Cell &cell: cells_)
+            
+            for(const Cell& cell: ibCells_)
             {
                 eqn.add(cell, cell, 1.);
+                eqn.addSource(cell, -bRefValue);
             }
+
             break;
+        default:
+            throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
     }
 
     return eqn;
 }
 
-void StepImmersedBoundaryObject::computeForce(Scalar rho,
-                                              Scalar mu,
-                                              const VectorFiniteVolumeField &u,
-                                              const ScalarFiniteVolumeField &p,
-                                              const Vector2D &g)
+Equation<Vector2D> QuadraticImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+{
+    Equation<Vector2D> eqn(u);
+
+    auto bType = boundaryType(u.name());
+
+    switch (bType)
+    {
+        case FIXED:
+            for (const Cell &cell: solidCells_)
+            {
+                eqn.add(cell, cell, 1.);
+                eqn.addSource(cell, -velocity(cell.centroid()));
+            }
+
+            for (const Cell &cell: ibCells_)
+            {
+                eqn.add(cell, cell, 1.);
+                eqn.addSource(cell, -velocity(cell.centroid()));
+            }
+            
+            break;
+        default:
+            throw Exception("QuadraticImmersedBoundaryObject", "velocityBcs", "only fixed boundaries are supported.");
+    }
+
+    return eqn;
+}
+
+void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
+                                                   Scalar mu,
+                                                   const VectorFiniteVolumeField &u,
+                                                   const ScalarFiniteVolumeField &p,
+                                                   const Vector2D &g)
 {
     typedef std::pair<Point2D, Scalar> ScalarPoint;
     typedef std::pair<Point2D, Vector2D> VectorPoint;
@@ -248,11 +297,11 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
     force_ += this->rho * shapePtr_->area() * g + shear;
 }
 
-void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
-                                              const ScalarFiniteVolumeField &mu,
-                                              const VectorFiniteVolumeField &u,
-                                              const ScalarFiniteVolumeField &p,
-                                              const Vector2D &g)
+void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
+                                                   const ScalarFiniteVolumeField &mu,
+                                                   const VectorFiniteVolumeField &u,
+                                                   const ScalarFiniteVolumeField &p,
+                                                   const Vector2D &g)
 {
     typedef std::pair<Point2D, Scalar> ScalarPoint;
 

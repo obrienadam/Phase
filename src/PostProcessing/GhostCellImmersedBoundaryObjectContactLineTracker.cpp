@@ -78,7 +78,7 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                 {
                     const auto &ptA = gammaIb[i];
                     const auto &ptB = gammaIb[(i + 1) % gammaIb.size()];
-                    bool isCandidate = ptA.second < 0.5 != ptB.second < 0.5;
+                    bool isCandidate = (ptA.second < 0.5) != (ptB.second < 0.5);
 
                     if (isCandidate)
                     {

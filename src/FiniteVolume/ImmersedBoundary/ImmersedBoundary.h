@@ -19,6 +19,11 @@ public:
 
     ImmersedBoundary(const Input &input, Solver &solver);
 
+    //- Solver/grid info
+    const Solver &solver() const;
+
+    const FiniteVolumeGrid2D &grid() const;
+
     //- Cell zones
     void initCellZones(CellZone &zone);
 
@@ -88,7 +93,8 @@ public:
     void computeForce(const ScalarFiniteVolumeField &rho,
                       const ScalarFiniteVolumeField &mu,
                       const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p);
+                      const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.));
 
 protected:
 

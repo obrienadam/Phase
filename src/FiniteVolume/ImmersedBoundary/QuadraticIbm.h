@@ -4,24 +4,17 @@
 #include "FiniteVolumeEquation.h"
 #include "ImmersedBoundary.h"
 
-namespace qibm {
+namespace qibm
+{
 
-    class QuadraticStencil
-    {
-    public:
-
-        QuadraticStencil(const Cell&, const ImmersedBoundaryObject& ibObj);
-
-    private:
-
-        std::vector<Ref<const Cell>> cells_;
-        std::vector<Scalar> coeffs_;
-
-    };
-
-    Equation<Vector2D> div(const VectorFiniteVolumeField &phi, VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
+    Equation<Vector2D> div(const VectorFiniteVolumeField &phi,
+                           VectorFiniteVolumeField &u,
+                           const ImmersedBoundary &ib,
+                           Scalar theta = 1.);
 
     Equation<Vector2D> laplacian(Scalar mu, VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
+
+    Equation<Vector2D> laplacian(const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
 
     void computeFaceVelocities(VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
 }

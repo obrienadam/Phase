@@ -37,7 +37,8 @@ public:
 
     FiniteVolumeField<int> &addIntegerField(const std::string &name);
 
-    ScalarFiniteVolumeField &addScalarField(const Input &input, const std::string &name);
+    ScalarFiniteVolumeField &addScalarField(const Input &input,
+                                            const std::string &name);
 
     ScalarFiniteVolumeField &addScalarField(const std::string &name);
 

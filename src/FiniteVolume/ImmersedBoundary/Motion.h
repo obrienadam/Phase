@@ -25,9 +25,18 @@ public:
     Vector2D velocity(const Point2D &pt) const
     { return vel_ + omega_ * (pt - pos_).tangentVec(); }
 
+    Scalar alpha() const
+    { return alpha_; }
+
+    Scalar omega() const
+    { return omega_; }
+
+    Scalar theta() const
+    { return theta_; }
+
 protected:
 
-    Scalar omega_ = 0., alpha_ = 0.;
+    Scalar alpha_, omega_, theta_;
     Vector2D acc_, vel_, pos_;
 
     std::weak_ptr<ImmersedBoundaryObject> ibObj_;
