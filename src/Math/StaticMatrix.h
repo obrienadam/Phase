@@ -82,6 +82,13 @@ public:
         return *this;
     };
 
+    template<int K>
+    void solve(StaticMatrix<M, K>& b)
+    {
+        static_assert(M == N, "Coefficient matrix must be square.");
+        LAPACKE_dgesv(LAPACK_ROW_MAJOR, M, K, vals_, N, ipiv_, b.data(), K);
+    }
+
     StaticMatrix<M, N> &operator*=(Scalar scalar)
     {
         for (int i = 0; i < M * N; ++i)
@@ -109,27 +116,34 @@ StaticMatrix<M, N> inverse(StaticMatrix<M, N> A)
 {
     A.invert();
     return A;
-};
+}
 
 template<int M, int N>
 StaticMatrix<M, M> pseudoInverse(StaticMatrix<M, N> A)
 {
     return inverse(A * A.transpose()) * A;
-};
+}
+
+template<int M, int N, int K>
+StaticMatrix<M, K> solve(StaticMatrix<M, N> A, StaticMatrix<M, K> b)
+{
+    A.solve(b);
+    return b;
+}
 
 template<int M, int N>
 StaticMatrix<M, N> operator*(Scalar lhs, StaticMatrix<M, N> A)
 {
     A *= lhs;
     return A;
-};
+}
 
 template<int M, int N>
 StaticMatrix<M, N> operator/(StaticMatrix<M, N> A, Scalar rhs)
 {
     A /= rhs;
     return A;
-};
+}
 
 template<int M, int N, int K>
 StaticMatrix<M, K> operator*(const StaticMatrix<M, N> &A, const StaticMatrix<N, K> &B)

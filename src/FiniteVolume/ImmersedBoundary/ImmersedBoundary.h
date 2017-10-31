@@ -32,6 +32,9 @@ public:
     const CellZone &zone() const
     { return *zone_; }
 
+    const NodeGroup &fluidNodes() const
+    { return fluidNodes_; }
+
     CellGroup ibCells() const;
 
     CellGroup solidCells() const;
@@ -101,6 +104,7 @@ protected:
     void setCellStatus();
 
     const CellZone *zone_ = nullptr;
+    NodeGroup fluidNodes_;
 
     Solver &solver_;
     FiniteVolumeField<int> &cellStatus_;

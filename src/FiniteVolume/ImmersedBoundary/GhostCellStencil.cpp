@@ -67,7 +67,7 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
         ImmersedBoundaryStencil(cell)
 {
     bp_ = bp;
-    ip_ = 2. * bp_ - cell.centroid();
+    ip_ = 2 * bp - cell.centroid();
     cells_ = grid.findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
@@ -97,23 +97,15 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
     if (ghostCellInStencil)
     {
         Vector2D n = cl.unitVec();
-        auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * A_;
         auto xn = StaticMatrix<1, 4>({bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}) * A_;
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
         neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
     }
     else
     {
         cells_.push_back(cell_);
-
-        auto xd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / 2.;
-        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / -length();
-
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
-        dirichletCoeffs_.push_back(1. / 2.);
-
+        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_;
         neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-        neumannCoeffs_.push_back(1. / length());
+        neumannCoeffs_.push_back(-1.);
     }
 }
 

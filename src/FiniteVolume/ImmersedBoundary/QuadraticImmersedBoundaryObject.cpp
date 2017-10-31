@@ -1,5 +1,5 @@
 #include "QuadraticImmersedBoundaryObject.h"
-#include "Matrix.h"
+#include "StaticMatrix.h"
 
 QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
@@ -47,9 +47,9 @@ void QuadraticImmersedBoundaryObject::updateCells()
 }
 
 //- Boundary conditions
-Equation<Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
+Equation <Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
 {
-    Equation<Scalar> eqn(field);
+    Equation <Scalar> eqn(field);
 
     auto bType = boundaryType(field.name());
     auto bRefValue = getBoundaryRefValue<Scalar>(field.name());
@@ -62,8 +62,8 @@ Equation<Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -bRefValue);
             }
-            
-            for(const Cell &cell: ibCells_)
+
+            for (const Cell &cell: ibCells_)
             {
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -bRefValue);
@@ -77,9 +77,9 @@ Equation<Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
     return eqn;
 }
 
-Equation<Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
+Equation <Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
 {
-    Equation<Vector2D> eqn(field);
+    Equation <Vector2D> eqn(field);
 
     auto bType = boundaryType(field.name());
     auto bRefValue = getBoundaryRefValue<Scalar>(field.name());
@@ -92,8 +92,8 @@ Equation<Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -bRefValue);
             }
-            
-            for(const Cell& cell: ibCells_)
+
+            for (const Cell &cell: ibCells_)
             {
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -bRefValue);
@@ -107,9 +107,9 @@ Equation<Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     return eqn;
 }
 
-Equation<Vector2D> QuadraticImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+Equation <Vector2D> QuadraticImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    Equation <Vector2D> eqn(u);
 
     auto bType = boundaryType(u.name());
 
@@ -127,7 +127,7 @@ Equation<Vector2D> QuadraticImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
                 eqn.add(cell, cell, 1.);
                 eqn.addSource(cell, -velocity(cell.centroid()));
             }
-            
+
             break;
         default:
             throw Exception("QuadraticImmersedBoundaryObject", "velocityBcs", "only fixed boundaries are supported.");
@@ -142,65 +142,70 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    typedef std::pair<Point2D, Scalar> ScalarPoint;
-    typedef std::pair<Point2D, Vector2D> VectorPoint;
+    typedef std::pair <Point2D, Scalar> ScalarPoint;
+    typedef std::pair <Point2D, Vector2D> VectorPoint;
 
-    std::vector<Point2D> bPts, tauPtsX, tauPtsY;
-    std::vector<Scalar> bP, tauX, tauY;
+    std::vector <Point2D> bPts, tauPtsX, tauPtsY;
+    std::vector <Scalar> bP, tauX, tauY;
+    bP.reserve(2 * ibCells_.size());
 
     for (const Cell &cell: ibCells_)
         for (const InteriorLink &nb: cell.neighbours())
-            if (isInIb(nb.cell()))
+            if (!isInIb(nb.cell()))
             {
-                const Cell &stCell = grid().globalActiveCells().nearestItem(
-                        2. * cell.centroid() - nb.cell().centroid());
+                const Cell &cell0 = cell;
+                const Cell &cell1 = nb.cell();
+                const Cell &cell2 = grid_.globalActiveCells().nearestItem(2. * cell1.centroid() - cell0.centroid());
 
-                LineSegment2D ln = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
-                Vector2D eta = nb.rCellVec().unitVec();
+                LineSegment2D ln = intersectionLine(LineSegment2D(cell0.centroid(), cell1.centroid()));
+                Vector2D eta = (cell0.centroid() - cell1.centroid()).unitVec();
 
-                Scalar eta1 = dot(stCell.centroid(), eta);
-                Scalar eta2 = dot(cell.centroid(), eta);
-                Scalar eta3 = dot(nb.cell().centroid(), eta);
+                Scalar eta0 = dot(cell0.centroid(), eta);
+                Scalar eta1 = dot(cell1.centroid(), eta);
+                Scalar eta2 = dot(cell2.centroid(), eta);
 
-                Matrix A = Matrix(3, 3, {
-                        eta1 * eta1, eta1, 1.,
-                        eta2 * eta2, eta2, 1.,
-                        eta3 * eta3, eta3, 1.
-                });
-
-                Matrix c = solve(A, Matrix(3, 1, {
-                        p(stCell),
-                        p(cell),
-                        p(nb.cell())
-                }));
+//                auto A = StaticMatrix<2, 2>(
+//                        {
+//                                eta1, 1.,
+//                                eta2, 1.
+//                        });
+//
+//                auto c = solve(A, StaticMatrix<2, 1>(
+//                        {
+//                                p(cell1),
+//                                p(cell2)
+//                        }));
 
                 Scalar etaB = dot(ln.ptB(), eta);
 
                 bPts.push_back(ln.ptB());
-                bP.push_back(c(0, 0) * etaB * etaB + c(1, 0) * etaB + c(2, 0) + rho * dot(g, ln.ptB()));
+                bP.push_back((p(cell1) - p(cell2)) / (eta1 - eta2) * (etaB - eta2) + p(cell2) + rho * dot(ln.ptB(), g));
 
-                if (std::abs(nb.rCellVec().x) > std::abs(nb.rCellVec().y))
-                {
-                    c = solve(A, Matrix(3, 1, {
-                            u(stCell).y,
-                            u(cell).y,
-                            u(nb.cell()).y
-                    }));
+//                bP.push_back(c(0, 0) * etaB + c(1, 0) + rho * dot(g, ln.ptB()));
 
-                    tauPtsY.push_back(ln.ptB());
-                    tauY.push_back(-mu * (2. * c(0, 0) * etaB + c(1, 0)));
-                }
-                else
-                {
-                    c = solve(A, Matrix(3, 1, {
-                            u(stCell).x,
-                            u(cell).x,
-                            u(nb.cell()).x
-                    }));
 
-                    tauPtsX.push_back(ln.ptB());
-                    tauX.push_back(-mu * (2. * c(0, 0) * etaB + c(1, 0)));
-                }
+//                if (std::abs(nb.rCellVec().x) > std::abs(nb.rCellVec().y))
+//                {
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    u(cell1).y,
+//                                    u(cell2).y
+//                            }));
+//
+//                    tauPtsY.push_back(ln.ptB());
+//                    tauY.push_back(-mu * c(0, 0));
+//                }
+//                else
+//                {
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    u(cell1).x,
+//                                    u(cell2).x
+//                            }));
+//
+//                    tauPtsX.push_back(ln.ptB());
+//                    tauX.push_back(-mu * c(0, 0));
+//                }
             }
 
     bPts = grid_.comm().allGatherv(bPts);
@@ -212,7 +217,7 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     tauPtsY = grid_.comm().allGatherv(tauPtsY);
     tauY = grid_.comm().allGatherv(tauY);
 
-    std::vector<ScalarPoint> pPoints, tauXPoints, tauYPoints;
+    std::vector <ScalarPoint> pPoints, tauXPoints, tauYPoints;
 
     std::transform(bPts.begin(), bPts.end(), bP.begin(), std::back_inserter(pPoints), [](const Point2D &pt, Scalar p) {
         return std::make_pair(pt, p);
@@ -231,25 +236,19 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     std::sort(pPoints.begin(), pPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
         Vector2D rVecA = ptA.first - shapePtr_->centroid();
         Vector2D rVecB = ptB.first - shapePtr_->centroid();
-        Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
-        Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
-        return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
+        return rVecA.angle() < rVecB.angle();
     });
 
     std::sort(tauXPoints.end(), tauXPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
         Vector2D rVecA = ptA.first - shapePtr_->centroid();
         Vector2D rVecB = ptB.first - shapePtr_->centroid();
-        Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
-        Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
-        return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
+        return rVecA.angle() < rVecB.angle();
     });
 
     std::sort(tauYPoints.end(), tauYPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
         Vector2D rVecA = ptA.first - shapePtr_->centroid();
         Vector2D rVecB = ptB.first - shapePtr_->centroid();
-        Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
-        Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
-        return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
+        return rVecA.angle() < rVecB.angle();
     });
 
     force_ = Vector2D(0., 0.);
@@ -294,7 +293,11 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     }
 
     //- add weight and sheare to net force
-    force_ += this->rho * shapePtr_->area() * g + shear;
+    std::cout << "Force pressure: " << force_ << "\n"
+              << "Force shear: " << shear << "\n";
+    force_ += this->rho * shapePtr_->area() * g;// + shear;
+    std::cout << "Force weight: " << this->rho * shapePtr_->area() * g << "\n"
+              << "Force total: " << force_ << "\n";
 }
 
 void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -303,80 +306,169 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    typedef std::pair<Point2D, Scalar> ScalarPoint;
+    typedef std::pair <Point2D, Scalar> ScalarPoint;
+    typedef std::pair <Point2D, Vector2D> VectorPoint;
 
-    std::vector<Point2D> bPts;
-    std::vector<Scalar> bP;
+    std::vector <Point2D> bPts, tauPtsX, tauPtsY;
+    std::vector <Scalar> bP, tauX, tauY;
+    bP.reserve(2 * ibCells_.size());
 
     for (const Cell &cell: ibCells_)
         for (const InteriorLink &nb: cell.neighbours())
-            if (isInIb(nb.cell()))
+            if (!isInIb(nb.cell()))
             {
-                const Cell &stCell = fluid_->nearestItem(2 * cell.centroid() - nb.cell().centroid());
-                LineSegment2D ln = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
-                Vector2D eta = nb.rCellVec().unitVec();
+                const Cell &cell0 = cell;
+                const Cell &cell1 = nb.cell();
+                const Cell &cell2 = grid_.globalActiveCells().nearestItem(2. * cell1.centroid() - cell0.centroid());
 
-                Scalar eta1 = dot(stCell.centroid(), eta);
-                Scalar eta2 = dot(cell.centroid(), eta);
-                Scalar eta3 = dot(nb.cell().centroid(), eta);
+                LineSegment2D ln = intersectionLine(LineSegment2D(cell1.centroid(), cell0.centroid()));
+                Vector2D eta = (cell0.centroid() - cell1.centroid()).unitVec();
 
-                Matrix A = Matrix(3, 3, {
-                        eta1 * eta1, eta1, 1.,
-                        eta2 * eta2, eta2, 1.,
-                        eta3 * eta3, eta3, 1.
-                });
-
-                Matrix c = solve(A, Matrix(3, 1, {
-                        p(stCell),
-                        p(cell),
-                        p(nb.cell())
-                }));
-
+                Scalar eta1 = dot(cell1.centroid(), eta);
+                Scalar eta2 = dot(cell2.centroid(), eta);
                 Scalar etaB = dot(ln.ptB(), eta);
-                Scalar pB = c(0, 0) * etaB * etaB + c(1, 0) * etaB + c(2, 0);
 
-                A = Matrix(2, 2, {
-                        eta1, 1.,
-                        eta2, 1.
-                });
-
-                c = solve(A, Matrix(3, 1, {
-                        rho(stCell),
-                        rho(cell)
-                }));
-
-                Scalar rhoB = c(0, 0) * etaB + c(1, 0);
+                Scalar pB = (p(cell1) - p(cell2)) / (eta1 - eta2) * (etaB - eta2) + p(cell2);
+                Scalar rhoB = (rho(cell1) - rho(cell2)) / (eta1 - eta2) * (etaB - eta2) + rho(cell2);
 
                 bPts.push_back(ln.ptB());
                 bP.push_back(pB + rhoB * dot(g, ln.ptB()));
+
+//                if (std::abs(nb.rCellVec().x) > std::abs(nb.rCellVec().y))
+//                {
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    u(cell1).y,
+//                                    u(cell2).y
+//                            }));
+//
+//                    Scalar dUdX = c(0, 0);
+//
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    mu(cell1),
+//                                    mu(cell2)
+//                            }));
+//
+//                    Scalar muB = c(0, 0) * etaB + c(1, 0);
+//
+//                    tauPtsY.push_back(ln.ptB());
+//                    tauY.push_back(-muB * dUdX);
+//                }
+//                else
+//                {
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    u(cell1).x,
+//                                    u(cell2).x
+//                            }));
+//
+//                    Scalar dUdY = c(0, 0);
+//
+//                    c = solve(A, StaticMatrix<2, 1>(
+//                            {
+//                                    mu(cell1),
+//                                    mu(cell2)
+//                            }));
+//
+//                    Scalar muB = c(0, 0) * etaB + c(1, 0);
+//                    muB = std::max(std::min(muB, 8.9e-4), 1.81e-5);
+//
+//                    tauPtsX.push_back(ln.ptB());
+//                    tauX.push_back(-muB * dUdY);
+//                }
             }
 
     bPts = grid_.comm().allGatherv(bPts);
     bP = grid_.comm().allGatherv(bP);
 
-    std::vector<ScalarPoint> pPoints;
+    tauPtsX = grid_.comm().allGatherv(tauPtsX);
+    tauX = grid_.comm().allGatherv(tauX);
+
+    tauPtsY = grid_.comm().allGatherv(tauPtsY);
+    tauY = grid_.comm().allGatherv(tauY);
+
+    std::vector <ScalarPoint> pPoints, tauXPoints, tauYPoints;
+    pPoints.reserve(bP.size());
+
     std::transform(bPts.begin(), bPts.end(), bP.begin(), std::back_inserter(pPoints), [](const Point2D &pt, Scalar p) {
         return std::make_pair(pt, p);
     });
 
+    std::transform(tauPtsX.begin(), tauPtsX.end(), tauX.begin(), std::back_inserter(tauXPoints),
+                   [](const Point2D &pt, Scalar p) {
+                       return std::make_pair(pt, p);
+                   });
+
+    std::transform(tauPtsY.begin(), tauPtsY.end(), tauY.begin(), std::back_inserter(tauYPoints),
+                   [](const Point2D &pt, Scalar p) {
+                       return std::make_pair(pt, p);
+                   });
+
     std::sort(pPoints.begin(), pPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
         Vector2D rVecA = ptA.first - shapePtr_->centroid();
         Vector2D rVecB = ptB.first - shapePtr_->centroid();
-        Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
-        Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
-        return (thetaA < 0. ? thetaA + 2 * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2 * M_PI : thetaB);
+        return rVecA.angle() < rVecB.angle();
+    });
+
+    std::sort(tauXPoints.end(), tauXPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
+        Vector2D rVecA = ptA.first - shapePtr_->centroid();
+        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        return rVecA.angle() < rVecB.angle();
+    });
+
+    std::sort(tauYPoints.end(), tauYPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
+        Vector2D rVecA = ptA.first - shapePtr_->centroid();
+        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        return rVecA.angle() < rVecB.angle();
     });
 
     force_ = Vector2D(0., 0.);
+    torque_ = 0.;
 
     for (int i = 0, end = pPoints.size(); i != end; ++i)
     {
         auto ptA = pPoints[i];
         auto ptB = pPoints[(i + 1) % end];
         Vector2D sf = (ptB.first - ptA.first).normalVec();
-        force_ += -0.5 * (ptA.second + ptB.second) * sf;
+        Vector2D xc = (ptA.first + ptB.first) / 2.;
+        Vector2D df = -0.5 * (ptA.second + ptB.second) * sf;
+
+        force_ += df;
+        torque_ += cross(df, xc - shapePtr_->centroid());
+        Vector2D r = ptA.first - shapePtr_->centroid();
     }
 
-    //- weight
-    force_ += this->rho * shapePtr_->area() * g;
+    Vector2D shear(0., 0.);
+
+    for (int i = 0, end = tauXPoints.size(); i != end; ++i)
+    {
+        auto ptA = tauXPoints[i];
+        auto ptB = tauXPoints[(i + 1) % end];
+        Vector2D sf = (ptB.first - ptA.first).normalVec();
+        Vector2D xc = (ptA.first + ptB.first) / 2.;
+        Vector2D df = Vector2D(-0.5 * (ptA.second + ptB.second) * sf.y, 0.);
+
+        shear += df;
+        torque_ += cross(df, xc - shapePtr_->centroid());
+    }
+
+    for (int i = 0, end = tauYPoints.size(); i != end; ++i)
+    {
+        auto ptA = tauYPoints[i];
+        auto ptB = tauYPoints[(i + 1) % end];
+        Vector2D sf = (ptB.first - ptA.first).normalVec();
+        Vector2D xc = (ptA.first + ptB.first) / 2.;
+        Vector2D df = Vector2D(0., -0.5 * (ptA.second + ptB.second) * sf.x);
+
+        shear += df;
+        torque_ += cross(df, xc - shapePtr_->centroid());
+    }
+
+    std::cout << "Buoyancy/pressure drag: " << force_ << "\n"
+              << "Shear: " << shear << "\n"
+              << "Net force: " << force_ + this->rho * shapePtr_->area() * g + shear << "\n";
+
+    //- add weight and sheare to net force
+    force_ += this->rho * shapePtr_->area() * g; // + shear;
 }

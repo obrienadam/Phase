@@ -19,6 +19,8 @@ protected:
     Scalar solveUEqn(Scalar timeStep);
 
     Scalar solvePEqn(Scalar timeStep);
+
+    void correctVelocity(Scalar timeStep);
 };
 
 #endif

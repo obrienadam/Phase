@@ -6,24 +6,24 @@
 #include "VectorFiniteVolumeField.h"
 #include "ScalarGradient.h"
 
-class SurfaceTensionForce: public VectorFiniteVolumeField
+class SurfaceTensionForce : public VectorFiniteVolumeField
 {
 public:
 
     //- Constructor
     SurfaceTensionForce(const Input &input,
                         const ImmersedBoundary &ib,
-                        ScalarFiniteVolumeField& gamma,
-                        const ScalarFiniteVolumeField& rho,
-                        const ScalarFiniteVolumeField& mu,
-                        const VectorFiniteVolumeField& u,
-                        const ScalarGradient& gradGamma);
+                        ScalarFiniteVolumeField &gamma,
+                        const ScalarFiniteVolumeField &rho,
+                        const ScalarFiniteVolumeField &mu,
+                        const VectorFiniteVolumeField &u,
+                        const ScalarGradient &gradGamma);
 
     //- Check if a particular patch should have contact lines enforced
     bool isContactLinePatch(const Patch &patch) const
     { return patchContactAngles_.find(patch.id()) != patchContactAngles_.end(); }
 
-    bool isContactLineIbObj(const ImmersedBoundaryObject& ibObj) const
+    bool isContactLineIbObj(const ImmersedBoundaryObject &ibObj) const
     { return ibContactAngles_.find(ibObj.id()) != ibContactAngles_.end(); }
 
     //- Internal fields
@@ -50,16 +50,16 @@ public:
     Scalar sigma() const
     { return sigma_; }
 
-    Scalar getTheta(const ImmersedBoundaryObject& ibObj) const
+    Scalar getTheta(const ImmersedBoundaryObject &ibObj) const
     {
         auto it = ibContactAngles_.find(ibObj.id());
-        return it != ibContactAngles_.end() ? it->second: M_PI_2;
+        return it != ibContactAngles_.end() ? it->second : M_PI_2;
     }
 
-    Scalar getTheta(const Patch& patch) const
+    Scalar getTheta(const Patch &patch) const
     {
         auto it = patchContactAngles_.find(patch.id());
-        return it != patchContactAngles_.end() ? it->second: M_PI_2;
+        return it != patchContactAngles_.end() ? it->second : M_PI_2;
     }
 
     //- Compute
@@ -67,20 +67,23 @@ public:
 
     virtual void compute() = 0;
 
-    virtual void compute(const ImmersedBoundary& ib) = 0;
+    virtual void compute(const ImmersedBoundary &ib) = 0;
 
     virtual void computeInterfaceNormals();
 
-    Vector2D contactLineNormal(const Cell& lCell,
-                               const Cell& rCell,
-                               const ImmersedBoundaryObject& ibObj) const;
+    Vector2D nearestContactLineNormal(const Cell &cell,
+                                      const ImmersedBoundaryObject &ibObj) const;
+
+    Vector2D contactLineNormal(const Cell &lCell,
+                               const Cell &rCell,
+                               const ImmersedBoundaryObject &ibObj) const;
 
     void smoothGammaField();
 
-    void smoothGammaField(const ImmersedBoundary& ib);
+    void smoothGammaField(const ImmersedBoundary &ib);
 
     //- Misc special gamma boundary equations
-    virtual Equation<Scalar> contactLineBcs(const ImmersedBoundary& ib) = 0;
+    virtual Equation<Scalar> contactLineBcs(const ImmersedBoundary &ib) = 0;
 
 protected:
 

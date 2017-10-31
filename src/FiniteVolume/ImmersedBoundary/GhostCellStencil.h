@@ -23,6 +23,7 @@ public:
                      const Vector2D& cl,
                      const FiniteVolumeGrid2D &grid);
 
+
     const Point2D &boundaryPoint() const
     { return bp_; }
 

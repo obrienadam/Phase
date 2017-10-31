@@ -25,6 +25,12 @@ public:
 
     int printf(const std::string& format, ...) const;
 
+    std::ostream& operator<<(std::ostream& os) const
+    {
+        std::cout << os.rdbuf();
+        return os;
+    }
+
     //- Info
     int rank() const;
 

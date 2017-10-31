@@ -9,7 +9,7 @@ class SolidBodyMotion: public Motion
 {
 public:
 
-    SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj);
+    SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj, const Vector2D& v0 = Vector2D(0., 0.));
 
     void update(Scalar timeStep);
 

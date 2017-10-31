@@ -55,17 +55,18 @@ Vector2D Vector2D::tangentVec() const
 
 Scalar Vector2D::angle() const
 {
-    return atan2(y, x);
+    Scalar theta = std::atan2(y, x);
+    return theta < 0. ? theta + 2. * M_PI : theta;
 }
 
 Scalar Vector2D::angle(const Vector2D &other) const
 {
-    return atan2(y - other.y, x - other.x);
+    return angle() - other.angle();
 }
 
 bool Vector2D::isParallel(const Vector2D &other) const
 {
-    return fabs(dot(*this, other) * dot(*this, other) - magSqr() * other.magSqr()) < EPSILON_;
+    return std::abs(cross(*this, other)) < EPSILON_;
 }
 
 Vector2D Vector2D::rotate(Scalar theta) const

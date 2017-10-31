@@ -180,7 +180,10 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
             }
             else if (motionType == "solidBody")
             {
-                motion = std::make_shared<SolidBodyMotion>(ibObject);
+                motion = std::make_shared<SolidBodyMotion>(
+                        ibObject,
+                        ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
+                );
             }
             else if (motionType == "none")
             {
@@ -259,6 +262,12 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
 
     if (ibObjs_.empty())
         solver_.grid().comm().printf("No immersed boundaries present.\n");
+
+    for(const Node& node: grid().nodes())
+    {
+        if(!ibObj(node))
+            fluidNodes_.add(node);
+    }
 }
 
 const Solver &ImmersedBoundary::solver() const
@@ -350,6 +359,12 @@ void ImmersedBoundary::update(Scalar timeStep)
 
     setCellStatus();
     solver_.grid().computeGlobalOrdering();
+
+    for(const Node& node: grid().nodes())
+    {
+        if(!ibObj(node))
+            fluidNodes_.add(node);
+    }
 }
 
 Equation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const

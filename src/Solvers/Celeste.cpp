@@ -38,8 +38,12 @@ void Celeste::computeFaces(const ImmersedBoundary &ib)
     auto &ft = *this;
     auto &kappa = *kappa_;
 
-    for (const Face &face: gamma_.grid().faces())
-        ft(face) = sigma_ * kappa(face) * gradGamma_(face);
+    for (const Face &f: grid_->interiorFaces())
+        ft(f) = ib_.ibObj(f.lCell().centroid()) || ib_.ibObj(f.rCell().centroid())
+                ? Vector2D(0., 0.) : sigma_ * kappa(f) * gradGamma_(f);
+
+    for (const Face &f: grid_->boundaryFaces())
+        ft(f) = sigma_ * kappa(f) * gradGamma_(f);
 }
 
 void Celeste::compute()
@@ -226,6 +230,8 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
 void Celeste::updateStencils(const ImmersedBoundary &ib)
 {
+    return;
+
     auto updateRequired = [&ib](const CelesteStencil &st) {
         if (st.truncated())
             return true;

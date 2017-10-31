@@ -28,7 +28,7 @@ FractionalStep::FractionalStep(const Input &input,
 
 void FractionalStep::initialize()
 {
-    u.setBoundaryFaces();
+    u.interpolateFaces();
     p.setBoundaryFaces();
 }
 

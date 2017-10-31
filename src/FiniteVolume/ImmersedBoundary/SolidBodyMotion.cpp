@@ -1,7 +1,7 @@
 #include "SolidBodyMotion.h"
 #include "ImmersedBoundaryObject.h"
 
-SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj)
+SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj, const Vector2D& v0)
         :
         Motion(ibObj)
 {
@@ -11,6 +11,7 @@ SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj)
                         "must specify a non-zero density for immersed boundary object \"" + ibObj.lock()->name() +
                         "\".");
 
+    vel_ = v0;
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
 }

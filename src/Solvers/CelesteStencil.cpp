@@ -188,7 +188,8 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     for (const InteriorLink &nb: cell.neighbours())
     {
         auto ibObj = ib.ibObj(nb.cell().centroid());
-        Vector2D dn = (ibObj ? fst.contactLineNormal(cell, nb.cell(), *ibObj) : n(nb.cell())) - n(cell);
+        Vector2D dn = ((ibObj ? fst.contactLineNormal(cell, nb.cell(), *ibObj) : n(nb.cell())) - n(cell)) /
+                      (weighted_ ? nb.rCellVec().magSqr() : 1.);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
@@ -196,14 +197,15 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     for (const DiagonalCellLink &dg: cell.diagonals())
     {
         auto ibObj = ib.ibObj(dg.cell().centroid());
-        Vector2D dn = (ibObj ? fst.contactLineNormal(cell, dg.cell(), *ibObj) : n(dg.cell())) - n(cell);
+        Vector2D dn = ((ibObj ? fst.contactLineNormal(cell, dg.cell(), *ibObj) : n(dg.cell())) - n(cell)) /
+                      (weighted_ ? dg.rCellVec().magSqr() : 1.);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
 
     for (const BoundaryLink &bd: cell.boundaries())
     {
-        Vector2D dn = n(bd.face()) - n(cell);
+        Vector2D dn = (n(bd.face()) - n(cell)) / (weighted_ ? bd.rFaceVec().magSqr() : 1.);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }

@@ -84,12 +84,12 @@ Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
                                                 const Cell &rCell,
                                                 const ImmersedBoundaryObject &ibObj) const
 {
-    LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
-    Vector2D en = ibObj.nearestEdgeNormal(ln.ptB());
+    //LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
+    Vector2D en = ibObj.nearestEdgeNormal(rCell.centroid());
 
     const VectorFiniteVolumeField &n = *n_;
 
-    if(n(lCell) == Vector2D(0., 0.))
+    if (n(lCell) == Vector2D(0., 0.))
         return Vector2D(0., 0.);
 
     Vector2D t = en.tangentVec().unitVec();
@@ -136,7 +136,7 @@ void SurfaceTensionForce::smoothGammaField()
     gammaTilde_->setBoundaryFaces();
 }
 
-void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary& ib)
+void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary &ib)
 {
     CellGroup cellsToSmooth = grid_->localActiveCells() - ib.solidCells();
 
