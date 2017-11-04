@@ -16,7 +16,8 @@ public:
 
     Link &operator=(const Link &rhs);
 
-    const Cell &self() const;
+    const Cell &self() const
+    { return self_; }
 
 protected:
 

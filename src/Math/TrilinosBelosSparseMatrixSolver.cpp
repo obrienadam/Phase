@@ -28,7 +28,7 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
         linearProblem_->setProblem(x_, b_);
     }
 
-    mat_ = rcp(new TpetraCrsMatrix(map_, 5, Tpetra::StaticProfile));
+    mat_ = rcp(new TpetraCrsMatrix(map_, 8, Tpetra::StaticProfile));
     precon_ = rcp(new AdditiveSchwarz(mat_));
     precon_->setParameters(*schwarzParams_);
     linearProblem_->setOperator(mat_);

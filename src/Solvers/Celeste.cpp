@@ -240,7 +240,7 @@ void Celeste::updateStencils(const ImmersedBoundary &ib)
             if (ib.ibObj(nb.cell().centroid()))
                 return true;
 
-        for (const DiagonalCellLink &dg: st.cell().diagonals())
+        for (const CellLink &dg: st.cell().diagonals())
             if (ib.ibObj(dg.cell().centroid()))
                 return true;
 

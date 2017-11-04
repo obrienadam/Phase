@@ -14,8 +14,3 @@ Link::Link(const Link &other)
 {
 
 }
-
-const Cell &Link::self() const
-{
-    return self_;
-}

@@ -26,7 +26,7 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
 
 void Cell::addDiagonalLink(const Cell &cell)
 {
-    diagonalLinks_.push_back(DiagonalCellLink(*this, cell));
+    diagonalLinks_.push_back(CellLink(*this, cell));
 }
 
 void Cell::addBoundaryLink(const Face &face)
@@ -43,6 +43,16 @@ void Cell::addInteriorLink(const Face &face, const Cell &cell)
         throw Exception("Cell", "addInteriorLink", "cannot add an interior link to a non-interior face.");
 
     interiorLinks_.push_back(InteriorLink(*this, face, cell));
+}
+
+std::vector<Ref<const CellLink>> Cell::cellLinks() const
+{
+    std::vector<Ref<const CellLink>> cellLinks;
+
+    cellLinks.insert(cellLinks.end(), interiorLinks_.begin(), interiorLinks_.end());
+    cellLinks.insert(cellLinks.end(), diagonalLinks_.begin(), diagonalLinks_.end());
+
+    return cellLinks;
 }
 
 const Cell &Cell::faceNeighbour(const Node &lNode, const Node &rNode) const

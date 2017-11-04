@@ -5,6 +5,7 @@
 #include "StepImmersedBoundaryObject.h"
 #include "QuadraticImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
+#include "HighOrderImmersedBoundaryObject.h"
 #include "TranslatingMotion.h"
 #include "OscillatingMotion.h"
 #include "SolidBodyMotion.h"
@@ -35,6 +36,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
                 ibObject = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjectInput.first, id++, solver.grid());
             else if (method == "ghost-cell")
                 ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, id++, solver.grid());
+            else if (method == "high-order")
+                ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, solver.grid());
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary",
                                 "invalid immersed boundary method \"" + method + "\".");
@@ -221,11 +224,11 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
                 std::string ibObjName = name + "_" + std::to_string(i) + "_" + std::to_string(j);
 
                 if (method == "step")
-                    ibObj = std::make_shared<StepImmersedBoundaryObject>(name, id++, solver.grid());
+                    ibObj = std::make_shared<StepImmersedBoundaryObject>(ibObjName, id++, solver.grid());
                 else if (method == "ghost-cell")
-                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(name, id++, solver.grid());
+                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjName, id++, solver.grid());
                 else if (method == "quadratic")
-                    ibObj = std::make_shared<QuadraticImmersedBoundaryObject>(name, id++, solver.grid());
+                    ibObj = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjName, id++, solver.grid());
                 if (shape == "circle")
                 {
                     ibObj->initCircle(

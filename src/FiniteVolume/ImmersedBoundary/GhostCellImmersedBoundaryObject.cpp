@@ -36,7 +36,7 @@ void GhostCellImmersedBoundaryObject::updateCells()
             if (!isInIb(nb.cell().centroid()))
                 return true;
 
-        for (const DiagonalCellLink &dg: cell.diagonals())
+        for (const CellLink &dg: cell.diagonals())
             if (!isInIb(dg.cell().centroid()))
                 return true;
 

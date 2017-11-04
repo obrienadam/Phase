@@ -21,7 +21,7 @@ void QuadraticImmersedBoundaryObject::updateCells()
             if (!isInIb(nb.cell()))
                 return true;
 
-        for (const DiagonalCellLink &dg: cell.diagonals())
+        for (const CellLink &dg: cell.diagonals())
             if (!isInIb(dg.cell()))
                 return true;
 
@@ -157,12 +157,17 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
                 const Cell &cell1 = nb.cell();
                 const Cell &cell2 = grid_.globalActiveCells().nearestItem(2. * cell1.centroid() - cell0.centroid());
 
+                if(cell1.id() == cell2.id())
+                    continue;
+
                 LineSegment2D ln = intersectionLine(LineSegment2D(cell0.centroid(), cell1.centroid()));
                 Vector2D eta = (cell0.centroid() - cell1.centroid()).unitVec();
 
                 Scalar eta0 = dot(cell0.centroid(), eta);
                 Scalar eta1 = dot(cell1.centroid(), eta);
                 Scalar eta2 = dot(cell2.centroid(), eta);
+
+
 
 //                auto A = StaticMatrix<2, 2>(
 //                        {
@@ -293,11 +298,7 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     }
 
     //- add weight and sheare to net force
-    std::cout << "Force pressure: " << force_ << "\n"
-              << "Force shear: " << shear << "\n";
     force_ += this->rho * shapePtr_->area() * g;// + shear;
-    std::cout << "Force weight: " << this->rho * shapePtr_->area() * g << "\n"
-              << "Force total: " << force_ << "\n";
 }
 
 void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -464,10 +465,6 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
         shear += df;
         torque_ += cross(df, xc - shapePtr_->centroid());
     }
-
-    std::cout << "Buoyancy/pressure drag: " << force_ << "\n"
-              << "Shear: " << shear << "\n"
-              << "Net force: " << force_ + this->rho * shapePtr_->area() * g + shear << "\n";
 
     //- add weight and sheare to net force
     force_ += this->rho * shapePtr_->area() * g; // + shear;

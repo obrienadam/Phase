@@ -93,15 +93,15 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_.velocityBcs(u) == fv::laplacian(mu_ / rho_, u, 0.5));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) + ib_.velocityBcs(u)
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();
+
+    for (const Cell &cell: fluid_)
+        u(cell) += timeStep / rho_ * gradP(cell);
+
     grid_->sendMessages(u);
-
-    for(auto ibObj: ib_)
-        for(const Cell& cell: ibObj->ibCells())
-            u(cell) = ibObj->velocity(cell.centroid());
-
     u.interpolateFaces();
 
     return error;
@@ -109,21 +109,21 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.bcs(p) == src::div(u) - lee::massSrc(u, ib_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid().localActiveCells()) == src::div(u, grid().localActiveCells()));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     //- Gradient
     p.setBoundaryFaces();
-    gradP.compute(fluid_);
+    gradP.compute(grid().localActiveCells());
 
     return error;
 }
 
 void FractionalStep::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid().localActiveCells())
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);
@@ -166,5 +166,3 @@ Scalar FractionalStep::maxDivergenceError()
 
     return grid_->comm().max(maxError);
 }
-
-

@@ -13,8 +13,6 @@ public:
 
     explicit BoundaryLink(const BoundaryLink &other);
 
-    virtual void init();
-
     const Face &face() const;
 
     const Vector2D &rFaceVec() const

@@ -13,8 +13,9 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
     {
         createOutputDirectory();
 
-        for (auto ibObj: solver.ib().ibObjPtrs())
+        for (auto ibObj: solver.ib())
         {
+            std::cout << ibObj->name() << "\n";
             std::ofstream fout((outputDir_ / (ibObj->name() + ".dat")).string());
             fout << "Title = \"" << ibObj->name() << "\"\n";
             fout.close();

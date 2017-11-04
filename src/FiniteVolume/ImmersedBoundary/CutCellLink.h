@@ -1,7 +1,7 @@
 #ifndef CUT_CELL_LINK_H
 #define CUT_CELL_LINK_H
 
-#include "InteriorFaceLink.h"
+#include "InteriorLink.h"
 #include "Shape2D.h"
 #include "Cell.h"
 

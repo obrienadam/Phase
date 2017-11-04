@@ -12,9 +12,9 @@ set(HEADERS FiniteVolumeGrid2D.h
         Cell/CellGroup.h
         Cell/CellZone.h
         Link/Link.h
-        Link/BoundaryFaceLink.h
-        Link/InteriorFaceLink.h
-        Link/DiagonalCellLink.h
+        Link/CellLink.h
+        Link/BoundaryLink.h
+        Link/InteriorLink.h
         FiniteVolumeZone.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
@@ -29,9 +29,9 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         Cell/Cell.cpp
         Cell/CellZone.cpp
         Link/Link.cpp
-        Link/BoundaryFaceLink.cpp
-        Link/InteriorFaceLink.cpp
-        Link/DiagonalCellLink.cpp
+        Link/CellLink.cpp
+        Link/BoundaryLink.cpp
+        Link/InteriorLink.cpp
         FiniteVolumeZone.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})

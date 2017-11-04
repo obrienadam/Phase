@@ -24,6 +24,7 @@ set(HEADERS Discretization/FaceInterpolation.h
         ImmersedBoundary/StepImmersedBoundaryObject.h
         ImmersedBoundary/QuadraticImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellImmersedBoundaryObject.h
+        ImmersedBoundary/HighOrderImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellStencil.h
         ImmersedBoundary/QuadraticIbmStencil.h
         ImmersedBoundary/CutCell.h
@@ -66,6 +67,7 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         ImmersedBoundary/StepImmersedBoundaryObject.cpp
         ImmersedBoundary/QuadraticImmersedBoundaryObject.cpp
         ImmersedBoundary/GhostCellImmersedBoundaryObject.cpp
+        ImmersedBoundary/HighOrderImmersedBoundaryObject.cpp
         ImmersedBoundary/ImmersedBoundaryStencil.cpp
         ImmersedBoundary/GhostCellStencil.cpp
         ImmersedBoundary/QuadraticIbmStencil.cpp

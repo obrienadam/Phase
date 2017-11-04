@@ -66,19 +66,74 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
     computeMomentumFlux(beta, timeStep);
     updateProperties(timeStep);
 
+//    for(const Cell& cell: grid_->localActiveCells())
+//    {
+//        Scalar rhoC = 0.;
+//
+//        if(!cell.boundaries().empty())
+//            continue;
+//
+//        for(const InteriorLink& nb: cell.neighbours())
+//        {
+//            const Vector2D& sf = nb.outwardNorm();
+//            auto lIbObj = ib_.ibObj(nb.face().lNode());
+//            auto rIbObj = ib_.ibObj(nb.face().rNode());
+//
+//            LineSegment2D f, s;
+//
+//            if(lIbObj && rIbObj)
+//            {
+//                rhoC += 1920 * dot(nb.face().centroid(), sf);
+//            }
+//            else if(lIbObj)
+//            {
+//                f = lIbObj->intersectionLine(nb.face().rNode(), nb.face().lNode());
+//                s = lIbObj->intersectionLine(nb.face().lNode(), nb.face().rNode());
+//
+//                Scalar l = LineSegment2D(nb.face().lNode(), nb.face().rNode()).length();
+//                Scalar lf = f.length();
+//                Scalar ls = s.length();
+//                Scalar g = gamma(nb.face());
+//                rho(nb.face()) = rho2_*g + rho1_*(1. - g);
+//                rhoC += rho(nb.face()) * dot(f.center(), lf / l * sf) + 1920 * dot(s.center(), ls / l * sf);
+//            }
+//            else if(rIbObj)
+//            {
+//                f = rIbObj->intersectionLine(nb.face().lNode(), nb.face().rNode());
+//                s = rIbObj->intersectionLine(nb.face().rNode(), nb.face().lNode());
+//
+//                Scalar l = LineSegment2D(nb.face().lNode(), nb.face().rNode()).length();
+//                Scalar lf = f.length();
+//                Scalar ls = s.length();
+//                Scalar g = gamma(nb.face());
+//                rho(nb.face()) = rho2_*g + rho1_*(1. - g);
+//                rhoC += rho(nb.face()) * dot(f.center(), lf / l * sf) + 1920 * dot(s.center(), ls / l * sf);
+//            }
+//            else
+//            {
+//                rhoC += rho(nb.face()) * dot(nb.face().centroid(), sf);
+//            }
+//        }
+//
+//        rhoC /= 2. * cell.volume();
+//
+//            std::cout << rhoC << std::endl;
+//        rho(cell) = rhoC;
+//    }
+
     return error;
 }
 
 Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, ib_, 0.5) + ib_.velocityBcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u)
              == qibm::laplacian(mu, u, ib_) + src::src(ft + sg, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
-    //u.interpolateFaces();
-    qibm::computeFaceVelocities(u, ib_);
+    u.interpolateFaces();
+    //qibm::computeFaceVelocities(u, ib_);
 
 //    gradP.faceToCell(rho, rho.oldField(0), grid_->localActiveCells());
 //
@@ -131,7 +186,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solvePEqn(Scalar timeStep)
 
 void FractionalStepMultiphaseQuadraticIbm::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: grid().localActiveCells())
+    for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho(cell) * gradP(cell);
 
     for (const Face &face: grid_->interiorFaces())

@@ -8,9 +8,8 @@
 
 #include "Node.h"
 #include "Face.h"
-#include "BoundaryFaceLink.h"
-#include "InteriorFaceLink.h"
-#include "DiagonalCellLink.h"
+#include "BoundaryLink.h"
+#include "InteriorLink.h"
 
 class FiniteVolumeGrid2D;
 
@@ -54,20 +53,23 @@ public:
     std::vector<InteriorLink> &neighbours()
     { return interiorLinks_; }
 
+    std::vector<CellLink> &diagonals()
+    { return diagonalLinks_; }
+
     std::vector<BoundaryLink> &boundaries()
     { return boundaryLinks_; }
-
-    std::vector<DiagonalCellLink> &diagonals()
-    { return diagonalLinks_; }
 
     const std::vector<InteriorLink> &neighbours() const
     { return interiorLinks_; }
 
+    const std::vector<CellLink> &diagonals() const
+    { return diagonalLinks_; }
+
     const std::vector<BoundaryLink> &boundaries() const
+
     { return boundaryLinks_; }
 
-    const std::vector<DiagonalCellLink> &diagonals() const
-    { return diagonalLinks_; }
+    std::vector<Ref<const CellLink>> cellLinks() const;
 
     const Cell& faceNeighbour(const Node& lNode, const Node& rNode) const;
 
@@ -105,8 +107,8 @@ private:
     const std::vector<Node> &nodes_;
 
     std::vector<InteriorLink> interiorLinks_;
+    std::vector<CellLink> diagonalLinks_;
     std::vector<BoundaryLink> boundaryLinks_;
-    std::vector<DiagonalCellLink> diagonalLinks_;
 };
 
 bool cellsShareFace(const Cell &cellA, const Cell &cellB);

@@ -26,8 +26,8 @@ Scalar FractionalStepQuadraticIbm::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
 
-    //u.interpolateFaces();
-    qibm::computeFaceVelocities(u, ib_);
+    u.interpolateFaces();
+    //qibm::computeFaceVelocities(u, ib_);
 
     return error;
 }

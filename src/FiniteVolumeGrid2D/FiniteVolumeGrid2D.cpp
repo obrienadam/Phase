@@ -431,7 +431,7 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
             if(cellPartition[nb.cell().id()] == comm_->rank())
                 return true;
 
-        for(const DiagonalCellLink& dg: cell.diagonals())
+        for(const CellLink& dg: cell.diagonals())
             if(cellPartition[dg.cell().id()] == comm_->rank())
                 return true;
 

@@ -43,6 +43,12 @@ public:
     Scalar *data()
     { return vals_; }
 
+    const Scalar *begin() const
+    { return vals_; }
+
+    const Scalar *end() const
+    { return vals_ + M * N; }
+
     const Scalar *data() const
     { return vals_; }
 
@@ -73,6 +79,17 @@ public:
 
     StaticMatrix<M, N> &invert()
     {
+
+        for (int i = 0; i < M; ++i)
+        {
+            for (int j = 0; j < N; ++j)
+            {
+                std::cout << vals_[i * N + j] << " ";
+            }
+            std::cout << "\n";
+        }
+        std::cout << "\n";
+
         lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, M, N, vals_, N, ipiv_);
         lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, M, vals_, N, ipiv_);
 
@@ -83,7 +100,7 @@ public:
     };
 
     template<int K>
-    void solve(StaticMatrix<M, K>& b)
+    void solve(StaticMatrix<M, K> &b)
     {
         static_assert(M == N, "Coefficient matrix must be square.");
         LAPACKE_dgesv(LAPACK_ROW_MAJOR, M, K, vals_, N, ipiv_, b.data(), K);
@@ -99,7 +116,7 @@ public:
 
     StaticMatrix<M, N> &operator/=(Scalar scalar)
     {
-        for(int i = 0; i < M * N; ++i)
+        for (int i = 0; i < M * N; ++i)
             vals_[i] /= scalar;
 
         return *this;

@@ -1,14 +1,15 @@
-#include "InteriorFaceLink.h"
+#include "InteriorLink.h"
 #include "Cell.h"
 
 //- Interior link
 
 InteriorLink::InteriorLink(const Cell &self, const Face &face, const Cell &cell)
         :
-        BoundaryLink(self, face),
-        cell_(cell)
+        CellLink(self, cell),
+        face_(face)
 {
-    rCellVec_ = cell.centroid() - self.centroid();
+    outwardNorm_ = face_.outwardNorm(self_.centroid());
+    rFaceVec_ = face_.centroid() - self_.centroid();
 }
 
 InteriorLink::InteriorLink(const InteriorLink &other)
@@ -16,12 +17,6 @@ InteriorLink::InteriorLink(const InteriorLink &other)
         InteriorLink(other.self_, other.face_, other.cell_)
 {
 
-}
-
-void InteriorLink::init()
-{
-    BoundaryLink::init();
-    rCellVec_ = cell_.centroid() - self_.centroid();
 }
 
 Scalar InteriorLink::volumeWeight() const
@@ -42,9 +37,4 @@ Scalar InteriorLink::distanceSqrWeight() const
     Scalar l1 = (face_.centroid() - self_.centroid()).magSqr();
     Scalar l2 = (face_.centroid() - cell_.centroid()).magSqr();
     return l2 / (l1 + l2);
-}
-
-const Cell &InteriorLink::cell() const
-{
-    return cell_;
 }

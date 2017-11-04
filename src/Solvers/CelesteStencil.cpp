@@ -37,7 +37,7 @@ void Celeste::CelesteStencil::init(bool weighted)
         });
     }
 
-    for (const DiagonalCellLink &dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
     {
         Vector2D r = dg.rCellVec() / (weighted_ ? dg.rCellVec().magSqr() : 1.);
 
@@ -91,7 +91,7 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
         truncated_ = ibObj ? true : truncated_;
     }
 
-    for (const DiagonalCellLink &dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
     {
         auto ibObj = ib.ibObj(dg.cell().centroid());
 
@@ -134,7 +134,7 @@ Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
     for (const InteriorLink &nb: cell.neighbours())
         b(i++, 0) = (phi(nb.cell()) - phi(cell)) / (weighted_ ? nb.rCellVec().magSqr() : 1.);
 
-    for (const DiagonalCellLink &dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
         b(i++, 0) = (phi(dg.cell()) - phi(cell)) / (weighted_ ? dg.rCellVec().magSqr() : 1.);
 
     for (const BoundaryLink &bd: cell.boundaries())
@@ -158,7 +158,7 @@ Scalar Celeste::CelesteStencil::div(const VectorFiniteVolumeField &u) const
         b(i++, 1) = du.y;
     }
 
-    for (const DiagonalCellLink &dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
     {
         Vector2D du = (u(dg.cell()) - u(cell)) / (weighted_ ? dg.rCellVec().magSqr() : 1.);
         b(i, 0) = du.x;
@@ -194,7 +194,7 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
         b(i++, 1) = dn.y;
     }
 
-    for (const DiagonalCellLink &dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
     {
         auto ibObj = ib.ibObj(dg.cell().centroid());
         Vector2D dn = ((ibObj ? fst.contactLineNormal(cell, dg.cell(), *ibObj) : n(dg.cell())) - n(cell)) /

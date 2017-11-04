@@ -47,7 +47,7 @@ void ScalarGradient::compute(const CellGroup& group, Method method) {
                     sum += sf;
                 }
 
-                for (const BoundaryLink &bd: cell.neighbours()) {
+                for (const InteriorLink &bd: cell.neighbours()) {
                     Vector2D sf = bd.outwardNorm().abs();
                     tmp += pointwise(gradPhi(bd.face()), sf);
                     sum += sf;
@@ -131,7 +131,7 @@ void ScalarGradient::compute(const ScalarFiniteVolumeField& weight)
             sum += sf;
         }
 
-        for(const BoundaryLink& bd: cell.neighbours())
+        for(const BoundaryLink& bd: cell.boundaries())
         {
             Vector2D sf = bd.outwardNorm().abs();
             tmp += pointwise(gradPhi(bd.face()), sf) / weight(bd.face());
