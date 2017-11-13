@@ -23,6 +23,8 @@ public:
     Scalar volume() const
     { return volume_; }
 
+    Scalar polarVolume() const;
+
     const Point2D &centroid() const
     { return centroid_; }
 
@@ -70,6 +72,14 @@ public:
     { return boundaryLinks_; }
 
     std::vector<Ref<const CellLink>> cellLinks() const;
+
+    template<class UnaryPredicate>
+    std::vector<Ref<const CellLink>> cellLinks(UnaryPredicate p)
+    {
+        auto result = cellLinks();
+        result.erase(std::remove_if(result.begin(), result.end(), p), result.end());
+        return result;
+    }
 
     const Cell& faceNeighbour(const Node& lNode, const Node& rNode) const;
 

@@ -94,12 +94,12 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //grid_->sendMessages(gradU);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) + ib_.velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
+             == fv::laplacian(mu_ / rho_, u, 0.5));
 
     Scalar error = uEqn_.solve();
 
-    for (const Cell &cell: fluid_)
-        u(cell) += timeStep / rho_ * gradP(cell);
+    //for (const Cell &cell: fluid_)
+    //    u(cell) += timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);
     u.interpolateFaces();
@@ -129,6 +129,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     grid_->sendMessages(u);
 
     for (const Face &face: grid_->interiorFaces())
+        if(fluid_.isInGroup(face.lCell()) || fluid_.isInGroup(face.rCell()))
         u(face) -= timeStep / rho_ * gradP(face);
 
     for (const Patch &patch: grid_->patches())

@@ -32,6 +32,8 @@ public:
     const Vector2D &norm() const
     { return normal_; }
 
+    Vector2D polarOutwardNorm(const Point2D& point) const;
+
     const Vector2D &tan() const
     { return tangent_; }
 

@@ -88,13 +88,13 @@ ImmersedBoundaries
 {
   Cylinder1
   {
-    method quadratic
+    method high-order
 
     geometry
     {
       type circle
       center (2,2.5)
-      radius 0.5
+      radius 0.6
     }
 
     u

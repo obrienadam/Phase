@@ -11,6 +11,10 @@ set(HEADERS Discretization/FaceInterpolation.h
         Equation/Divergence.h
         Equation/Laplacian.h
         Equation/Source.h
+        Equation/AxisymmetricTimeDerivative.h
+        Equation/AxisymmetricDivergence.h
+        Equation/AxisymmetricLaplacian.h
+        Equation/AxisymmetricSource.h
         Field/Field.h
         Field/FiniteVolumeField.h
         Field/ScalarFiniteVolumeField.h
@@ -27,6 +31,7 @@ set(HEADERS Discretization/FaceInterpolation.h
         ImmersedBoundary/HighOrderImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellStencil.h
         ImmersedBoundary/QuadraticIbmStencil.h
+        ImmersedBoundary/HighOrderStencil.h
         ImmersedBoundary/CutCell.h
         ImmersedBoundary/CutCellLink.h
         ImmersedBoundary/ImmersedBoundaryStencil.h
@@ -54,6 +59,7 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         Equation/Divergence.cpp
         Equation/Laplacian.cpp
         Equation/Source.cpp
+        Equation/AxisymmetricSource.cpp
         Field/Field.tpp
         Field/FiniteVolumeField.tpp
         Field/ScalarFiniteVolumeField.cpp
@@ -71,6 +77,7 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         ImmersedBoundary/ImmersedBoundaryStencil.cpp
         ImmersedBoundary/GhostCellStencil.cpp
         ImmersedBoundary/QuadraticIbmStencil.cpp
+        ImmersedBoundary/HighOrderStencil.cpp
         ImmersedBoundary/CutCell.cpp
         ImmersedBoundary/CutCellLink.cpp
         ImmersedBoundary/Motion.cpp

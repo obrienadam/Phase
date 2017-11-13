@@ -115,6 +115,53 @@ void ScalarGradient::compute(const CellGroup& group, Method method) {
     }
 }
 
+void ScalarGradient::computeAxisymmetric(const CellGroup &cells, Method method)
+{
+    computeFaces();
+    std::fill(this->begin(), this->end(), Vector2D(0., 0.));
+    VectorFiniteVolumeField &gradPhi = *this;
+
+    switch (method)
+    {
+        case FACE_TO_CELL:
+            for (const Cell &cell: cells)
+            {
+                Vector2D sum(0., 0.), tmp(0., 0.);
+
+                for (const InteriorLink &nb: cell.neighbours()) {
+                    Vector2D sf = nb.face().polarOutwardNorm(cell.centroid()).abs();
+                    tmp += pointwise(gradPhi(nb.face()), sf);
+                    sum += sf;
+                }
+
+                for (const InteriorLink &bd: cell.neighbours()) {
+                    Vector2D sf = bd.face().polarOutwardNorm(cell.centroid()).abs();
+                    tmp += pointwise(gradPhi(bd.face()), sf);
+                    sum += sf;
+                }
+
+                gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
+            }
+            break;
+        case GREEN_GAUSS_CELL:
+            for(const Cell& cell: cells)
+            {
+                for (const InteriorLink &nb: cell.neighbours())
+                {
+                    Scalar g = nb.distanceWeight();
+                    Scalar phiF = g * phi_(cell) + (1. - g) * phi_(nb.cell());
+                    gradPhi(cell) += phiF * nb.face().polarOutwardNorm(cell.centroid());
+                }
+
+                for (const BoundaryLink &bd: cell.boundaries())
+                    gradPhi(cell) += phi_(bd.face()) * bd.face().polarOutwardNorm(cell.centroid());
+
+                gradPhi(cell) /= cell.polarVolume();
+            }
+            break;
+    }
+}
+
 void ScalarGradient::compute(const ScalarFiniteVolumeField& weight)
 {
     computeFaces();

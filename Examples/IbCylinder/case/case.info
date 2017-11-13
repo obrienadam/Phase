@@ -6,7 +6,7 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1.5e-3
+	timeStep 1e-3
 	maxCo 0.5
 	maxTime 200
 	smoothingKernelRadius 0
@@ -20,7 +20,7 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib trilinos
+		lib eigen
 		iluFill 0
 		tolerance 1e-14
 		schwarzIters 1
@@ -28,7 +28,7 @@ LinearAlgebra
 
 	pEqn
 	{
-		lib trilinos
+		lib eigen
 		solver TFQMR
 		iluFill 4
 		tolerance 1e-14
@@ -70,6 +70,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 10
+  fileWriteFrequency 1
   consoleOutputFrequency 1
 }

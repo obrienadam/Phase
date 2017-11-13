@@ -15,6 +15,8 @@ public:
 
     void compute(const CellGroup& cells, Method method = FACE_TO_CELL);
 
+    void computeAxisymmetric(const CellGroup& cells, Method method = FACE_TO_CELL);
+
     void compute(const ScalarFiniteVolumeField& weight);
 
 private:

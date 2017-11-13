@@ -1,4 +1,5 @@
 #include <ImmersedBoundary/QuadraticImmersedBoundaryObject.h>
+#include <ImmersedBoundary/HighOrderImmersedBoundaryObject.h>
 #include "Celeste.h"
 #include "Algorithm.h"
 #include "GhostCellImmersedBoundaryObject.h"
@@ -162,6 +163,12 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
 
                 for (const Cell &cell: ibObj->solidCells())
                     eqn.add(cell, cell, 1.);
+
+                break;
+
+            case ImmersedBoundaryObject::HIGH_ORDER:
+                for(auto ibObj: ib)
+                    eqn += ibObj->contactLineBcs(gamma_, getTheta(*ibObj));
 
                 break;
             default:

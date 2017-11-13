@@ -6,9 +6,9 @@ Solver
 {
 	timeDependent Off
 	maxIterations 100
-	timeStep 5e-4
-	maxTime 1
-	maxCo 0.8
+	timeStep 1e-2
+	maxTime 20
+	maxCo 100
 
 	numInnerIterations 1
 	numPressureCorrections 2
@@ -29,7 +29,7 @@ LinearAlgebra
   pEqn
   {
     lib trilinos
-    solver GMRES
+    solver TFQMR
     iluFill 4
     schwarzIters 2
     schwarzCombineMode ADD
@@ -39,7 +39,7 @@ LinearAlgebra
 
 Properties
 {
-	rho 1.2
+	rho 1
 	mu 1e-2
 	g (0,0)
 	gamma 0.001

@@ -202,10 +202,10 @@ Matrix Matrix::subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t
 }
 
 //- External functions
-Matrix eye(size_t nRows, size_t nCols)
+Matrix eye(int m)
 {
-    Matrix mat(nRows, nCols);
-    for (size_t i = 0; i < nRows && i < nCols; ++i)
+    Matrix mat(m, m);
+    for (int i = 0; i < m; ++i)
         mat(i, i) = 1.;
 
     return mat;
@@ -230,6 +230,14 @@ Matrix transpose(Matrix mat)
 Matrix inverse(Matrix mat)
 {
     return mat.invert();
+}
+
+Matrix pseudoInverse(Matrix mat)
+{
+    Matrix I = eye(mat.m());
+    LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', mat.m(), mat.n(), I.n(), mat.data(), mat.n(), I.data(), I.n());
+    I.resize(mat.n(), mat.m());
+    return I;
 }
 
 Matrix solve(Matrix A, Matrix b)

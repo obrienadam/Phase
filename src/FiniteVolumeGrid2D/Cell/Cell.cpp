@@ -24,6 +24,19 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
     id_ = grid.cells().size();
 }
 
+Scalar Cell::polarVolume() const
+{
+    Scalar volume = 0.;
+
+    for (const InteriorLink &nb: interiorLinks_)
+        volume += dot(nb.face().centroid(), nb.face().polarOutwardNorm(centroid_));
+
+    for (const BoundaryLink &bd: boundaryLinks_)
+        volume += dot(bd.face().centroid(), bd.face().polarOutwardNorm(centroid_));
+
+    return volume / 3.;
+}
+
 void Cell::addDiagonalLink(const Cell &cell)
 {
     diagonalLinks_.push_back(CellLink(*this, cell));

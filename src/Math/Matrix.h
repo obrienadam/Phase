@@ -73,13 +73,15 @@ private:
 };
 
 //- External functions
-Matrix eye(size_t nRows, size_t nCols);
+Matrix eye(int m);
 
 Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max);
 
 Matrix transpose(Matrix mat);
 
 Matrix inverse(Matrix mat);
+
+Matrix pseudoInverse(Matrix mat);
 
 Matrix solve(Matrix A, Matrix b);
 

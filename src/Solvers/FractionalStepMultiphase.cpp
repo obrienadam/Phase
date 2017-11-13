@@ -76,7 +76,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.)
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5)
                  == ft.contactLineBcs(ib_));
 
     Scalar error = gammaEqn_.solve();
@@ -98,7 +98,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.) + ib_.bcs(u)
-             == fv::laplacian(mu, u, 0.5) + ft.oldField(0));
+             == fv::laplacian(mu, u, 0.5));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
@@ -110,13 +110,14 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, p) + ib_.bcs(p) == src::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho, p, fluid_) + ib_.bcs(p) == src::div(u, fluid_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     p.setBoundaryFaces();
     gradP.computeFaces();
+    gradP.faceToCell(rho, rho, fluid_);
 
     return error;
 }
@@ -134,8 +135,6 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         const Vector2D &nw = face.norm();
         return u(face.lCell()) - dot(u(face.lCell()), nw) * nw / nw.magSqr();
     });
-
-    gradP.faceToCell(rho, rho, fluid_);
 
     for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho(cell) * gradP(cell);
@@ -220,5 +219,5 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 //    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
 //    ft.faceToCell(rho, rho, fluid_);
 
-    ft.compute(ib_);
+    //ft.compute(ib_);
 }

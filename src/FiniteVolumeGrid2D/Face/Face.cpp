@@ -18,6 +18,14 @@ Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type ty
     id_ = grid.faces().size();
 }
 
+Vector2D Face::polarOutwardNorm(const Point2D& point) const
+{
+    const Point2D &n1 = lNode();
+    const Point2D &n2 = rNode();
+    Vector2D sf((n2.y * n2.y - n1.y * n1.y) / 2., (n1.y + n2.y) / 2. * (n2.x - n1.x));
+    return dot(sf, centroid_ - point) > 0. ? sf : -sf;
+}
+
 Vector2D Face::outwardNorm(const Point2D &point) const
 {
     return dot(centroid_ - point, normal_) > 0. ? normal_ : -normal_;

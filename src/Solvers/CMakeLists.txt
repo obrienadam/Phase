@@ -2,6 +2,7 @@ set(HEADERS Solver.h
         Poisson.h
         Piso.h
         FractionalStep.h
+        FractionalStepAxisymmetric.h
         FractionalStepQuadraticIbm.h
         FractionalStepMultiphase.h
         FractionalStepIncremental.h
@@ -18,6 +19,7 @@ set(SOURCES Solver.cpp
         Poisson.cpp
         Piso.cpp
         FractionalStep.cpp
+        FractionalStepAxisymmetric.cpp
         FractionalStepQuadraticIbm.cpp
         FractionalStepIncremental.cpp
         Coupled.cpp

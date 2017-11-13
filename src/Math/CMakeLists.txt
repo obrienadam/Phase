@@ -1,5 +1,7 @@
 set(HEADERS StaticMatrix.h
         Matrix.h
+        BlockMatrix.h
+        StaticMatrix.h
         SparseMatrixSolver.h
         EigenSparseMatrixSolver.h
         TrilinosBelosSparseMatrixSolver.h
@@ -13,6 +15,7 @@ set(HEADERS StaticMatrix.h
         InterpolationFunction.h)
 
 set(SOURCES Matrix.cpp
+        BlockMatrix.cpp
         SparseMatrixSolver.cpp
         EigenSparseMatrixSolver.cpp
         TrilinosBelosSparseMatrixSolver.cpp

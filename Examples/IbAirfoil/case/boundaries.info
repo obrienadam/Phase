@@ -70,6 +70,8 @@ ImmersedBoundaries
 {
   Airfoil1
   {
+    method high-order
+
     geometry
     {
       type polygon
@@ -77,7 +79,7 @@ ImmersedBoundaries
       file naca0015
 
       scale 1.2
-      rotate -20
+      rotate -13
     }
 
     interpolation

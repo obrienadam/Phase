@@ -38,7 +38,7 @@ protected:
 
     virtual void correctVelocity(Scalar timeStep);
 
-    Scalar maxDivergenceError();
+    virtual Scalar maxDivergenceError();
 
     Equation<Vector2D> uEqn_;
     Equation<Scalar> pEqn_;

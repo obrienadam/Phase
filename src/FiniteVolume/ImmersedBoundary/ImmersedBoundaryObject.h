@@ -200,6 +200,9 @@ public:
     virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
     { throw Exception("ImmersedBoundaryObject", "pressureBcs", "not implemented."); }
 
+    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta)
+    { return bcs(gamma); }
+
     virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
     { return bcs(gamma); }
 

@@ -117,6 +117,15 @@ private:
     int ipiv_[M];
 };
 
+template<int M>
+StaticMatrix<M, M> eye()
+{
+    StaticMatrix<M, M> I;
+    for(int i = 0; i < M; ++i)
+        I(i, i) = 1.;
+    return I;
+};
+
 template<int M, int N>
 StaticMatrix<M, N> inverse(StaticMatrix<M, N> A)
 {
@@ -125,9 +134,17 @@ StaticMatrix<M, N> inverse(StaticMatrix<M, N> A)
 }
 
 template<int M, int N>
-StaticMatrix<M, M> pseudoInverse(StaticMatrix<M, N> A)
+StaticMatrix<N, M> pseudoInverse(StaticMatrix<M, N> A)
 {
-    return inverse(A * A.transpose()) * A;
+    StaticMatrix<M, M> I = eye<M>();
+    LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', M, N, M, A.data(), N, I.data(), M);
+    StaticMatrix<N, M> pInv;
+
+    for(int i = 0; i < N; ++i)
+        for(int j = 0; j < M; ++j)
+            pInv(i, j) = I(i, j);
+
+    return pInv;
 }
 
 template<int M, int N, int K>

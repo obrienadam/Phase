@@ -14,6 +14,9 @@ target_link_libraries(phasePisoMultiphase ${PHASE_LIBRARIES})
 add_executable(phaseFractionalStep phaseFractionalStep.cpp)
 target_link_libraries(phaseFractionalStep ${PHASE_LIBRARIES})
 
+add_executable(phaseFractionalStepAxisymmetric phaseFractionalStepAxisymmetric.cpp)
+target_link_libraries(phaseFractionalStepAxisymmetric ${PHASE_LIBRARIES})
+
 add_executable(phaseFractionalStepQuadraticIbm phaseFractionalStepQuadraticIbm.cpp)
 target_link_libraries(phaseFractionalStepQuadraticIbm ${PHASE_LIBRARIES})
 
