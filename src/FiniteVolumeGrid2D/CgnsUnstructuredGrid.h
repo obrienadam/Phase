@@ -18,7 +18,7 @@ public:
 
 private:
 
-    void readNodes(int fileId, int baseId, int zoneId, int nNodes, Scalar convertToMeters);
+    void readNodes(int fileId, int baseId, int zoneId, int nNodes, Scalar convertToMeters, const Point2D& origin);
 
     void readElements(int fileId, int baseId, int zoneId);
 

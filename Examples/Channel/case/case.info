@@ -6,21 +6,23 @@ Solver
 {
 	timeDependent Off
 	maxIterations 100
-	timeStep 1e-2
+	timeStep 2.5e-3
 	maxTime 20
-	maxCo 100
+	maxCo 1
 
 	numInnerIterations 1
 	numPressureCorrections 2
 	momentumRelaxation 0.5
 	pressureCorrectionRelaxation 0.5
+	;symmetryAxis (0,1)
+	axisPoint (-0.1,0)
 }
 
 LinearAlgebra
 {
   uEqn
   {
-    lib trilinos
+    lib eigen
     solver BiCGSTAB
     iluFill 0
     tolerance 1e-14
@@ -28,7 +30,7 @@ LinearAlgebra
 
   pEqn
   {
-    lib trilinos
+    lib eigen
     solver TFQMR
     iluFill 4
     schwarzIters 2
@@ -40,7 +42,7 @@ LinearAlgebra
 Properties
 {
 	rho 1
-	mu 1e-2
+	mu 1e-3
 	g (0,0)
 	gamma 0.001
 }
@@ -54,6 +56,7 @@ Grid
 	; Rectilinear parameters
 	width 0.8
 	height 0.4
+	origin (0.1,0)
 }
 
 Viewer

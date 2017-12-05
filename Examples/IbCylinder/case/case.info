@@ -6,8 +6,8 @@ Solver
 {
 	timeDependent On
 	maxIterations 100
-	timeStep 1e-3
-	maxCo 0.5
+	timeStep 5e-3
+	maxCo 1
 	maxTime 200
 	smoothingKernelRadius 0
 	momentumRelaxation 1
@@ -70,6 +70,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 1
+  fileWriteFrequency 50
   consoleOutputFrequency 1
 }

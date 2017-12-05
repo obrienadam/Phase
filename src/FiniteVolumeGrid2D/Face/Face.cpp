@@ -18,11 +18,12 @@ Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type ty
     id_ = grid.faces().size();
 }
 
-Vector2D Face::polarOutwardNorm(const Point2D& point) const
+Vector2D Face::polarOutwardNorm(const Point2D &point) const
 {
     const Point2D &n1 = lNode();
     const Point2D &n2 = rNode();
-    Vector2D sf((n2.y * n2.y - n1.y * n1.y) / 2., (n1.y + n2.y) / 2. * (n2.x - n1.x));
+    Vector2D sf((n1.x + n2.x) / 2. * (n2.y - n1.y), (n2.x * n2.x - n1.x * n1.x) / 2.);
+
     return dot(sf, centroid_ - point) > 0. ? sf : -sf;
 }
 
@@ -53,15 +54,15 @@ Scalar Face::distanceWeight() const
 std::vector<Ref<const Cell> > Face::cells() const
 {
     std::set<Label> ids;
-    for(Label id: lNode().cellIds())
+    for (Label id: lNode().cellIds())
         ids.insert(id);
 
-    for(Label id: rNode().cellIds())
+    for (Label id: rNode().cellIds())
         ids.insert(id);
 
     std::vector<Ref<const Cell>> cells;
 
-    for(Label id: ids)
+    for (Label id: ids)
         cells.push_back(std::cref(cells_[id]));
 
     return cells;

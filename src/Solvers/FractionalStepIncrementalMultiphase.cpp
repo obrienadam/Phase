@@ -136,8 +136,7 @@ Scalar FractionalStepIncrementalMultiphase::solveUEqn(Scalar timeStep)
     gradP.faceToCell(rho, rho.oldField(0), fluid_);
 
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u)
-             == fv::laplacian(mu, u, 0.5) - src::src(gradP - sg0 - ft0, fluid_));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u) == fv::laplacian(mu, u, 0.5) - src::src(gradP - sg0 - ft0, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);

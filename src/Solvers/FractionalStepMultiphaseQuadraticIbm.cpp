@@ -31,8 +31,8 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
     //ib_.computeForce(rho1_, mu1_, u, p, g_);
     ib_.update(timeStep);
 
-    ScalarFiniteVolumeField& ps = scalarField("ps");
-    for(const Cell& cell: grid_->cells())
+    ScalarFiniteVolumeField &ps = scalarField("ps");
+    for (const Cell &cell: grid_->cells())
         ps(cell) = p(cell) + rho(cell) * dot(g_, cell.centroid());
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
@@ -47,12 +47,12 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep, fluid_) + cicsam::div(u, beta, gamma, fluid_, 0.5)
-                 + ft.contactLineBcs(ib_) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep, fluid_) + cicsam::div(u, beta, gamma, fluid_, 0.5) ==
+                 ft.contactLineBcs(ib_));
 
     Scalar error = gammaEqn_.solve();
 
-    for(const Cell& cell: grid().localActiveCells())
+    for (const Cell &cell: grid().localActiveCells())
         gamma(cell) = clamp(gamma(cell), 0., 1.);
 
     grid_->sendMessages(gamma);

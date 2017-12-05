@@ -234,7 +234,7 @@ Matrix inverse(Matrix mat)
 
 Matrix pseudoInverse(Matrix mat)
 {
-    Matrix I = eye(mat.m());
+    Matrix I = eye(std::max(mat.m(), mat.n()));
     LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', mat.m(), mat.n(), I.n(), mat.data(), mat.n(), I.data(), I.n());
     I.resize(mat.n(), mat.m());
     return I;

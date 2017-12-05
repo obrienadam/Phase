@@ -11,7 +11,7 @@ namespace axi
                     Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
-        const VectorFiniteVolumeField& u0 = u.oldField(0);
+        const VectorFiniteVolumeField &u0 = u.oldField(0);
 
         for (const Cell &cell: phi.grid().cells())
         {

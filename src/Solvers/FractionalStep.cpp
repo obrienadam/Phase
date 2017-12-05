@@ -109,21 +109,21 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid().localActiveCells()) == src::div(u, grid().localActiveCells()));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) + ib_.bcs(p) == src::div(u, fluid_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     //- Gradient
     p.setBoundaryFaces();
-    gradP.compute(grid().localActiveCells());
+    gradP.compute(fluid_);
 
     return error;
 }
 
 void FractionalStep::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: grid().localActiveCells())
+    for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);

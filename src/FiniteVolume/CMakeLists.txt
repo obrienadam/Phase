@@ -59,6 +59,7 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         Equation/Divergence.cpp
         Equation/Laplacian.cpp
         Equation/Source.cpp
+        Equation/AxisymmetricLaplacian.cpp
         Equation/AxisymmetricSource.cpp
         Field/Field.tpp
         Field/FiniteVolumeField.tpp

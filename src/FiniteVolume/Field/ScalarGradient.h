@@ -3,24 +3,28 @@
 
 #include "VectorFiniteVolumeField.h"
 
-class ScalarGradient: public VectorFiniteVolumeField
+class ScalarGradient : public VectorFiniteVolumeField
 {
 public:
 
-    enum Method {FACE_TO_CELL, GREEN_GAUSS_CELL, GREEN_GAUSS_NODE};
+    enum Method
+    {
+        FACE_TO_CELL, GREEN_GAUSS_CELL, GREEN_GAUSS_NODE
+    };
 
-    explicit ScalarGradient(const ScalarFiniteVolumeField& phi);
+    explicit ScalarGradient(const ScalarFiniteVolumeField &phi);
 
     void computeFaces();
 
-    void compute(const CellGroup& cells, Method method = FACE_TO_CELL);
+    void compute(const CellGroup &cells, Method method = FACE_TO_CELL);
 
-    void computeAxisymmetric(const CellGroup& cells, Method method = FACE_TO_CELL);
+    void computeAxisymmetric(const CellGroup &cells,
+                             Method method = FACE_TO_CELL);
 
-    void compute(const ScalarFiniteVolumeField& weight);
+    void compute(const ScalarFiniteVolumeField &weight);
 
 private:
-    const ScalarFiniteVolumeField& phi_;
+    const ScalarFiniteVolumeField &phi_;
 };
 
 #endif

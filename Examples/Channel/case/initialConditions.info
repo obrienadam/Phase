@@ -7,7 +7,7 @@ InitialConditions
     all
     {
       type uniform
-      value (2.5,0)
+      value (0,0)
     }
   }
 }

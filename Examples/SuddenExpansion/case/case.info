@@ -46,6 +46,7 @@ Grid
 {
 	type cgns
 	filename "case/SuddenExpansionMesh.cgns"
+	origin (0.25,0)
 }
 
 Viewer

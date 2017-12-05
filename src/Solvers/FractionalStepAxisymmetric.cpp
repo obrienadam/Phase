@@ -15,7 +15,8 @@ FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input,
 Scalar FractionalStepAxisymmetric::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (axi::ddt(u, timeStep) + axi::div(u, u, 1) == axi::laplacian(mu_ / rho_, u, 1));
+    uEqn_ = (axi::ddt(u, timeStep) + axi::div(u, u, 1)
+             == axi::vectorLaplacian(mu_ / rho_, u, 1));
     Scalar error = uEqn_.solve();
 
     u.interpolateFaces();
@@ -25,11 +26,13 @@ Scalar FractionalStepAxisymmetric::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (axi::laplacian(timeStep / rho_, p) == axi::src::div(u));
+    pEqn_ = (axi::laplacian(timeStep / rho_, p, 1.) == axi::src::div(u));
     Scalar error = pEqn_.solve();
 
     p.interpolateFaces();
     gradP.computeAxisymmetric(fluid_);
+
+    return error;
 }
 
 void FractionalStepAxisymmetric::correctVelocity(Scalar timeStep)

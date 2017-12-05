@@ -1,5 +1,6 @@
+#include <eigen3/Eigen/SparseLU>
+
 #include "HighOrderImmersedBoundaryObject.h"
-#include "BlockMatrix.h"
 #include "HighOrderStencil.h"
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
@@ -35,37 +36,132 @@ void HighOrderImmersedBoundaryObject::updateCells()
 
 Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &phi) const
 {
+    typedef Eigen::Triplet<Scalar> Triplet;
+    typedef Eigen::SparseMatrix<Scalar> SparseMatrix;
+    typedef Eigen::SparseLU<SparseMatrix> Solver;
+
     Equation<Scalar> eqn(phi);
-    CellGroup compatCells;
-    for(const Cell& cell: solidCells_)
+
+    for (const Cell &cell: solidCells_)
     {
-        int count = 0;
-        for(const CellLink &nb: cell.neighbours())
-            if(!isInIb(nb.cell()))
-                count++;
-        if(count > 1)
-            compatCells.add(cell);
+        eqn.add(cell, cell, 1.);
     }
 
-    for(const Cell& cell: solidCells_)
-        if(!compatCells.isInGroup(cell))
-            eqn.add(cell, cell, 1.);
+    //- Local ids of ibCells
+    std::unordered_map<int, int> ids;
+    ids.reserve(ibCells_.size());
+    int id = 0;
+    for (const Cell &cell: ibCells_)
+        ids[cell.id()] = id++;
 
-    for(const Cell& cell: ibCells_)
+    int M = 0;
+    std::vector<Triplet> triplets;
+    std::vector<Ref<const Cell>> cells;
+
+    //- Cell eqns
+    for (const Cell &cell: ibCells_)
     {
-        for(const CellLink& nb: cell.neighbours())
-        {
-            if(compatCells.isInGroup(nb.cell()))
+        for (const CellLink &nb: cell.cellLinks())
+            if (!solidCells_.isInGroup(nb.cell()))
             {
+                Point2D x = nb.cell().centroid();
+                int j = ids[cell.id()] * 6;
 
+                triplets.push_back(Triplet(M, j++, x.x * x.x));
+                triplets.push_back(Triplet(M, j++, x.y * x.y));
+                triplets.push_back(Triplet(M, j++, x.x * x.y));
+                triplets.push_back(Triplet(M, j++, x.x));
+                triplets.push_back(Triplet(M, j++, x.y));
+                triplets.push_back(Triplet(M, j++, 1.));
+                cells.push_back(std::cref(nb.cell()));
+                M++;
+            }
+    }
+
+    //- Compatibility eqns
+    for (const Cell &cell: ibCells_)
+    {
+        for (const CellLink &nb: cell.cellLinks())
+        {
+            if (ibCells_.isInGroup(nb.cell()))
+            {
+                Point2D x = nearestIntersect(nb.cell().centroid());
+                int j = ids[cell.id()] * 6;
+                triplets.push_back(Triplet(M, j++, x.x * x.x));
+                triplets.push_back(Triplet(M, j++, x.y * x.y));
+                triplets.push_back(Triplet(M, j++, x.x * x.y));
+                triplets.push_back(Triplet(M, j++, x.x));
+                triplets.push_back(Triplet(M, j++, x.y));
+                triplets.push_back(Triplet(M, j++, 1.));
+
+                j = ids[nb.cell().id()] * 6;
+                triplets.push_back(Triplet(M, j++, -x.x * x.x));
+                triplets.push_back(Triplet(M, j++, -x.y * x.y));
+                triplets.push_back(Triplet(M, j++, -x.x * x.y));
+                triplets.push_back(Triplet(M, j++, -x.x));
+                triplets.push_back(Triplet(M, j++, -x.y));
+                triplets.push_back(Triplet(M, j++, -1.));
+                M++;
             }
         }
+    }
 
-        for(const CellLink& dg: cell.diagonals())
-        {
-            //if(!isInIb(dg.cell()))
-            //    addFRow()
-        }
+    //- Boundary eqns
+    for (const Cell &cell: ibCells_)
+    {
+        Point2D bp = nearestIntersect(cell.centroid());
+        Vector2D bn = nearestEdgeNormal(bp);
+
+        int j = ids[cell.id()] * 6;
+//        triplets.push_back(Triplet(M, j++, bp.x * bp.x));
+//        triplets.push_back(Triplet(M, j++, bp.y * bp.y));
+//        triplets.push_back(Triplet(M, j++, bp.x * bp.y));
+//        triplets.push_back(Triplet(M, j++, bp.x));
+//        triplets.push_back(Triplet(M, j++, bp.y));
+//        triplets.push_back(Triplet(M, j++, 1.));
+
+        triplets.push_back(Triplet(M, j++, 2. * bp.x * bn.x));
+        triplets.push_back(Triplet(M, j++, 2. * bp.y * bn.y));
+        triplets.push_back(Triplet(M, j++, bp.x * bn.y + bp.y * bn.x));
+        triplets.push_back(Triplet(M, j++, bn.x));
+        triplets.push_back(Triplet(M, j++, bn.y));
+        triplets.push_back(Triplet(M, j++, 0.));
+        M++;
+    }
+
+    //- Assemble matrix
+    SparseMatrix A(M, 6 * ibCells_.size());
+    A.setFromTriplets(triplets.begin(), triplets.end());
+
+    triplets.clear();
+    for (const Cell &cell: ibCells_)
+    {
+        int j = ids[cell.id()];
+        int i = 6 * j;
+        Point2D x = cell.centroid();
+
+        triplets.push_back(Triplet(i++, j, x.x * x.x));
+        triplets.push_back(Triplet(i++, j, x.y * x.y));
+        triplets.push_back(Triplet(i++, j, x.x * x.y));
+        triplets.push_back(Triplet(i++, j, x.x));
+        triplets.push_back(Triplet(i++, j, x.y));
+        triplets.push_back(Triplet(i++, j, 1.));
+    }
+
+    //- X Matrix
+    SparseMatrix X(6 * ibCells_.size(), ibCells_.size());
+    X.setFromTriplets(triplets.begin(), triplets.end());
+    Solver solver;
+    SparseMatrix P = A.transpose() * A;
+    solver.compute(P);
+    X = (solver.solve(X)).transpose() * A.transpose();
+
+    for (const Cell &cell: ibCells_)
+    {
+        for (int j = 0; j < cells.size(); ++j)
+            eqn.add(cell, cells[j], X.coeff(ids[cell.id()], j));
+
+        eqn.add(cell, cell, -1.);
     }
 
     return eqn;
@@ -86,25 +182,25 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
         std::vector<Ref<const Cell>> cells;
         std::vector<Point2D> bps;
 
-        for(const CellLink& nb: cell.neighbours())
+        for (const CellLink &nb: cell.neighbours())
         {
-            if(ibCells_.isInGroup(nb.cell()))
+            if (ibCells_.isInGroup(nb.cell()))
             {
                 cells.push_back(std::cref(nb.cell()));
                 bps.push_back(nearestIntersect(nb.cell().centroid()));
             }
-            else if(fluid_->isInGroup(nb.cell()))
+            else if (fluid_->isInGroup(nb.cell()))
                 cells.push_back(std::cref(nb.cell()));
         }
 
-        for(const CellLink& dg: cell.diagonals())
+        for (const CellLink &dg: cell.diagonals())
         {
-            if(ibCells_.isInGroup(dg.cell()))
+            if (ibCells_.isInGroup(dg.cell()))
             {
                 cells.push_back(std::cref(dg.cell()));
                 bps.push_back(nearestIntersect(dg.cell().centroid()));
             }
-            else if(fluid_->isInGroup(dg.cell()))
+            else if (fluid_->isInGroup(dg.cell()))
                 cells.push_back(std::cref(dg.cell()));
         }
 
@@ -112,8 +208,7 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
 
         Matrix A(cells.size() + bps.size(), 6);
 
-        auto addRow = [&A](int i, const Point2D& x)
-        {
+        auto addRow = [&A](int i, const Point2D &x) {
             A(i, 0) = x.x * x.x;
             A(i, 1) = x.y * x.y;
             A(i, 2) = x.x * x.y;
@@ -123,10 +218,10 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
         };
 
         int i = 0;
-        for(const Cell& cell: cells)
+        for (const Cell &cell: cells)
             addRow(i++, cell.centroid());
 
-        for(const Point2D& pt: bps)
+        for (const Point2D &pt: bps)
             addRow(i++, pt);
 
         Point2D x = cell.centroid();
@@ -136,86 +231,150 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
         eqn.add(cell, cells.begin(), cells.end(), c.begin());
 
         i = 0;
-        for(auto it = c.begin() + cells.size(); it != c.end(); ++it)
-        {
+        for (auto it = c.begin() + cells.size(); it != c.end(); ++it)
             eqn.addSource(cell, velocity(bps[i++]) * (*it));
-        }
-
-        std::cout << A << "\n\n";
-        std::cout << c << "\n";
     }
-    std::cout << "FINISHED\n";
 
     return eqn;
 }
 
 Equation<Scalar> HighOrderImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
 {
+    typedef Eigen::Triplet<Scalar> Triplet;
+    typedef Eigen::SparseMatrix<Scalar> SparseMatrix;
+    typedef Eigen::SparseLU<SparseMatrix> Solver;
+
     Equation<Scalar> eqn(gamma);
 
     for (const Cell &cell: solidCells_)
     {
         eqn.add(cell, cell, 1.);
-        eqn.addSource(cell, 0.);
     }
+
+    //- Local ids of ibCells
+    std::unordered_map<int, int> ids;
+    ids.reserve(ibCells_.size());
+    int id = 0;
+    for (const Cell &cell: ibCells_)
+        ids[cell.id()] = id++;
+
+    int M = 0;
+    std::vector<Triplet> triplets;
+    std::vector<Ref<const Cell>> cells;
+
+    //- Cell eqns
+    for (const Cell &cell: ibCells_)
+    {
+        for (const CellLink &nb: cell.cellLinks())
+            if (!solidCells_.isInGroup(nb.cell()))
+            {
+                Point2D x = nb.cell().centroid();
+                int j = ids[cell.id()] * 6;
+
+                triplets.push_back(Triplet(M, j++, x.x * x.x));
+                triplets.push_back(Triplet(M, j++, x.y * x.y));
+                triplets.push_back(Triplet(M, j++, x.x * x.y));
+                triplets.push_back(Triplet(M, j++, x.x));
+                triplets.push_back(Triplet(M, j++, x.y));
+                triplets.push_back(Triplet(M, j++, 1.));
+                cells.push_back(std::cref(nb.cell()));
+                M++;
+            }
+    }
+
+    //- Compatibility eqns
+    for (const Cell &cell: ibCells_)
+    {
+        for (const CellLink &nb: cell.cellLinks())
+        {
+            if (ibCells_.isInGroup(nb.cell()))
+            {
+                Point2D x = nearestIntersect(nb.cell().centroid());
+                int j = ids[cell.id()] * 6;
+                triplets.push_back(Triplet(M, j++, x.x * x.x));
+                triplets.push_back(Triplet(M, j++, x.y * x.y));
+                triplets.push_back(Triplet(M, j++, x.x * x.y));
+                triplets.push_back(Triplet(M, j++, x.x));
+                triplets.push_back(Triplet(M, j++, x.y));
+                triplets.push_back(Triplet(M, j++, 1.));
+
+                j = ids[nb.cell().id()] * 6;
+                triplets.push_back(Triplet(M, j++, -x.x * x.x));
+                triplets.push_back(Triplet(M, j++, -x.y * x.y));
+                triplets.push_back(Triplet(M, j++, -x.x * x.y));
+                triplets.push_back(Triplet(M, j++, -x.x));
+                triplets.push_back(Triplet(M, j++, -x.y));
+                triplets.push_back(Triplet(M, j++, -1.));
+                M++;
+            }
+        }
+    }
+
+    //- Boundary eqns
+    for (const Cell &cell: ibCells_)
+    {
+        Point2D bp = nearestIntersect(cell.centroid());
+        Vector2D bn = nearestEdgeNormal(bp);
+
+        int j = ids[cell.id()] * 6;
+//        triplets.push_back(Triplet(M, j++, bp.x * bp.x));
+//        triplets.push_back(Triplet(M, j++, bp.y * bp.y));
+//        triplets.push_back(Triplet(M, j++, bp.x * bp.y));
+//        triplets.push_back(Triplet(M, j++, bp.x));
+//        triplets.push_back(Triplet(M, j++, bp.y));
+//        triplets.push_back(Triplet(M, j++, 1.));
+
+        Vector2D cl = bn.rotate(M_PI_2 - theta);
+        triplets.push_back(Triplet(M, j++, 2. * bp.x * cl.x));
+        triplets.push_back(Triplet(M, j++, 2. * bp.y * cl.y));
+        triplets.push_back(Triplet(M, j++, bp.x * cl.y + bp.y * cl.x));
+        triplets.push_back(Triplet(M, j++, cl.x));
+        triplets.push_back(Triplet(M, j++, cl.y));
+        triplets.push_back(Triplet(M++, j++, 0.));
+
+        j = ids[cell.id()] * 6;
+        cl = bn.rotate(theta - M_PI_2);
+        triplets.push_back(Triplet(M, j++, 2. * bp.x * cl.x));
+        triplets.push_back(Triplet(M, j++, 2. * bp.y * cl.y));
+        triplets.push_back(Triplet(M, j++, bp.x * cl.y + bp.y * cl.x));
+        triplets.push_back(Triplet(M, j++, cl.x));
+        triplets.push_back(Triplet(M, j++, cl.y));
+        triplets.push_back(Triplet(M++, j++, 0.));
+    }
+
+    //- Assemble matrix
+    SparseMatrix A(M, 6 * ibCells_.size());
+    A.setFromTriplets(triplets.begin(), triplets.end());
+
+    triplets.clear();
+    for (const Cell &cell: ibCells_)
+    {
+        int j = ids[cell.id()];
+        int i = 6 * j;
+        Point2D x = cell.centroid();
+
+        triplets.push_back(Triplet(i++, j, x.x * x.x));
+        triplets.push_back(Triplet(i++, j, x.y * x.y));
+        triplets.push_back(Triplet(i++, j, x.x * x.y));
+        triplets.push_back(Triplet(i++, j, x.x));
+        triplets.push_back(Triplet(i++, j, x.y));
+        triplets.push_back(Triplet(i++, j, 1.));
+    }
+
+    //- X Matrix
+    SparseMatrix X(6 * ibCells_.size(), ibCells_.size());
+    X.setFromTriplets(triplets.begin(), triplets.end());
+    Solver solver;
+    SparseMatrix P = A.transpose() * A;
+    solver.compute(P);
+    X = (solver.solve(X)).transpose() * A.transpose();
 
     for (const Cell &cell: ibCells_)
     {
-        StaticMatrix<9, 6> A;
-
-        auto addFixedRow = [&A](int i, const Point2D &x) {
-            A(i, 0) = x.x * x.x;
-            A(i, 1) = x.y * x.y;
-            A(i, 2) = x.x * x.y;
-            A(i, 3) = x.x;
-            A(i, 4) = x.y;
-            A(i, 5) = 1.;
-        };
-
-        auto addClRow = [&A](int i, const Point2D &bp, const Vector2D &cl) {
-            A(i, 0) = 2. * bp.x * cl.x;
-            A(i, 1) = 2. * bp.y * cl.y;
-            A(i, 2) = bp.x * cl.y + bp.y * cl.x;
-            A(i, 3) = cl.x;
-            A(i, 4) = cl.y;
-            A(i, 5) = 0.;
-        };
-
-        auto nbs = cell.cellLinks();
-        std::vector<Ref<const Cell>> stCells;
-        std::vector<Point2D> bn;
-
-        int i = 0;
-        for (const CellLink &nb: nbs)
-        {
-            if (isInIb(nb.cell()))
-                continue;
-
-            addFixedRow(i++, nb.cell().centroid());
-            stCells.push_back(nb.cell());
-        }
-
-        for (const CellLink &nb: nbs)
-        {
-            if (!isInIb(nb.cell()))
-                continue;
-
-            Point2D bp = nearestIntersect(nb.cell().centroid());
-            Vector2D n = nearestEdgeNormal(nb.cell().centroid());
-            addClRow(i++, bp, n);
-        }
-
-
-        Point2D x = cell.centroid();
-        addClRow(i, x, nearestEdgeNormal(x));
-
-        auto c = StaticMatrix<1, 6>({x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
+        for (int j = 0; j < cells.size(); ++j)
+            eqn.add(cell, cells[j], X.coeff(ids[cell.id()], j));
 
         eqn.add(cell, cell, -1.);
-        eqn.add(cell, stCells.begin(), stCells.end(), c.begin());
-
-        for (auto it = c.begin() + stCells.size(); it != c.end(); ++it)
-            eqn.addSource(cell, (*it) * 0);
     }
 
     return eqn;

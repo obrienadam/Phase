@@ -34,6 +34,18 @@ Scalar Cell::polarVolume() const
     for (const BoundaryLink &bd: boundaryLinks_)
         volume += dot(bd.face().centroid(), bd.face().polarOutwardNorm(centroid_));
 
+//    Scalar r1, r2, z1, z2;
+//
+//    auto box = shape().boundingBox();
+//    r1 = box.min_corner().x;
+//    r2 = box.max_corner().x;
+//    z1 = box.min_corner().y;
+//    z2 = box.max_corner().y;
+//
+//    Scalar tstVol = M_PI * (r2*r2 - r1*r1) * (z2 - z1) / (2 * M_PI);
+//
+//    std::cout << volume / 3. << " = " << tstVol << "\n";
+
     return volume / 3.;
 }
 

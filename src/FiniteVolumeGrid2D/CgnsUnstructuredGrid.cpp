@@ -49,7 +49,7 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
     printf("Loading zone \"%s\" with %d nodes and %d cells...\n", name, sizes[0], sizes[1]);
 
     //- Read all zone relevant data
-    readNodes(fileId, baseId, zoneId, sizes[0], convertToMeters);
+    readNodes(fileId, baseId, zoneId, sizes[0], convertToMeters, input.caseInput().get<std::string>("Grid.origin", "(0,0)"));
     readElements(fileId, baseId, zoneId);
     readBoundaries(fileId, baseId, zoneId);
 
@@ -78,7 +78,7 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
     nodes_.reserve(sizes[0]);
     cells_.reserve(sizes[1]);
 
-    readNodes(fid, bid, zid, sizes[0], 1.);
+    readNodes(fid, bid, zid, sizes[0], 1., Point2D(0., 0.));
     readElements(fid, bid, zid);
     readBoundaries(fid, bid, zid);
     initConnectivity();
@@ -124,12 +124,12 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
         comm_->isend(proc, recvOrders[proc], proc);
     }
 
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
         std::vector<unsigned long> sendOrder(comm_->probeSize<unsigned long>(proc, comm_->rank()));
         comm_->recv(proc, sendOrder, comm_->rank());
 
-        for(Label gid: sendOrder)
+        for (Label gid: sendOrder)
             sendCellGroups_[proc].add(cells_[globalToLocalIdMap[gid]]);
     }
 
@@ -139,7 +139,12 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
 
 //- Private helper methods
 
-void CgnsUnstructuredGrid::readNodes(int fileId, int baseId, int zoneId, int nNodes, Scalar convertToMeters)
+void CgnsUnstructuredGrid::readNodes(int fileId,
+                                     int baseId,
+                                     int zoneId,
+                                     int nNodes,
+                                     Scalar convertToMeters,
+                                     const Point2D &origin)
 {
     std::vector<double> xCoords(nNodes), yCoords(nNodes);
     cgsize_t rmin = 1, rmax = nNodes;
@@ -148,7 +153,7 @@ void CgnsUnstructuredGrid::readNodes(int fileId, int baseId, int zoneId, int nNo
     cg_coord_read(fileId, baseId, zoneId, "CoordinateY", CGNS_ENUMV(RealDouble), &rmin, &rmax, yCoords.data());
 
     for (int i = 0; i < nNodes; ++i)
-        addNode(Point2D(xCoords[i] * convertToMeters, yCoords[i] * convertToMeters));
+        addNode((Point2D(xCoords[i], yCoords[i]) + origin) * convertToMeters);
 }
 
 void CgnsUnstructuredGrid::readElements(int fileId, int baseId, int zoneId)

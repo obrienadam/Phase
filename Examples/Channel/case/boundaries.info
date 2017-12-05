@@ -6,8 +6,8 @@ Boundaries
   {
     x-
     {
-      type normal_gradient
-      value (0,0)
+      type fixed
+      value (1,0)
     }
 
     x+
@@ -33,8 +33,8 @@ Boundaries
   {
     x-
     {
-      type fixed
-      value 1
+      type normal_gradient
+      value 0
     }
 
     x+

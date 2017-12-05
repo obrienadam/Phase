@@ -27,21 +27,23 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D()
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
                                        const std::vector<Label> &cellInds,
-                                       const std::vector<Label> &cells)
+                                       const std::vector<Label> &cells,
+                                       const Point2D &origin)
         :
         FiniteVolumeGrid2D()
 {
-    init(nodes, cellInds, cells);
+    init(nodes, cellInds, cells, origin);
 }
 
 void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes,
                               const std::vector<Label> &cellInds,
-                              const std::vector<Label> &cells)
+                              const std::vector<Label> &cells,
+                              const Point2D &origin)
 {
     reset();
 
     for (const Point2D &node: nodes)
-        addNode(node);
+        addNode(node + origin);
 
     for (int i = 0; i < cellInds.size() - 1; ++i)
     {
@@ -128,7 +130,8 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label> &nodeIds)
     for (Label id: nodeIds)
         nodes_[id].addCell(newCell);
 
-    for (Label i = 0, end = nodeIds.size(); i < end; ++i) {
+    for (Label i = 0, end = nodeIds.size(); i < end; ++i)
+    {
         Label n1 = nodeIds[i], n2 = nodeIds[(i + 1) % end];
 
         auto key = n1 < n2 ? make_pair(n1, n2) : make_pair(n2, n1);
@@ -143,7 +146,8 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label> &nodeIds)
             faceDirectory_[key] = face.id();
 
             face.addCell(newCell);
-        } else // face already exists, but is now an interior face
+        }
+        else // face already exists, but is now an interior face
         {
             Face &face = faces_[it->second];
             face.setType(Face::INTERIOR);
@@ -244,7 +248,7 @@ void FiniteVolumeGrid2D::setCellActive(const Cell &cell)
     globalActiveCells_.add(cell);
 }
 
-void FiniteVolumeGrid2D::setCellInactive(const Cell& cell)
+void FiniteVolumeGrid2D::setCellInactive(const Cell &cell)
 {
     localInactiveCells_.add(cell);
     globalInactiveCells_.add(cell);
@@ -255,7 +259,7 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
     std::vector<int> isInGlobalGroup(cells_.size(), 0);
     CellGroup globalGroup(localGroup.name());
 
-    for(const Cell& cell: localGroup)
+    for (const Cell &cell: localGroup)
     {
         isInGlobalGroup[cell.id()] = 1;
         globalGroup.add(cell);
@@ -263,22 +267,22 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
 
     sendMessages(isInGlobalGroup);
 
-    for(const CellZone& bufferZone: bufferZones())
-        for(const Cell& cell: bufferZone)
-            if(isInGlobalGroup[cell.id()])
+    for (const CellZone &bufferZone: bufferZones())
+        for (const Cell &cell: bufferZone)
+            if (isInGlobalGroup[cell.id()])
                 globalGroup.add(cell);
 
     return globalGroup;
 }
 
-CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string& name)
+CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string &name)
 {
     return *(cellGroups_[name] = std::make_shared<CellGroup>(name));
 }
 
-CellZone &FiniteVolumeGrid2D::createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry)
+CellZone &FiniteVolumeGrid2D::createCellZone(const std::string &name, std::shared_ptr<CellZone::ZoneRegistry> registry)
 {
-    return *(cellZones_[name] = std::make_shared<CellZone>(name, registry ? registry: cellZoneRegistry_));
+    return *(cellZones_[name] = std::make_shared<CellZone>(name, registry ? registry : cellZoneRegistry_));
 }
 
 //- Face related methods
@@ -318,9 +322,9 @@ void FiniteVolumeGrid2D::assignFaceIds()
 
 FaceGroup &FiniteVolumeGrid2D::createFaceGroup(const std::string &name, const std::vector<Label> &ids)
 {
-    FaceGroup& faceGroup = faceGroups_[name] = FaceGroup(name);
+    FaceGroup &faceGroup = faceGroups_[name] = FaceGroup(name);
 
-    for(Label id: ids)
+    for (Label id: ids)
         faceGroup.add(faces_[id]);
 
     return faceGroup;
@@ -329,7 +333,7 @@ FaceGroup &FiniteVolumeGrid2D::createFaceGroup(const std::string &name, const st
 //- Patch related methods
 Patch &FiniteVolumeGrid2D::createPatch(const std::string &name, const std::vector<Label> &faces)
 {
-    Patch& patch = patches_.insert(std::make_pair(name, Patch(name, patches_.size(), patchRegistry_))).first->second;
+    Patch &patch = patches_.insert(std::make_pair(name, Patch(name, patches_.size(), patchRegistry_))).first->second;
     patch.clear();
 
     for (Label id: faces)
@@ -340,7 +344,7 @@ Patch &FiniteVolumeGrid2D::createPatch(const std::string &name, const std::vecto
 
 Patch &FiniteVolumeGrid2D::createPatchByNodes(const std::string &name, const std::vector<Label> &nodes)
 {
-    Patch& patch = patches_.insert(std::make_pair(name, Patch(name, patches_.size(), patchRegistry_))).first->second;
+    Patch &patch = patches_.insert(std::make_pair(name, Patch(name, patches_.size(), patchRegistry_))).first->second;
     patch.clear();
 
     for (Label lid = 0, rid = 1; rid < nodes.size(); lid += 2, rid += 2)
@@ -353,7 +357,7 @@ const std::vector<Ref<const Patch> > FiniteVolumeGrid2D::patches() const
 {
     std::vector<Ref<const Patch>> patches;
 
-    for(const auto& entry: patches_)
+    for (const auto &entry: patches_)
         patches.push_back(std::cref(entry.second));
 
     return patches;
@@ -364,7 +368,7 @@ const Node &FiniteVolumeGrid2D::findNearestNode(const Point2D &pt) const
     return nodeGroup_.nearestItems(pt, 1)[0];
 }
 
-std::vector<Ref<const Node>> FiniteVolumeGrid2D::findNearestNodes(const Point2D& pt, int nNodes) const
+std::vector<Ref<const Node>> FiniteVolumeGrid2D::findNearestNodes(const Point2D &pt, int nNodes) const
 {
     return nodeGroup_.nearestItems(pt, nNodes);
 }
@@ -423,20 +427,20 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     comm_->broadcast(comm_->mainProcNo(), cellPartition);
 
     //- Criteria to see if a cell is retained on a particular proc
-    auto addCellToThisProc = [this, &cellPartition](const Cell& cell, Scalar r = 0.)->bool {
-        if(cellPartition[cell.id()] == comm_->rank())
+    auto addCellToThisProc = [this, &cellPartition](const Cell &cell, Scalar r = 0.) -> bool {
+        if (cellPartition[cell.id()] == comm_->rank())
             return true;
 
-        for(const InteriorLink& nb: cell.neighbours())
-            if(cellPartition[nb.cell().id()] == comm_->rank())
+        for (const InteriorLink &nb: cell.neighbours())
+            if (cellPartition[nb.cell().id()] == comm_->rank())
                 return true;
 
-        for(const CellLink& dg: cell.diagonals())
-            if(cellPartition[dg.cell().id()] == comm_->rank())
+        for (const CellLink &dg: cell.diagonals())
+            if (cellPartition[dg.cell().id()] == comm_->rank())
                 return true;
 
-        for(const Cell& kCell: globalActiveCells_.itemsWithin(Circle(cell.centroid(), r)))
-            if(cellPartition[kCell.id()] == comm_->rank())
+        for (const Cell &kCell: globalActiveCells_.itemsWithin(Circle(cell.centroid(), r)))
+            if (cellPartition[kCell.id()] == comm_->rank())
                 return true;
 
         return false;
@@ -448,11 +452,12 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     vector<Label> cellInds(1, 0), cellNodeIds, cellProc;
     unordered_map<Label, Label> cellGlobalToLocalIdMap, cellLocalToGlobalIdMap;
     vector<int> localNodeId(nodes_.size(), -1);
-    Scalar r = input.caseInput().get<Scalar>("Grid.minBufferWidth", 0.); //- May be important for algorithms requiring spatial searches
+    Scalar r = input.caseInput().get<Scalar>("Grid.minBufferWidth",
+                                             0.); //- May be important for algorithms requiring spatial searches
 
-    for(const Cell& cell: cells_)
+    for (const Cell &cell: cells_)
     {
-        if(addCellToThisProc(cell, r))
+        if (addCellToThisProc(cell, r))
         {
             cellInds.push_back(cellInds.back() + cell.nodes().size());
             cellProc.push_back(cellPartition[cell.id()]);
@@ -460,9 +465,9 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
             cellGlobalToLocalIdMap[cell.id()] = cellInds.size() - 2;
             cellLocalToGlobalIdMap[cellInds.size() - 2] = cell.id();
 
-            for(const Node& node: cell.nodes())
+            for (const Node &node: cell.nodes())
             {
-                if(localNodeId[node.id()] == -1)
+                if (localNodeId[node.id()] == -1)
                 {
                     localNodeId[node.id()] = nodes.size();
                     nodes.push_back(node);
@@ -477,7 +482,7 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     comm_->printf("Computing the local boundary patches...\n");
     std::unordered_map<std::string, std::vector<Label>> localPatches;
 
-    for(const Patch& patch: patches())
+    for (const Patch &patch: patches())
     {
         vector<Label> nodeIds;
 
@@ -488,19 +493,19 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
 
             if (lid > -1 && rid > -1)
             {
-                nodeIds.push_back((Label)lid);
-                nodeIds.push_back((Label)rid);
+                nodeIds.push_back((Label) lid);
+                nodeIds.push_back((Label) rid);
             }
         }
 
-        if(!nodeIds.empty())
+        if (!nodeIds.empty())
             localPatches[patch.name()] = nodeIds;
     }
 
     //- Now re-initialize local domains
     comm_->printf("Initializing local domains...\n");
-    init(nodes, cellInds, cellNodeIds);
-    for(const auto& patch: localPatches)
+    init(nodes, cellInds, cellNodeIds, Point2D(0., 0.));
+    for (const auto &patch: localPatches)
         createPatchByNodes(patch.first, patch.second);
 
     comm_->printf("Finished initializing local domains.\n");
@@ -510,21 +515,21 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     sendCellGroups_.resize(comm_->nProcs());
     bufferCellZones_.resize(comm_->nProcs());
 
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
         sendCellGroups_[proc] = CellGroup("Proc" + std::to_string(proc));
         bufferCellZones_[proc] = CellZone("Proc" + std::to_string(proc), localActiveCells_.registry());
     }
 
     //- Identify buffer regions
-    for(const Cell& cell: cells_)
-        if(cellProc[cell.id()] != comm_->rank())
+    for (const Cell &cell: cells_)
+        if (cellProc[cell.id()] != comm_->rank())
             bufferCellZones_[cellProc[cell.id()]].add(cell);
 
     //- Initialize all buffers
     std::vector<std::vector<unsigned long>> recvOrders(comm_->nProcs());
 
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
         std::transform(bufferCellZones_[proc].begin(), bufferCellZones_[proc].end(),
                        std::back_inserter(recvOrders[proc]), [&cellLocalToGlobalIdMap](const Cell &cell) {
@@ -534,12 +539,12 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
         comm_->isend(proc, recvOrders[proc], proc);
     }
 
-    for(int proc = 0; proc < comm_->nProcs(); ++proc)
+    for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
         std::vector<unsigned long> sendOrder(comm_->probeSize<unsigned long>(proc, comm_->rank()));
         comm_->recv(proc, sendOrder, comm_->rank());
 
-        for(Label gid: sendOrder)
+        for (Label gid: sendOrder)
             sendCellGroups_[proc].add(cells_[cellGlobalToLocalIdMap[gid]]);
     }
 
@@ -592,7 +597,7 @@ void FiniteVolumeGrid2D::computeGlobalOrdering()
             cells_[cell.id()].index(2) = globalIndices[1][cell.id()];
             cells_[cell.id()].index(3) = globalIndices[2][cell.id()];
 
-            if(globalIndices[0][cell.id()] != -1)
+            if (globalIndices[0][cell.id()] != -1)
                 globalActiveCells_.add(cell);
             else
                 globalInactiveCells_.add(cell);
@@ -641,7 +646,7 @@ void FiniteVolumeGrid2D::initCells()
         }
     }
 
-    for(const Face& face: interiorFaces_)
+    for (const Face &face: interiorFaces_)
     {
         if (!boundaryNodes_.isInGroup(face.lNode()))
             interiorNodes_.add(face.lNode());

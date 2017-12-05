@@ -9,7 +9,7 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input, std::share
 {
     using namespace std;
 
-    //- Check if a grid nees to be loaded
+    //- Check if a grid needs to be loaded
     if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
     {
         auto grid = std::make_shared<CgnsUnstructuredGrid>();
@@ -19,6 +19,7 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input, std::share
 
     //- Grid must be constructed
     string gridType = input.caseInput().get<string>("Grid.type");
+    Point2D origin = input.caseInput().get<string>("Grid.origin", "(0,0)");
 
     if (gridType == "rectilinear")
     {
@@ -40,7 +41,8 @@ std::shared_ptr<FiniteVolumeGrid2D> constructGrid(const Input &input, std::share
                                                                 nCellsX, nCellsY,
                                                                 convertToMeters,
                                                                 xDimRefinements,
-                                                                yDimRefinements);
+                                                                yDimRefinements,
+                                                                origin);
 
         grid->partition(input, comm);
         return grid;

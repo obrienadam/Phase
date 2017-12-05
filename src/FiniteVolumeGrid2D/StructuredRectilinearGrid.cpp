@@ -5,7 +5,8 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
                                                      Size nCellsX, Size nCellsY,
                                                      Scalar convertToMeters,
                                                      const std::vector<std::pair<Scalar, Scalar> > &xDimRefinements,
-                                                     const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements)
+                                                     const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements,
+                                                     const Point2D &origin)
         :
         FiniteVolumeGrid2D()
 {
@@ -56,7 +57,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
             elems.push_back((j + 1) * nNodesX + i);
         }
 
-    init(nodes, elemInds, elems);
+    init(nodes, elemInds, elems, origin);
 
     //- Construct default patches
     std::vector<Label> xm, xp, ym, yp;

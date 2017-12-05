@@ -16,7 +16,8 @@ public:
                               Size nCellsY,
                               Scalar convertToMeters,
                               const std::vector<std::pair<Scalar, Scalar>> &xDimRefinements,
-                              const std::vector<std::pair<Scalar, Scalar>> &yDimRefinements);
+                              const std::vector<std::pair<Scalar, Scalar>> &yDimRefinements,
+                              const Point2D& origin);
 
     Cell &operator()(Label i, Label j);
 

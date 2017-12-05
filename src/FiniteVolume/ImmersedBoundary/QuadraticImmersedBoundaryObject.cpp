@@ -333,7 +333,7 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
                 Scalar rhoB = (rho(cell1) - rho(cell2)) / (eta1 - eta2) * (etaB - eta2) + rho(cell2);
 
                 bPts.push_back(ln.ptB());
-                bP.push_back(pB + rhoB * dot(g, ln.ptB()));
+                bP.push_back(/*pB +*/ rhoB * dot(g, ln.ptB()));
 
 //                if (std::abs(nb.rCellVec().x) > std::abs(nb.rCellVec().y))
 //                {

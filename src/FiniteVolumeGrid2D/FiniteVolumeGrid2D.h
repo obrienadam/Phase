@@ -23,12 +23,14 @@ public:
 
     FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
                        const std::vector<Label> &cellInds,
-                       const std::vector<Label> &cells);
+                       const std::vector<Label> &cells,
+                       const Point2D& origin);
 
     //- Initialization
     void init(const std::vector<Point2D> &nodes,
               const std::vector<Label> &cellInds,
-              const std::vector<Label> &cells);
+              const std::vector<Label> &cells,
+              const Point2D &origin);
 
     void reset();
 
@@ -59,10 +61,10 @@ public:
     const std::vector<Node> &nodes() const
     { return nodes_; }
 
-    const NodeGroup& interiorNodes() const
+    const NodeGroup &interiorNodes() const
     { return interiorNodes_; }
 
-    const NodeGroup& boundaryNodes() const
+    const NodeGroup &boundaryNodes() const
     { return boundaryNodes_; }
 
     std::vector<Point2D> coords() const;
@@ -90,7 +92,7 @@ public:
     //- Cell groups and zones
     void setCellActive(const Cell &cell);
 
-    template <class const_iterator>
+    template<class const_iterator>
     void setCellsActive(const_iterator begin, const_iterator end)
     {
         localActiveCells_.add(begin, end);
@@ -99,7 +101,7 @@ public:
 
     void setCellInactive(const Cell &cell);
 
-    template <class const_iterator>
+    template<class const_iterator>
     void setCellsInactive(const_iterator begin, const_iterator end)
     {
         localInactiveCells_.add(begin, end);
@@ -113,28 +115,28 @@ public:
     const CellGroup &cellGroup(const std::string &name) const
     { return *cellGroups_.find(name)->second; }
 
-    std::shared_ptr<CellGroup>& cellGroupPtr(const std::string& name)
+    std::shared_ptr<CellGroup> &cellGroupPtr(const std::string &name)
     { return cellGroups_.find(name)->second; }
 
     //- Cell zone access
     CellZone &cellZone(const std::string &name)
     { return *cellZones_.find(name)->second; }
 
-    const CellZone &cellZone(const std::string& name) const
+    const CellZone &cellZone(const std::string &name) const
     { return *cellZones_.find(name)->second; }
 
-    std::shared_ptr<CellZone>& cellZonePtr(const std::string& name)
+    std::shared_ptr<CellZone> &cellZonePtr(const std::string &name)
     { return cellZones_.find(name)->second; }
 
-    CellGroup globalCellGroup(const CellGroup& localGroup) const;
+    CellGroup globalCellGroup(const CellGroup &localGroup) const;
 
     //- Cell group creation
-    CellGroup &createCellGroup(const std::string& name);
+    CellGroup &createCellGroup(const std::string &name);
 
     //- Cell zone creation
-    CellZone &createCellZone(const std::string& name, std::shared_ptr<CellZone::ZoneRegistry> registry = nullptr);
+    CellZone &createCellZone(const std::string &name, std::shared_ptr<CellZone::ZoneRegistry> registry = nullptr);
 
-    const std::shared_ptr<CellZone::ZoneRegistry>& cellZoneRegistry() const
+    const std::shared_ptr<CellZone::ZoneRegistry> &cellZoneRegistry() const
     { return cellZoneRegistry_; }
 
     const CellZone &localActiveCells() const
@@ -160,10 +162,10 @@ public:
     const std::vector<Face> &faces() const
     { return faces_; }
 
-    const FaceGroup& interiorFaces() const
+    const FaceGroup &interiorFaces() const
     { return interiorFaces_; }
 
-    const FaceGroup& boundaryFaces() const
+    const FaceGroup &boundaryFaces() const
     { return boundaryFaces_; }
 
     bool faceExists(Label n1, Label n2) const;
@@ -173,36 +175,36 @@ public:
     void assignFaceIds();
 
     //- Patch related methods
-    FaceGroup& createFaceGroup(const std::string& name, const std::vector<Label>& ids = std::vector<Label>());
+    FaceGroup &createFaceGroup(const std::string &name, const std::vector<Label> &ids = std::vector<Label>());
 
-    Patch& createPatch(const std::string &name, const std::vector<Label> &faces);
+    Patch &createPatch(const std::string &name, const std::vector<Label> &faces);
 
-    Patch& createPatchByNodes(const std::string &name, const std::vector<Label> &nodes);
+    Patch &createPatchByNodes(const std::string &name, const std::vector<Label> &nodes);
 
     const std::vector<Ref<const Patch>> patches() const;
 
-    FaceGroup& faceGroup(const std::string& name)
+    FaceGroup &faceGroup(const std::string &name)
     { return faceGroups_.find(name)->second; }
 
-    const FaceGroup& faceGroup(const std::string& name) const
+    const FaceGroup &faceGroup(const std::string &name) const
     { return faceGroups_.find(name)->second; }
 
-    bool hasPatch(const std::string& name) const
+    bool hasPatch(const std::string &name) const
     { return patches_.find(name) != patches_.end(); }
 
-    Patch& patch(const std::string& name)
+    Patch &patch(const std::string &name)
     { return patches_.find(name)->second; }
 
-    const Patch& patch(const std::string& name) const
+    const Patch &patch(const std::string &name) const
     { return patches_.find(name)->second; }
 
-    const Patch& patch(const Face& face) const
+    const Patch &patch(const Face &face) const
     { return patchRegistry_->find(face.id())->second; }
 
     //- Entity searches
     const Node &findNearestNode(const Point2D &pt) const;
 
-    std::vector<Ref<const Node>> findNearestNodes(const Point2D& pt, int nNodes) const;
+    std::vector<Ref<const Node>> findNearestNodes(const Point2D &pt, int nNodes) const;
 
     //- Parallel/paritioning
     const Communicator &comm() const
