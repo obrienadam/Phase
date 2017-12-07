@@ -336,6 +336,33 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Poin
     return nullptr;
 }
 
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(const Point2D& pt) const
+{
+    return nearestIntersect(pt).first;
+}
+
+std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> ImmersedBoundary::nearestIntersect(const Point2D &pt) const
+{
+    std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj = nullptr;
+    Point2D minXc;
+    Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
+
+    for(const auto& ibObj: *this)
+    {
+        Point2D xc = ibObj->nearestIntersect(pt);
+        Scalar distSqr = (xc - pt).magSqr();
+
+        if(distSqr < minDistSqr)
+        {
+            nearestIbObj = ibObj;
+            minXc = xc;
+            minDistSqr = distSqr;
+        }
+    }
+
+    return std::make_pair(nearestIbObj, minXc);
+}
+
 const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string &name) const
 {
     for (const auto &ibObj: ibObjs_)

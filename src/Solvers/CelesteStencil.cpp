@@ -21,107 +21,92 @@ void Celeste::CelesteStencil::init(bool weighted)
 
     const Cell &cell = *cellPtr_;
 
-    Matrix A(cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size(), 5);
+    reset();
 
-    int i = 0;
-    for (const InteriorLink &nb: cell.neighbours())
+    for (const CellLink &link: cell.cellLinks())
     {
-        Vector2D r = nb.rCellVec() / (weighted_ ? nb.rCellVec().magSqr() : 1.);
+        cells_.push_back(std::cref(link.cell()));
 
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
-    }
-
-    for (const CellLink &dg: cell.diagonals())
-    {
-        Vector2D r = dg.rCellVec() / (weighted_ ? dg.rCellVec().magSqr() : 1.);
-
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
+        if (!cell.boundaries().empty())
+            for (const BoundaryLink &bd: link.cell().boundaries())
+                faces_.push_back(std::cref(bd.face()));
     }
 
     for (const BoundaryLink &bd: cell.boundaries())
-    {
-        Vector2D r = bd.rFaceVec() / (weighted_ ? bd.rFaceVec().magSqr() : 1.);
+        faces_.push_back(std::cref(bd.face()));
 
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
-    }
-
-    pInv_ = inverse(transpose(A) * A) * transpose(A);
+    initMatrix();
 }
 
 void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
 {
-    const Cell &cell = *cellPtr_;
-    Matrix A(cell.neighbours().size() + cell.diagonals().size() + cell.boundaries().size(), 5);
-
+    weighted_ = weighted;
     truncated_ = false;
 
-    int i = 0;
-    for (const InteriorLink &nb: cell.neighbours())
+    const Cell &cell = *cellPtr_;
+
+    reset();
+
+    auto isIbCell = [&ib](const Cell &cell) -> std::shared_ptr<const ImmersedBoundaryObject> {
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            auto ibObj = ib.ibObj(nb.cell().centroid());
+            if (ibObj)
+                return ibObj;
+        }
+        return nullptr;
+    };
+
+    auto ibObj = isIbCell(cell);
+
+    if (!ibObj)
     {
-        auto ibObj = ib.ibObj(nb.cell().centroid());
+        for (const CellLink &link: cell.cellLinks())
+        {
+            if (!ib.ibObj(link.cell().centroid()))
+            {
+                cells_.push_back(std::cref(link.cell()));
 
-        Vector2D r = ibObj ? ibObj->intersectionLine(cell.centroid(), nb.cell().centroid()).rVec() : nb.rCellVec();
-
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
-
-        truncated_ = ibObj ? true : truncated_;
+                if (!cell.boundaries().empty())
+                    for (const BoundaryLink &bd: link.cell().boundaries())
+                        faces_.push_back(std::cref(bd.face()));
+            }
+        }
     }
-
-    for (const CellLink &dg: cell.diagonals())
+    else
     {
-        auto ibObj = ib.ibObj(dg.cell().centroid());
+        for (const CellLink &link: cell.cellLinks())
+        {
+            if (!ib.ibObj(link.cell().centroid()))
+            {
+                auto nbIbObj = isIbCell(link.cell());
 
-        Vector2D r = ibObj ? ibObj->intersectionLine(cell.centroid(), dg.cell().centroid()).rVec() : dg.rCellVec();
+                if (nbIbObj)
+                {
+                    auto ibObjPt = ib.nearestIntersect(link.cell().centroid());
+                    compatPts_.push_back(std::make_pair(ibObjPt.first, link.cell()));
+                }
 
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
+                cells_.push_back(link.cell());
 
-        truncated_ = ibObj ? true : truncated_;
+                if (!cell.boundaries().empty())
+                    for (const BoundaryLink &bd: link.cell().boundaries())
+                        faces_.push_back(std::cref(bd.face()));
+            }
+        }
     }
 
     for (const BoundaryLink &bd: cell.boundaries())
-    {
-        Vector2D r = bd.rFaceVec();
+        faces_.push_back(std::cref(bd.face()));
 
-        A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
-        });
-    }
+    initMatrix();
+}
 
-    pInv_ = inverse(transpose(A) * A) * transpose(A);
+void Celeste::CelesteStencil::reset()
+{
+    cells_.clear();
+    faces_.clear();
+    compatPts_.clear();
 }
 
 Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
@@ -131,14 +116,16 @@ Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
 
     const Cell &cell = *cellPtr_;
 
-    for (const InteriorLink &nb: cell.neighbours())
-        b(i++, 0) = (phi(nb.cell()) - phi(cell)) / (weighted_ ? nb.rCellVec().magSqr() : 1.);
+    for (const Cell &kCell: cells_)
+    {
+        b(i++, 0) = (phi(kCell) - phi(cell)) / (weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.);
+    }
 
-    for (const CellLink &dg: cell.diagonals())
-        b(i++, 0) = (phi(dg.cell()) - phi(cell)) / (weighted_ ? dg.rCellVec().magSqr() : 1.);
 
-    for (const BoundaryLink &bd: cell.boundaries())
-        b(i++, 0) = (phi(bd.face()) - phi(cell)) / (weighted_ ? bd.rFaceVec().magSqr() : 1.);
+    for (const Face &face: faces_)
+    {
+        b(i++, 0) = (phi(face) - phi(cell)) / (weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.);
+    }
 
     b = pInv_ * b;
     return Vector2D(b(b.m() - 2, 0), b(b.m() - 1, 0));
@@ -147,33 +134,32 @@ Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
 Scalar Celeste::CelesteStencil::div(const VectorFiniteVolumeField &u) const
 {
     Matrix b(pInv_.n(), 2);
-    int i = 0;
 
     const Cell &cell = *cellPtr_;
 
-    for (const InteriorLink &nb: cell.neighbours())
+    int i = 0;
+    for (const Cell &kCell: cells_)
     {
-        Vector2D du = (u(nb.cell()) - u(cell)) / (weighted_ ? nb.rCellVec().magSqr() : 1.);
+        Vector2D du = (u(kCell) - u(cell)) / (weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.);
         b(i, 0) = du.x;
         b(i++, 1) = du.y;
     }
 
-    for (const CellLink &dg: cell.diagonals())
+    for (const Face &face: faces_)
     {
-        Vector2D du = (u(dg.cell()) - u(cell)) / (weighted_ ? dg.rCellVec().magSqr() : 1.);
-        b(i, 0) = du.x;
-        b(i++, 1) = du.y;
-    }
-
-    for (const BoundaryLink &bd: cell.boundaries())
-    {
-        Vector2D du = (u(bd.face()) - u(cell)) / (weighted_ ? bd.rFaceVec().magSqr() : 1.);
+        Vector2D du = (u(face) - u(cell)) / (weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.);
         b(i, 0) = du.x;
         b(i++, 1) = du.y;
     }
 
     b = pInv_ * b;
     return b(b.m() - 2, 0) + b(b.m() - 1, 1);
+}
+
+Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
+                                      const Celeste &fst) const
+{
+    return div(n);
 }
 
 Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
@@ -185,31 +171,77 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     const Cell &cell = *cellPtr_;
 
     int i = 0;
-    for (const InteriorLink &nb: cell.neighbours())
+    for (const Cell &kCell: cells_)
     {
-        auto ibObj = ib.ibObj(nb.cell().centroid());
-        Vector2D dn = ((ibObj ? fst.contactLineNormal(cell, nb.cell(), *ibObj) : n(nb.cell())) - n(cell)) /
-                      (weighted_ ? nb.rCellVec().magSqr() : 1.);
+        Vector2D dn = n(kCell) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
 
-    for (const CellLink &dg: cell.diagonals())
+    for (const Face &face: faces_)
     {
-        auto ibObj = ib.ibObj(dg.cell().centroid());
-        Vector2D dn = ((ibObj ? fst.contactLineNormal(cell, dg.cell(), *ibObj) : n(dg.cell())) - n(cell)) /
-                      (weighted_ ? dg.rCellVec().magSqr() : 1.);
+        Vector2D dn = n(face) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
 
-    for (const BoundaryLink &bd: cell.boundaries())
+    for (const auto &compatPt: compatPts_)
     {
-        Vector2D dn = (n(bd.face()) - n(cell)) / (weighted_ ? bd.rFaceVec().magSqr() : 1.);
+        Vector2D dn = fst.contactLineNormal(compatPt.second, *compatPt.first.lock()) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
 
     b = pInv_ * b;
     return b(b.m() - 2, 0) + b(b.m() - 1, 1);
+}
+
+//- Private methods
+
+void Celeste::CelesteStencil::initMatrix()
+{
+    Matrix A(cells_.size() + compatPts_.size() + faces_.size(), 5);
+    const Cell &cell = *cellPtr_;
+
+    int i = 0;
+    for (const Cell &kCell: cells_)
+    {
+        Vector2D r = (kCell.centroid() - cell.centroid());
+
+        if (weighted_) r /= r.magSqr();
+
+        A(i, 0) = r.x * r.x / 2.;
+        A(i, 1) = r.y * r.y / 2.;
+        A(i, 2) = r.x * r.y;
+        A(i, 3) = r.x;
+        A(i++, 4) = r.y;
+    }
+
+    for (const Face &face: faces_)
+    {
+        Vector2D r = face.centroid() - cell.centroid();
+
+        if (weighted_) r /= r.magSqr();
+
+        A(i, 0) = r.x * r.x / 2.;
+        A(i, 1) = r.y * r.y / 2.;
+        A(i, 2) = r.x * r.y;
+        A(i, 3) = r.x;
+        A(i++, 4) = r.y;
+    }
+
+    for (const auto &compatPt: compatPts_)
+    {
+        Vector2D r = compatPt.first.lock()->nearestIntersect(compatPt.second.get().centroid()) - cell.centroid();
+
+        if (weighted_) r /= r.magSqr();
+
+        A(i, 0) = r.x * r.x / 2.;
+        A(i, 1) = r.y * r.y / 2.;
+        A(i, 2) = r.x * r.y;
+        A(i, 3) = r.x;
+        A(i++, 4) = r.y;
+    }
+
+    pInv_ = pseudoInverse(A);
 }

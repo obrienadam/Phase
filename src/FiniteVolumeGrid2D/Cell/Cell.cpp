@@ -73,6 +73,7 @@ void Cell::addInteriorLink(const Face &face, const Cell &cell)
 std::vector<Ref<const CellLink>> Cell::cellLinks() const
 {
     std::vector<Ref<const CellLink>> cellLinks;
+    cellLinks.reserve(8);
 
     cellLinks.insert(cellLinks.end(), interiorLinks_.begin(), interiorLinks_.end());
     cellLinks.insert(cellLinks.end(), diagonalLinks_.begin(), diagonalLinks_.end());

@@ -64,16 +64,10 @@ void SurfaceTensionForce::computeInterfaceNormals()
         for (const Face &face: patch)
         {
             Scalar theta = getTheta(patch);
-
-            if (n(face.lCell()) == Vector2D(0., 0.))
-                n(face) = Vector2D(0., 0.);
-            else
-            {
-                Vector2D t = face.norm().tangentVec().unitVec();
-                t = dot(t, n(face.lCell())) > 0. ? t : -t;
-                Scalar phi = cross(t, face.outwardNorm()) < 0. ? M_PI_2 - theta : theta - M_PI_2;
-                n(face) = t.rotate(phi);
-            }
+            Vector2D t = face.norm().tangentVec().unitVec();
+            t = dot(t, n(face.lCell())) > 0. ? t : -t;
+            Scalar phi = cross(t, face.outwardNorm()) < 0. ? M_PI_2 - theta : theta - M_PI_2;
+            n(face) = t.rotate(phi) * n(face.lCell()).magSqr();
         }
     }
 
@@ -97,36 +91,38 @@ Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
 
     t = dot(t, n(lCell)) > 0. ? t : -t;
     Scalar phi = cross(t, en) < 0. ? M_PI_2 - theta : theta - M_PI_2;
-    return t.rotate(phi);
+    return t.rotate(phi) * n(lCell).magSqr();
+}
+
+Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const ImmersedBoundaryObject &ibObj) const
+{
+    //LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
+    Vector2D en = ibObj.nearestEdgeNormal(cell.centroid());
+
+    const VectorFiniteVolumeField &n = *n_;
+
+    Vector2D t = en.tangentVec().unitVec();
+    Scalar theta = getTheta(ibObj);
+
+    t = dot(t, n(cell)) > 0. ? t : -t;
+    Scalar phi = cross(t, en) < 0. ? M_PI_2 - theta : theta - M_PI_2;
+    return t.rotate(phi) * n(cell).magSqr();
+}
+
+Vector2D SurfaceTensionForce::contactLineNormal(const Cell& cell, const ImmersedBoundary &ib) const
+{
+    auto ibObj = ib.nearestIbObj(cell.centroid());
+    return contactLineNormal(cell, *ibObj);
 }
 
 void SurfaceTensionForce::smoothGammaField()
 {
-//    smooth(gamma_, grid().localActiveCells(), kernelWidth_, *gammaTilde_,
-//           [](const Cell& cell, const Cell& kCell, Scalar e) {
-//               Vector2D r = (cell.centroid() - kCell.centroid()).abs() / e;
-//               Scalar dx = r.x < 1. ? pow(r.x, 4) - 2*pow(r.x, 2) + 1. : 0.;
-//               Scalar dy = r.y < 1. ? pow(r.y, 4) - 2*pow(r.y, 2) + 1. : 0.;
-//               return dx * dy;
-//           });
+    const CellGroup &cellsToSmooth = grid_->globalActiveCells();
 
-//    smooth(gamma_,
-//           grid().localActiveCells(),
-//           grid().globalActiveCells(),
-//           kernelWidth_,
-//           *gammaTilde_,
-//           [](const Cell& cell, const Cell& kCell, Scalar e) {
-//               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
-//               return r < 1. ? pow(r, 4) - 2 * pow(r, 2) + 1 : 0.;
-//           });
-
-//    smooth(gamma_, grid().localActiveCells(), kernelWidth_, *gammaTilde_,
-//    [](const Cell& cell, const Cell &kCell, Scalar e) {
-//        Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
-//        return r < 1. ? pow(1. - r*r, 3) : 0.;
-//    });
-    //- This kernel is better
-    smooth(gamma_, grid().localActiveCells(), grid_->cellZone("fluid"), kernelWidth_, *gammaTilde_,
+    smooth(gamma_, cellsToSmooth,
+           cellsToSmooth,
+           kernelWidth_,
+           *gammaTilde_,
            [](const Cell &cell, const Cell &kCell, Scalar e) {
                Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
                return r < 1. ? std::cos(M_PI * r) + 1. : 0.;

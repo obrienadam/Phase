@@ -129,7 +129,6 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     grid_->sendMessages(u);
 
     for (const Face &face: grid_->interiorFaces())
-        if(fluid_.isInGroup(face.lCell()) || fluid_.isInGroup(face.rCell()))
         u(face) -= timeStep / rho_ * gradP(face);
 
     for (const Patch &patch: grid_->patches())

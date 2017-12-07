@@ -71,12 +71,15 @@ public:
 
     virtual void computeInterfaceNormals();
 
-    Vector2D nearestContactLineNormal(const Cell &cell,
-                                      const ImmersedBoundaryObject &ibObj) const;
-
     Vector2D contactLineNormal(const Cell &lCell,
                                const Cell &rCell,
                                const ImmersedBoundaryObject &ibObj) const;
+
+    Vector2D contactLineNormal(const Cell &cell,
+                               const ImmersedBoundaryObject &ibObj) const;
+
+    Vector2D contactLineNormal(const Cell &cell,
+                               const ImmersedBoundary &ib) const;
 
     void smoothGammaField();
 

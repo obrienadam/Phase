@@ -45,6 +45,8 @@ protected:
 
         void init(const ImmersedBoundary& ib, bool weighted = false);
 
+        void reset();
+
         const Cell& cell() const
         { return *cellPtr_; }
 
@@ -58,16 +60,22 @@ protected:
 
         Scalar div(const VectorFiniteVolumeField& u) const;
 
+        Scalar kappa(const VectorFiniteVolumeField& n, const Celeste& fst) const;
+
         Scalar kappa(const VectorFiniteVolumeField& n, const ImmersedBoundary& ib, const Celeste& fst) const;
 
     private:
+
+        void initMatrix();
 
         const Cell* cellPtr_ = nullptr;
 
         bool truncated_, weighted_;
 
         Matrix pInv_;
-
+        std::vector<Ref<const Cell>> cells_;
+        std::vector<Ref<const Face>> faces_;
+        std::vector<std::pair<std::weak_ptr<const ImmersedBoundaryObject>, Ref<const Cell>>> compatPts_;
     };
 
     virtual void computeGradGammaTilde();
