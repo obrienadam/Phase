@@ -75,7 +75,7 @@ protected:
         Matrix pInv_;
         std::vector<Ref<const Cell>> cells_;
         std::vector<Ref<const Face>> faces_;
-        std::vector<std::pair<std::weak_ptr<const ImmersedBoundaryObject>, Ref<const Cell>>> compatPts_;
+        std::vector<std::pair<std::weak_ptr<const ImmersedBoundaryObject>, Point2D>> compatPts_;
     };
 
     virtual void computeGradGammaTilde();

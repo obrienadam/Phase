@@ -75,6 +75,9 @@ public:
                                const Cell &rCell,
                                const ImmersedBoundaryObject &ibObj) const;
 
+    Vector2D contactLineNormal(const Cell& cell, const Point2D& pt,
+                               const ImmersedBoundaryObject &ibObj) const;
+
     Vector2D contactLineNormal(const Cell &cell,
                                const ImmersedBoundaryObject &ibObj) const;
 

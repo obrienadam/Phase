@@ -212,39 +212,22 @@ void FractionalStepMultiphase::computeMomentumFlux(const ScalarFiniteVolumeField
 
 void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 {
-    //- Update density, density gradient and gravity source
+    //- Update density
     rho.savePreviousTimeStep(timeStep, 1);
-    rho.computeCells([this](const Cell &c) {
-        Scalar g = gamma(c);
+    rho.computeCells([this](const Cell &cell) {
+        Scalar g = gamma(cell);
         return (1. - g) * rho1_ + g * rho2_;
     });
 
-    grid_->sendMessages(rho);
-
-    rho.computeFaces([this](const Face &f) {
-        Scalar g = gamma(f);
+    rho.computeFaces([this](const Face &face) {
+        Scalar g = gamma(face);
         return (1. - g) * rho1_ + g * rho2_;
     });
 
-    gradRho.computeFaces();
-
-    //- Update viscosity
-    mu.savePreviousTimeStep(timeStep, 1);
-    mu.computeCells([this](const Cell &cell) {
-        Scalar g = clamp(gamma(cell), 0., 1.);
-        return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
-    });
-
-    grid_->sendMessages(mu);
-
-    mu.computeFaces([this](const Face &f) {
-        Scalar g = gamma(f);
-        return rho(f) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / rho2_);
-    });
-
-    mu.interpolateFaces();
+    grid_->sendMessages(rho); //- For correct gradient computation
 
     //- Update the gravitational source term
+    gradRho.computeFaces();
     sg.savePreviousTimeStep(timeStep, 1.);
     for (const Face &face: grid().faces())
         sg(face) = dot(g_, -face.centroid()) * gradRho(face);
@@ -252,8 +235,20 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
     sg.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
     sg.faceToCell(rho, rho, fluid_);
 
+    //- Update viscosity from kinematic viscosity
+    mu.savePreviousTimeStep(timeStep, 1);
+    mu.computeCells([this](const Cell &cell) {
+        Scalar g = gamma(cell);
+        return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+    });
+    mu.computeFaces([this](const Face &face) {
+        Scalar g = gamma(face);
+        return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+    });
+
+    //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.compute(ib_);
+    ft.computeFaces(ib_);
     ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
     ft.faceToCell(rho, rho, fluid_);
 }

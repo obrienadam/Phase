@@ -94,6 +94,20 @@ Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
     return t.rotate(phi) * n(lCell).magSqr();
 }
 
+Vector2D
+SurfaceTensionForce::contactLineNormal(const Cell &cell, const Point2D &pt, const ImmersedBoundaryObject &ibObj) const
+{
+    const Vector2D &n = (*n_)(cell);
+    Vector2D ns = -ibObj.nearestEdgeNormal(pt);
+    Vector2D ts = (n - dot(n, ns) * ns).unitVec();
+
+    if(n.magSqr() == 0)
+        return n;
+
+    Scalar theta = getTheta(ibObj);
+    return ns * std::cos(theta) + ts * std::sin(theta);
+}
+
 Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const ImmersedBoundaryObject &ibObj) const
 {
     //LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
@@ -109,7 +123,7 @@ Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const Immersed
     return t.rotate(phi) * n(cell).magSqr();
 }
 
-Vector2D SurfaceTensionForce::contactLineNormal(const Cell& cell, const ImmersedBoundary &ib) const
+Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const ImmersedBoundary &ib) const
 {
     auto ibObj = ib.nearestIbObj(cell.centroid());
     return contactLineNormal(cell, *ibObj);

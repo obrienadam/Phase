@@ -23,14 +23,17 @@ void Celeste::CelesteStencil::init(bool weighted)
 
     reset();
 
-    for (const CellLink &link: cell.cellLinks())
+    for(const InteriorLink& nb: cell.neighbours())
     {
-        cells_.push_back(std::cref(link.cell()));
+        cells_.push_back(std::cref(nb.cell()));
 
-        if (!cell.boundaries().empty())
-            for (const BoundaryLink &bd: link.cell().boundaries())
+        if(!cell.boundaries().empty())
+            for(const BoundaryLink& bd: nb.cell().boundaries())
                 faces_.push_back(std::cref(bd.face()));
     }
+
+    for(const CellLink& dg: cell.diagonals())
+        cells_.push_back(std::cref(dg.cell()));
 
     for (const BoundaryLink &bd: cell.boundaries())
         faces_.push_back(std::cref(bd.face()));
@@ -47,52 +50,33 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
 
     reset();
 
-    auto isIbCell = [&ib](const Cell &cell) -> std::shared_ptr<const ImmersedBoundaryObject> {
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            auto ibObj = ib.ibObj(nb.cell().centroid());
-            if (ibObj)
-                return ibObj;
-        }
-        return nullptr;
-    };
-
-    auto ibObj = isIbCell(cell);
-
-    if (!ibObj)
+    for(const InteriorLink& nb: cell.neighbours())
     {
-        for (const CellLink &link: cell.cellLinks())
-        {
-            if (!ib.ibObj(link.cell().centroid()))
-            {
-                cells_.push_back(std::cref(link.cell()));
+        auto ibObj = ib.ibObj(nb.cell().centroid());
 
-                if (!cell.boundaries().empty())
-                    for (const BoundaryLink &bd: link.cell().boundaries())
-                        faces_.push_back(std::cref(bd.face()));
-            }
+        if(!ibObj)
+        {
+            cells_.push_back(std::cref(nb.cell()));
+
+            if (!cell.boundaries().empty())
+                for (const BoundaryLink &bd: nb.cell().boundaries())
+                    faces_.push_back(std::cref(bd.face()));
+        }
+        else
+        {
+            compatPts_.push_back(std::make_pair(ibObj, nb.cell().centroid()));
         }
     }
-    else
+
+    for(const CellLink& dg: cell.diagonals())
     {
-        for (const CellLink &link: cell.cellLinks())
+        auto ibObj = ib.ibObj(dg.cell().centroid());
+
+        if(!ibObj)
+            cells_.push_back(std::cref(dg.cell()));
+        else
         {
-            if (!ib.ibObj(link.cell().centroid()))
-            {
-                auto nbIbObj = isIbCell(link.cell());
-
-                if (nbIbObj)
-                {
-                    auto ibObjPt = ib.nearestIntersect(link.cell().centroid());
-                    compatPts_.push_back(std::make_pair(ibObjPt.first, link.cell()));
-                }
-
-                cells_.push_back(link.cell());
-
-                if (!cell.boundaries().empty())
-                    for (const BoundaryLink &bd: link.cell().boundaries())
-                        faces_.push_back(std::cref(bd.face()));
-            }
+            compatPts_.push_back(std::make_pair(ibObj, dg.cell().centroid()));
         }
     }
 
@@ -120,7 +104,6 @@ Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
     {
         b(i++, 0) = (phi(kCell) - phi(cell)) / (weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.);
     }
-
 
     for (const Face &face: faces_)
     {
@@ -187,7 +170,7 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
 
     for (const auto &compatPt: compatPts_)
     {
-        Vector2D dn = fst.contactLineNormal(compatPt.second, *compatPt.first.lock()) - n(cell);
+        Vector2D dn = fst.contactLineNormal(cell, compatPt.second, *compatPt.first.lock()) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
@@ -232,7 +215,7 @@ void Celeste::CelesteStencil::initMatrix()
 
     for (const auto &compatPt: compatPts_)
     {
-        Vector2D r = compatPt.first.lock()->nearestIntersect(compatPt.second.get().centroid()) - cell.centroid();
+        Vector2D r = compatPt.second - cell.centroid();
 
         if (weighted_) r /= r.magSqr();
 

@@ -14,7 +14,7 @@ class ContactLineTracker
 
 private:
 
-    const Patch& patch_;
+    const Patch& finpatch_;
 
     std::vector<Scalar> time_;
     std::vector<Point2D> location_;

@@ -97,15 +97,24 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
     if (ghostCellInStencil)
     {
         Vector2D n = cl.unitVec();
-        auto xn = StaticMatrix<1, 4>({bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}) * A_;
+        auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * A_;
+        auto xn = StaticMatrix<1, 4>({{bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}}) * A_;
+
+        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
         neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
     }
     else
     {
         cells_.push_back(cell_);
-        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_;
+
+        auto xd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / 2.;
+        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / -length();
+
+        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
+        dirichletCoeffs_.push_back(1. / 2.);
+
         neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-        neumannCoeffs_.push_back(-1.);
+        neumannCoeffs_.push_back(1. / length());
     }
 }
 
@@ -162,7 +171,37 @@ Scalar GhostCellStencil::bpValue(const ScalarFiniteVolumeField &field) const
                                         field(cells[3])
                                 });
 
-    return (x * A_ * b)(0, 0);
+    return (x * A * b)(0, 0);
+}
+
+Vector2D GhostCellStencil::bpValue(const VectorFiniteVolumeField &field) const
+{
+    auto cells = field.grid().findNearestNode(bp_).cells();
+
+    Point2D x1 = cells[0].get().centroid();
+    Point2D x2 = cells[1].get().centroid();
+    Point2D x3 = cells[2].get().centroid();
+    Point2D x4 = cells[3].get().centroid();
+
+    auto A = inverse<4, 4>({
+                                   x1.x * x1.y, x1.x, x1.y, 1.,
+                                   x2.x * x2.y, x2.x, x2.y, 1.,
+                                   x3.x * x3.y, x3.x, x3.y, 1.,
+                                   x4.x * x4.y, x4.x, x4.y, 1.,
+                           });
+
+    auto x = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.});
+
+    auto b = StaticMatrix<4, 2>({
+                                        field(cells[0]).x, field(cells[0]).y,
+                                        field(cells[1]).x, field(cells[1]).y,
+                                        field(cells[2]).x, field(cells[2]).y,
+                                        field(cells[3]).x, field(cells[3]).y
+                                });
+
+    StaticMatrix<1, 2> u = x * A * b;
+
+    return Vector2D(u(0, 0), u(0, 1));
 }
 
 Vector2D GhostCellStencil::ipGrad(const ScalarFiniteVolumeField &field) const

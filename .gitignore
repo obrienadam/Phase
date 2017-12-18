@@ -98,6 +98,8 @@ Thumbs.db
 # Build directories
 bin
 lib
+cmake-build-*
+cmake-build-*
 
 # Misc
 *.mp4
