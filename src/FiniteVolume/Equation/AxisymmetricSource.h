@@ -4,9 +4,12 @@
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 
-namespace axi::src
+namespace axi
 {
-    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &u);
+    namespace src
+    {
+        ScalarFiniteVolumeField div(const VectorFiniteVolumeField &u);
+    }
 }
 
 #endif

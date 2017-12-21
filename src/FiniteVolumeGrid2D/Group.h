@@ -13,6 +13,9 @@ class Group
 {
 public:
 
+    typedef typename std::vector<Ref<const T> >::iterator iterator;
+    typedef typename std::vector<Ref<const T> >::const_iterator const_iterator;
+
     Group(const std::string &name = "N/A") : name_(name)
     {}
 
@@ -78,16 +81,16 @@ public:
     const T &nearestItem(const Shape2D& shape) const;
 
     //- Iterators
-    typename std::vector<Ref<const T> >::iterator begin()
+    iterator begin()
     { return items_.begin(); }
 
-    typename std::vector<Ref<const T> >::iterator end()
+    iterator end()
     { return items_.end(); }
 
-    typename std::vector<Ref<const T> >::const_iterator begin() const
+    const_iterator begin() const
     { return items_.begin(); }
 
-    typename std::vector<Ref<const T> >::const_iterator end() const
+    const_iterator end() const
     { return items_.end(); }
 
     bool isInGroup(const T &item) const;

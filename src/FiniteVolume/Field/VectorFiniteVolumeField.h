@@ -15,9 +15,43 @@ template<>
 Vector VectorFiniteVolumeField::vectorize() const;
 
 template<>
+template<class UnaryPredicate>
 void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                                          const FiniteVolumeField<Scalar> &faceWeight,
-                                         const CellGroup& cells);
+                                         const CellGroup &cells,
+                                         const UnaryPredicate &p)
+{
+    auto &self = *this;
+
+    for (const Cell &cell: cells)
+    {
+        if(!p(cell))
+            continue;
+
+        Vector2D sumSf(0., 0.), tmp(0., 0.);
+
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            Vector2D sf = nb.outwardNorm().abs();
+            tmp += pointwise(self(nb.face()), sf) / faceWeight(nb.face());
+            sumSf += sf;
+        }
+
+        for (const BoundaryLink &bd: cell.boundaries())
+        {
+            Vector2D sf = bd.outwardNorm().abs();
+            tmp += pointwise(self(bd.face()), sf) / faceWeight(bd.face());
+            sumSf += sf;
+        }
+
+        self(cell) = cellWeight(cell) * Vector2D(tmp.x / sumSf.x, tmp.y / sumSf.y);
+    }
+}
+
+template<>
+void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
+                                         const FiniteVolumeField<Scalar> &faceWeight,
+                                         const CellGroup &cells);
 
 template<>
 void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input);

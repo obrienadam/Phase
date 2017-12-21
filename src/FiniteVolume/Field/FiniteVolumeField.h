@@ -41,6 +41,8 @@ public:
 
     void fillInterior(const T &val);
 
+    void assign(const FiniteVolumeField<T>& field);
+
     template<class TFunc>
     void computeCells(const TFunc &fcn)
     {
@@ -68,6 +70,12 @@ public:
         for (const Face &face: grid().boundaryFaces())
             (*this)(face) = fcn(face);
     }
+
+    template<class UnaryPredicate>
+    void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
+                    const FiniteVolumeField<Scalar> &faceWeight,
+                    const CellGroup &cells,
+                    const UnaryPredicate& p);
 
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,
@@ -237,6 +245,8 @@ protected:
     void setBoundaryTypes(const Input &input);
 
     void setBoundaryRefValues(const Input &input);
+
+    //- Data members
 
     std::map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
 

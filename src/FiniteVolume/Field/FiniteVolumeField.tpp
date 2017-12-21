@@ -70,6 +70,17 @@ void FiniteVolumeField<T>::fillInterior(const T &val)
 }
 
 template<class T>
+void FiniteVolumeField<T>::assign(const FiniteVolumeField<T>& field)
+{
+    this->assign(field.begin(), field.end());
+    faces_.assign(field.faces_.begin(), field.faces_.end());
+    nodes_.assign(field.nodes_.begin(), field.nodes_.end());
+    patchBoundaries_ = field.patchBoundaries_;
+    grid_ = field.grid_;
+    cellGroup_ = field.cellGroup_;
+}
+
+template<class T>
 void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 {
     patchBoundaries_ = other.patchBoundaries_;
@@ -129,11 +140,20 @@ void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::funct
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
-    prevTimeStep->second.clearHistory();
-
-    previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
-    previousTimeSteps_.resize(nPreviousFields);
+    if(previousTimeSteps_.size() == nPreviousFields)
+    {
+        auto prevTimeStep = previousTimeSteps_.back();
+        prevTimeStep->second = *this;
+        prevTimeStep->second.clearHistory();
+        previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
+        previousTimeSteps_.pop_back();
+    }
+    else
+    {
+        auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
+        prevTimeStep->second.clearHistory();
+        previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
+    }
 
     return previousTimeSteps_.front()->second;
 }

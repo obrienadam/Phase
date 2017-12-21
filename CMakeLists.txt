@@ -7,14 +7,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG -fopenmp")
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
         message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
     endif ()
 
     # Look for OpenBLAS by default (includes CBLAS)
-    set(BLA_VENDOR OpenBLAS)
+    set(BLA_VENDOR "OpenBLAS")
 
     # Check for lapacke/cblas availability
     find_path(OPENBLAS_INCLUDE_DIRS NAMES "lapacke.h" "cblas.h" PATH_SUFFIXES "openblas")

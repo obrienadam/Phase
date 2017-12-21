@@ -297,16 +297,6 @@ void ImmersedBoundary::initCellZones(CellZone &zone)
     solver_.grid().computeGlobalOrdering();
 }
 
-void ImmersedBoundary::clearCellZones()
-{
-    for (auto &ibObj: ibObjs_)
-    {
-        ibObj->clear();
-    }
-
-    solver_.grid().computeGlobalOrdering();
-}
-
 CellGroup ImmersedBoundary::ibCells() const
 {
     CellGroup ibCellGroup;

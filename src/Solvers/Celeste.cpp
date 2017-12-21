@@ -61,19 +61,13 @@ void Celeste::compute()
 
 void Celeste::compute(const ImmersedBoundary &ib)
 {
-    computeGradGammaTilde();
-    computeInterfaceNormals();
-    computeCurvature(ib);
+    computeFaces(ib);
 
     auto &ft = *this;
     const auto &kappa = *kappa_;
 
-    ft.fill(Vector2D(0, 0));
-
     for (const Cell &cell: grid_->cellZone("fluid"))
         ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
-
-    ft.interpolateFaces();
 }
 
 void Celeste::constructMatrices()

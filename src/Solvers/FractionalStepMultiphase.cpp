@@ -160,6 +160,8 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
     for (const Cell &cell: fluid_)
         u(cell) -= timeStep / rho(cell) * (gradP(cell) - ft(cell) + ft0(cell) - sg(cell) + sg0(cell));
 
+    grid_->sendMessages(u);
+
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho(face) * gradP(face);
 
@@ -224,7 +226,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         return (1. - g) * rho1_ + g * rho2_;
     });
 
-    grid_->sendMessages(rho); //- For correct gradient computation
+    //grid_->sendMessages(rho); //- For correct gradient computation
 
     //- Update the gravitational source term
     gradRho.computeFaces();
@@ -248,7 +250,17 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeFaces(ib_);
-    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
-    ft.faceToCell(rho, rho, fluid_);
+    ft.compute(ib_);
+
+    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
+    auto p = [this](const Cell& cell)
+    {
+        for(const CellLink& nb: cell.neighbours())
+            if(ib_.ibObj(nb.cell().centroid()))
+                return false;
+        return true;
+    };
+
+    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_, p);
+    ft.faceToCell(rho, rho, fluid_, p);
 }

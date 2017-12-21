@@ -27,8 +27,6 @@ public:
     //- Cell zones
     void initCellZones(CellZone &zone);
 
-    void clearCellZones();
-
     const CellZone &zone() const
     { return *zone_; }
 
