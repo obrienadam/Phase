@@ -224,6 +224,12 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
     grid_->sendMessages(kappa);
     kappa.interpolateFaces();
+
+    for(const Face& face: grid_->interiorFaces())
+    {
+        if(ib.ibObj(face.lCell().centroid()) || ib.ibObj(face.rCell().centroid()))
+            kappa(face) = 0;
+    }
 }
 
 void Celeste::updateStencils(const ImmersedBoundary &ib)
