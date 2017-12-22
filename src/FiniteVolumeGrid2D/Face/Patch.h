@@ -18,7 +18,11 @@ public:
 
     void add(const Face &face);
 
+    void add(const FaceGroup& group);
+
     void remove(const Face &face);
+
+    void remove(const FaceGroup& faces);
 
     void clear();
 

@@ -24,7 +24,7 @@ Vector2D::Vector2D(std::string vecStr)
 
 Scalar Vector2D::mag() const
 {
-    return sqrt(x * x + y * y);
+    return std::sqrt(x * x + y * y);
 }
 
 Scalar Vector2D::magSqr() const
@@ -39,8 +39,7 @@ Vector2D Vector2D::abs() const
 
 Vector2D Vector2D::unitVec() const
 {
-    Scalar invMag = 1. / mag();
-    return Vector2D(x * invMag, y * invMag);
+    return *this / mag();
 }
 
 Vector2D Vector2D::normalVec() const

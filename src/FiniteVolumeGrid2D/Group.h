@@ -33,16 +33,18 @@ public:
     { return items_.empty(); }
 
     //- Data access
-    std::vector<Ref<const T> > items() const
+    const std::vector<Ref<const T> >& items() const
     { return items_; }
 
     //- Adding/removing items
     virtual void add(const T &item);
 
+    virtual void add(const Group<T> &other);
+
     template<class T2>
-    void addAll(const T2& container)
+    void addAll(const T2 &container)
     {
-        for(const T& item: container)
+        for (const T &item: container)
             add(item);
     }
 
@@ -70,15 +72,15 @@ public:
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;
 
-    std::vector<Ref<const T> > itemsCoveredBy(const Shape2D& shape) const;
+    std::vector<Ref<const T> > itemsCoveredBy(const Shape2D &shape) const;
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
-    std::vector<Ref<const T> > nearestItems(const Shape2D& shape, size_t k) const;
+    std::vector<Ref<const T> > nearestItems(const Shape2D &shape, size_t k) const;
 
     const T &nearestItem(const Point2D &pt) const;
 
-    const T &nearestItem(const Shape2D& shape) const;
+    const T &nearestItem(const Shape2D &shape) const;
 
     //- Iterators
     iterator begin()
@@ -107,7 +109,7 @@ public:
 protected:
 
     typedef std::pair<Point2D, Label> Value;
-    typedef boost::geometry::index::rtree<Value, boost::geometry::index::quadratic<16> > Rtree;
+    typedef boost::geometry::index::rtree<Value, boost::geometry::index::quadratic<8, 1> > Rtree;
 
     std::vector<Ref<const T> > getRefs(const std::vector<Value> &vals) const;
 

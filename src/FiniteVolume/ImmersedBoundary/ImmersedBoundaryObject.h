@@ -9,6 +9,9 @@ class ImmersedBoundaryObject
 {
 public:
 
+    typedef typename std::vector<std::shared_ptr<ImmersedBoundaryObject>>::iterator iterator;
+    typedef typename std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator const_iterator;
+
     enum Type
     {
         GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER
@@ -101,6 +104,7 @@ public:
     std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
 
+    //- Boundary methods
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
     void addBoundaryType(const std::string &name, const std::string &boundaryType);
@@ -200,9 +204,6 @@ public:
     virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
     { throw Exception("ImmersedBoundaryObject", "pressureBcs", "not implemented."); }
 
-    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta)
-    { return bcs(gamma); }
-
     virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
     { return bcs(gamma); }
 
@@ -230,9 +231,9 @@ protected:
 
     std::shared_ptr<Shape2D> shapePtr_;
 
-    std::map<std::string, BoundaryType> boundaryTypes_;
-    std::map<std::string, Scalar> boundaryRefScalars_;
-    std::map<std::string, Vector2D> boundaryRefVectors_;
+    std::unordered_map<std::string, BoundaryType> boundaryTypes_;
+    std::unordered_map<std::string, Scalar> boundaryRefScalars_;
+    std::unordered_map<std::string, Vector2D> boundaryRefVectors_;
 
     Vector2D force_;
     Scalar torque_;

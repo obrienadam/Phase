@@ -18,6 +18,16 @@ void Group<T>::add(const T &item)
     }
 }
 
+template <class T>
+void Group<T>::add(const Group<T> &other)
+{
+    itemSet_.reserve(size() + other.size());
+    items_.reserve(size() + other.size());
+
+    for(const T& item: other.items_)
+        add(item);
+}
+
 template<class T>
 void Group<T>::remove(const T &item)
 {
@@ -26,7 +36,7 @@ void Group<T>::remove(const T &item)
     if (entry != itemSet_.end())
     {
         itemSet_.erase(entry);
-        items_.erase(std::remove_if(items_.begin(), items_.end(), [&item](const T &i) { return item.id() == i.id(); }));
+        items_.erase(std::find_if(items_.begin(), items_.end(), [&item](const T &arg) { return item.id() == arg.id(); }));
         rTree_.remove(Value(item.centroid(), item.id()));
     }
 }
@@ -34,8 +44,15 @@ void Group<T>::remove(const T &item)
 template<class T>
 void Group<T>::remove(const Group<T> &other)
 {
-    for (const T &item: other)
-        remove(item);
+    items_.erase(std::remove_if(items_.begin(), items_.end(), [&other](const T &item) {
+        return other.itemSet_.find(item.id()) != other.itemSet_.end();
+    }), items_.end());
+
+    for(const T& item: other.items_)
+    {
+        itemSet_.erase(item.id());
+        rTree_.remove(Value(item.centroid(), item.id()));
+    }
 }
 
 template<class T>

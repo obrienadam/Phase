@@ -91,38 +91,7 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
         switch (ibObj->type())
         {
             case ImmersedBoundaryObject::GHOST_CELL:
-                for (const GhostCellStencil &st: std::static_pointer_cast<GhostCellImmersedBoundaryObject>(
-                        ibObj)->stencils())
-                {
-                    Vector2D wn = -ibObj->nearestEdgeNormal(st.boundaryPoint());
-
-                    Scalar theta = getTheta(*ibObj);
-
-                    Ray2D r1 = Ray2D(st.cell().centroid(), wn.rotate(M_PI_2 - theta));
-                    Ray2D r2 = Ray2D(st.cell().centroid(), wn.rotate(theta - M_PI_2));
-
-                    GhostCellStencil m1(st.cell(), ibObj->shape().intersections(r1)[0], r1.r(), grid());
-                    GhostCellStencil m2(st.cell(), ibObj->shape().intersections(r2)[0], r2.r(), grid());
-
-                    if (theta < M_PI_2)
-                    {
-                        if (m1.ipValue(gamma_) > m2.ipValue(gamma_))
-                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
-                        else
-                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
-                    }
-                    else
-                    {
-                        if (m1.ipValue(gamma_) < m2.ipValue(gamma_))
-                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
-                        else
-                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
-                    }
-                }
-
-                for (const Cell &cell: ibObj->solidCells())
-                    eqn.add(cell, cell, 1.);
-
+                eqn += ibObj->contactLineBcs(gamma_, getTheta(*ibObj));
                 break;
             case ImmersedBoundaryObject::QUADRATIC:
                 for (const Cell &cell: ibObj->ibCells())
@@ -227,8 +196,14 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
 
     for(const Face& face: grid_->interiorFaces())
     {
-        if(ib.ibObj(face.lCell().centroid()) || ib.ibObj(face.rCell().centroid()))
-            kappa(face) = 0;
+        if(ib.ibObj(face.lCell().centroid()))
+        {
+            kappa(face) = kappa(face.rCell());
+        }
+        else if(ib.ibObj(face.rCell().centroid()))
+        {
+            kappa(face) = kappa(face.lCell());
+        }
     }
 }
 

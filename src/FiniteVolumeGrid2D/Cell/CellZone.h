@@ -18,8 +18,6 @@ public:
 
     void add(const CellGroup& cells);
 
-    void add(const CellZone& cells);
-
     template <class const_iterator>
     void add(const_iterator begin, const_iterator end)
     {
@@ -28,6 +26,8 @@ public:
     }
 
     void remove(const Cell &cell);
+
+    void remove(const CellGroup& cells);
 
     void clear();
 

@@ -136,7 +136,8 @@ Scalar FractionalStepIncrementalMultiphase::solveUEqn(Scalar timeStep)
     gradP.faceToCell(rho, rho.oldField(0), fluid_);
 
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u) == fv::laplacian(mu, u, 0.5) - src::src(gradP - sg0 - ft0, fluid_));
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u)
+             == fv::laplacian(mu, u, 0.5) - src::src(gradP - sg0 - ft0, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
@@ -201,6 +202,8 @@ void FractionalStepIncrementalMultiphase::correctVelocity(Scalar timeStep)
                                            - sg(cell) + sg0(cell)
                                            - ft(cell) + ft0(cell));
 
+    grid_->sendMessages(u);
+
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho(face) * (gradP(face) - gradP0(face));
 
@@ -218,8 +221,6 @@ void FractionalStepIncrementalMultiphase::correctVelocity(Scalar timeStep)
                     u(f) = u(f.lCell()) - dot(u(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
                 break;
         }
-
-    grid_->sendMessages(u);
 }
 
 void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
@@ -260,7 +261,17 @@ void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeFaces(ib_);
-    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
-    ft.faceToCell(rho, rho, fluid_);
+    ft.compute(ib_);
+
+    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
+    auto p = [this](const Cell& cell)
+    {
+        for(const CellLink& nb: cell.neighbours())
+            if(ib_.ibObj(nb.cell().centroid()))
+                return false;
+        return true;
+    };
+
+    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_, p);
+    ft.faceToCell(rho, rho, fluid_, p);
 }

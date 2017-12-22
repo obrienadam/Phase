@@ -93,6 +93,12 @@ int Communicator::broadcast(int root, int integer) const
     return integer;
 }
 
+Vector2D Communicator::broadcast(int root, Vector2D vec) const
+{
+    MPI_Bcast(&vec, 1, MPI_VECTOR2D_, root, comm_);
+    return vec;
+}
+
 //- Communication
 
 void Communicator::broadcast(int root, std::vector<int> &ints) const
@@ -183,8 +189,8 @@ std::vector<double> Communicator::gatherv(int root, const std::vector<double> &v
 {
     std::vector<int> sizes = gather(root, (int)vals.size());
     std::vector<double> result(std::accumulate(sizes.begin(), sizes.end(), 0));
-    std::vector<int> displs(1, 0);
-    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+    std::vector<int> displs(sizes.size(), 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
 
     MPI_Gatherv(vals.data(), vals.size(), MPI_DOUBLE, result.data(), sizes.data(), displs.data(), MPI_DOUBLE, root, comm_);
     return result;
@@ -194,8 +200,8 @@ std::vector<Vector2D> Communicator::gatherv(int root, const std::vector<Vector2D
 {
     std::vector<int> sizes = gather(root, (int)vals.size());
     std::vector<Vector2D> result(std::accumulate(sizes.begin(), sizes.end(), 0));
-    std::vector<int> displs(1, 0);
-    std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
+    std::vector<int> displs(sizes.size(), 0);
+    std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
 
     MPI_Gatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_, root, comm_);
     return result;

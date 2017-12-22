@@ -5,7 +5,7 @@
 #include "GhostCellStencil.h"
 #include "Celeste.h"
 
-class GhostCellImmersedBoundaryObject: public ImmersedBoundaryObject
+class GhostCellImmersedBoundaryObject : public ImmersedBoundaryObject
 {
 public:
 
@@ -18,24 +18,43 @@ public:
 
     void updateCells();
 
-    Equation<Scalar> bcs(ScalarFiniteVolumeField& field) const;
+    void updateContactLineStencils(Scalar theta);
 
-    Equation<Vector2D> bcs(VectorFiniteVolumeField& field) const;
+    Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField& u) const;
+    Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
 
-    Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField& p) const;
+    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField& gamma, Scalar theta) const;
+    Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const;
 
-    const std::vector<GhostCellStencil>& stencils() const
+    Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const;
+
+    void computeForce(Scalar rho,
+                      Scalar mu,
+                      const VectorFiniteVolumeField &u,
+                      const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.));
+
+    void computeForce(const ScalarFiniteVolumeField &rho,
+                      const ScalarFiniteVolumeField &mu,
+                      const VectorFiniteVolumeField &u,
+                      const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.));
+
+
+    const std::vector<GhostCellStencil> &stencils() const
     { return stencils_; }
+
+    const std::vector<GhostCellStencil> &contactLineStencils() const
+    { return contactLineStencils_; }
 
 protected:
 
     void constructStencils();
 
     std::vector<GhostCellStencil> stencils_;
+    std::vector<GhostCellStencil> contactLineStencils_;
 };
 
 #endif

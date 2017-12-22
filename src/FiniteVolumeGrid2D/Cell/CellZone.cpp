@@ -4,8 +4,8 @@
 
 CellZone::CellZone(const std::string &name,
                    const std::shared_ptr<ZoneRegistry> &registry)
-    :
-      Group(name)
+        :
+        Group(name)
 {
     registry_ = registry;
 }
@@ -31,26 +31,31 @@ void CellZone::add(const Cell &cell)
 
 void CellZone::add(const CellGroup &cells)
 {
-    for(const Cell& cell: cells)
-        add(cell);
-}
-
-void CellZone::add(const CellZone& cells)
-{
     //- Must construct a temporary container since moving cells will modify the original
     //  container
+    items_.reserve(size() + cells.size());
+    itemSet_.reserve(size() + cells.size());
 
-    for(const Cell &cell: cells.items())
+    for (const Cell &cell: std::vector<Ref<const Cell>>(cells.items()))
         add(cell);
 }
 
 void CellZone::remove(const Cell &cell)
 {
-    if(isInGroup(cell))
+    if (isInGroup(cell))
     {
         registry_->erase(cell.id());
         CellGroup::remove(cell);
     }
+}
+
+void CellZone::remove(const CellGroup& cells)
+{
+    for(const Cell& cell: cells)
+        if(isInGroup(cell))
+            registry_->erase(cell.id());
+
+    CellGroup::remove(cells);
 }
 
 void CellZone::clear()

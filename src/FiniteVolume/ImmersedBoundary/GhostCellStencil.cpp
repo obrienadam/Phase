@@ -7,8 +7,9 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
         :
         ImmersedBoundaryStencil(cell)
 {
-    bp_ = ibObj.shape().nearestIntersect(cell.centroid());
+    bp_ = ibObj.nearestIntersect(cell.centroid());
     ip_ = 2. * bp_ - cell.centroid();
+    nw_ = ibObj.nearestEdgeNormal(bp_).unitVec();
     cells_ = grid.findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
@@ -68,6 +69,7 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
 {
     bp_ = bp;
     ip_ = 2 * bp - cell.centroid();
+    nw_ = (bp_ - ip_).unitVec();
     cells_ = grid.findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
@@ -245,4 +247,34 @@ Vector2D GhostCellStencil::bpGrad(const ScalarFiniteVolumeField &field) const
     auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * A * b;
 
     return Vector2D(x(0, 0), x(1, 0));
+}
+
+Tensor2D GhostCellStencil::bpGrad(const VectorFiniteVolumeField &field) const
+{
+    auto cells = field.grid().findNearestNode(bp_).cells();
+
+    Point2D x1 = cells[0].get().centroid();
+    Point2D x2 = cells[1].get().centroid();
+    Point2D x3 = cells[2].get().centroid();
+    Point2D x4 = cells[3].get().centroid();
+
+    auto A = inverse<4, 4>(
+            {
+                    x1.x * x1.y, x1.x, x1.y, 1.,
+                    x2.x * x2.y, x2.x, x2.y, 1.,
+                    x3.x * x3.y, x3.x, x3.y, 1.,
+                    x4.x * x4.y, x4.x, x4.y, 1.,
+            });
+
+    auto b = StaticMatrix<4, 2>(
+            {
+                    field(cells[0]).x, field(cells[0]).y,
+                    field(cells[1]).x, field(cells[1]).y,
+                    field(cells[2]).x, field(cells[2]).y,
+                    field(cells[3]).x, field(cells[3]).y
+            });
+
+    auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * A * b;
+
+    return Tensor2D(x(0, 0), x(1, 0), x(1, 0), x(1, 1));
 }

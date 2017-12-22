@@ -21,6 +21,15 @@ void Patch::add(const Face &face)
     }
 }
 
+void Patch::add(const FaceGroup& group)
+{
+    items_.reserve(size() + group.size());
+    itemSet_.reserve(size() + group.size());
+
+    for(const Face& item: std::vector<Ref<const Face>>(group.items()))
+        add(item);
+}
+
 void Patch::remove(const Face &face)
 {
     if(isInGroup(face))
@@ -28,6 +37,15 @@ void Patch::remove(const Face &face)
         registry_->erase(face.id());
         FaceGroup::remove(face);
     }
+}
+
+void Patch::remove(const FaceGroup& faces)
+{
+    for(const Face& face: faces)
+        if(isInGroup(face))
+            registry_->erase(face.id());
+
+    FaceGroup::remove(faces);
 }
 
 void Patch::clear()

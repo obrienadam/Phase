@@ -30,11 +30,13 @@ public:
     const Point2D &imagePoint() const
     { return ip_; }
 
+    const Vector2D& wallNormal() const
+    {
+        return nw_;
+    }
+
     const std::vector<Ref<const Cell>>& cells() const
     { return cells_; }
-
-    Vector2D unitNormal() const
-    { return (bp_ - ip_).unitVec(); }
 
     Scalar length() const
     { return (ip_ - cell().centroid()).mag(); }
@@ -53,10 +55,12 @@ public:
 
     Vector2D bpGrad(const ScalarFiniteVolumeField& field) const;
 
+    Tensor2D bpGrad(const VectorFiniteVolumeField& field) const;
+
 protected:
 
     StaticMatrix<4, 4> A_;
-    Point2D ip_, bp_;
+    Point2D ip_, bp_, nw_;
 };
 
 #endif
