@@ -23,13 +23,6 @@ Polygon::Polygon(const boost::geometry::model::ring<Point2D, false, true> &boost
     init();
 }
 
-Polygon Polygon::convexHull() const
-{
-    boost::geometry::model::ring<Point2D, false, true> newPoly;
-    boost::geometry::convex_hull(poly_, newPoly);
-    return Polygon(newPoly);
-}
-
 Scalar Polygon::perimeter() const
 {
     return boost::geometry::perimeter(poly_);
@@ -284,29 +277,30 @@ void Polygon::init()
 }
 
 //- External functions
-Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB)
+std::vector<Polygon> intersection(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector<boost::geometry::model::ring<Point2D, false, true> > pgn;
+    std::vector<boost::geometry::model::ring<Point2D, false, true> > boostPolygons;
+    boost::geometry::intersection(pgnA.boostRing(), pgnB.boostRing(), boostPolygons);
+    std::vector<Polygon> polygons(boostPolygons.size());
 
-    boost::geometry::intersection(pgnA.boostRing(), pgnB.boostRing(), pgn);
+    std::transform(boostPolygons.begin(), boostPolygons.end(), polygons.begin(),
+                   [](const boost::geometry::model::ring<Point2D, false, true>& ring) {
+                       return Polygon(ring);
+                   });
 
-    if (pgn.size() == 0)
-        return Polygon();
-    else if (pgn.size() > 1)
-        throw Exception("Polygon", "intersectionPolygon", "there are two polygons!");
-
-    return Polygon(pgn.front());
+    return polygons;
 }
 
-Polygon difference(const Polygon &pgnA, const Polygon &pgnB)
+std::vector<Polygon> difference(const Polygon &pgnA, const Polygon &pgnB)
 {
-    std::vector<boost::geometry::model::ring<Point2D, false, true> > pgn;
-    boost::geometry::difference(pgnA.boostRing(), pgnB.boostRing(), pgn);
+    std::vector<boost::geometry::model::ring<Point2D, false, true> > boostPolygons;
+    boost::geometry::difference(pgnA.boostRing(), pgnB.boostRing(), boostPolygons);
+    std::vector<Polygon> polygons(boostPolygons.size());
 
-    if (pgn.size() == 0)
-        return Polygon();
-    else if (pgn.size() > 1)
-        throw Exception("Polygon", "difference", "there is more than one output polygon!");
+    std::transform(boostPolygons.begin(), boostPolygons.end(), polygons.begin(),
+                   [](const boost::geometry::model::ring<Point2D, false, true>& ring) {
+                       return Polygon(ring);
+                   });
 
-    return Polygon(pgn.front());
+    return polygons;
 }

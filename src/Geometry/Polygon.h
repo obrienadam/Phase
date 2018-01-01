@@ -47,8 +47,6 @@ public:
     Scalar area() const
     { return area_; }
 
-    Polygon convexHull() const;
-
     Scalar momentOfInertia() const
     { throw Exception("Polygon", "momentOfInertia", "not implemented."); }
 
@@ -121,8 +119,8 @@ protected:
 };
 
 //- External functions
-Polygon intersectionPolygon(const Polygon &pgnA, const Polygon &pgnB);
+std::vector<Polygon> intersection(const Polygon &pgnA, const Polygon &pgnB);
 
-Polygon difference(const Polygon &pgnA, const Polygon &pgnB);
+std::vector<Polygon> difference(const Polygon &pgnA, const Polygon &pgnB);
 
 #endif

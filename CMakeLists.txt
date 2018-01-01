@@ -5,7 +5,14 @@ cmake_minimum_required(VERSION 3.6.0)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xhost -DNDEBUG")
+
+    # Look for mkl by default
+    set(BLA_VENDOR Intel10_64lp)
+else ()
     set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
     set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG -fopenmp")
 
@@ -14,7 +21,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     endif ()
 
     # Look for OpenBLAS by default (includes CBLAS)
-    set(BLA_VENDOR "OpenBLAS")
+    set(BLA_VENDOR OpenBLAS)
 
     # Check for lapacke/cblas availability
     find_path(OPENBLAS_INCLUDE_DIRS NAMES "lapacke.h" "cblas.h" PATH_SUFFIXES "openblas")
@@ -23,13 +30,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     endif ()
 
     include_directories(${OPENBLAS_INCLUDE_DIRS})
-
-elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xhost -DNDEBUG")
-
-    # Look for mkl by default
-    set(BLA_VENDOR Intel10_64lp)
 endif ()
 
 # find required packages
