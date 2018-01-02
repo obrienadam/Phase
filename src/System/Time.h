@@ -18,6 +18,8 @@ public:
     void reset();
 
     double elapsedSeconds() const;
+    double elapsedSeconds(const Communicator& comm) const;
+
     std::string elapsedTime() const;
     std::string elapsedCpuTime(const Communicator& comm) const;
 

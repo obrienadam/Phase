@@ -47,6 +47,8 @@ public:
 
     Vector2D broadcast(int root, Vector2D vec) const;
 
+    double broadcast(int root, double val) const;
+
     void broadcast(int root, std::vector<int> &ints) const;
 
     void broadcast(int root, std::vector<unsigned long> &vals) const;

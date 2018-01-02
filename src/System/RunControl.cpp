@@ -3,6 +3,9 @@
 
 void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 {
+    //- Max run time (for easy restart)
+    auto maxWallTime = input.caseInput().get<Scalar>("Solver.maxWallTime", std::numeric_limits<Scalar>::infinity()) * 3600;
+
     //- Time step conditions
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
     Scalar maxCo = input.caseInput().get<Scalar>("Solver.maxCo");
@@ -30,7 +33,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     time_.start();
     for (
             iterNo = 0;
-            time < maxTime;
+            time < maxTime && time_.elapsedSeconds(solver.grid().comm()) < maxWallTime;
             time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
             )
     {
@@ -54,6 +57,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
 
         solver.printf("Time step: %.2e s\n", timeStep);
         solver.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time + timeStep, (time + timeStep) / maxTime * 100);
+        solver.printf("Elapsed time: %s\n", time_.elapsedTime().c_str());
         solver.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds() / (iterNo + 1));
         solver.printf("%s\n", (std::string(96, '-') + "| End of iteration no " + std::to_string(iterNo + 1)).c_str());
     }

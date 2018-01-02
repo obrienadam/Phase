@@ -100,7 +100,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
 
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.) + ib_.bcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.bcs(u)
              == fv::laplacian(mu, u, 0.5) + src::src(ft0 + sg0, fluid_));
 
     Scalar error = uEqn_.solve();
@@ -158,7 +158,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
 
     for (const Cell &cell: fluid_)
-        u(cell) -= timeStep / rho(cell) * (gradP(cell) - ft(cell) + ft0(cell) - sg(cell) + sg0(cell));
+        u(cell) -= timeStep / rho(cell) * (gradP(cell) - ft(cell) - sg(cell) + ft0(cell) + sg0(cell));
 
     grid_->sendMessages(u);
 

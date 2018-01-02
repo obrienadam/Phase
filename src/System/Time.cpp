@@ -22,6 +22,11 @@ double Time::elapsedSeconds() const
     return std::chrono::duration_cast<Seconds>(end_ - start_).count();
 }
 
+double Time::elapsedSeconds(const Communicator& comm) const
+{
+    return comm.broadcast(comm.mainProcNo(), elapsedSeconds());
+}
+
 std::string Time::elapsedTime() const
 {
     auto dur(end_ - start_);

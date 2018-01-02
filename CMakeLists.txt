@@ -35,7 +35,7 @@ endif ()
 # find required packages
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 find_package(MPI REQUIRED)
 find_package(Trilinos REQUIRED COMPONENTS Tpetra Belos MueLu)
 find_package(HDF5 REQUIRED)

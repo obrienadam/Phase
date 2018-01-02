@@ -99,6 +99,12 @@ Vector2D Communicator::broadcast(int root, Vector2D vec) const
     return vec;
 }
 
+double Communicator::broadcast(int root, double val) const
+{
+    MPI_Bcast(&val, 1, MPI_DOUBLE, root, comm_);
+    return val;
+}
+
 //- Communication
 
 void Communicator::broadcast(int root, std::vector<int> &ints) const
