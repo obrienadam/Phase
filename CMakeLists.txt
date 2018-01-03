@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xhost -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xHost -DNDEBUG")
 
     # Look for mkl by default
     set(BLA_VENDOR Intel10_64lp)
