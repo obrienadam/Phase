@@ -8,11 +8,6 @@
 typedef FiniteVolumeField<Vector2D> VectorFiniteVolumeField;
 
 //- Specializations
-template<>
-VectorFiniteVolumeField &VectorFiniteVolumeField::operator=(const Vector &rhs);
-
-template<>
-Vector VectorFiniteVolumeField::vectorize() const;
 
 template<>
 template<class UnaryPredicate>

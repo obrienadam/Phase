@@ -7,14 +7,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -qopenmp -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-qopenmp -O3 -xHost -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -xHost")
 
     # Look for mkl by default
     set(BLA_VENDOR Intel10_64lp)
 else ()
-    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-reorder -Wno-sign-compare -Wno-switch -fopenmp -O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-reorder -Wno-sign-compare -Wno-switch -O3 -march=native -DNDEBUG -fopenmp")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-reorder -Wno-sign-compare -Wno-switch -march=native")
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
         message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
@@ -37,8 +35,14 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 find_package(MPI REQUIRED)
-find_package(Trilinos REQUIRED COMPONENTS Tpetra Belos MueLu)
+find_package(Trilinos REQUIRED COMPONENTS Xpetra Tpetra Belos MueLu)
 find_package(HDF5 REQUIRED)
+find_package(OpenMP)
+
+if (OPENMP_FOUND)
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 # Compiler configuration
 set(CMAKE_CXX_STANDARD 11)

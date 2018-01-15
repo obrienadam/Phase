@@ -9,6 +9,7 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
         nodeIds_(nodeIds)
 {
     std::vector<Point2D> vertices;
+    vertices.reserve(nodeIds.size());
 
     for (Label id: nodeIds_)
         vertices.push_back(nodes_[id]);

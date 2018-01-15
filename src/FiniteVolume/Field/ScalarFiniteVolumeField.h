@@ -7,9 +7,6 @@ typedef FiniteVolumeField<Scalar> ScalarFiniteVolumeField;
 
 //- Specializations
 template<>
-ScalarFiniteVolumeField &ScalarFiniteVolumeField::operator=(const Vector &rhs);
-
-template<>
 void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input);
 
 //- External

@@ -14,7 +14,6 @@ Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type ty
     centroid_ = 0.5 * (lNode() + rNode());
     tangent_ = rNode() - lNode();
     normal_ = tangent_.normalVec();
-
     id_ = grid.faces().size();
 }
 

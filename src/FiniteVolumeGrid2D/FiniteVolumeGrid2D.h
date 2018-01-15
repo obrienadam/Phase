@@ -41,15 +41,6 @@ public:
     Size nCells() const
     { return cells_.size(); }
 
-    Size nFaces() const
-    { return faces_.size(); }
-
-    Size nLocalActiveCells() const
-    { return localActiveCells_.size(); }
-
-    Size nActiveCellsGlobal() const
-    { return nActiveCellsGlobal_; }
-
     std::string gridInfo() const;
 
     //- Create grid entities
@@ -212,6 +203,8 @@ public:
 
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
 
+    std::unordered_map<std::string, std::vector<int>> patchToNodeMap() const;
+
     void partition(const Input &input, std::shared_ptr<Communicator> comm);
 
     template<class T>
@@ -219,11 +212,6 @@ public:
 
     template<class T>
     void sendMessages(std::vector<T> &data, Size nSets) const;
-
-    //- Active cell ordering, required for lineary algebra!
-    void computeGlobalOrdering();
-
-    void computeParMetisGlobalOrdering();
 
     //- Misc
     const BoundingBox &boundingBox() const
@@ -241,12 +229,10 @@ protected:
 
     //- Node related data
     std::vector<Node> nodes_;
-    NodeGroup interiorNodes_;
-    NodeGroup boundaryNodes_;
+    NodeGroup interiorNodes_, boundaryNodes_, nodeGroup_;
 
     //- Cell related data
     std::vector<Cell> cells_;
-    Size nActiveCellsGlobal_;
 
     //- Local cell zones
     CellZone localActiveCells_, localInactiveCells_;
@@ -269,8 +255,7 @@ protected:
     std::map<std::pair<Label, Label>, Label> faceDirectory_; // A directory that can find a face given the two node ids
 
     //- Interior and boundary face data structures
-    FaceGroup interiorFaces_;
-    FaceGroup boundaryFaces_;
+    FaceGroup interiorFaces_, boundaryFaces_;
 
     //- User defined face groups and patches
     std::shared_ptr<Patch::PatchRegistry> patchRegistry_;
@@ -278,9 +263,6 @@ protected:
     std::unordered_map<std::string, Patch> patches_;
 
     BoundingBox bBox_;
-
-    //- For node searches
-    Group<Node> nodeGroup_;
 };
 
 #include "FiniteVolumeGrid2D.tpp"

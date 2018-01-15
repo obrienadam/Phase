@@ -7,16 +7,16 @@
 class Vector : public std::vector<Scalar>
 {
 public:
-    Vector(size_t size = 0, Scalar val = 0.);
+    Vector(Size size = 0, Scalar val = 0.);
 
     Vector(const Vector &rhs) = default;
 
     Vector(Vector &&rhs) = default;
 
-    Scalar &operator()(size_t i)
+    Scalar &operator()(Index i)
     { return std::vector<Scalar>::operator[](i); }
 
-    const Scalar &operator()(size_t i) const
+    const Scalar &operator()(Index i) const
     { return std::vector<Scalar>::operator[](i); }
 
     Vector &operator=(const Vector &rhs) = default;
@@ -31,7 +31,8 @@ public:
 
     Vector operator-() const;
 
-    void zero() { std::fill(begin(), end(), 0.); }
+    void zero()
+    { std::fill(begin(), end(), 0.); }
 };
 
 Vector operator+(Vector lhs, const Vector &rhs);

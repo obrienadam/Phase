@@ -2,34 +2,12 @@
 #include "Exception.h"
 
 template<>
-VectorFiniteVolumeField &VectorFiniteVolumeField::operator=(const Vector &rhs)
+void VectorFiniteVolumeField::computeOrdering()
 {
-    auto &self = *this;
-    const size_t nActiveCells = grid().nLocalActiveCells();
-
-    for (const Cell &cell: grid().localActiveCells())
-    {
-        self[cell.id()].x = rhs[cell.index(0)];
-        self[cell.id()].y = rhs[cell.index(0) + nActiveCells];
-    }
-
-    return self;
-}
-
-template<>
-Vector VectorFiniteVolumeField::vectorize() const
-{
-    const auto &self = *this;
-    const Size nActiveCells = grid().nLocalActiveCells();
-    Vector vec(2 * nActiveCells, 0.);
-
-    for (const Cell &cell: grid().localActiveCells())
-    {
-        vec[cell.index(0)] = self(cell).x;
-        vec[nActiveCells + cell.index(0)] = self(cell).y;
-    }
-
-    return vec;
+    if(indexMap_)
+        indexMap_->update(*grid_);
+    else
+        indexMap_ = std::make_shared<IndexMap>(*grid_, 2);
 }
 
 template<>

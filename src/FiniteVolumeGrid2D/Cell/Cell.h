@@ -28,19 +28,6 @@ public:
     const Point2D &centroid() const
     { return centroid_; }
 
-    //- Indices
-    Index &index(Size indexNo)
-    { return indices_[indexNo]; }
-
-    Index index(Size indexNo) const
-    { return indices_[indexNo]; }
-
-    void setNumIndices(Size num)
-    { indices_.resize(num, -1); }
-
-    void clearIndices()
-    { indices_.clear(); }
-
     //- Ids
     Label id() const
     { return id_; }
@@ -105,7 +92,6 @@ public:
 
 private:
 
-    std::vector<Index> indices_; // Indices for linear algebra. May change depending on problem
     Label id_; // Indices for identification. Should not normally be changed
 
     Polygon cellShape_;

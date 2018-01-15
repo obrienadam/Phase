@@ -22,7 +22,7 @@ LinearAlgebra
 {
   uEqn
   {
-    lib eigen
+    lib trilinos
     solver BiCGSTAB
     iluFill 0
     tolerance 1e-14
@@ -30,12 +30,12 @@ LinearAlgebra
 
   pEqn
   {
-    lib eigen
+    lib trilinos
     solver TFQMR
-    iluFill 4
+    iluFill 5
     schwarzIters 2
     schwarzCombineMode ADD
-    tolerance 1e-14
+    tolerance 1e-8
   }
 }
 
@@ -50,13 +50,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 300
-	nCellsY 150
+	nCellsX 800
+	nCellsY 400
 
 	; Rectilinear parameters
 	width 0.8
 	height 0.4
-	origin (0.1,0)
 }
 
 Viewer

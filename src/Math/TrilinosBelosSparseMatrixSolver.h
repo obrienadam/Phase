@@ -6,7 +6,6 @@
 #include <BelosTpetraAdapter.hpp>
 #include <BelosSolverManager.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_AdditiveSchwarz.hpp>
 
 #include "SparseMatrixSolver.h"
 
@@ -48,19 +47,23 @@ private:
     typedef Tpetra::CrsMatrix<Scalar, Index, Index> TpetraCrsMatrix;
     typedef Tpetra::Vector<Scalar, Index, Index> TpetraVector;
     typedef Tpetra::MultiVector<Scalar, Index, Index> TpetraMultiVector;
-    typedef Tpetra::Operator<Scalar, Index, Index> Operator;
-    typedef Belos::LinearProblem<Scalar, TpetraMultiVector, Operator> LinearProblem;
-    typedef Belos::SolverManager<Scalar, TpetraMultiVector, Operator> Solver;
+    typedef Tpetra::Operator<Scalar, Index, Index> TpetraOperator;
+    typedef Belos::LinearProblem<Scalar, TpetraMultiVector, TpetraOperator> LinearProblem;
+    typedef Belos::SolverManager<Scalar, TpetraMultiVector, TpetraOperator> Solver;
     typedef Ifpack2::Preconditioner<Scalar, Index, Index> Preconditioner;
-    typedef Ifpack2::AdditiveSchwarz<TpetraRowMatrix> AdditiveSchwarz;
 
     //- Communication objects
     const Communicator &comm_;
     Teuchos::RCP<TeuchosComm> Tcomm_;
     Teuchos::RCP<const TpetraMap> map_;
 
+    //- Types
+    std::string precType_;
+
     //- Parameters
-    Teuchos::RCP<Teuchos::ParameterList> belosParams_, ifpackParams_, schwarzParams_;
+    Teuchos::RCP<Teuchos::ParameterList> belosParams_, ifpackParams_;
+
+    //- Factories
 
     //- Matrix data structures
     Teuchos::RCP<TpetraCrsMatrix> mat_;

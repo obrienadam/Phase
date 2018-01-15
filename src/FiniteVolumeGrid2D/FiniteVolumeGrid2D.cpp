@@ -1,4 +1,5 @@
 #include <numeric>
+#include <unordered_set>
 
 #include <cgnslib.h>
 #include <metis.h>
@@ -67,10 +68,10 @@ void FiniteVolumeGrid2D::reset()
     nodes_.clear();
     interiorNodes_.clear();
     boundaryNodes_.clear();
+    nodeGroup_.clear();
 
     //- Cell related data
     cells_.clear();
-    nActiveCellsGlobal_ = 0;
 
     //- Local cell zones
     localActiveCells_.clear();
@@ -101,7 +102,6 @@ void FiniteVolumeGrid2D::reset()
     patches_.clear();
 
     bBox_ = BoundingBox(Point2D(0., 0.), Point2D(0., 0.));
-    nodeGroup_.clear();
 }
 
 //- size info
@@ -140,18 +140,14 @@ Label FiniteVolumeGrid2D::createCell(const std::vector<Label> &nodeIds)
         if (it == faceDirectory_.end()) // face doesn't exist, so create it
         {
             faces_.push_back(Face(n1, n2, *this, Face::BOUNDARY));
-
             Face &face = faces_.back();
-
             faceDirectory_[key] = face.id();
-
             face.addCell(newCell);
         }
         else // face already exists, but is now an interior face
         {
             Face &face = faces_[it->second];
             face.setType(Face::INTERIOR);
-
             face.addCell(newCell);
         }
     }
@@ -167,20 +163,16 @@ Label FiniteVolumeGrid2D::addNode(const Point2D &point)
 
 std::vector<Point2D> FiniteVolumeGrid2D::coords() const
 {
-    std::vector<Point2D> coords;
-    std::transform(nodes_.begin(), nodes_.end(),
-                   std::back_inserter(coords),
-                   [](const Node &node) { return Point2D(node); });
-
+    std::vector<Point2D> coords(nodes_.begin(), nodes_.end());
     return coords;
 }
 
 std::vector<Scalar> FiniteVolumeGrid2D::xCoords() const
 {
-    std::vector<Scalar> xCoords;
+    std::vector<Scalar> xCoords(nodes_.size());
 
     std::transform(nodes_.begin(), nodes_.end(),
-                   std::back_inserter(xCoords),
+                   xCoords.begin(),
                    [](const Node &node) { return node.x; });
 
     return xCoords;
@@ -188,10 +180,10 @@ std::vector<Scalar> FiniteVolumeGrid2D::xCoords() const
 
 std::vector<Scalar> FiniteVolumeGrid2D::yCoords() const
 {
-    std::vector<Scalar> yCoords;
+    std::vector<Scalar> yCoords(nodes_.size());
 
     std::transform(nodes_.begin(), nodes_.end(),
-                   std::back_inserter(yCoords),
+                   yCoords.begin(),
                    [](const Node &node) { return node.y; });
 
     return yCoords;
@@ -356,6 +348,7 @@ Patch &FiniteVolumeGrid2D::createPatchByNodes(const std::string &name, const std
 const std::vector<Ref<const Patch> > FiniteVolumeGrid2D::patches() const
 {
     std::vector<Ref<const Patch>> patches;
+    patches.reserve(patches_.size());
 
     for (const auto &entry: patches_)
         patches.push_back(std::cref(entry.second));
@@ -388,6 +381,28 @@ std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementCo
     }
 
     return connectivity;
+}
+
+std::unordered_map<std::string, std::vector<int>> FiniteVolumeGrid2D::patchToNodeMap() const
+{
+    using namespace std;
+    unordered_map<string, vector<int>> patchToNodes;
+
+    for(const Patch& patch: patches())
+    {
+        vector<int> nodes;
+        nodes.reserve(2 * patch.items().size());
+
+        for(const Face& face: patch)
+        {
+            nodes.push_back(face.lNode().id());
+            nodes.push_back(face.rNode().id());
+        }
+
+        patchToNodes[patch.name()] = nodes;
+    }
+
+    return patchToNodes;
 }
 
 void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communicator> comm)
@@ -431,12 +446,8 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
         if (cellPartition[cell.id()] == comm_->rank())
             return true;
 
-        for (const InteriorLink &nb: cell.neighbours())
-            if (cellPartition[nb.cell().id()] == comm_->rank())
-                return true;
-
-        for (const CellLink &dg: cell.diagonals())
-            if (cellPartition[dg.cell().id()] == comm_->rank())
+        for (const CellLink& nb: cell.cellLinks())
+            if(cellPartition[nb.cell().id()] == comm_->rank())
                 return true;
 
         for (const Cell &kCell: globalActiveCells_.itemsWithin(Circle(cell.centroid(), r)))
@@ -456,7 +467,6 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
                                              0.); //- May be important for algorithms requiring spatial searches
 
     for (const Cell &cell: cells_)
-    {
         if (addCellToThisProc(cell, r))
         {
             cellInds.push_back(cellInds.back() + cell.nodes().size());
@@ -476,7 +486,6 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
                 cellNodeIds.push_back(localNodeId[node.id()]);
             }
         }
-    }
 
     //- Boundary patches
     comm_->printf("Computing the local boundary patches...\n");
@@ -504,7 +513,9 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
 
     //- Now re-initialize local domains
     comm_->printf("Initializing local domains...\n");
+
     init(nodes, cellInds, cellNodeIds, Point2D(0., 0.));
+
     for (const auto &patch: localPatches)
         createPatchByNodes(patch.first, patch.second);
 
@@ -549,68 +560,6 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     }
 
     comm_->waitAll();
-    computeGlobalOrdering();
-}
-
-void FiniteVolumeGrid2D::computeGlobalOrdering()
-{
-    /* Note: global orderings are guaranteed to be contigous on each process.
-     * This is a requirement for the majority of sparse linear solvers. */
-
-    std::vector<Size> nLocalCells = comm_->allGather(nLocalActiveCells());
-    Index globalIndexStart = std::accumulate(nLocalCells.begin(), nLocalCells.begin() + comm_->rank(), 0);
-    nActiveCellsGlobal_ = std::accumulate(nLocalCells.begin(), nLocalCells.end(), 0);
-
-    std::vector<Index> globalIndices[] = {
-            std::vector<Index>(nCells(), -1),
-            std::vector<Index>(nCells(), -1),
-            std::vector<Index>(nCells(), -1),
-    };
-
-    Index localIndex = 0;
-    for (const Cell &cell: localActiveCells_)
-    {
-        cells_[cell.id()].setNumIndices(4);
-        cells_[cell.id()].index(0) = localIndex;
-        cells_[cell.id()].index(1) = globalIndexStart + localIndex;
-        cells_[cell.id()].index(2) = 2 * globalIndexStart + localIndex;
-        cells_[cell.id()].index(3) = 2 * globalIndexStart + localIndex + nLocalCells[comm_->rank()];
-        ++localIndex;
-
-        globalIndices[0][cell.id()] = cell.index(1);
-        globalIndices[1][cell.id()] = cell.index(2);
-        globalIndices[2][cell.id()] = cell.index(3);
-    }
-
-    //- Must communicate new global indices to neighbours
-    sendMessages(globalIndices[0]);
-    sendMessages(globalIndices[1]);
-    sendMessages(globalIndices[2]);
-
-    //- Set global ids for the buffer zones
-    for (CellZone &bufferZone: bufferCellZones_)
-        for (const Cell &cell: bufferZone)
-        {
-            cells_[cell.id()].setNumIndices(4);
-            cells_[cell.id()].index(0) = -1;
-            cells_[cell.id()].index(1) = globalIndices[0][cell.id()];
-            cells_[cell.id()].index(2) = globalIndices[1][cell.id()];
-            cells_[cell.id()].index(3) = globalIndices[2][cell.id()];
-
-            if (globalIndices[0][cell.id()] != -1)
-                globalActiveCells_.add(cell);
-            else
-                globalInactiveCells_.add(cell);
-        }
-
-    comm_->printf("Num local cells main proc = %d\nNum global cells = %d\n",
-                  nLocalCells[comm_->rank()],
-                  nActiveCellsGlobal_);
-}
-
-void FiniteVolumeGrid2D::computeParMetisGlobalOrdering()
-{
-
 }
 
 //- Protected methods

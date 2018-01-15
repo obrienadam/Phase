@@ -174,18 +174,6 @@ void FiniteVolumeField<T>::clearHistory()
     previousTimeSteps_.clear();
 }
 
-template<class T>
-Vector FiniteVolumeField<T>::vectorize() const
-{
-    const auto &self = *this;
-    Vector vec = Vector(grid().nLocalActiveCells(), 0.);
-
-    for (const Cell &cell: grid().localActiveCells())
-        vec[cell.index(0)] = self(cell);
-
-    return vec;
-}
-
 //- Operators
 
 template<class T>

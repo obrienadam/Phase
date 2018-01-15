@@ -5,6 +5,7 @@
 #include "FiniteVolumeGrid2D.h"
 #include "Input.h"
 #include "Vector.h"
+#include "IndexMap.h"
 
 template<class T>
 class FiniteVolumeField : public Field<T>
@@ -43,6 +44,18 @@ public:
 
     void assign(const FiniteVolumeField<T>& field);
 
+    //- Index map
+    void computeOrdering();
+
+    std::shared_ptr<IndexMap>& indexMap()
+    { return indexMap_; }
+
+    const std::shared_ptr<const IndexMap>& indexMap() const
+    { return indexMap_; }
+    
+    void setIndexMap(const std::shared_ptr<IndexMap>& indexMap)
+    { indexMap_ = indexMap; }
+
     template<class TFunc>
     void computeCells(const TFunc &fcn)
     {
@@ -80,12 +93,6 @@ public:
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,
                     const CellGroup &cells);
-
-    void setPatch(const Patch &patch, const std::function<T(const Face &face)> &fcn)
-    {
-        for (const Face &face: patch)
-            (*this)(face) = fcn(face);
-    }
 
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
@@ -211,11 +218,7 @@ public:
     const FiniteVolumeField &prevIteration() const
     { return *previousIteration_; }
 
-    //- Vectorization
-    Vector vectorize() const;
-
     //- Operators
-    FiniteVolumeField &operator=(const Vector &rhs);
 
     FiniteVolumeField &operator+=(const FiniteVolumeField &rhs);
 
@@ -248,7 +251,7 @@ protected:
 
     //- Data members
 
-    std::map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
+    std::unordered_map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
 
     //- Grid
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
@@ -263,6 +266,9 @@ protected:
     std::vector<std::shared_ptr<PreviousField>> previousTimeSteps_;
 
     std::shared_ptr<FiniteVolumeField<T>> previousIteration_;
+
+    //- Index map
+    std::shared_ptr<IndexMap> indexMap_;
 };
 
 #include "FiniteVolumeField.tpp"

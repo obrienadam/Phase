@@ -5,25 +5,24 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &
         :
         name(name),
         field_(field),
-        nLocalActiveCells_(field.grid().nLocalActiveCells()),
-        nGlobalActiveCells_(field.grid().nActiveCellsGlobal()),
-        coeffs_(2 * nLocalActiveCells_),
-        sources_(2 * nLocalActiveCells_)
+        coeffs_(2 * field.grid().localActiveCells().size()),
+        sources_(2 * field.grid().localActiveCells().size(), 0.)
 {
-    for (auto &coeff: coeffs_)
-        coeff.reserve(5);
+    std::for_each(coeffs_.begin(), coeffs_.end(), [](Row& row) {
+        row.reserve(5);
+    });
 }
 
 template<>
 template<>
 void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
 {
-    setValue(cell.index(0),
-             nb.index(2),
+    setValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 0),
              val);
 
-    setValue(cell.index(0) + nLocalActiveCells_,
-             nb.index(3),
+    setValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 1),
              val);
 }
 
@@ -31,12 +30,12 @@ template<>
 template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 {
-    addValue(cell.index(0),
-             nb.index(2),
+    addValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 0),
              val);
 
-    addValue(cell.index(0) + nLocalActiveCells_,
-             nb.index(3),
+    addValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 1),
              val);
 }
 
@@ -44,25 +43,12 @@ template<>
 template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Vector2D val)
 {
-    addValue(cell.index(0),
-             nb.index(2),
+    addValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 0),
              val.x);
 
-    addValue(cell.index(0) + nLocalActiveCells_,
-             nb.index(3),
-             val.y);
-}
-
-template<>
-template<>
-void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &val)
-{
-    addValue(cell.index(0),
-             nb.index(2),
-             val.x);
-
-    addValue(cell.index(0) + nLocalActiveCells_,
-             nb.index(3),
+    addValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 1),
              val.y);
 }
 
@@ -70,13 +56,13 @@ template<>
 template<>
 void Equation<Vector2D>::addCoupling(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
-    addValue(cell.index(0),
-             nb.index(3),
-             val.y);
-
-    addValue(cell.index(0) + nLocalActiveCells_,
-             nb.index(2),
+    addValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 1),
              val.x);
+
+    addValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 0),
+             val.y);
 }
 
 template<>
@@ -84,23 +70,23 @@ Vector2D Equation<Vector2D>::get(const Cell &cell, const Cell &nb)
 {
     Vector2D u(0., 0.);
 
-    for (const auto &entry: coeffs_[cell.index(0)])
-    {
-        if (entry.first == nb.index(2))
+    Index col = field_.indexMap()->global(nb, 0);
+
+    for (const auto &entry: coeffs_[field_.indexMap()->local(cell, 0)])
+        if (entry.first == col)
         {
             u.x = entry.second;
             break;
         }
-    }
 
-    for (const auto &entry: coeffs_[cell.index(0) + nLocalActiveCells_])
-    {
-        if (entry.first == nb.index(3))
+    col = field_.indexMap()->global(nb, 1);
+
+    for (const auto &entry: coeffs_[field_.indexMap()->local(cell, 1)])
+        if (entry.first == col)
         {
             u.y = entry.second;
             break;
         }
-    }
 
     return u;
 }
@@ -108,41 +94,39 @@ Vector2D Equation<Vector2D>::get(const Cell &cell, const Cell &nb)
 template<>
 void Equation<Vector2D>::remove(const Cell &cell)
 {
-    coeffs_[cell.index(0)].clear();
-    coeffs_[cell.index(0) + nLocalActiveCells_].clear();
-    sources_[cell.index(0)] = 0.;
-    sources_[cell.index(0) + nLocalActiveCells_] = 0.;
+    coeffs_[field_.indexMap()->local(cell, 0)].clear();
+    coeffs_[field_.indexMap()->local(cell, 1)].clear();
+    sources_[field_.indexMap()->local(cell, 0)] = 0.;
+    sources_[field_.indexMap()->local(cell, 1)] = 0.;
 }
 
 template<>
-void Equation<Vector2D>::addSource(const Cell& cell, Vector2D u)
+void Equation<Vector2D>::addSource(const Cell &cell, Vector2D u)
 {
-    sources_[cell.index(0)] += u.x;
-    sources_[cell.index(0) + nLocalActiveCells_] += u.y;
+    sources_[field_.indexMap()->local(cell, 0)] += u.x;
+    sources_[field_.indexMap()->local(cell, 1)] += u.y;
 }
 
 template<>
-void Equation<Vector2D>::setSource(const Cell& cell, Vector2D u)
+void Equation<Vector2D>::setSource(const Cell &cell, Vector2D u)
 {
-    sources_[cell.index(0)] = u.x;
-    sources_[cell.index(0) + nLocalActiveCells_] = u.y;
+    sources_[field_.indexMap()->local(cell, 0)] = u.x;
+    sources_[field_.indexMap()->local(cell, 1)] = u.y;
 }
 
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    nLocalActiveCells_ = field_.grid().nLocalActiveCells();
-
     for (const Cell &cell: field_.grid().localActiveCells())
     {
-        Scalar &coeffX = coeffRef(cell.index(0), cell.index(2));
-        Scalar &coeffY = coeffRef(cell.index(0) + nLocalActiveCells_, cell.index(3));
+        Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
+        Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
 
         coeffX /= relaxationFactor;
         coeffY /= relaxationFactor;
 
-        sources_(cell.index(0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
-        sources_(cell.index(0) + nLocalActiveCells_) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
+        sources_(field_.indexMap()->local(cell, 0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
+        sources_(field_.indexMap()->local(cell, 1)) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
     }
 }
 
@@ -151,11 +135,8 @@ Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField
 {
     for (const Cell &cell: rhs.grid().localActiveCells())
     {
-        Index rowX = cell.index(0);
-        Index rowY = rowX + nLocalActiveCells_;
-
-        sources_(rowX) += rhs(cell).x;
-        sources_(rowY) += rhs(cell).y;
+        sources_(field_.indexMap()->local(cell, 0)) += rhs(cell).x;
+        sources_(field_.indexMap()->local(cell, 1)) += rhs(cell).y;
     }
 
     return *this;
@@ -166,11 +147,8 @@ Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField
 {
     for (const Cell &cell: rhs.grid().localActiveCells())
     {
-        Index rowX = cell.index(0);
-        Index rowY = rowX + nLocalActiveCells_;
-
-        sources_(rowX) -= rhs(cell).x;
-        sources_(rowY) -= rhs(cell).y;
+        sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell).x;
+        sources_(field_.indexMap()->local(cell, 1)) -= rhs(cell).y;
     }
 
     return *this;

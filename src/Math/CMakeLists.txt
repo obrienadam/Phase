@@ -4,7 +4,7 @@ set(HEADERS StaticMatrix.h
         SparseMatrixSolver.h
         EigenSparseMatrixSolver.h
         TrilinosBelosSparseMatrixSolver.h
-        #TrilinosMueluSparseMatrixSolver.h
+        TrilinosMueluSparseMatrixSolver.h
         Vector.h
         Algorithm.h
         Interpolation.h
@@ -17,7 +17,7 @@ set(SOURCES Matrix.cpp
         SparseMatrixSolver.cpp
         EigenSparseMatrixSolver.cpp
         TrilinosBelosSparseMatrixSolver.cpp
-        #TrilinosMueluSparseMatrixSolver.cpp
+        TrilinosMueluSparseMatrixSolver.cpp
         Vector.cpp
         LinearInterpolation.cpp
         BilinearInterpolation.cpp

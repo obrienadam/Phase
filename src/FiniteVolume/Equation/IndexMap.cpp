@@ -2,52 +2,37 @@
 
 #include "IndexMap.h"
 
-IndexMap::IndexMap(const FiniteVolumeGrid2D &grid, Size nIndexSets)
-{
-    init(grid, nIndexSets);
-}
-
-void IndexMap::init(const FiniteVolumeGrid2D &grid, Size nIndexSets)
+void IndexMap::init(const FiniteVolumeGrid2D &grid, Size nIndices)
 {
     nCells_ = grid.nCells();
-    nIndexSets_ = nIndexSets;
-    localIndices_.resize(nIndexSets*nCells_, INACTIVE);
-    globalIndices_.resize(nIndexSets*nCells_, INACTIVE);
+    nIndices_ = nIndices;
 
-    auto nLocalUnknowns = grid.comm().allGather(nIndexSets_ * grid.nLocalActiveCells());
-    range_.first = std::accumulate(nLocalUnknowns.begin(), nLocalUnknowns.begin() + grid.comm().rank(), 0);
-    range_.second = range_.first + nLocalUnknowns[grid.comm().rank()];
+    localIndices_.resize(nIndices_ * nCells_);
+    globalIndices_.resize(nIndices_ * nCells_);
 
-    for (Size indexSet = 0; indexSet < nIndexSets_; ++indexSet)
-    {
-        Index localIndex = 0;
+    update(grid);
+}
+
+void IndexMap::update(const FiniteVolumeGrid2D &grid)
+{
+    std::fill(localIndices_.begin(), localIndices_.end(), INACTIVE);
+    std::fill(globalIndices_.begin(), globalIndices_.end(), INACTIVE);
+
+    std::vector<Size> nLocalActiveCells = grid.comm().allGather(grid.localActiveCells().size());
+
+    ownershipRange_.first =
+            nIndices_ * std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid.comm().rank(), 0);
+    ownershipRange_.second = ownershipRange_.first + nIndices_ * nLocalActiveCells[grid.comm().rank()];
+
+    Index localIndex = 0;
+
+    for (Size indexNo = 0; indexNo < nIndices_; ++indexNo)
         for (const Cell &cell: grid.localActiveCells())
         {
-            localIndices_[indexSet * nCells_ + cell.id()] = localIndex;
-            globalIndices_[indexSet * nCells_ + cell.id()] = range_.first + localIndex++;
+            localIndices_[indexNo * nCells_ + cell.id()] = localIndex;
+            globalIndices_[indexNo * nCells_ + cell.id()] = ownershipRange_.first + localIndex++;
         }
-    }
 
     //- Communicate global indices to other procs
-    grid.sendMessages(globalIndices_, nIndexSets_);
-}
-
-Index IndexMap::local(const Cell &cell, int set) const
-{
-    return localIndices_[set * nCells_ + cell.id()];
-}
-
-Index IndexMap::global(const Cell &cell, int set) const
-{
-    return globalIndices_[set * nCells_ + cell.id()];
-}
-
-bool IndexMap::isLocallyActive(const Cell& cell) const
-{
-    return local(cell) != INACTIVE;
-}
-
-bool IndexMap::isGloballyActive(const Cell& cell) const
-{
-    return global(cell) != INACTIVE;
+    grid.sendMessages(globalIndices_, nIndices_);
 }

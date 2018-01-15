@@ -134,7 +134,6 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
     }
 
     comm_->waitAll();
-    computeGlobalOrdering();
 }
 
 //- Private helper methods

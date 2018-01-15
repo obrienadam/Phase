@@ -294,7 +294,6 @@ void ImmersedBoundary::initCellZones(CellZone &zone)
     }
 
     setCellStatus();
-    solver_.grid().computeGlobalOrdering();
 }
 
 CellGroup ImmersedBoundary::ibCells() const
@@ -378,7 +377,6 @@ void ImmersedBoundary::update(Scalar timeStep)
         ibObj->update(timeStep);
 
     setCellStatus();
-    solver_.grid().computeGlobalOrdering();
 
     for(const Node& node: grid().nodes())
     {

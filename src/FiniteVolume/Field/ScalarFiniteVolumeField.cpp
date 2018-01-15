@@ -1,14 +1,12 @@
 #include "ScalarFiniteVolumeField.h"
 
 template<>
-ScalarFiniteVolumeField &ScalarFiniteVolumeField::operator=(const Vector &rhs)
+void ScalarFiniteVolumeField::computeOrdering()
 {
-    auto &self = *this;
-
-    for (const Cell &cell: self.grid().localActiveCells())
-        self(cell) = rhs[cell.index(0)];
-
-    return self;
+    if(indexMap_)
+        indexMap_->update(*grid_);
+    else
+        indexMap_ = std::make_shared<IndexMap>(*grid_, 1);
 }
 
 //- Protected methods

@@ -1,3 +1,4 @@
+#include <Teuchos_XMLParameterListCoreHelpers.hpp>
 #include <BelosSolverFactory.hpp>
 #include <Ifpack2_Factory.hpp>
 
@@ -10,7 +11,6 @@ TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communica
     Tcomm_ = rcp(new TeuchosComm(comm.communicator()));
     belosParams_ = rcp(new Teuchos::ParameterList());
     ifpackParams_ = rcp(new Teuchos::ParameterList());
-    schwarzParams_ = rcp(new Teuchos::ParameterList());
     linearProblem_ = rcp(new LinearProblem());
 }
 
@@ -25,12 +25,11 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
         map_ = map;
         x_ = rcp(new TpetraVector(map_, true));
         b_ = rcp(new TpetraVector(map_, false));
-        linearProblem_->setProblem(x_, b_);
     }
 
     mat_ = rcp(new TpetraCrsMatrix(map_, 8, Tpetra::StaticProfile));
-    precon_ = rcp(new AdditiveSchwarz(mat_));
-    precon_->setParameters(*schwarzParams_);
+    precon_ = Ifpack2::Factory().create(precType_, rcp_static_cast<const TpetraRowMatrix>(mat_));
+    precon_->setParameters(*ifpackParams_);
     linearProblem_->setOperator(mat_);
     linearProblem_->setRightPrec(precon_);
 }
@@ -60,12 +59,12 @@ void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientL
 
 void TrilinosBelosSparseMatrixSolver::setGuess(const Vector &x0)
 {
-    std::transform(x0.begin(), x0.end(), x_->getDataNonConst().begin(), [](Scalar val) { return val; });
+    x_->getDataNonConst().assign(x0.begin(), x0.end());
 }
 
 void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
 {
-    std::transform(rhs.begin(), rhs.end(), b_->getDataNonConst().begin(), [](Scalar val) { return val; });
+    b_->getDataNonConst().assign(rhs.begin(), rhs.end());
 }
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
@@ -85,40 +84,57 @@ void TrilinosBelosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
     for (const Cell &cell: field.grid().localActiveCells())
-        field(cell) = soln[cell.index(0)];
+        field(cell) = soln[field.indexMap()->local(cell, 0)];
 }
 
 void TrilinosBelosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-    Index nActiveCells = field.grid().localActiveCells().size();
 
     for (const Cell &cell: field.grid().localActiveCells())
     {
-        field(cell).x = soln[cell.index(0)];
-        field(cell).y = soln[cell.index(0) + nActiveCells];
+        Vector2D &vec = field(cell);
+        vec.x = soln[field.indexMap()->local(cell, 0)];
+        vec.y = soln[field.indexMap()->local(cell, 1)];
     }
 }
 
 void TrilinosBelosSparseMatrixSolver::setup(const boost::property_tree::ptree& parameters)
 {
-    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, Operator> SolverFactory;
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
-    SolverFactory factory;
+    std::string filename = parameters.get<std::string>("belosParamFile", "");
 
-    belosParams_->set("Maximum Iterations", parameters.get<int>("maxIters", 500));
-    belosParams_->set("Convergence Tolerance", parameters.get<Scalar>("tolerance", 1e-8));
-    solver_ = factory.create(parameters.get<std::string>("solver", "BICGSTAB"), belosParams_);
+    if(filename.empty())
+    {
+        belosParams_->set("Maximum Iterations", parameters.get<int>("maxIters", 500));
+        belosParams_->set("Convergence Tolerance", parameters.get<Scalar>("tolerance", 1e-8));
+    }
+    else
+        belosParams_ = Teuchos::getParametersFromXmlFile("case/" + filename);
+
+    solver_ = SolverFactory().create(parameters.get<std::string>("solver", "BICGSTAB"), belosParams_);
     solver_->setProblem(linearProblem_);
-    solver_->setParameters(belosParams_);
 
-    ifpackParams_->set("fact: iluk level-of-fill", parameters.get<Scalar>("iluFill", 0.));
-    ifpackParams_->set("fact: ilut level-of-fill", parameters.get<Scalar>("iluFill", 1.));
-    schwarzParams_->set("schwarz: inner preconditioner name", parameters.get<std::string>("innerPreconditioner", "RILUK"));
-    schwarzParams_->set("schwarz: num iterations", parameters.get<int>("schwarzIters", 1));
-    schwarzParams_->set("schwarz: combine mode", parameters.get<std::string>("schwarzCombineMode", "ADD"));
-    schwarzParams_->set("schwarz: overlap level", parameters.get<int>("schwarzOverlap", 0));
-    schwarzParams_->set("schwarz: inner preconditioner parameters", *ifpackParams_);
+    precType_ = parameters.get<std::string>("preconditioner", "schwarz");
+    filename = parameters.get<std::string>("ifpackParamFile", "");
+
+    if(filename.empty())
+    {
+        precType_ = "schwarz";
+
+        auto tmp = rcp(new Teuchos::ParameterList());
+        tmp->set("fact: iluk level-of-fill", parameters.get<Scalar>("iluFill", 0.));
+        tmp->set("fact: ilut level-of-fill", parameters.get<Scalar>("iluFill", 1.));
+
+        ifpackParams_->set("schwarz: inner preconditioner name", parameters.get<std::string>("innerPreconditioner", "RILUK"));
+        ifpackParams_->set("schwarz: num iterations", parameters.get<int>("schwarzIters", 1));
+        ifpackParams_->set("schwarz: combine mode", parameters.get<std::string>("schwarzCombineMode", "ADD"));
+        ifpackParams_->set("schwarz: overlap level", parameters.get<int>("schwarzOverlap", 0));
+        ifpackParams_->set("schwarz: inner preconditioner parameters", *tmp);
+    }
+    else
+        ifpackParams_ = Teuchos::getParametersFromXmlFile("case/" + filename);
 }
 
 int TrilinosBelosSparseMatrixSolver::nIters() const

@@ -29,14 +29,14 @@ Scalar Equation<T>::minDiagonal() const
     Scalar minDiagonal = std::numeric_limits<Scalar>::infinity();
 
     int rowNo = 0;
-    for(const auto& row: coeffs_)
+    for (const auto &row: coeffs_)
     {
         Scalar diagonal = 0.;
         for (const auto &entry: row)
-            if(rowNo == entry.first)
+            if (rowNo == entry.first)
                 diagonal += entry.second;
 
-        minDiagonal = std::abs(diagonal) < std::abs(minDiagonal) ? diagonal: minDiagonal;
+        minDiagonal = std::abs(diagonal) < std::abs(minDiagonal) ? diagonal : minDiagonal;
         rowNo++;
     }
 
@@ -49,11 +49,11 @@ Scalar Equation<T>::minDiagonalDominance() const
     Scalar minDiagonalDominance = std::numeric_limits<Scalar>::infinity();
 
     int rowNo = 0;
-    for(const auto& row: coeffs_)
+    for (const auto &row: coeffs_)
     {
         Scalar diagonal = 0., offDiagonalSum = 0.;
         for (const auto &entry: row)
-            if(rowNo == entry.first)
+            if (rowNo == entry.first)
                 diagonal += std::abs(entry.second);
             else
                 offDiagonalSum += std::abs(entry.second);
@@ -73,13 +73,8 @@ Equation<T> &Equation<T>::operator=(const Equation<T> &rhs)
     else if (&field_.grid() != &rhs.field_.grid())
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
-    nLocalActiveCells_ = rhs.nLocalActiveCells_;
-    nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
     coeffs_ = rhs.coeffs_;
     sources_ = rhs.sources_;
-
-    if(rhs.indexMap_)
-        indexMap_ = rhs.indexMap_;
 
     if (rhs.spSolver_) // Prevent a sparse solver from being accidently destroyed if the rhs solver doesn't exist
         spSolver_ = rhs.spSolver_;
@@ -93,8 +88,6 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
     if (&field_ != &rhs.field_)
         throw Exception("Equation<T>", "operator=", "cannot copy equations defined for different fields.");
 
-    nLocalActiveCells_ = rhs.nLocalActiveCells_;
-    nGlobalActiveCells_ = rhs.nGlobalActiveCells_;
     coeffs_ = std::move(rhs.coeffs_);
     sources_ = std::move(rhs.sources_);
 
@@ -141,26 +134,9 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 }
 
 template<class T>
-Equation<T> &Equation<T>::operator/=(const ScalarFiniteVolumeField &rhs)
-{
-    for(const Cell& cell: rhs.grid().localActiveCells())
-    {
-        Index i = cell.index(0);
-        Scalar val = rhs(cell);
-
-        for(auto& coeff: coeffs_[i])
-            coeff.second /= val;
-
-        sources_[i] /= val;
-    }
-
-    return *this;
-}
-
-template<class T>
 Equation<T> &Equation<T>::operator==(Scalar rhs)
 {
-    if(rhs == 0.) // for efficiency
+    if (rhs == 0.) // for efficiency
         return *this;
 
     for (Scalar &src: sources_)
@@ -185,15 +161,9 @@ template<class T>
 Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 {
     for (const Cell &cell: rhs.grid().localActiveCells())
-        sources_(cell.index(0)) -= rhs(cell);
+        sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell);
 
     return *this;
-}
-
-template<class T>
-void Equation<T>::setSparseSolver(std::shared_ptr<SparseMatrixSolver> &spSolver)
-{
-    spSolver_ = spSolver;
 }
 
 template<class T>
@@ -204,10 +174,10 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
 
     if (lib == "eigen" || lib == "eigen3")
         spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
-    else if(lib == "trilinos" || lib == "belos")
+    else if (lib == "trilinos" || lib == "belos")
         spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
-    //else if(lib == "muelu")
-    //    spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm);
+    else if (lib == "muelu")
+        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, field_.gridPtr());
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 
@@ -215,6 +185,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
                                                                 "\" does not support multiple processes in its current configuration.");
 
+    field_.computeOrdering();
     spSolver_->setup(input.caseInput().get_child("LinearAlgebra." + name));
 
     comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());
@@ -227,9 +198,7 @@ Scalar Equation<T>::solve()
         throw Exception("Equation<T>", "solve",
                         "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    nLocalActiveCells_ = field_.grid().nLocalActiveCells();
-    nGlobalActiveCells_ = field_.grid().nActiveCellsGlobal();
-
+    field_.computeOrdering();
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(-sources_);
@@ -262,13 +231,11 @@ template<class T>
 void Equation<T>::addValue(Index i, Index j, Scalar val)
 {
     for (auto &entry: coeffs_[i])
-    {
         if (entry.first == j)
         {
             entry.second += val;
             return;
         }
-    }
 
     coeffs_[i].push_back(std::make_pair(j, val));
 }
@@ -277,10 +244,8 @@ template<class T>
 Scalar &Equation<T>::coeffRef(Index i, Index j)
 {
     for (auto &entry: coeffs_[i])
-    {
         if (entry.first == j)
             return entry.second;
-    }
 
     throw Exception("Equation<T>", "coeffRef", "requested coefficient does not exist.");
 }
