@@ -13,7 +13,11 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
     cells_ = grid.findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
-        throw Exception("GhostCellStencil", "GhostCellStencil", "number of image point cells must be 4.");
+    {
+        std::ostringstream sout;
+        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
+        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+    }
 
     Point2D x1 = cells_[0].get().centroid();
     Point2D x2 = cells_[1].get().centroid();
@@ -73,7 +77,11 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
     cells_ = grid.findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
-        throw Exception("GhostCellStencil", "GhostCellStencil", "number of image point cells must be 4.");
+    {
+        std::ostringstream sout;
+        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
+        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+    }
 
     Point2D x1 = cells_[0].get().centroid();
     Point2D x2 = cells_[1].get().centroid();

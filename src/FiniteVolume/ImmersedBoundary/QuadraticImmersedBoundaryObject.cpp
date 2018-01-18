@@ -13,16 +13,19 @@ QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::stri
 //- Update
 void QuadraticImmersedBoundaryObject::updateCells()
 {
+    //std::cout << "Add cells back to fluid for \"" << name_ << "\"...\n";
     fluid_->add(cells_);
-    cells_.addAll(fluid_->itemsWithin(*shapePtr_));
 
+    //std::cout << "Find cells inside \"" << name_ << "\"...\n";
+    auto items = fluid_->itemsWithin(*shapePtr_);
+
+    //std::cout << "Add items to cell zone for \"" << name_ << "\"...\n";
+    cells_.add(items.begin(), items.end());
+
+    //std::cout << "Constructing cell zones for \"" << name_ << "\"...\n";
     auto isIbCell = [this](const Cell &cell) {
         for (const InteriorLink &nb: cell.neighbours())
             if (!isInIb(nb.cell()))
-                return true;
-
-        for (const CellLink &dg: cell.diagonals())
-            if (!isInIb(dg.cell()))
                 return true;
 
         return false;
@@ -42,7 +45,7 @@ void QuadraticImmersedBoundaryObject::updateCells()
     forcingCells_.clear();
     for (const Cell &cell: ibCells_)
         for (const InteriorLink &nb: cell.neighbours())
-            if (!isInIb(nb.cell()))
+            if (fluid_->isInGroup(nb.cell()) && !isInIb(nb.cell()))
                 forcingCells_.add(nb.cell());
 }
 

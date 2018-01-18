@@ -50,6 +50,27 @@ int Communicator::printf(const char *format, ...) const
     return n;
 }
 
+int Communicator::sync_printf(const char *format, ...) const
+{
+    int n = 0;
+
+    for(int proc = 0; proc < nProcs(); ++proc)
+    {
+        if(proc == rank())
+        {
+            va_list argsPtr;
+            va_start(argsPtr, format);
+            n = vfprintf(stdout, format, argsPtr);
+            va_end(argsPtr);
+            fflush(stdout);
+        }
+
+        barrier();
+    }
+
+    return n;
+}
+
 int Communicator::printf(const std::string& format, ...) const
 {
     int n = 0;

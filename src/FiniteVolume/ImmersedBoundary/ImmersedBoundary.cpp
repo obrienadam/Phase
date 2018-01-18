@@ -266,9 +266,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, Solver &solver)
     if (ibObjs_.empty())
         solver_.grid().comm().printf("No immersed boundaries present.\n");
 
-    for(const Node& node: grid().nodes())
+    for (const Node &node: grid().nodes())
     {
-        if(!ibObj(node))
+        if (!ibObj(node))
             fluidNodes_.add(node);
     }
 }
@@ -325,23 +325,24 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Poin
     return nullptr;
 }
 
-std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(const Point2D& pt) const
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(const Point2D &pt) const
 {
     return nearestIntersect(pt).first;
 }
 
-std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> ImmersedBoundary::nearestIntersect(const Point2D &pt) const
+std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D>
+ImmersedBoundary::nearestIntersect(const Point2D &pt) const
 {
     std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj = nullptr;
     Point2D minXc;
     Scalar minDistSqr = std::numeric_limits<Scalar>::infinity();
 
-    for(const auto& ibObj: *this)
+    for (const auto &ibObj: *this)
     {
         Point2D xc = ibObj->nearestIntersect(pt);
         Scalar distSqr = (xc - pt).magSqr();
 
-        if(distSqr < minDistSqr)
+        if (distSqr < minDistSqr)
         {
             nearestIbObj = ibObj;
             minXc = xc;
@@ -361,16 +362,6 @@ const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string &name) c
     throw Exception("ImmersedBoundary", "ibObj", "no immersed boundary object named \"" + name + "\".");
 }
 
-std::vector<Ref<const ImmersedBoundaryObject> > ImmersedBoundary::ibObjs() const
-{
-    std::vector<Ref<const ImmersedBoundaryObject>> refs;
-
-    std::transform(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(refs),
-                   [](const std::shared_ptr<ImmersedBoundaryObject> &ptr) { return std::cref(*ptr); });
-
-    return refs;
-}
-
 void ImmersedBoundary::update(Scalar timeStep)
 {
     for (auto &ibObj: ibObjs_)
@@ -378,9 +369,9 @@ void ImmersedBoundary::update(Scalar timeStep)
 
     setCellStatus();
 
-    for(const Node& node: grid().nodes())
+    for (const Node &node: grid().nodes())
     {
-        if(!ibObj(node))
+        if (!ibObj(node))
             fluidNodes_.add(node);
     }
 }

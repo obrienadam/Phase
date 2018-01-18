@@ -14,20 +14,54 @@ public:
 
     ~CellZone();
 
-    void add(const Cell &cell);
+    //- Adding/removing items
+    void add(const Cell &item);
 
-    void add(const CellGroup& cells);
+    void add(const CellGroup &items);
 
-    template <class const_iterator>
-    void add(const_iterator begin, const_iterator end)
+    template <class iterator>
+    void add(iterator begin, iterator end)
     {
-        for(const_iterator itr = begin; itr != end; ++itr)
-            add(*itr);
+        for(auto it = begin; it != end; ++it)
+        {
+            const Cell &c = *it;
+
+            auto insert = registry_->insert(std::make_pair(c.id(), std::ref(*this)));
+
+            if(!insert.second && this != &insert.first->second.get())
+            {
+                insert.first->second.get().remove(begin, end);
+                registry_->insert(std::make_pair(c.id(), std::ref(*this)));
+            }
+
+            CellGroup::add(c);
+        }
     }
 
-    void remove(const Cell &cell);
+    void remove(const Cell &item);
 
-    void remove(const CellGroup& cells);
+    void remove(const CellGroup &other);
+
+    template <class iterator>
+    void remove(iterator begin, iterator end)
+    {
+        std::unordered_set<Label> items(end - begin);
+        std::transform(begin, end, std::inserter(items, items.begin()), [](const Cell &item) {
+            return item.id();
+        });
+
+        items_.erase(std::remove_if(items_.begin(), items_.end(), [this, &items](const Cell& item) {
+            if(items.find(item.id()) != items.end())
+            {
+                registry_->erase(item.id());
+                itemSet_.erase(item.id());
+                rTree_.remove(Value(item.centroid(), std::cref(item)));
+                return true;
+            }
+
+            return false;
+        }), items_.end());
+    }
 
     void clear();
 

@@ -6,7 +6,7 @@ FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input, std::
         :
         FractionalStep(input, grid)
 {
-    for (auto ibObj: ib_.ibObjPtrs())
+    for (const auto &ibObj: ib_)
     {
         if (ibObj->type() != ImmersedBoundaryObject::QUADRATIC)
             throw Exception("FractionalStepQuadraticIbm",
@@ -22,6 +22,7 @@ Scalar FractionalStepQuadraticIbm::solveUEqn(Scalar timeStep)
     //grid_->sendMessages(gradU);
 
     uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, ib_) + ib_.velocityBcs(u) == qibm::laplacian(mu_ / rho_, u, ib_));
+
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);

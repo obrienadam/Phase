@@ -10,7 +10,7 @@ GhostCellImmersedBoundaryObjectContactLineTracker::GhostCellImmersedBoundaryObje
     if (solver.grid().comm().isMainProc())
         createOutputDirectory();
 
-    for (auto ibObj: solver_.ib().ibObjPtrs())
+    for (const auto &ibObj: solver_.ib())
     {
         auto gcIbObj = std::dynamic_pointer_cast<GhostCellImmersedBoundaryObject>(ibObj);
 

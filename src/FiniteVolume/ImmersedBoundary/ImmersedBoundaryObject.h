@@ -105,6 +105,10 @@ public:
                                                      const Point2D &ptB) const; // returns a intersection point and the edge normal
 
     //- Boundary methods
+    void addBoundary(const std::string &name, BoundaryType bType, Scalar ref);
+
+    void addBoundary(const std::string &name, BoundaryType bType, const Vector2D& ref);
+
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
     void addBoundaryType(const std::string &name, const std::string &boundaryType);

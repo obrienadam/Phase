@@ -19,14 +19,13 @@ void CellZone::add(const Cell &cell)
 {
     auto insertion = registry_->insert(std::make_pair(cell.id(), std::ref(*this)));
 
-    if (insertion.second)
-        CellGroup::add(cell);
-    else
+    if(!insertion.second)
     {
         insertion.first->second.get().CellGroup::remove(cell);
         insertion.first->second = std::ref(*this);
-        CellGroup::add(cell);
     }
+
+    CellGroup::add(cell);
 }
 
 void CellZone::add(const CellGroup &cells)
@@ -37,16 +36,23 @@ void CellZone::add(const CellGroup &cells)
     itemSet_.reserve(size() + cells.size());
 
     for (const Cell &cell: std::vector<Ref<const Cell>>(cells.items()))
-        add(cell);
+    {
+        auto insert = registry_->insert(std::make_pair(cell.id(), std::ref(*this)));
+
+        if(!insert.second && this != &insert.first->second.get())
+        {
+            insert.first->second.get().remove(cells);
+            registry_->insert(std::make_pair(cell.id(), std::ref(*this)));
+        }
+
+        CellGroup::add(cell);
+    }
 }
 
 void CellZone::remove(const Cell &cell)
 {
-    if (isInGroup(cell))
-    {
-        registry_->erase(cell.id());
-        CellGroup::remove(cell);
-    }
+    registry_->erase(cell.id());
+    CellGroup::remove(cell);
 }
 
 void CellZone::remove(const CellGroup& cells)

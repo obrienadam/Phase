@@ -2,7 +2,7 @@
 #define TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
 
 #include <Teuchos_DefaultMpiComm.hpp>
-#include <Xpetra_TpetraRowMatrix.hpp>
+#include <MueLu_Ifpack2Smoother.hpp>
 #include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <BelosTpetraAdapter.hpp>
@@ -52,14 +52,7 @@ private:
     typedef Tpetra::Map<Index, Index> TpetraMap;
     typedef Tpetra::Operator<Scalar, Index, Index> TpetraOperator;
     typedef Tpetra::CrsMatrix<Scalar, Index, Index> TpetraCrsMatrix;
-    typedef Tpetra::Vector<Scalar, Index, Index> TpetraVector;
     typedef Tpetra::MultiVector<Scalar, Index, Index> TpetraMultiVector;
-//
-//    typedef Xpetra::Map<Index, Index> XpetraMap;
-//    typedef Xpetra::CrsMatrix<Scalar, Index, Index> XpetraCrsMatrix;
-//    typedef Xpetra::Vector<Scalar, Index, Index> XpetraVector;
-//    typedef Xpetra::MultiVector<Scalar, Index, Index> XpetraMultiVector;
-
 
     typedef MueLu::Hierarchy<Scalar, Index, Index> MueLuHierarchy;
     typedef MueLu::HierarchyManager<Scalar, Index, Index> MueLuHierarchyManager;
@@ -74,7 +67,6 @@ private:
     Teuchos::RCP<TpetraMap> map_;
 
     Teuchos::RCP<Teuchos::ParameterList> belosParams_, mueluParams_;
-    Teuchos::RCP<MueLuHierarchyManager> mueLuFactory_;
     Teuchos::RCP<MueLuHierarchy> h_;
 
     Teuchos::RCP<TpetraMultiVector> x_, b_, coords_;

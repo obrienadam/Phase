@@ -22,7 +22,8 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
     if (volume_ < 0.)
         throw Exception("Cell", "Cell", "faces are not oriented in a counter-clockwise manner.");
 
-    id_ = grid.cells().size();
+    localId_ = grid.cells().size();
+    globalId_ = localId_;
 }
 
 Scalar Cell::polarVolume() const

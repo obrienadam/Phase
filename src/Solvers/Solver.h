@@ -126,9 +126,6 @@ public:
 
     const ImmersedBoundary& ib() const { return ib_; }
 
-    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const
-    { return ib_.ibObjs(); }
-
     virtual void initialize() {}
 
 protected:

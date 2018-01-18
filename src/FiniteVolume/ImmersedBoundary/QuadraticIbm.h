@@ -12,15 +12,15 @@ namespace qibm
                            const ImmersedBoundary &ib,
                            Scalar theta = 1.);
 
-    Equation<Vector2D> laplacian(Scalar mu, VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
+    Equation<Vector2D> laplacian(Scalar mu,
+                                 VectorFiniteVolumeField &u,
+                                 const ImmersedBoundary &ib,
+                                 Scalar theta = 1.);
 
     Equation<Vector2D> laplacian(const ScalarFiniteVolumeField &mu,
                                  VectorFiniteVolumeField &u,
-                                 const ImmersedBoundary &ib);
-
-    Equation<Scalar> pressureEquation(Scalar rho, Scalar timeStep, ScalarFiniteVolumeField &p, const ImmersedBoundary& ib);
-
-    void computeFaceVelocities(VectorFiniteVolumeField &u, const ImmersedBoundary &ib);
+                                 const ImmersedBoundary &ib,
+                                 Scalar theta = 1.);
 }
 
 #endif

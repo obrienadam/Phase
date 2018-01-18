@@ -19,6 +19,13 @@ public:
 
     Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid);
 
+    Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid, Label globalId)
+            :
+            Cell(nodeIds, grid)
+    {
+        globalId_ = globalId;
+    }
+
     //- Geometry
     Scalar volume() const
     { return volume_; }
@@ -30,7 +37,13 @@ public:
 
     //- Ids
     Label id() const
-    { return id_; }
+    { return localId_; }
+
+    Label localId() const
+    { return localId_; }
+
+    Label globalId() const
+    { return globalId_; }
 
     //- Connectivity links, should really only be done by grid classes
     void addDiagonalLink(const Cell &cell);
@@ -55,7 +68,6 @@ public:
     { return diagonalLinks_; }
 
     const std::vector<BoundaryLink> &boundaries() const
-
     { return boundaryLinks_; }
 
     std::vector<Ref<const CellLink>> cellLinks() const;
@@ -68,7 +80,7 @@ public:
         return result;
     }
 
-    const Cell& faceNeighbour(const Node& lNode, const Node& rNode) const;
+    const Cell &faceNeighbour(const Node &lNode, const Node &rNode) const;
 
     //- Nodes
     const std::vector<Ref<const Node> > nodes() const;
@@ -92,7 +104,7 @@ public:
 
 private:
 
-    Label id_; // Indices for identification. Should not normally be changed
+    Label localId_, globalId_; // Indices for identification. Should not normally be changed
 
     Polygon cellShape_;
 

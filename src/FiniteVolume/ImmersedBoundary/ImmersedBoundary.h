@@ -44,12 +44,10 @@ public:
 
     std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> nearestIntersect(const Point2D& pt) const;
 
-    const std::vector<std::shared_ptr<ImmersedBoundaryObject>> &ibObjPtrs() const
-    { return ibObjs_; }
-
     const ImmersedBoundaryObject &ibObj(const std::string &name) const;
 
-    std::vector<Ref<const ImmersedBoundaryObject>> ibObjs() const;
+    const std::vector<std::shared_ptr<ImmersedBoundaryObject>>& ibObjs() const
+    { return ibObjs_; }
 
     std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator begin() const
     { return ibObjs_.begin(); }

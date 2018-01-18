@@ -17,8 +17,9 @@ void HighOrderImmersedBoundaryObject::updateCells()
     fluid_->add(cells_);
     ibCells_.clear();
     solidCells_.clear();
-    cells_.addAll(fluid_->itemsWithin(*shapePtr_));
-    solidCells_.addAll(cells_);
+    auto items = fluid_->itemsWithin(*shapePtr_);
+    cells_.add(items.begin(), items.end());
+    solidCells_.add(cells_.begin(), cells_.end());
 
     for (const Cell &cell: solidCells_)
         for (const InteriorLink &nb: cell.neighbours())
@@ -43,16 +44,14 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
     Equation<Scalar> eqn(phi);
 
     for (const Cell &cell: solidCells_)
-    {
         eqn.add(cell, cell, 1.);
-    }
 
     //- Local ids of ibCells
-    std::unordered_map<int, int> ids;
-    ids.reserve(ibCells_.size());
+    std::unordered_map<int, int> idToIndex;
+    idToIndex.reserve(ibCells_.size());
     int id = 0;
     for (const Cell &cell: ibCells_)
-        ids[cell.id()] = id++;
+        idToIndex[cell.id()] = id++;
 
     int M = 0;
     std::vector<Triplet> triplets;
@@ -65,7 +64,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
             if (!solidCells_.isInGroup(nb.cell()))
             {
                 Point2D x = nb.cell().centroid();
-                int j = ids[cell.id()] * 6;
+                int j = idToIndex[cell.id()] * 6;
 
                 triplets.push_back(Triplet(M, j++, x.x * x.x));
                 triplets.push_back(Triplet(M, j++, x.y * x.y));
@@ -86,7 +85,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
             if (ibCells_.isInGroup(nb.cell()))
             {
                 Point2D x = nearestIntersect(nb.cell().centroid());
-                int j = ids[cell.id()] * 6;
+                int j = idToIndex[cell.id()] * 6;
                 triplets.push_back(Triplet(M, j++, x.x * x.x));
                 triplets.push_back(Triplet(M, j++, x.y * x.y));
                 triplets.push_back(Triplet(M, j++, x.x * x.y));
@@ -94,7 +93,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
                 triplets.push_back(Triplet(M, j++, x.y));
                 triplets.push_back(Triplet(M, j++, 1.));
 
-                j = ids[nb.cell().id()] * 6;
+                j = idToIndex[nb.cell().id()] * 6;
                 triplets.push_back(Triplet(M, j++, -x.x * x.x));
                 triplets.push_back(Triplet(M, j++, -x.y * x.y));
                 triplets.push_back(Triplet(M, j++, -x.x * x.y));
@@ -112,7 +111,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
         Point2D bp = nearestIntersect(cell.centroid());
         Vector2D bn = nearestEdgeNormal(bp);
 
-        int j = ids[cell.id()] * 6;
+        int j = idToIndex[cell.id()] * 6;
 //        triplets.push_back(Triplet(M, j++, bp.x * bp.x));
 //        triplets.push_back(Triplet(M, j++, bp.y * bp.y));
 //        triplets.push_back(Triplet(M, j++, bp.x * bp.y));
@@ -136,7 +135,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
     triplets.clear();
     for (const Cell &cell: ibCells_)
     {
-        int j = ids[cell.id()];
+        int j = idToIndex[cell.id()];
         int i = 6 * j;
         Point2D x = cell.centroid();
 
@@ -159,7 +158,7 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
     for (const Cell &cell: ibCells_)
     {
         for (int j = 0; j < cells.size(); ++j)
-            eqn.add(cell, cells[j], X.coeff(ids[cell.id()], j));
+            eqn.add(cell, cells[j], X.coeff(idToIndex[cell.id()], j));
 
         eqn.add(cell, cell, -1.);
     }

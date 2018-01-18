@@ -119,6 +119,18 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
     );
 }
 
+void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType bType, Scalar ref)
+{
+    boundaryTypes_[name] = bType;
+    boundaryRefScalars_[name] = ref;
+}
+
+void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType bType, const Vector2D& ref)
+{
+    boundaryTypes_[name] = bType;
+    boundaryRefVectors_[name] = ref;
+}
+
 void ImmersedBoundaryObject::addBoundaryType(const std::string &name, BoundaryType boundaryType)
 {
     boundaryTypes_[name] = boundaryType;
@@ -141,13 +153,15 @@ void ImmersedBoundaryObject::addBoundaryType(const std::string &name, const std:
 template<>
 Scalar ImmersedBoundaryObject::getBoundaryRefValue<Scalar>(const std::string &name) const
 {
-    return boundaryRefScalars_.find(name)->second;
+    auto it = boundaryRefScalars_.find(name);
+    return it == boundaryRefScalars_.end() ? 0. : it->second;
 }
 
 template<>
 Vector2D ImmersedBoundaryObject::getBoundaryRefValue<Vector2D>(const std::string &name) const
 {
-    return boundaryRefVectors_.find(name)->second;
+    auto it = boundaryRefVectors_.find(name);
+    return it == boundaryRefVectors_.end() ? Vector2D(0., 0.) : it->second;
 }
 
 void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue)

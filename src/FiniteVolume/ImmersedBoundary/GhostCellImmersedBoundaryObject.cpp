@@ -28,7 +28,8 @@ void GhostCellImmersedBoundaryObject::updateCells()
     solidCells_.clear();
     deadCells_.clear();
 
-    cells_.addAll(fluid_->itemsWithin(*shapePtr_));
+    auto items = fluid_->itemsWithin(*shapePtr_);
+    cells_.add(items.begin(), items.end());
 
     auto isIbCell = [this](const Cell &cell) {
         if (!isInIb(cell.centroid()))

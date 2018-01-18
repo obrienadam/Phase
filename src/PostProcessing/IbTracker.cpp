@@ -25,7 +25,7 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
         }
     }
 
-    ibObjs_.insert(ibObjs_.end(), solver_.ib().ibObjPtrs().begin(), solver_.ib().ibObjPtrs().end());
+    ibObjs_.insert(ibObjs_.end(), solver_.ib().begin(), solver_.ib().end());
 }
 
 void IbTracker::compute(Scalar time)

@@ -2,6 +2,7 @@
 #define GROUP_H
 
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
 
 #include "Shape2D.h"
@@ -33,32 +34,46 @@ public:
     { return items_.empty(); }
 
     //- Data access
-    const std::vector<Ref<const T> >& items() const
+    const std::vector<Ref<const T> > &items() const
     { return items_; }
 
     //- Adding/removing items
     virtual void add(const T &item);
 
-    virtual void add(const Group<T> &other);
+    virtual void add(const Group<T> &items);
 
-    template<class T2>
-    void addAll(const T2 &container)
+    template <class iterator>
+    void add(iterator first, iterator last)
     {
-        for (const T &item: container)
-            add(item);
-    }
-
-    template<class const_iterator>
-    void add(const_iterator begin, const_iterator end)
-    {
-        for (const_iterator itr = begin; itr != end; ++itr)
-            add(*itr);
+        for (; first != last; ++first)
+            add(*first);
     }
 
     virtual void remove(const T &item);
 
     virtual void remove(const Group<T> &other);
 
+    template <class iterator>
+    void remove(iterator begin, iterator end)
+    {
+        std::unordered_set<Label> items(end - begin);
+        std::transform(begin, end, std::inserter(items, items.begin()), [](const T &item) {
+            return item.id();
+        });
+
+        items_.erase(std::remove_if(items_.begin(), items_.end(), [this, &items](const T &item) {
+            if(items.find(item.id()) != items.end())
+            {
+                itemSet_.erase(item.id());
+                rTree_.remove(Value(item.id(), std::cref(item)));
+                return true;
+            }
+
+            return false;
+        }), items_.end());
+    }
+
+    //- Operators
     Group<T> &operator+=(const Group<T> &rhs);
 
     Group<T> &operator-=(const Group<T> &rhs);
@@ -72,7 +87,11 @@ public:
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;
 
+    std::vector<Ref<const T> > itemsNotWithin(const Shape2D &shape) const;
+
     std::vector<Ref<const T> > itemsCoveredBy(const Shape2D &shape) const;
+
+    std::vector<Ref<const T> > itemsNotCoveredBy(const Shape2D &shape) const;
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
@@ -97,19 +116,21 @@ public:
 
     bool isInGroup(const T &item) const;
 
-    template<class const_iterator>
-    bool isInGroup(const_iterator begin, const_iterator end) const
-    {
-        for (const_iterator it = begin; it != end; ++it)
-            if (!isInGroup(*it))
-                return false;
-        return true;
-    }
-
 protected:
 
-    typedef std::pair<Point2D, Label> Value;
-    typedef boost::geometry::index::rtree<Value, boost::geometry::index::quadratic<8, 1> > Rtree;
+    typedef std::pair<Point2D, Ref<const T>> Value;
+    typedef boost::geometry::index::quadratic<8, 4> Parameters;
+    typedef boost::geometry::index::indexable<Value> IndexableGetter;
+
+    struct EqualTo
+    {
+        bool operator()(const Value& lhs, const Value& rhs) const
+        {
+            return lhs.second.get().id() == rhs.second.get().id();
+        }
+    };
+
+    typedef boost::geometry::index::rtree<Value, Parameters, IndexableGetter, EqualTo> Rtree;
 
     std::vector<Ref<const T> > getRefs(const std::vector<Value> &vals) const;
 

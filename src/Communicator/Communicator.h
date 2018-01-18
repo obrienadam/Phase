@@ -23,6 +23,8 @@ public:
 
     int printf(const char *format, ...) const;
 
+    int sync_printf(const char *format, ...) const;
+
     int printf(const std::string& format, ...) const;
 
     //- Info

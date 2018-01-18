@@ -12,13 +12,13 @@ void Patch::add(const Face &face)
 {
     auto insertion = registry_->insert(std::make_pair(face.id(), std::ref(*this)));
 
-    if(insertion.second)
-        FaceGroup::add(face);
-    else
+    if(!insertion.second)
     {
         insertion.first->second.get().remove(face);
-        add(face);
+        insertion.first->second = std::ref(*this);
     }
+
+    FaceGroup::add(face);
 }
 
 void Patch::add(const FaceGroup& group)
@@ -26,17 +26,24 @@ void Patch::add(const FaceGroup& group)
     items_.reserve(size() + group.size());
     itemSet_.reserve(size() + group.size());
 
-    for(const Face& item: std::vector<Ref<const Face>>(group.items()))
-        add(item);
+    for(const Face& face: std::vector<Ref<const Face>>(group.items()))
+    {
+        auto insertion = registry_->insert(std::make_pair(face.id(), std::ref(*this)));
+
+        if(!insertion.second && this != &insertion.first->second.get())
+        {
+            insertion.first->second.get().remove(group);
+            registry_->insert(std::make_pair(face.id(), std::ref(*this)));
+        }
+
+        FaceGroup::add(face);
+    }
 }
 
 void Patch::remove(const Face &face)
 {
-    if(isInGroup(face))
-    {
-        registry_->erase(face.id());
-        FaceGroup::remove(face);
-    }
+    registry_->erase(face.id());
+    FaceGroup::remove(face);
 }
 
 void Patch::remove(const FaceGroup& faces)
@@ -58,8 +65,10 @@ void Patch::clear()
 
 void Patch::setRegistry(std::shared_ptr<Patch::PatchRegistry> &registry)
 {
-    std::vector<Ref<const Face>> items = this->items();
-    clear();
+    for(const Face& face: *this)
+        registry_->erase(face.id());
+
     registry_ = registry;
-    FaceGroup::add(items.begin(), items.end());
+
+    Patch::add(*this);
 }

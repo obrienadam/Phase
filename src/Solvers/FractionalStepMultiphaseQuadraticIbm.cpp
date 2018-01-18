@@ -9,7 +9,7 @@ FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const
         :
         FractionalStepMultiphase(input, grid)
 {
-    for (auto ibObj: ib_.ibObjPtrs())
+    for (const auto &ibObj: ib_)
     {
         if (ibObj->type() != ImmersedBoundaryObject::QUADRATIC)
             throw Exception("FractionalStepMultiphaseQuadraticIbm",

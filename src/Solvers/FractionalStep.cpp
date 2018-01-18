@@ -48,7 +48,10 @@ Scalar FractionalStep::solve(Scalar timeStep)
     printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
+    printf("Updating IB positions...\n");
     ib_.update(timeStep);
+
+    printf("Computing IB forces...\n");
     ib_.computeForce(rho_, mu_, u, p, g_);
 
     return 0;

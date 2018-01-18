@@ -115,7 +115,6 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     }
 
     for (const Patch &patch: grid_->patches())
-    {
         switch (u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:
@@ -133,7 +132,6 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
                     u(f) = u(f.lCell()) - dot(u(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
                 break;
         }
-    }
 
     return error;
 }

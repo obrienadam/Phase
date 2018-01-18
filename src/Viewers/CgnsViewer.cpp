@@ -196,14 +196,14 @@ void CgnsViewer::writeImmersedBoundaries(int fid, const Solver &solver)
     //- Create new zones for the ibs and write them
     int ibBase;
     cg_base_write(fid, "IBs", 1, 2, &ibBase);
-    for (const ImmersedBoundaryObject &ibObj: solver.ibObjs())
+    for (const auto &ibObj: solver.ib())
     {
-        Polygon pgn = ibObj.shape().polygonize();
+        Polygon pgn = ibObj->shape().polygonize();
         int nVerts = pgn.vertices().size() - 1;
         int sizes[3] = {nVerts, 1, 0};
 
         int ibZoneId;
-        cg_zone_write(fid, ibBase, ibObj.name().c_str(), sizes, CGNS_ENUMV(Unstructured), &ibZoneId);
+        cg_zone_write(fid, ibBase, ibObj->name().c_str(), sizes, CGNS_ENUMV(Unstructured), &ibZoneId);
 
         std::vector<Scalar> coordsX, coordsY;
 
