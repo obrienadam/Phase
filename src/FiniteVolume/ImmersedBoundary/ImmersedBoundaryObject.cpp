@@ -6,13 +6,13 @@
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
                                                Label id,
-                                               FiniteVolumeGrid2D &grid)
+                                               const std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
         name_(name),
         grid_(grid),
         id_(id)
 {
-    cells_ = CellZone("Cells", grid.cellZoneRegistry());
+    cells_ = CellZone("Cells", grid->cellZoneRegistry());
     zoneRegistry_ = std::make_shared<CellZone::ZoneRegistry>();
     ibCells_ = CellZone("IbCells", zoneRegistry_);
     solidCells_ = CellZone("SolidCells", zoneRegistry_);
@@ -55,7 +55,6 @@ void ImmersedBoundaryObject::clear()
     solidCells_.clear();
     freshCells_.clear();
     deadCells_.clear();
-    //grid_.setCellsActive(fluid_->begin(), fluid_->end());
 }
 
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) const

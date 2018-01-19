@@ -11,10 +11,14 @@ public:
     //- Constructors, one for circles, another for polygons
     QuadraticImmersedBoundaryObject(const std::string &name,
                            Label id,
-                           FiniteVolumeGrid2D &grid);
+                           const std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     Type type() const
     { return QUADRATIC; }
+
+    //- Clear
+
+    void clear();
 
     //- Update
     void updateCells();

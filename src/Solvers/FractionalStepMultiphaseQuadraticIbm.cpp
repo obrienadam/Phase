@@ -16,8 +16,6 @@ FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const
                             "FractionalStepMultiphaseQuadraticIbm",
                             "immersed boundary object \"" + ibObj->name() + "\" is not type \"quadratic\".");
     }
-
-    addScalarField("ps");
 }
 
 Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
@@ -28,12 +26,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
     correctVelocity(timeStep);
 
     ib_.computeForce(rho, mu, u, p, g_);
-    //ib_.computeForce(rho1_, mu1_, u, p, g_);
     ib_.update(timeStep);
-
-    ScalarFiniteVolumeField &ps = scalarField("ps");
-    for (const Cell &cell: grid_->cells())
-        ps(cell) = p(cell) + rho(cell) * dot(g_, cell.centroid());
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -52,7 +45,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     Scalar error = gammaEqn_.solve();
 
-    for (const Cell &cell: grid().localActiveCells())
+    for (const Cell &cell: grid_->localActiveCells())
         gamma(cell) = clamp(gamma(cell), 0., 1.);
 
     grid_->sendMessages(gamma);
@@ -172,21 +165,21 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphaseQuadraticIbm::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, p, grid_->localActiveCells()) == src::div(u, grid().localActiveCells()));
+    pEqn_ = (fv::laplacian(timeStep / rho, p, grid_->localActiveCells()) == src::div(u, grid_->localActiveCells()));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     p.setBoundaryFaces();
     gradP.computeFaces();
-    gradP.faceToCell(rho, rho, grid().localActiveCells());
+    gradP.faceToCell(rho, rho, grid_->localActiveCells());
 
     return error;
 }
 
 void FractionalStepMultiphaseQuadraticIbm::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: fluid_) // Try correcting over the entire domain!!
         u(cell) -= timeStep / rho(cell) * gradP(cell);
 
     for (const Face &face: grid_->interiorFaces())

@@ -35,21 +35,21 @@ Scalar FractionalStepQuadraticIbm::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepQuadraticIbm::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid().localActiveCells()) == src::div(u, grid().localActiveCells()));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid_->localActiveCells()) == src::div(u, grid_->localActiveCells()));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     //- Gradient
     p.setBoundaryFaces();
-    gradP.compute(grid().localActiveCells());
+    gradP.compute(grid_->localActiveCells());
 
     return error;
 }
 
 void FractionalStepQuadraticIbm::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: grid().localActiveCells())
+    for (const Cell &cell: grid_->localActiveCells())
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);

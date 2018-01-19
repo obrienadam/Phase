@@ -4,8 +4,6 @@
 #include "ImmersedBoundaryObject.h"
 #include "CollisionModel.h"
 
-class Solver;
-
 class SurfaceTensionForce;
 
 class ImmersedBoundary
@@ -17,12 +15,14 @@ public:
         FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4, DEAD_CELLS = 5, BUFFER_CELLS = 6
     };
 
-    ImmersedBoundary(const Input &input, Solver &solver);
+    ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     //- Solver/grid info
-    const Solver &solver() const;
+    const std::shared_ptr<FiniteVolumeGrid2D>& grid()
+    { return grid_; }
 
-    const FiniteVolumeGrid2D &grid() const;
+    std::shared_ptr<const FiniteVolumeGrid2D> grid() const
+    { return grid_; }
 
     //- Cell zones
     void initCellZones(CellZone &zone);
@@ -106,8 +106,8 @@ protected:
     const CellZone *zone_ = nullptr;
     NodeGroup fluidNodes_;
 
-    Solver &solver_;
-    FiniteVolumeField<int> &cellStatus_;
+
+    std::shared_ptr<FiniteVolumeGrid2D> grid_;
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
 
     //- Collision model

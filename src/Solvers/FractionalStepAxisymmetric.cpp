@@ -37,7 +37,7 @@ Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
 
 void FractionalStepAxisymmetric::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: grid().localActiveCells())
+    for (const Cell &cell: grid_->localActiveCells())
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);

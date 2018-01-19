@@ -1,14 +1,12 @@
 #ifndef GHOST_CELL_STENCIL_H
 #define GHOST_CELL_STENCIL_H
 
+#include "ImmersedBoundaryStencil.h"
 #include "Cell.h"
 #include "Interpolation.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
-#include "ImmersedBoundaryStencil.h"
 #include "StaticMatrix.h"
-
-class GhostCellImmersedBoundaryObject;
 
 class GhostCellStencil: public ImmersedBoundaryStencil
 {
@@ -16,7 +14,7 @@ public:
 
     GhostCellStencil(const Cell& cell): ImmersedBoundaryStencil(cell) {}
 
-    GhostCellStencil(const Cell &cell, const GhostCellImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
+    GhostCellStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj);
 
     GhostCellStencil(const Cell& cell,
                      const Point2D& bp,

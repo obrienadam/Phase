@@ -242,7 +242,7 @@ void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
     //- Update the gravitational source term
     gradRho.computeFaces();
     sg.savePreviousTimeStep(timeStep, 1.);
-    for (const Face &face: grid().faces())
+    for (const Face &face: grid_->faces())
         sg(face) = dot(g_, -face.centroid()) * gradRho(face);
 
     sg.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);

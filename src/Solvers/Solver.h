@@ -115,8 +115,8 @@ public:
     { return *vectorFields_.find(name)->second; }
 
     //- Grid
-    FiniteVolumeGrid2D &grid()
-    { return *grid_; }
+    const std::shared_ptr<FiniteVolumeGrid2D> &grid()
+    { return grid_; }
 
     const FiniteVolumeGrid2D &grid() const
     { return *grid_; }

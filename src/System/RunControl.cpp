@@ -33,7 +33,7 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     time_.start();
     for (
             iterNo = 0;
-            time < maxTime && time_.elapsedSeconds(solver.grid().comm()) < maxWallTime;
+            time < maxTime && time_.elapsedSeconds(solver.grid()->comm()) < maxWallTime;
             time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
             )
     {
@@ -67,6 +67,6 @@ void RunControl::run(const Input &input, Solver &solver, Viewer &viewer)
     solver.printf("%s\n", (std::string(96, '*')).c_str());
     solver.printf("Calculation complete.\n");
     solver.printf("Elapsed time: %s\n", time_.elapsedTime().c_str());
-    solver.printf("Elapsed CPU time: %s\n", time_.elapsedCpuTime(solver.grid().comm()).c_str());
+    solver.printf("Elapsed CPU time: %s\n", time_.elapsedCpuTime(solver.grid()->comm()).c_str());
     solver.printf("%s\n", (std::string(96, '*')).c_str());
 }

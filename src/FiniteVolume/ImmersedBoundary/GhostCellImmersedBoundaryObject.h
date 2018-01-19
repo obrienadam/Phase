@@ -11,7 +11,7 @@ public:
 
     GhostCellImmersedBoundaryObject(const std::string &name,
                                     Label id,
-                                    FiniteVolumeGrid2D &grid);
+                                    const std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     Type type() const
     { return GHOST_CELL; }

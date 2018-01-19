@@ -1,16 +1,14 @@
 #include "GhostCellStencil.h"
-#include "GhostCellImmersedBoundaryObject.h"
 
 GhostCellStencil::GhostCellStencil(const Cell &cell,
-                                   const GhostCellImmersedBoundaryObject &ibObj,
-                                   const FiniteVolumeGrid2D &grid)
+                                   const ImmersedBoundaryObject &ibObj)
         :
         ImmersedBoundaryStencil(cell)
 {
     bp_ = ibObj.nearestIntersect(cell.centroid());
     ip_ = 2. * bp_ - cell.centroid();
     nw_ = ibObj.nearestEdgeNormal(bp_).unitVec();
-    cells_ = grid.findNearestNode(ip_).cells();
+    cells_ = ibObj.grid()->findNearestNode(ip_).cells();
 
     if (cells_.size() != 4)
     {

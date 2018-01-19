@@ -5,7 +5,7 @@
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
-                                                                 FiniteVolumeGrid2D &grid)
+                                                                 const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         ImmersedBoundaryObject(name, id, grid)
 {
@@ -24,7 +24,7 @@ void HighOrderImmersedBoundaryObject::updateCells()
     for (const Cell &cell: solidCells_)
         for (const InteriorLink &nb: cell.neighbours())
         {
-            if (!solidCells_.isInGroup(nb.cell()) && grid().localActiveCells().isInGroup(nb.cell()))
+            if (!solidCells_.isInGroup(nb.cell()) && grid()->localActiveCells().isInGroup(nb.cell()))
             {
                 cells_.add(nb.cell());
                 ibCells_.add(nb.cell());

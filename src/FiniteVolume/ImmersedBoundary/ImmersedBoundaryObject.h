@@ -25,7 +25,7 @@ public:
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
                            Label id,
-                           FiniteVolumeGrid2D &grid);
+                           const std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     virtual Type type() const = 0;
 
@@ -80,7 +80,7 @@ public:
     //- Set/get primary cell zone
     void setZone(CellZone &zone);
 
-    void clear();
+    virtual void clear();
 
     CellZone &cellZone()
     { return *fluid_; }
@@ -88,7 +88,7 @@ public:
     const CellZone &cellZone() const
     { return *fluid_; }
 
-    const FiniteVolumeGrid2D &grid() const
+    const std::shared_ptr<FiniteVolumeGrid2D> &grid() const
     { return grid_; }
 
     //- Operations
@@ -227,7 +227,7 @@ protected:
     std::string name_;
     Label id_;
 
-    FiniteVolumeGrid2D &grid_;
+    std::shared_ptr<FiniteVolumeGrid2D> grid_;
 
     std::shared_ptr<CellZone::ZoneRegistry> zoneRegistry_; //- Registry for these IB cells only
     CellZone cells_, ibCells_, solidCells_, freshCells_, deadCells_;

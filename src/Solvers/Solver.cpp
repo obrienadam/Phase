@@ -11,7 +11,7 @@
 
 Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        ib_(input, *this),
+        ib_(input, grid),
         grid_(grid)
 {
     //- Set simulation time options

@@ -3,7 +3,7 @@
 #include "GhostCellImmersedBoundaryObject.h"
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id,
-                                                                 FiniteVolumeGrid2D &grid)
+                                                                 const std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
         ImmersedBoundaryObject(name, id, grid)
 {
@@ -189,8 +189,8 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVo
         Ray2D r1 = Ray2D(st.cell().centroid(), wn.rotate(M_PI_2 - theta));
         Ray2D r2 = Ray2D(st.cell().centroid(), wn.rotate(theta - M_PI_2));
 
-        GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), grid_);
-        GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), grid_);
+        GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), *grid_);
+        GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), *grid_);
 
         if (theta < M_PI_2)
         {
@@ -229,15 +229,15 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
     for (const GhostCellStencil &st: stencils_)
     {
         points.push_back(st.boundaryPoint());
-        pressures.push_back(st.bpValue(p));
+        pressures.push_back(st.bpValue(p) + rho * dot(st.boundaryPoint(), g));
         shears.push_back(mu * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec()));
     }
 
-    points = grid_.comm().gatherv(grid_.comm().mainProcNo(), points);
-    pressures = grid_.comm().gatherv(grid_.comm().mainProcNo(), pressures);
-    shears = grid_.comm().gatherv(grid_.comm().mainProcNo(), shears);
+    points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
+    pressures = grid_->comm().gatherv(grid_->comm().mainProcNo(), pressures);
+    shears = grid_->comm().gatherv(grid_->comm().mainProcNo(), shears);
 
-    if (grid_.comm().isMainProc())
+    if (grid_->comm().isMainProc())
     {
         force_ = Vector2D(0., 0.);
 
@@ -267,7 +267,7 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
         }
     }
 
-    force_ = grid_.comm().broadcast(grid_.comm().mainProcNo(), force_);
+    force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_);
 }
 
 void GhostCellImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -285,5 +285,5 @@ void GhostCellImmersedBoundaryObject::constructStencils()
 {
     stencils_.clear();
     for (const Cell &cell: ibCells_)
-        stencils_.push_back(GhostCellStencil(cell, *this, grid_));
+        stencils_.push_back(GhostCellStencil(cell, *this));
 }

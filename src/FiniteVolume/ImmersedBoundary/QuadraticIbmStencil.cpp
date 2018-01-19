@@ -10,7 +10,7 @@ QuadraticIbmStencil::QuadraticIbmStencil(const Cell &cell,
 
     if (ibObjIbCell)
     {
-        const Cell &stCell = ib.grid().globalActiveCells().nearestItem(
+        const Cell &stCell = ib.grid()->globalActiveCells().nearestItem(
                 2. * cell.centroid() - ibCell.centroid()
         );
 

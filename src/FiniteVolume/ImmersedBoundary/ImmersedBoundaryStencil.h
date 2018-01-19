@@ -2,6 +2,7 @@
 #define IMMERSED_BOUNDARY_STENCIL_H
 
 #include "Cell.h"
+#include "ImmersedBoundaryObject.h"
 
 class ImmersedBoundaryStencil
 {

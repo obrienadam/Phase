@@ -103,7 +103,7 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
         for (const InteriorLink &nb: cell.neighbours())
             if (isInIb(nb.cell()))
             {
-                const Cell &stCell = grid().globalActiveCells().nearestItem(
+                const Cell &stCell = grid_->globalActiveCells().nearestItem(
                         2. * cell.centroid() - nb.cell().centroid());
 
                 LineSegment2D ln = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
@@ -154,14 +154,14 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
                 }
             }
 
-    bPts = grid_.comm().allGatherv(bPts);
-    bP = grid_.comm().allGatherv(bP);
+    bPts = grid_->comm().allGatherv(bPts);
+    bP = grid_->comm().allGatherv(bP);
 
-    tauPtsX = grid_.comm().allGatherv(tauPtsX);
-    tauX = grid_.comm().allGatherv(tauX);
+    tauPtsX = grid_->comm().allGatherv(tauPtsX);
+    tauX = grid_->comm().allGatherv(tauX);
 
-    tauPtsY = grid_.comm().allGatherv(tauPtsY);
-    tauY = grid_.comm().allGatherv(tauY);
+    tauPtsY = grid_->comm().allGatherv(tauPtsY);
+    tauY = grid_->comm().allGatherv(tauY);
 
     std::vector<ScalarPoint> pPoints, tauXPoints, tauYPoints;
 
@@ -302,8 +302,8 @@ void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho
                 bP.push_back(pB + rhoB * dot(g, ln.ptB()));
             }
 
-    bPts = grid_.comm().allGatherv(bPts);
-    bP = grid_.comm().allGatherv(bP);
+    bPts = grid_->comm().allGatherv(bPts);
+    bP = grid_->comm().allGatherv(bP);
 
     std::vector<ScalarPoint> pPoints;
     std::transform(bPts.begin(), bPts.end(), bP.begin(), std::back_inserter(pPoints), [](const Point2D &pt, Scalar p) {
