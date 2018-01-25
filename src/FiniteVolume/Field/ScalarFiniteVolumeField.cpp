@@ -20,14 +20,14 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
     {
         Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name_ + ".*.value");
 
-        for (const Patch& patch: grid().patches())
+        for (const Patch& patch: grid()->patches())
         {
             BoundaryType type = patchBoundaries_[patch.id()].first;
             patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for (const Patch& patch: grid().patches())
+    for (const Patch& patch: grid()->patches())
     {
         Scalar refVal = input.boundaryInput().get<Scalar>("Boundaries." + name_ + "." + patch.name() + ".value", 0);
         BoundaryType type = patchBoundaries_[patch.id()].first;
@@ -36,7 +36,7 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
 
     auto &self = *this;
 
-    for(const Patch& patch: grid().patches())
+    for(const Patch& patch: grid()->patches())
         for(const Face& face: patch)
             self(face) = boundaryRefValue(patch);
 }
@@ -57,15 +57,15 @@ ScalarFiniteVolumeField operator/(ScalarFiniteVolumeField lhs, const ScalarFinit
 
 ScalarFiniteVolumeField operator/(Scalar lhs, ScalarFiniteVolumeField rhs)
 {
-    for (const Cell &cell: rhs.grid().cells())
+    for (const Cell &cell: rhs.grid()->cells())
         rhs(cell) = lhs / rhs(cell);
 
     if(rhs.hasFaces())
-        for (const Face &face: rhs.grid().faces())
+        for (const Face &face: rhs.grid()->faces())
             rhs(face) = lhs / rhs(face);
 
     if(rhs.hasNodes())
-        for(const Node &node: rhs.grid().nodes())
+        for(const Node &node: rhs.grid()->nodes())
             rhs(node) = lhs / rhs(node);
 
     return rhs;

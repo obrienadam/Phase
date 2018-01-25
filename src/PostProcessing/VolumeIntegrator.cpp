@@ -7,7 +7,7 @@ VolumeIntegrator::VolumeIntegrator(const Solver &solver, const std::string &fiel
 {
     outputDir_ = outputDir_ / "VolumeIntegrators";
 
-    if (solver.grid().comm().isMainProc())
+    if (solver.grid()->comm().isMainProc())
         createOutputDirectory();
 
     std::ofstream fout((outputDir_ / (field_.name() + ".dat")).string());
@@ -21,12 +21,12 @@ void VolumeIntegrator::compute(Scalar time)
     {
         Scalar result = 0.;
 
-        for (const Cell &cell: solver_.grid().localActiveCells())
+        for (const Cell &cell: solver_.grid()->localActiveCells())
             result += field_(cell) * cell.volume();
 
-        result = solver_.grid().comm().sum(result);
+        result = solver_.grid()->comm().sum(result);
 
-        if (solver_.grid().comm().isMainProc())
+        if (solver_.grid()->comm().isMainProc())
         {
             std::ofstream fout((outputDir_ / (field_.name() + ".dat")).string(),
                                std::ofstream::out | std::ofstream::app);

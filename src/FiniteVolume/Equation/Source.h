@@ -28,7 +28,7 @@ namespace src
     template <class T>
     FiniteVolumeField<T> src(const FiniteVolumeField<T> &field, const CellGroup& group)
     {
-        VectorFiniteVolumeField srcField(field.gridPtr(), field.name(), T(), false, false);
+        VectorFiniteVolumeField srcField(field.grid(), field.name(), T(), false, false);
 
         for(const Cell& cell: group)
             srcField(cell) = field(cell) * cell.volume();

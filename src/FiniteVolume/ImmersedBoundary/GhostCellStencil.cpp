@@ -1,7 +1,8 @@
 #include "GhostCellStencil.h"
 
 GhostCellStencil::GhostCellStencil(const Cell &cell,
-                                   const ImmersedBoundaryObject &ibObj)
+                                   const ImmersedBoundaryObject &ibObj,
+                                   bool throwExceptionOnError)
         :
         ImmersedBoundaryStencil(cell)
 {
@@ -12,9 +13,15 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
 
     if (cells_.size() != 4)
     {
-        std::ostringstream sout;
-        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
-        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+        if (throwExceptionOnError)
+        {
+            std::ostringstream sout;
+            sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_
+                 << ".";
+            throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+        }
+        else
+            return;
     }
 
     Point2D x1 = cells_[0].get().centroid();
@@ -65,7 +72,8 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
 GhostCellStencil::GhostCellStencil(const Cell &cell,
                                    const Point2D &bp,
                                    const Vector2D &cl,
-                                   const FiniteVolumeGrid2D &grid)
+                                   const FiniteVolumeGrid2D &grid,
+                                   bool throwExceptionOnError)
         :
         ImmersedBoundaryStencil(cell)
 {
@@ -76,9 +84,15 @@ GhostCellStencil::GhostCellStencil(const Cell &cell,
 
     if (cells_.size() != 4)
     {
-        std::ostringstream sout;
-        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
-        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+        if (throwExceptionOnError)
+        {
+            std::ostringstream sout;
+            sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_
+                 << ".";
+            throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
+        }
+        else
+            return;
     }
 
     Point2D x1 = cells_[0].get().centroid();
@@ -157,7 +171,7 @@ Vector2D GhostCellStencil::ipValue(const VectorFiniteVolumeField &field) const
 
 Scalar GhostCellStencil::bpValue(const ScalarFiniteVolumeField &field) const
 {
-    auto cells = field.grid().findNearestNode(bp_).cells();
+    auto cells = field.grid()->findNearestNode(bp_).cells();
 
     Point2D x1 = cells[0].get().centroid();
     Point2D x2 = cells[1].get().centroid();
@@ -184,7 +198,7 @@ Scalar GhostCellStencil::bpValue(const ScalarFiniteVolumeField &field) const
 
 Vector2D GhostCellStencil::bpValue(const VectorFiniteVolumeField &field) const
 {
-    auto cells = field.grid().findNearestNode(bp_).cells();
+    auto cells = field.grid()->findNearestNode(bp_).cells();
 
     Point2D x1 = cells[0].get().centroid();
     Point2D x2 = cells[1].get().centroid();
@@ -227,7 +241,7 @@ Vector2D GhostCellStencil::ipGrad(const ScalarFiniteVolumeField &field) const
 
 Vector2D GhostCellStencil::bpGrad(const ScalarFiniteVolumeField &field) const
 {
-    auto cells = field.grid().findNearestNode(bp_).cells();
+    auto cells = field.grid()->findNearestNode(bp_).cells();
 
     Point2D x1 = cells[0].get().centroid();
     Point2D x2 = cells[1].get().centroid();
@@ -257,7 +271,7 @@ Vector2D GhostCellStencil::bpGrad(const ScalarFiniteVolumeField &field) const
 
 Tensor2D GhostCellStencil::bpGrad(const VectorFiniteVolumeField &field) const
 {
-    auto cells = field.grid().findNearestNode(bp_).cells();
+    auto cells = field.grid()->findNearestNode(bp_).cells();
 
     Point2D x1 = cells[0].get().centroid();
     Point2D x2 = cells[1].get().centroid();

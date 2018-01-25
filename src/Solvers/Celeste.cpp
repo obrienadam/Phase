@@ -26,7 +26,7 @@ void Celeste::computeFaces()
     auto &ft = *this;
     auto &kappa = *kappa_;
 
-    for (const Face &face: gamma_.grid().faces())
+    for (const Face &face: gamma_.grid()->faces())
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
 }
 
@@ -39,7 +39,7 @@ void Celeste::computeFaces(const ImmersedBoundary &ib)
     auto &ft = *this;
     auto &kappa = *kappa_;
 
-    for (const Face &face: gamma_.grid().faces())
+    for (const Face &face: gamma_.grid()->faces())
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
 }
 
@@ -53,7 +53,7 @@ void Celeste::compute()
     auto &kappa = *kappa_;
 
     ft.fill(Vector2D(0., 0.));
-    for (const Cell &cell: gamma_.grid().cellZone("fluid"))
+    for (const Cell &cell: gamma_.grid()->cellZone("fluid"))
         ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
 
     ft.interpolateFaces();
@@ -103,8 +103,8 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                     Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
                     Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
 
-                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), grid());
-                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), grid());
+                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid());
+                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid());
 
                     if (theta < M_PI_2)
                     {
@@ -150,7 +150,7 @@ void Celeste::computeGradGammaTilde()
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde_->fill(Vector2D(0., 0.));
-    for (const Cell &cell: gradGamma_.grid().cellZone("fluid"))
+    for (const Cell &cell: gradGamma_.grid()->cellZone("fluid"))
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
@@ -162,7 +162,7 @@ void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde_->fill(Vector2D(0., 0.));
-    for (const Cell &cell: gradGamma_.grid().cellZone("fluid"))
+    for (const Cell &cell: gradGamma_.grid()->cellZone("fluid"))
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 

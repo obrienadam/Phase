@@ -25,6 +25,7 @@ const std::vector<Ref<const Cell> > Node::cells() const
 {
     using namespace std;
     vector<Ref<const Cell>> cells;
+    cells.reserve(cells_.size());
 
     for (Label id: cellIds_)
         cells.push_back(cref(cells_[id]));

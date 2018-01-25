@@ -1,6 +1,8 @@
 #ifndef EQUATION_H
 #define EQUATION_H
 
+#include <valarray>
+
 #include "FiniteVolumeGrid2D.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
@@ -46,6 +48,12 @@ public:
     void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::vector<T2> &vals)
     {
         add(cell, nbs.begin(), nbs.end(), vals.begin());
+    }
+
+    template<typename T2>
+    void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::valarray<T2> &vals)
+    {
+        add(cell, nbs.begin(), nbs.end(), std::begin(vals));
     }
 
     template<typename T2>

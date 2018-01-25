@@ -6,23 +6,14 @@ set(HEADERS StaticMatrix.h
         TrilinosBelosSparseMatrixSolver.h
         TrilinosMueluSparseMatrixSolver.h
         Vector.h
-        Algorithm.h
-        Interpolation.h
-        LinearInterpolation.h
-        BilinearInterpolation.h
-        QuadraticNormalInterpolation.h
-        InterpolationFunction.h)
+        Algorithm.h)
 
 set(SOURCES Matrix.cpp
         SparseMatrixSolver.cpp
         EigenSparseMatrixSolver.cpp
         TrilinosBelosSparseMatrixSolver.cpp
         TrilinosMueluSparseMatrixSolver.cpp
-        Vector.cpp
-        LinearInterpolation.cpp
-        BilinearInterpolation.cpp
-        QuadraticNormalInterpolation.cpp
-        InterpolationFunction.cpp Algorithm.h)
+        Vector.cpp)
 
 add_library(Math ${HEADERS} ${SOURCES})
 

@@ -4,35 +4,40 @@
 #include <vector>
 #include "Types.h"
 
-class Vector : public std::vector<Scalar>
+class Vector
 {
 public:
     Vector(Size size = 0, Scalar val = 0.);
 
-    Vector(const Vector &rhs) = default;
-
-    Vector(Vector &&rhs) = default;
-
     Scalar &operator()(Index i)
-    { return std::vector<Scalar>::operator[](i); }
+    { return data_[i]; }
 
-    const Scalar &operator()(Index i) const
-    { return std::vector<Scalar>::operator[](i); }
+    Scalar operator()(Index i) const
+    { return data_[i]; }
 
-    Vector &operator=(const Vector &rhs) = default;
+    size_t size() const
+    { return data_.size(); }
 
-    Vector &operator=(Vector &&rhs) = default;
+    const std::vector<Scalar>& data() const
+    { return data_; }
 
     Vector &operator+=(const Vector &rhs);
 
     Vector &operator-=(const Vector &rhs);
 
+    Vector &operator+=(Scalar rhs);
+
+    Vector &operator-=(Scalar rhs);
+
     Vector &operator*=(Scalar rhs);
 
     Vector operator-() const;
 
-    void zero()
-    { std::fill(begin(), end(), 0.); }
+    void zero();
+
+private:
+
+    std::vector<Scalar> data_;
 };
 
 Vector operator+(Vector lhs, const Vector &rhs);

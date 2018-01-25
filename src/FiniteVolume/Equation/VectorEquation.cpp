@@ -5,8 +5,8 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &
         :
         name(name),
         field_(field),
-        coeffs_(2 * field.grid().localActiveCells().size()),
-        sources_(2 * field.grid().localActiveCells().size(), 0.)
+        coeffs_(2 * field.grid()->localActiveCells().size()),
+        sources_(2 * field.grid()->localActiveCells().size(), 0.)
 {
     std::for_each(coeffs_.begin(), coeffs_.end(), [](Row& row) {
         row.reserve(5);
@@ -96,28 +96,28 @@ void Equation<Vector2D>::remove(const Cell &cell)
 {
     coeffs_[field_.indexMap()->local(cell, 0)].clear();
     coeffs_[field_.indexMap()->local(cell, 1)].clear();
-    sources_[field_.indexMap()->local(cell, 0)] = 0.;
-    sources_[field_.indexMap()->local(cell, 1)] = 0.;
+    sources_(field_.indexMap()->local(cell, 0)) = 0.;
+    sources_(field_.indexMap()->local(cell, 1)) = 0.;
 }
 
 template<>
 void Equation<Vector2D>::addSource(const Cell &cell, Vector2D u)
 {
-    sources_[field_.indexMap()->local(cell, 0)] += u.x;
-    sources_[field_.indexMap()->local(cell, 1)] += u.y;
+    sources_(field_.indexMap()->local(cell, 0)) += u.x;
+    sources_(field_.indexMap()->local(cell, 1)) += u.y;
 }
 
 template<>
 void Equation<Vector2D>::setSource(const Cell &cell, Vector2D u)
 {
-    sources_[field_.indexMap()->local(cell, 0)] = u.x;
-    sources_[field_.indexMap()->local(cell, 1)] = u.y;
+    sources_(field_.indexMap()->local(cell, 0)) = u.x;
+    sources_(field_.indexMap()->local(cell, 1)) = u.y;
 }
 
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    for (const Cell &cell: field_.grid().localActiveCells())
+    for (const Cell &cell: field_.grid()->localActiveCells())
     {
         Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
         Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
@@ -133,7 +133,7 @@ void Equation<Vector2D>::relax(Scalar relaxationFactor)
 template<>
 Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField &rhs)
 {
-    for (const Cell &cell: rhs.grid().localActiveCells())
+    for (const Cell &cell: rhs.grid()->localActiveCells())
     {
         sources_(field_.indexMap()->local(cell, 0)) += rhs(cell).x;
         sources_(field_.indexMap()->local(cell, 1)) += rhs(cell).y;
@@ -145,7 +145,7 @@ Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField
 template<>
 Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField &rhs)
 {
-    for (const Cell &cell: rhs.grid().localActiveCells())
+    for (const Cell &cell: rhs.grid()->localActiveCells())
     {
         sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell).x;
         sources_(field_.indexMap()->local(cell, 1)) -= rhs(cell).y;
@@ -158,5 +158,5 @@ Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField
 template<>
 Size Equation<Vector2D>::getRank() const
 {
-    return 2 * field_.grid().localActiveCells().size();
+    return 2 * field_.grid()->localActiveCells().size();
 }

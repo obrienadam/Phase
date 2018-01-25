@@ -37,7 +37,7 @@ void TrilinosMueluSparseMatrixSolver::setRank(int rank)
         coords_ = rcp(new TpetraMultiVector(map_, 2));
     }
 
-    mat_ = rcp(new TpetraCrsMatrix(map_, 8, Tpetra::StaticProfile));
+    mat_ = rcp(new TpetraCrsMatrix(map_, 9, Tpetra::StaticProfile));
 
     linearProblem_->setOperator(mat_);
 
@@ -89,12 +89,12 @@ void TrilinosMueluSparseMatrixSolver::set(const CoefficientList &eqn)
 
 void TrilinosMueluSparseMatrixSolver::setGuess(const Vector &x0)
 {
-    x_->getDataNonConst(0).assign(x0.begin(), x0.end());
+    x_->getDataNonConst(0).assign(std::begin(x0.data()), std::end(x0.data()));
 }
 
 void TrilinosMueluSparseMatrixSolver::setRhs(const Vector &rhs)
 {
-    b_->getDataNonConst(0).assign(rhs.begin(), rhs.end());
+    b_->getDataNonConst(0).assign(std::begin(rhs.data()), std::end(rhs.data()));
 }
 
 Scalar TrilinosMueluSparseMatrixSolver::solve()
@@ -131,14 +131,14 @@ Scalar TrilinosMueluSparseMatrixSolver::solve(const Vector &x0)
 void TrilinosMueluSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData(0);
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
         field(cell) = soln[field.indexMap()->local(cell, 0)];
 }
 
 void TrilinosMueluSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData(0);
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Vector2D &u = field(cell);
         u.x = soln[field.indexMap()->local(cell, 0)];

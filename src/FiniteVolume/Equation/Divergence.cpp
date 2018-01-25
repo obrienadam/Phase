@@ -6,7 +6,7 @@ Equation<Vector2D> fv::div(const VectorFiniteVolumeField &phiU,
 {
     Equation<Vector2D> eqn(u);
 
-    for (const Cell &cell: u.grid().cellZone("fluid"))
+    for (const Cell &cell: u.grid()->cellZone("fluid"))
     {
         for (const InteriorLink &nb: cell.neighbours())
         {

@@ -4,7 +4,7 @@ set(HEADERS PostProcessing.h
         ReynoldsNumber.h
         GhostCellImmersedBoundaryObjectForceIntegrator.h
         GhostCellImmersedBoundaryObjectContactLineTracker.h
-        ContactLineTracker.h
+        ImmersedBoundaryObjectContactLineTracker.h
         ForceIntegrator.h
         IbTracker.h)
 
@@ -14,7 +14,7 @@ set(SOURCE PostProcessing.cpp
         ReynoldsNumber.cpp
         GhostCellImmersedBoundaryObjectForceIntegrator.cpp
         GhostCellImmersedBoundaryObjectContactLineTracker.cpp
-        ContactLineTracker.cpp
+        ImmersedBoundaryObjectContactLineTracker.cpp
         ForceIntegrator.cpp
         IbTracker.cpp)
 

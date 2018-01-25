@@ -13,7 +13,7 @@ namespace fv
 
         const VectorFiniteVolumeField& u0 = u.oldField(0);
 
-        for (const Cell &cell: phi.grid().cellZone("fluid"))
+        for (const Cell &cell: phi.grid()->cellZone("fluid"))
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -60,7 +60,7 @@ namespace fv
     {
         Equation<T> eqn(field);
 
-        for (const Cell &cell: field.grid().cellZone("fluid"))
+        for (const Cell &cell: field.grid()->cellZone("fluid"))
         {
             for (const InteriorLink &nb: cell.neighbours())
             {

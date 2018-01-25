@@ -1,36 +1,29 @@
 #include "QuadraticIbmStencil.h"
 #include "StaticMatrix.h"
 
-QuadraticIbmStencil::QuadraticIbmStencil(const Cell &cell,
-                                         const Cell &ibCell,
-                                         const ImmersedBoundary &ib,
-                                         Scalar flux)
+QuadraticIbmStencil::QuadraticIbmStencil(const InteriorLink &link,
+                                         const ImmersedBoundary &ib)
 {
-    auto ibObjIbCell = ib.ibObj(ibCell.centroid());
+    auto ibObj = ib.ibObj(link.cell().centroid());
 
-    if (ibObjIbCell)
+    if (ibObj)
     {
         const Cell &stCell = ib.grid()->globalActiveCells().nearestItem(
-                2. * cell.centroid() - ibCell.centroid()
+                2. * link.self().centroid() - link.cell().centroid()
         );
 
         auto ibObjStCell = ib.ibObj(stCell.centroid());
 
         if (ibObjStCell)
-            initQuadraticCoeffs(*ibObjStCell, stCell, cell, ibCell, *ibObjIbCell);
+            initQuadraticCoeffs(stCell, link.self(), link.cell(), *ibObjStCell, *ibObj);
         else
-            initQuadraticCoeffs(stCell, cell, ibCell, *ibObjIbCell);
+            initQuadraticCoeffs(stCell, link.self(), link.cell(), *ibObj);
     }
     else
     {
-        cells_ = {std::cref(ibCell)};
+        cells_ = {std::cref(link.cell())};
         coeffs_ = {1.};
     }
-
-    for (Scalar &coeff: coeffs_)
-        coeff *= flux;
-
-    src_ *= flux;
 }
 
 void QuadraticIbmStencil::initQuadraticCoeffs(const Cell &stCell,
@@ -50,11 +43,10 @@ void QuadraticIbmStencil::initQuadraticCoeffs(const Cell &stCell,
     try
     {
         auto A = inverse(StaticMatrix<3, 3>({
-                e[0] * e[0], e[0], 1.,
-                e[1] * e[1], e[1], 1.,
-                e[2] * e[2], e[2], 1.
-        }));
-
+                                                    e[0] * e[0], e[0], 1.,
+                                                    e[1] * e[1], e[1], 1.,
+                                                    e[2] * e[2], e[2], 1.
+                                            }));
 
         Scalar eb = dot(ibCell.centroid(), eta);
         auto c = StaticMatrix<1, 3>({eb * eb, eb, 1.}) * A;
@@ -77,10 +69,10 @@ void QuadraticIbmStencil::initQuadraticCoeffs(const Cell &stCell,
     }
 }
 
-void QuadraticIbmStencil::initQuadraticCoeffs(const ImmersedBoundaryObject &ibObjL,
-                                              const Cell &stCell,
+void QuadraticIbmStencil::initQuadraticCoeffs(const Cell &stCell,
                                               const Cell &cell,
                                               const Cell &ibCell,
+                                              const ImmersedBoundaryObject &ibObjL,
                                               const ImmersedBoundaryObject &ibObjR)
 {
     Vector2D eta = (ibCell.centroid() - stCell.centroid()).unitVec();
@@ -96,11 +88,10 @@ void QuadraticIbmStencil::initQuadraticCoeffs(const ImmersedBoundaryObject &ibOb
     try
     {
         auto A = inverse(StaticMatrix<3, 3>({
-                e[0] * e[0], e[0], 1.,
-                e[1] * e[1], e[1], 1.,
-                e[2] * e[2], e[2], 1.
-        }));
-
+                                                    e[0] * e[0], e[0], 1.,
+                                                    e[1] * e[1], e[1], 1.,
+                                                    e[2] * e[2], e[2], 1.
+                                            }));
 
         Scalar eb = dot(ibCell.centroid(), eta);
         auto c = StaticMatrix<1, 3>({eb * eb, eb, 1.}) * A;
@@ -115,9 +106,9 @@ void QuadraticIbmStencil::initQuadraticCoeffs(const ImmersedBoundaryObject &ibOb
 
         src_ = c(0, 0) * ibObjL.velocity(lnSt.ptB()) + c(0, 2) * ibObjR.velocity(lnIb.ptB());
     }
-    catch (const Exception &exception)
+    catch (const Exception &e)
     {
-        initLinearCoeffs(ibObjL, stCell, ibCell, ibObjR);
+        initLinearCoeffs(stCell, ibCell, ibObjL, ibObjR);
     }
 }
 
@@ -132,9 +123,9 @@ void QuadraticIbmStencil::initLinearCoeffs(const Cell &stCell, const Cell &ibCel
     };
 
     auto A = inverse(StaticMatrix<2, 2>({
-            e[0], 1.,
-            e[1], 1.
-    }));
+                                                e[0], 1.,
+                                                e[1], 1.
+                                        }));
 
     Scalar eb = dot(ibCell.centroid(), eta);
     auto c = StaticMatrix<1, 2>({eb, 1.}) * A;
@@ -150,9 +141,9 @@ void QuadraticIbmStencil::initLinearCoeffs(const Cell &stCell, const Cell &ibCel
     src_ = c(0, 1) * ibObj.velocity(ln.ptB());
 }
 
-void QuadraticIbmStencil::initLinearCoeffs(const ImmersedBoundaryObject &ibObjL,
-                                           const Cell &stCell,
+void QuadraticIbmStencil::initLinearCoeffs(const Cell &stCell,
                                            const Cell &ibCell,
+                                           const ImmersedBoundaryObject &ibObjL,
                                            const ImmersedBoundaryObject &ibObjR)
 {
     Vector2D eta = (ibCell.centroid() - stCell.centroid()).unitVec();
@@ -165,12 +156,13 @@ void QuadraticIbmStencil::initLinearCoeffs(const ImmersedBoundaryObject &ibObjL,
     };
 
     auto A = inverse(StaticMatrix<2, 2>({
-            e[0], 1.,
-            e[1], 1.
-    }));
+                                                e[0], 1.,
+                                                e[1], 1.
+                                        }));
 
     Scalar eb = dot(ibCell.centroid(), eta);
     auto c = StaticMatrix<1, 2>({eb, 1.}) * A;
 
+    coeffs_ = {};
     src_ = c(0, 0) * ibObjL.velocity(lnSt.ptB()) + c(0, 1) * ibObjR.velocity(lnIb.ptB());
 }

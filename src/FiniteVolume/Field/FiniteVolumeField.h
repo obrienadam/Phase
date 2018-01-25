@@ -40,6 +40,8 @@ public:
     //- Initialization
     void fill(const T &val);
 
+    void fill(const T &val, const CellGroup &group);
+
     void fillInterior(const T &val);
 
     void assign(const FiniteVolumeField<T>& field);
@@ -59,28 +61,28 @@ public:
     template<class TFunc>
     void computeCells(const TFunc &fcn)
     {
-        for (const Cell &cell: grid().cells())
+        for (const Cell &cell: grid_->cells())
             (*this)(cell) = fcn(cell);
     }
 
     template<class TFunc>
     void computeFaces(const TFunc &fcn)
     {
-        for (const Face &face: grid().faces())
+        for (const Face &face: grid_->faces())
             (*this)(face) = fcn(face);
     }
 
     template<class TFunc>
     void computeInteriorFaces(const TFunc &fcn)
     {
-        for (const Face &face: grid().interiorFaces())
+        for (const Face &face: grid_->interiorFaces())
             (*this)(face) = fcn(face);
     }
 
     template<class TFunc>
     void computeBoundaryFaces(const TFunc &fcn)
     {
-        for (const Face &face: grid().boundaryFaces())
+        for (const Face &face: grid_->boundaryFaces())
             (*this)(face) = fcn(face);
     }
 
@@ -232,11 +234,8 @@ public:
 
     FiniteVolumeField &operator/=(Scalar lhs);
 
-    std::shared_ptr<const FiniteVolumeGrid2D> gridPtr() const
+    const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
     { return grid_; }
-
-    const FiniteVolumeGrid2D &grid() const
-    { return *grid_; }
 
     //- Debug
     void writeToFile(const std::string &filename) const;

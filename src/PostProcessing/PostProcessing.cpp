@@ -3,6 +3,7 @@
 #include "IbTracker.h"
 #include "GhostCellImmersedBoundaryObjectForceIntegrator.h"
 #include "GhostCellImmersedBoundaryObjectContactLineTracker.h"
+#include "ImmersedBoundaryObjectContactLineTracker.h"
 
 PostProcessing::PostProcessing(const Input &input, const Solver &solver)
 {
@@ -37,6 +38,10 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
             else if (postProcessingObjectInput.first == "GhostCellImmersedBoundaryObjectContactLineTracker")
             {
                 postProcessingObj = std::make_shared<GhostCellImmersedBoundaryObjectContactLineTracker>(solver);
+            }
+            else if (postProcessingObjectInput.first == "ImmersedBoundaryObjectContactLineTracker")
+            {
+                postProcessingObj = std::make_shared<ImmersedBoundaryObjectContactLineTracker>(solver);
             }
 
             if (postProcessingObj)

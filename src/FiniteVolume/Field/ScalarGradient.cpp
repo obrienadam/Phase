@@ -2,7 +2,7 @@
 
 ScalarGradient::ScalarGradient(const ScalarFiniteVolumeField &phi)
         :
-        VectorFiniteVolumeField(phi.gridPtr(),
+        VectorFiniteVolumeField(phi.grid(),
                                 "grad" + phi.name(),
                                 Vector2D(0., 0.),
                                 true, false),

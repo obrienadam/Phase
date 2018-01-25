@@ -27,7 +27,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
-    ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
+    ft_ = std::make_shared<Celeste>(input, *ib_, gamma, rho, mu, u, gradGamma);
 
     addVectorField(ft_);
 
@@ -91,7 +91,7 @@ void PisoMultiphase::computeRho()
 
     rho.savePreviousTimeStep(0, 1);
 
-    for (const Cell &cell: rho.grid().cells())
+    for (const Cell &cell: rho.grid()->cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         rho(cell) = (1 - w) * rho1_ + w * rho2_;
@@ -102,10 +102,10 @@ void PisoMultiphase::computeRho()
     harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
     gradRho.compute(fluid_);
 
-    for (const Cell &cell: sg.grid().cellZone("fluid"))
+    for (const Cell &cell: sg.grid()->cellZone("fluid"))
         sg(cell) = dot(g_, cell.centroid()) * gradRho(cell);
 
-    for (const Face &face: sg.grid().faces())
+    for (const Face &face: sg.grid()->faces())
         sg(face) = dot(g_, face.centroid()) * gradRho(face);
 }
 
@@ -117,7 +117,7 @@ void PisoMultiphase::computeMu()
 
     mu.savePreviousTimeStep(0, 1);
 
-    for (const Cell &cell: mu.grid().cells())
+    for (const Cell &cell: mu.grid()->cells())
     {
         Scalar w = max(0., min(1., alpha(cell)));
         mu(cell) = (1 - w) * mu1_ + w * mu2_;
@@ -134,7 +134,7 @@ Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
     computeRho();
     computeMu();
 
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_->bcs(u)
              == fv::laplacian(mu, u) + src::src(*ft_ - gradP - sg, fluid_));
 
     Scalar error = uEqn_.solve();
@@ -157,7 +157,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
         case CICSAM:
             gammaEqn_ = (
                     fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) +
-                    ib_.bcs(gamma) == 0.);
+                    ib_->bcs(gamma) == 0.);
     }
 
     Scalar error = gammaEqn_.solve();
@@ -180,7 +180,7 @@ void PisoMultiphase::rhieChowInterpolation()
     Piso::rhieChowInterpolation();
     const auto& ft = *ft_;
 
-    for (const Face &face: u.grid().interiorFaces())
+    for (const Face &face: u.grid()->interiorFaces())
     {
         const Cell &lCell = face.lCell();
         const Cell &rCell = face.rCell();
@@ -195,7 +195,7 @@ void PisoMultiphase::rhieChowInterpolation()
                    + df * sg(face) - (g * d(lCell) * sg(lCell) + (1. - g) * d(rCell) * sg(rCell));
     }
 
-    for (const Face &face: u.grid().boundaryFaces())
+    for (const Face &face: u.grid()->boundaryFaces())
     {
         const Cell &cellP = face.lCell();
         const Scalar df = d(face);

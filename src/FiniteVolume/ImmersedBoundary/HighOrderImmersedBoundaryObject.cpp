@@ -5,9 +5,10 @@
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
+                                                                 const ImmersedBoundary &ib,
                                                                  const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, id, ib, grid)
 {
 
 }
@@ -17,7 +18,7 @@ void HighOrderImmersedBoundaryObject::updateCells()
     fluid_->add(cells_);
     ibCells_.clear();
     solidCells_.clear();
-    auto items = fluid_->itemsWithin(*shapePtr_);
+    auto items = fluid_->itemsWithin(*shape_);
     cells_.add(items.begin(), items.end());
     solidCells_.add(cells_.begin(), cells_.end());
 

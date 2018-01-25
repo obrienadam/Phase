@@ -19,6 +19,14 @@ public:
                         const VectorFiniteVolumeField &u,
                         const ScalarGradient &gradGamma);
 
+    SurfaceTensionForce(const Input& input,
+                        const ScalarFiniteVolumeField &rho,
+                        const ScalarFiniteVolumeField &mu,
+                        const VectorFiniteVolumeField &u,
+                        const ScalarGradient &gradGamma,
+                        const std::weak_ptr<ImmersedBoundary> &ib,
+                        ScalarFiniteVolumeField &gamma);
+
     //- Check if a particular patch should have contact lines enforced
     bool isContactLinePatch(const Patch &patch) const
     { return patchContactAngles_.find(patch.id()) != patchContactAngles_.end(); }
@@ -93,26 +101,23 @@ public:
 
 protected:
 
-    Scalar sigma_, kernelWidth_;
+    Scalar sigma_, kernelWidth_, eps_ = 1e-8;
 
     std::unordered_map<Label, Scalar> ibContactAngles_;
     std::unordered_map<Label, Scalar> patchContactAngles_;
 
-    ScalarFiniteVolumeField &gamma_;
     const ScalarFiniteVolumeField &rho_;
     const ScalarFiniteVolumeField &mu_;
     const VectorFiniteVolumeField &u_;
     const ScalarGradient &gradGamma_;
+    ScalarFiniteVolumeField &gamma_;
 
     const ImmersedBoundary &ib_;
 
-    //- Cutoff
-    Scalar eps_ = 1e-6;
-
     //- Fields, can share ownership
     std::shared_ptr<ScalarFiniteVolumeField> kappa_, gammaTilde_;
-    std::shared_ptr<ScalarGradient> gradGammaTilde_;
     std::shared_ptr<VectorFiniteVolumeField> n_;
+    std::shared_ptr<ScalarGradient> gradGammaTilde_;
 };
 
 #endif

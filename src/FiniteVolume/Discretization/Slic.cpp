@@ -7,7 +7,7 @@ Equation<Scalar> slic::div(const VectorFiniteVolumeField &u,
 {
     Equation<Scalar> eqn(gamma);
 
-    for (const Cell &cell: gamma.grid().cellZone("fluid"))
+    for (const Cell &cell: gamma.grid()->cellZone("fluid"))
     {
         for (const InteriorLink &nb: cell.neighbours())
         {

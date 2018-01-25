@@ -94,13 +94,13 @@ namespace fv
     template<typename T>
     Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
-        return laplacian(gamma, phi, phi.grid().cellZone("fluid"), theta);
+        return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
     }
 
     template<class T>
     Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
-        return laplacian(gamma, phi, phi.grid().cellZone("fluid"), theta);
+        return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
     }
 }
 

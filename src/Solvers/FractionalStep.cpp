@@ -23,7 +23,7 @@ FractionalStep::FractionalStep(const Input &input,
     fluid_.add(grid_->localActiveCells());
 
     //- Create ib zones if any. Will also update local/global indices
-    ib_.initCellZones(fluid_);
+    ib_->initCellZones(fluid_);
 }
 
 void FractionalStep::initialize()
@@ -49,10 +49,10 @@ Scalar FractionalStep::solve(Scalar timeStep)
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     printf("Updating IB positions...\n");
-    ib_.update(timeStep);
+    ib_->update(timeStep);
 
     printf("Computing IB forces...\n");
-    ib_.computeForce(rho_, mu_, u, p, g_);
+    ib_->computeForce(rho_, mu_, u, p, g_);
 
     return 0;
 }
@@ -96,7 +96,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) + ib_.velocityBcs(u)
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) + ib_->velocityBcs(u)
              == fv::laplacian(mu_ / rho_, u, 0.5));
 
     Scalar error = uEqn_.solve();
@@ -112,7 +112,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) + ib_.bcs(p) == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) + ib_->bcs(p) == src::div(u, fluid_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);

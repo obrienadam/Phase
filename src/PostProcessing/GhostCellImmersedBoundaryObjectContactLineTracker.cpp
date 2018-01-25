@@ -7,7 +7,7 @@ GhostCellImmersedBoundaryObjectContactLineTracker::GhostCellImmersedBoundaryObje
 {
     outputDir_ /= "GhostCellImmersedBoundaryObjectContactLineTracker";
 
-    if (solver.grid().comm().isMainProc())
+    if (solver.grid()->comm().isMainProc())
         createOutputDirectory();
 
     for (const auto &ibObj: solver_.ib())
@@ -16,7 +16,7 @@ GhostCellImmersedBoundaryObjectContactLineTracker::GhostCellImmersedBoundaryObje
 
         if (gcIbObj && solver_.scalarFieldPtr("gamma"))
         {
-            if (solver.grid().comm().isMainProc())
+            if (solver.grid()->comm().isMainProc())
             {
                 std::ofstream fout((outputDir_ / (gcIbObj->name() + "_contactLines.dat")).string());
                 fout << "time\tpos_x\tpos_y\tn_x\tn_y\ttheta\n";
@@ -54,10 +54,10 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
             }
 
             //- Gather all data to the main proc
-            pts = solver_.grid().comm().gatherv(solver_.grid().comm().mainProcNo(), pts);
-            gammaVals = solver_.grid().comm().gatherv(solver_.grid().comm().mainProcNo(), gammaVals);
+            pts = solver_.grid()->comm().gatherv(solver_.grid()->comm().mainProcNo(), pts);
+            gammaVals = solver_.grid()->comm().gatherv(solver_.grid()->comm().mainProcNo(), gammaVals);
 
-            if (solver_.grid().comm().isMainProc())
+            if (solver_.grid()->comm().isMainProc())
             {
                 std::vector <std::pair<Point2D, Scalar>> gammaBps;
                 std::transform(pts.begin(), pts.end(), gammaVals.begin(), std::back_inserter(gammaBps),
@@ -94,7 +94,10 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                                    std::ofstream::out | std::ofstream::app);
 
                 for (const auto &cl: clPoints)
-                    fout << time << "\t" << cl.x << "\t" << cl.y << "\t" << 0 << "\t" << 0 << "\t" << 0 << "\n";
+                {
+                    Vector2D r = cl - gcIbObj->shape().centroid();
+                    fout << time << "\t" << cl.x << "\t" << cl.y << "\t" << 0 << "\t" << 0 << "\t" << std::atan2(r.y, r.x) << "\n";
+                }
 
                 fout.close();
             }

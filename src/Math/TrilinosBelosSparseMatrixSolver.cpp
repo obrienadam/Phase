@@ -27,7 +27,7 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
         b_ = rcp(new TpetraVector(map_, false));
     }
 
-    mat_ = rcp(new TpetraCrsMatrix(map_, 8, Tpetra::StaticProfile));
+    mat_ = rcp(new TpetraCrsMatrix(map_, 9, Tpetra::StaticProfile));
     precon_ = Ifpack2::Factory().create(precType_, rcp_static_cast<const TpetraRowMatrix>(mat_));
     precon_->setParameters(*ifpackParams_);
     linearProblem_->setOperator(mat_);
@@ -59,12 +59,12 @@ void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientL
 
 void TrilinosBelosSparseMatrixSolver::setGuess(const Vector &x0)
 {
-    x_->getDataNonConst().assign(x0.begin(), x0.end());
+    x_->getDataNonConst().assign(std::begin(x0.data()), std::end(x0.data()));
 }
 
 void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
 {
-    b_->getDataNonConst().assign(rhs.begin(), rhs.end());
+    b_->getDataNonConst().assign(std::begin(rhs.data()), std::end(rhs.data()));
 }
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
@@ -83,7 +83,7 @@ Scalar TrilinosBelosSparseMatrixSolver::solve()
 void TrilinosBelosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
         field(cell) = soln[field.indexMap()->local(cell, 0)];
 }
 
@@ -91,7 +91,7 @@ void TrilinosBelosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field
 {
     Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
 
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Vector2D &vec = field(cell);
         vec.x = soln[field.indexMap()->local(cell, 0)];

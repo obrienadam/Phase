@@ -118,13 +118,13 @@ public:
     const std::shared_ptr<FiniteVolumeGrid2D> &grid()
     { return grid_; }
 
-    const FiniteVolumeGrid2D &grid() const
-    { return *grid_; }
+    std::shared_ptr<const FiniteVolumeGrid2D> grid() const
+    { return grid_; }
+
+    const ImmersedBoundary& ib() const { return *ib_; }
 
     //- ICs/IBs
     void setInitialConditions(const Input &input);
-
-    const ImmersedBoundary& ib() const { return ib_; }
 
     virtual void initialize() {}
 
@@ -149,6 +149,7 @@ protected:
     virtual void restartSolution();
 
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
+    std::shared_ptr<ImmersedBoundary> ib_;
 
     //- Fields and geometries
     mutable std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
@@ -158,9 +159,6 @@ protected:
 
     //- Solver parameters
     Scalar maxTimeStep_;
-
-    //- Immersed boundary manager
-    ImmersedBoundary ib_;
 };
 
 #endif

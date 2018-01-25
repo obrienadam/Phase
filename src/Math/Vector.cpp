@@ -3,34 +3,51 @@
 
 Vector::Vector(size_t size, Scalar val)
         :
-        std::vector<Scalar>(size, val)
+        data_(size, val)
 {
 
 }
 
 Vector &Vector::operator+=(const Vector &rhs)
 {
-    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), std::plus<Scalar>());
+    std::transform(data_.begin(), data_.end(), rhs.data_.begin(), data_.begin(), std::plus<Scalar>());
     return *this;
 }
 
 Vector &Vector::operator-=(const Vector &rhs)
 {
-    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), std::minus<Scalar>());
+    std::transform(data_.begin(), data_.end(), rhs.data_.begin(), data_.begin(), std::minus<Scalar>());
+    return *this;
+}
+
+Vector &Vector::operator+=(Scalar rhs)
+{
+    std::for_each(data_.begin(), data_.end(), [rhs](Scalar &val) { val += rhs; });
+    return *this;
+}
+
+Vector &Vector::operator-=(Scalar rhs)
+{
+    std::for_each(data_.begin(), data_.end(), [rhs](Scalar &val) { val -= rhs; });
     return *this;
 }
 
 Vector &Vector::operator*=(Scalar rhs)
 {
-    std::transform(this->begin(), this->end(), this->begin(), [rhs](Scalar val) { return val * rhs; });
+    std::for_each(data_.begin(), data_.end(), [rhs](Scalar &val) { val *= rhs; });
     return *this;
 }
 
 Vector Vector::operator-() const
 {
-    Vector newVector(this->size());
-    std::transform(begin(), end(), newVector.begin(), [](Scalar val){ return -val; });
+    Vector newVector(*this);
+    std::for_each(newVector.data_.begin(), newVector.data_.end(), [](Scalar &val) { val = -val; });
     return newVector;
+}
+
+void Vector::zero()
+{
+    std::fill(data_.begin(), data_.end(), 0.);
 }
 
 //- External functions

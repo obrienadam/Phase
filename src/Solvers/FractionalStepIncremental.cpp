@@ -22,7 +22,7 @@ FractionalStepIncremental::FractionalStepIncremental(const Input &input,
     fluid_.add(grid_->localActiveCells());
 
     //- Create ib zones if any. Will also update local/global indices
-    ib_.initCellZones(fluid_);
+    ib_->initCellZones(fluid_);
 }
 
 void FractionalStepIncremental::initialize()
@@ -43,7 +43,7 @@ Scalar FractionalStepIncremental::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    //ib_.update(timeStep);
+    //ib_->update(timeStep);
 
     printf("Max Co = %lf\n", maxCourantNumber(timeStep));
     printf("Max divergence error = %.4e\n", maxDivergenceError());
@@ -63,7 +63,7 @@ void FractionalStepIncremental::restartSolution()
 Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_.velocityBcs(u)
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();
@@ -100,7 +100,7 @@ Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepIncremental::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_.bcs(p) == src::div(u) + src::laplacian(timeStep / rho_, p));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_->bcs(p) == src::div(u) + src::laplacian(timeStep / rho_, p));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);

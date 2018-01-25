@@ -6,23 +6,8 @@
 void StepImmersedBoundaryObject::updateCells()
 {
     fluid_->add(cells_);
-
-    switch (shapePtr_->type())
-    {
-        case Shape2D::CIRCLE:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Circle>(shapePtr_))) //- The circle method is much more efficient
-                cells_.add(cell);
-            break;
-        case Shape2D::BOX:
-            for (const Cell &cell: fluid_->itemsWithin(
-                    *std::static_pointer_cast<Box>(shapePtr_))) //- The box method is much more efficient
-                cells_.add(cell);
-            break;
-        default:
-            for (const Cell &cell: fluid_->itemsWithin(*shapePtr_))
-                cells_.add(cell);
-    }
+    auto cells = fluid_->itemsWithin(*shape_);
+    cells_.add(cells.begin(), cells.end());
 
     solidCells_.clear();
     solidCells_.add(cells_);
@@ -180,24 +165,24 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
                    });
 
     std::sort(pPoints.begin(), pPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
-        Vector2D rVecA = ptA.first - shapePtr_->centroid();
-        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        Vector2D rVecA = ptA.first - shape_->centroid();
+        Vector2D rVecB = ptB.first - shape_->centroid();
         Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
         Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
         return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
     });
 
     std::sort(tauXPoints.end(), tauXPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
-        Vector2D rVecA = ptA.first - shapePtr_->centroid();
-        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        Vector2D rVecA = ptA.first - shape_->centroid();
+        Vector2D rVecB = ptB.first - shape_->centroid();
         Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
         Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
         return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
     });
 
     std::sort(tauYPoints.end(), tauYPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
-        Vector2D rVecA = ptA.first - shapePtr_->centroid();
-        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        Vector2D rVecA = ptA.first - shape_->centroid();
+        Vector2D rVecB = ptB.first - shape_->centroid();
         Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
         Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
         return (thetaA < 0. ? thetaA + 2. * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2. * M_PI : thetaB);
@@ -215,7 +200,7 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
         Vector2D df = -0.5 * (ptA.second + ptB.second) * sf;
 
         force_ += df;
-        torque_ += cross(df, xc - shapePtr_->centroid());
+        torque_ += cross(df, xc - shape_->centroid());
     }
 
     Vector2D shear(0., 0.);
@@ -229,7 +214,7 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
         Vector2D df = Vector2D(-0.5 * (ptA.second + ptB.second) * sf.y, 0.);
 
         shear += df;
-        torque_ += cross(df, xc - shapePtr_->centroid());
+        torque_ += cross(df, xc - shape_->centroid());
     }
 
     for (int i = 0, end = tauYPoints.size(); i != end; ++i)
@@ -241,11 +226,11 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
         Vector2D df = Vector2D(0., -0.5 * (ptA.second + ptB.second) * sf.x);
 
         shear += df;
-        torque_ += cross(df, xc - shapePtr_->centroid());
+        torque_ += cross(df, xc - shape_->centroid());
     }
 
     //- add weight and sheare to net force
-    force_ += this->rho * shapePtr_->area() * g + shear;
+    force_ += this->rho * shape_->area() * g + shear;
 }
 
 void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -311,8 +296,8 @@ void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho
     });
 
     std::sort(pPoints.begin(), pPoints.end(), [this](const ScalarPoint &ptA, const ScalarPoint &ptB) {
-        Vector2D rVecA = ptA.first - shapePtr_->centroid();
-        Vector2D rVecB = ptB.first - shapePtr_->centroid();
+        Vector2D rVecA = ptA.first - shape_->centroid();
+        Vector2D rVecB = ptB.first - shape_->centroid();
         Scalar thetaA = std::atan2(rVecA.y, rVecA.x);
         Scalar thetaB = std::atan2(rVecB.y, rVecB.x);
         return (thetaA < 0. ? thetaA + 2 * M_PI : thetaA) < (thetaB < 0. ? thetaB + 2 * M_PI : thetaB);
@@ -329,5 +314,5 @@ void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho
     }
 
     //- weight
-    force_ += this->rho * shapePtr_->area() * g;
+    force_ += this->rho * shape_->area() * g;
 }

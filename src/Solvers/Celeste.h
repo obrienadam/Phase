@@ -37,9 +37,9 @@ protected:
 
         CelesteStencil() {}
 
-        CelesteStencil(const Cell& cell, bool weighted);
+        CelesteStencil(const Cell& cell, bool weighted = false);
 
-        CelesteStencil(const Cell& cell, const ImmersedBoundary& ib, bool weighted);
+        CelesteStencil(const Cell& cell, const ImmersedBoundary& ib, bool weighted = false);
 
         void init(bool weighted = false);
 
@@ -75,7 +75,7 @@ protected:
         Matrix pInv_;
         std::vector<Ref<const Cell>> cells_;
         std::vector<Ref<const Face>> faces_;
-        std::vector<std::pair<std::weak_ptr<const ImmersedBoundaryObject>, Point2D>> compatPts_;
+        std::vector<std::pair<Ref<const Cell>, std::weak_ptr<const ImmersedBoundaryObject>>> compatPts_;
     };
 
     virtual void computeGradGammaTilde();

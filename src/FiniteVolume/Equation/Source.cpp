@@ -3,12 +3,12 @@
 
 ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField &field)
 {
-    return div(field, field.grid().cellZone("fluid"));
+    return div(field, field.grid()->cellZone("fluid"));
 }
 
 ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField& field, const CellGroup &cells)
 {
-    ScalarFiniteVolumeField divF(field.gridPtr(), "divF", 0., false, false);
+    ScalarFiniteVolumeField divF(field.grid(), "divF", 0., false, false);
 
     for (const Cell &cell: cells)
     {
@@ -29,9 +29,9 @@ ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField& field, const Cel
 ScalarFiniteVolumeField src::laplacian(Scalar gamma,
                                        const ScalarFiniteVolumeField &phi)
 {
-    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name(), 0., false, false);
+    ScalarFiniteVolumeField lapPhi(phi.grid(), "lap" + phi.name(), 0., false, false);
 
-    for (const Cell &cell: phi.grid().cellZone("fluid"))
+    for (const Cell &cell: phi.grid()->cellZone("fluid"))
     {
         for (const InteriorLink &nb: cell.neighbours())
         {
@@ -52,9 +52,9 @@ ScalarFiniteVolumeField src::laplacian(Scalar gamma,
 ScalarFiniteVolumeField src::laplacian(const ScalarFiniteVolumeField& gamma,
                                        const ScalarFiniteVolumeField& phi)
 {
-    ScalarFiniteVolumeField lapPhi(phi.gridPtr(), "lap" + phi.name(), 0., false, false);
+    ScalarFiniteVolumeField lapPhi(phi.grid(), "lap" + phi.name(), 0., false, false);
 
-    for(const Cell& cell: phi.grid().cellZone("fluid"))
+    for(const Cell& cell: phi.grid()->cellZone("fluid"))
     {
         for (const InteriorLink& nb: cell.neighbours())
         {
@@ -77,7 +77,7 @@ VectorFiniteVolumeField src::ftc(const ScalarFiniteVolumeField& cellWeight,
                                  const VectorFiniteVolumeField& field,
                                  const CellGroup& cells)
 {
-    VectorFiniteVolumeField src(field.gridPtr(), "tmp", Vector2D(0., 0.), false, false);
+    VectorFiniteVolumeField src(field.grid(), "tmp", Vector2D(0., 0.), false, false);
 
     for(const Cell& cell: cells)
     {

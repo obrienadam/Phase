@@ -2,33 +2,21 @@
 
 #include "GhostCellImmersedBoundaryObject.h"
 
-GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name, Label id,
+GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name,
+                                                                 Label id,
+                                                                 const ImmersedBoundary &ib,
                                                                  const std::shared_ptr<FiniteVolumeGrid2D>& grid)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, id, ib, grid)
 {
 
 }
 
 void GhostCellImmersedBoundaryObject::updateCells()
 {
-    if (motion_)
-    {
-//        fluid_->add(freshCells_);
-//        freshCells_.clear();
-//
-//        for (const Cell &cell: cells_)
-//            if (!isInIb(cell.centroid()))
-//                freshCells_.add(cell);
-    }
+    clear();
 
-    fluid_->add(cells_);
-
-    ibCells_.clear();
-    solidCells_.clear();
-    deadCells_.clear();
-
-    auto items = fluid_->itemsWithin(*shapePtr_);
+    auto items = fluid_->itemsWithin(*shape_);
     cells_.add(items.begin(), items.end());
 
     auto isIbCell = [this](const Cell &cell) {
@@ -247,8 +235,8 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
 
         std::sort(stresses.begin(), stresses.end(),
                   [this](const std::tuple <Point2D, Scalar, Scalar> &a, std::tuple <Point2D, Scalar, Scalar> &b) {
-                      return (std::get<0>(a) - shapePtr_->centroid()).angle() <
-                             (std::get<0>(b) - shapePtr_->centroid()).angle();
+                      return (std::get<0>(a) - shape_->centroid()).angle() <
+                             (std::get<0>(b) - shape_->centroid()).angle();
                   });
 
         for (int i = 0; i < stresses.size(); ++i)

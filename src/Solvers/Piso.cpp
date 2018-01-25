@@ -34,13 +34,13 @@ Piso::Piso(const Input &input,
 
     //- Copy relevant boundary types
     pCorr.copyBoundaryTypes(p);
-    ib_.copyBoundaryTypes(p, pCorr);
+    ib_->copyBoundaryTypes(p, pCorr);
 
     //- All active cells to fluid cells
     fluid_.add(grid_->localActiveCells());
 
     //- Create ib zones if any
-    ib_.initCellZones(fluid_);
+    ib_->initCellZones(fluid_);
 }
 
 Scalar Piso::solve(Scalar timeStep)
@@ -101,7 +101,7 @@ Scalar Piso::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
 
 Scalar Piso::solveUEqn(Scalar timeStep)
 {
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_.bcs(u) ==
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_->bcs(u) ==
              fv::laplacian(mu, u) - src::src(gradP, fluid_));
 
     uEqn_.relax(momentumOmega_);
@@ -128,7 +128,7 @@ Scalar Piso::solvePCorrEqn()
             m(cell) += dot(u(bd.face()), bd.outwardNorm());
     }
 
-    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_.bcs(pCorr) == m);
+    pCorrEqn_ = (fv::laplacian(d, pCorr) + ib_->bcs(pCorr) == m);
 
     Scalar error = pCorrEqn_.solve();
     grid_->sendMessages(pCorr);
@@ -157,7 +157,7 @@ void Piso::rhieChowInterpolation()
     Scalar dt = u.oldTimeStep(0);
 
     d.fill(0.);
-    for (const Cell &cell: d.grid().cellZone("fluid"))
+    for (const Cell &cell: grid_->cellZone("fluid"))
     {
         Vector2D coeff = uEqn_.get(cell, cell);
         d(cell) = cell.volume() / (0.5 * (coeff.x + coeff.y));
@@ -167,7 +167,7 @@ void Piso::rhieChowInterpolation()
 
     interpolateFaces(fv::INVERSE_VOLUME, d);
 
-    for (const Face &face: u.grid().interiorFaces())
+    for (const Face &face: grid_->interiorFaces())
     {
         const Cell &cellP = face.lCell();
         const Cell &cellQ = face.rCell();
@@ -191,7 +191,7 @@ void Piso::rhieChowInterpolation()
                   - df * gradP(face) + (g * dP * gradP(cellP) + (1. - g) * dQ * gradP(cellQ));
     }
 
-    for (const Face &face: u.grid().boundaryFaces())
+    for (const Face &face: u.grid()->boundaryFaces())
     {
         Scalar df = d(face);
         Scalar rhoP0 = rhoPrev(face.lCell());
@@ -224,15 +224,15 @@ void Piso::rhieChowInterpolation()
 
 void Piso::correctVelocity()
 {
-    for (const Cell &cell: u.grid().localActiveCells())
+    for (const Cell &cell: u.grid()->localActiveCells())
         u(cell) -= d(cell) * gradPCorr(cell);
 
     grid_->sendMessages(u); // gradPCorr may not be correct in buffer zones
 
-    for (const Face &face: u.grid().interiorFaces())
+    for (const Face &face: u.grid()->interiorFaces())
         u(face) -= d(face) * gradPCorr(face);
 
-    for (const Face &face: u.grid().boundaryFaces())
+    for (const Face &face: u.grid()->boundaryFaces())
     {
         switch (u.boundaryType(face))
         {

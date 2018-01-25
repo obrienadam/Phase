@@ -13,7 +13,7 @@ namespace axi
         Equation<T> eqn(phi);
         const VectorFiniteVolumeField &u0 = u.oldField(0);
 
-        for (const Cell &cell: phi.grid().cells())
+        for (const Cell &cell: phi.grid()->cells())
         {
             for (const InteriorLink &nb: cell.neighbours())
             {

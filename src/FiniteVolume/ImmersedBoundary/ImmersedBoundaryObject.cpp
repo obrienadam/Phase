@@ -1,14 +1,17 @@
 #include <memory>
 
 #include "ImmersedBoundaryObject.h"
+#include "ImmersedBoundary.h"
 #include "TranslatingMotion.h"
 #include "OscillatingMotion.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
                                                Label id,
-                                               const std::shared_ptr<FiniteVolumeGrid2D>& grid)
+                                               const ImmersedBoundary &ib,
+                                               const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         name_(name),
+        ib_(&ib),
         grid_(grid),
         id_(id)
 {
@@ -25,16 +28,16 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
 
 void ImmersedBoundaryObject::initCircle(const Point2D &center, Scalar radius)
 {
-    shapePtr_ = std::make_shared<Circle>(center, radius);
+    shape_ = std::unique_ptr<Circle>(new Circle(center, radius));
 }
 
 
 void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar height)
 {
-    shapePtr_ = std::make_shared<Box>(
+    shape_ = std::unique_ptr<Box>(new Box(
             Point2D(center.x - width / 2., center.y - height / 2.),
             Point2D(center.x + width / 2., center.y + height / 2.)
-    );
+    ));
 }
 
 void ImmersedBoundaryObject::setMotion(std::shared_ptr<Motion> motion)
@@ -59,12 +62,12 @@ void ImmersedBoundaryObject::clear()
 
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) const
 {
-    auto xc = shapePtr_->intersections(ln);
+    auto xc = shape_->intersections(ln);
 
     if (xc.empty())
     {
         Point2D pts[] = {ln.ptA(), ln.ptB()};
-        xc.push_back(shapePtr_->closest(pts, pts + 2));
+        xc.push_back(shape_->closest(pts, pts + 2));
     }
 
     return LineSegment2D(ln.ptA(), xc[0]);
@@ -77,15 +80,15 @@ LineSegment2D ImmersedBoundaryObject::intersectionLine(const Point2D &ptA, const
 
 Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
 {
-    switch (shapePtr_->type())
+    switch (shape_->type())
     {
         case Shape2D::CIRCLE:
-            return (shapePtr_->centroid() - pt).unitVec();
+            return (shape_->centroid() - pt).unitVec();
         case Shape2D::BOX:
         case Shape2D::POLYGON:
         {
-            auto edge = shapePtr_->nearestEdge(pt);
-            return dot(edge.norm(), shapePtr_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
+            auto edge = shape_->nearestEdge(pt);
+            return dot(edge.norm(), shape_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
                                                                                 : -edge.norm().unitVec();
         }
         default:
@@ -111,7 +114,7 @@ std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const P
     else
         xc = intersections[0];
 
-    LineSegment2D edge = shapePtr_->nearestEdge(xc);
+    LineSegment2D edge = shape_->nearestEdge(xc);
 
     return std::make_pair(
             xc, -(edge.ptB() - edge.ptA()).normalVec()
@@ -124,7 +127,7 @@ void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType b
     boundaryRefScalars_[name] = ref;
 }
 
-void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType bType, const Vector2D& ref)
+void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType bType, const Vector2D &ref)
 {
     boundaryTypes_[name] = bType;
     boundaryRefVectors_[name] = ref;
@@ -251,29 +254,8 @@ void ImmersedBoundaryObject::update(Scalar timeStep)
 void ImmersedBoundaryObject::updateCells()
 {
     clear();
-
-    switch (shapePtr_->type())
-    {
-        case Shape2D::CIRCLE:
-        {
-            auto cells = fluid_->itemsWithin(*std::static_pointer_cast<Circle>(shapePtr_));
-            cells_.add(cells.begin(), cells.end());
-        }
-            break;
-        case Shape2D::BOX:
-        {
-            auto cells = fluid_->itemsWithin(*std::static_pointer_cast<Box>(shapePtr_));
-            cells_.add(cells.begin(), cells.end());
-        }
-            break;
-        default:
-        {
-            auto cells = fluid_->itemsWithin(*shapePtr_);
-            cells_.add(cells.begin(), cells.end());
-        }
-            break;
-    }
-
+    auto cells = fluid_->itemsWithin(*shape_);
+    cells_.add(cells.begin(), cells.end());
     solidCells_.add(cells_); //- By default solid cells are not made inactive
 }
 

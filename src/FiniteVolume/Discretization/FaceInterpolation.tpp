@@ -44,14 +44,14 @@ namespace fv
 
         };
 
-        for (const Face &face: field.grid().interiorFaces())
+        for (const Face &face: field.grid()->interiorFaces())
         {
             const Scalar tmp = alpha(face);
 
             field(face) = field(face.lCell()) * tmp + field(face.rCell()) * (1. - tmp);
         }
 
-        for(const Patch& patch: field.grid().patches())
+        for(const Patch& patch: field.grid()->patches())
         {
             switch(field.boundaryType(patch))
             {
@@ -104,13 +104,13 @@ namespace fv
 
         };
 
-        for (const Face &face: field.grid().interiorFaces())
+        for (const Face &face: field.grid()->interiorFaces())
         {
             const Scalar tmp = alpha(face);
             field(face) = 1. / (tmp / field(face.lCell()) + (1. - tmp) / field(face.rCell()));
         }
 
-        for(const Patch& patch: field.grid().patches())
+        for(const Patch& patch: field.grid()->patches())
         {
             switch(field.boundaryType(patch))
             {
@@ -129,18 +129,18 @@ namespace fv
     {
         if (inverseWeighting)
         {
-            for (const Face &face: field.grid().interiorFaces())
+            for (const Face &face: field.grid()->interiorFaces())
                 field(face) = (field(face.lCell()) / w(face.lCell()) + field(face.rCell()) / w(face.rCell())) /
                               (1. / w(face.lCell()) + 1. / w(face.rCell()));
         }
         else
         {
-            for (const Face &face: field.grid().interiorFaces())
+            for (const Face &face: field.grid()->interiorFaces())
                 field(face) = (w(face.lCell()) * field(face.lCell()) + w(face.rCell()) * field(face.rCell())) /
                               (w(face.lCell()) + w(face.rCell()));
         }
 
-        for(const Patch& patch: field.grid().patches())
+        for(const Patch& patch: field.grid()->patches())
         {
             switch(field.boundaryType(patch))
             {

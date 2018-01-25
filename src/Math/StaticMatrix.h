@@ -31,7 +31,7 @@ public:
 
     StaticMatrix(const std::initializer_list<Scalar> &vals)
     {
-        std::transform(vals.begin(), vals.end(), vals_, [](Scalar val) { return val; });
+        std::copy(vals.begin(), vals.end(), vals_);
     }
 
     constexpr int m() const
@@ -83,7 +83,7 @@ public:
         lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, M, vals_, N, ipiv_);
 
         if (info1 != 0 || info2 != 0)
-            throw Exception("StaticMatrix", "invert", "inversion failed, matrix is singular to working precision.");
+            throw Exception("StaticMatrix", "invert", "matrix inversion failed.");
 
         return *this;
     };
@@ -114,14 +114,14 @@ public:
 private:
 
     Scalar vals_[M * N];
-    int ipiv_[M];
+    lapack_int ipiv_[M];
 };
 
 template<int M>
 StaticMatrix<M, M> eye()
 {
     StaticMatrix<M, M> I;
-    for(int i = 0; i < M; ++i)
+    for (int i = 0; i < M; ++i)
         I(i, i) = 1.;
     return I;
 };
@@ -140,8 +140,8 @@ StaticMatrix<N, M> pseudoInverse(StaticMatrix<M, N> A)
     LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', M, N, M, A.data(), N, I.data(), M);
     StaticMatrix<N, M> pInv;
 
-    for(int i = 0; i < N; ++i)
-        for(int j = 0; j < M; ++j)
+    for (int i = 0; i < N; ++i)
+        for (int j = 0; j < M; ++j)
             pInv(i, j) = I(i, j);
 
     return pInv;

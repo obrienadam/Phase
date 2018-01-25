@@ -1,5 +1,6 @@
 #include <cstdarg>
 #include <numeric>
+#include <algorithm>
 
 #include <mpi.h>
 

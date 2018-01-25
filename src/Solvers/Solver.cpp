@@ -11,11 +11,18 @@
 
 Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        ib_(input, grid),
+        ib_(std::make_shared<ImmersedBoundary>(input, grid)),
         grid_(grid)
 {
     //- Set simulation time options
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
+
+    auto proc = std::make_shared<FiniteVolumeField<int>>(grid_, "proc", grid_->comm().rank(), false, false);
+
+    grid_->sendMessages(*proc);
+
+    integerFields_[proc->name()] = proc;
+    integerFields_[ib_->cellStatus()->name()] = ib_->cellStatus();
 }
 
 void Solver::printf(const char *format, ...) const
@@ -239,7 +246,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
 {
     const Polygon pgn = circle.polygonize(1000);
 
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Scalar area = 0.;
 
@@ -257,7 +264,7 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
 {
     const Polygon pgn = circle.polygonize(1000);
 
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Scalar area = 0.;
 
@@ -303,7 +310,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
 
     Polygon pgn(vtx.begin(), vtx.end());
 
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Scalar area = 0.;
 
@@ -319,7 +326,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
 
 void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Scalar area = 0.;
 
@@ -335,7 +342,7 @@ void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeFie
 
 void Solver::setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid().localActiveCells())
+    for (const Cell &cell: field.grid()->localActiveCells())
     {
         Scalar area = 0.;
 
@@ -361,7 +368,7 @@ void Solver::setRotating(const std::string &function, Scalar amplitude, const Ve
     else
         throw Exception("Input", "setRotating", "invalid rotation function.");
 
-    for (const Cell &cell: field.grid().cells())
+    for (const Cell &cell: field.grid()->cells())
     {
         Vector2D rVec = cell.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -369,7 +376,7 @@ void Solver::setRotating(const std::string &function, Scalar amplitude, const Ve
         field[cell.id()] = amplitude * func(theta);
     }
 
-    for (const Face &face: field.grid().interiorFaces())
+    for (const Face &face: field.grid()->interiorFaces())
     {
         Vector2D rVec = face.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -397,7 +404,7 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
     else
         throw Exception("Input", "setRotating", "invalid y rotation function.");
 
-    for (const Cell &cell: field.grid().cells())
+    for (const Cell &cell: field.grid()->cells())
     {
         Vector2D rVec = cell.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);
@@ -406,7 +413,7 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
         field[cell.id()].y = amplitude.y * yFunc(theta);
     }
 
-    for (const Face &face: field.grid().interiorFaces())
+    for (const Face &face: field.grid()->interiorFaces())
     {
         Vector2D rVec = face.centroid() - center;
         Scalar theta = atan2(rVec.y, rVec.x);

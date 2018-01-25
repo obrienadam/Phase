@@ -9,7 +9,7 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
                              Scalar theta)
 {
     Equation<Vector2D> eqn(u);
-    std::vector<bool> isForcingCell(u.grid().cells().size(), false);
+    std::vector<bool> isForcingCell(u.grid()->cells().size(), false);
     const VectorFiniteVolumeField &phi0 = phi.oldField(0);
 
     for (auto ibObj: ib)
@@ -28,9 +28,9 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
 
                 if (ibObj)
                 {
-                    QuadraticIbmStencil st = QuadraticIbmStencil(cell, nb.cell(), ib, std::min(flux, 0.));
-                    eqn.add(cell, st.cells(), st.coeffs());
-                    eqn.addSource(cell, st.src());
+                    QuadraticIbmStencil st = QuadraticIbmStencil(nb, ib);
+                    eqn.add(cell, st.cells(), std::valarray<Scalar>(std::min(flux, 0.) * st.coeffs()));
+                    eqn.addSource(cell, std::min(flux, 0.) * st.src());
                 }
                 else
                     eqn.add(cell, nb.cell(), std::min(flux, 0.));
@@ -39,7 +39,7 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
             }
     }
 
-    for (const Cell &cell: u.grid().cellZone("fluid"))
+    for (const Cell &cell: u.grid()->cellZone("fluid"))
     {
         if (isForcingCell[cell.id()])
             continue;
@@ -91,7 +91,7 @@ Equation<Vector2D> qibm::laplacian(Scalar mu,
                                    Scalar theta)
 {
     Equation<Vector2D> eqn(u);
-    std::vector<bool> isForcingCell(u.grid().cells().size(), false);
+    std::vector<bool> isForcingCell(u.grid()->cells().size(), false);
 
     for (auto ibObj: ib)
     {
@@ -109,9 +109,9 @@ Equation<Vector2D> qibm::laplacian(Scalar mu,
 
                 if (ibObj)
                 {
-                    QuadraticIbmStencil st = QuadraticIbmStencil(cell, nb.cell(), ib, flux);
-                    eqn.add(cell, st.cells(), st.coeffs());
-                    eqn.addSource(cell, st.src());
+                    QuadraticIbmStencil st = QuadraticIbmStencil(nb, ib);
+                    eqn.add(cell, st.cells(), std::valarray<Scalar>(flux * st.coeffs()));
+                    eqn.addSource(cell, flux * st.src());
                 }
                 else
                     eqn.add(cell, nb.cell(), flux);
@@ -120,7 +120,7 @@ Equation<Vector2D> qibm::laplacian(Scalar mu,
             }
     }
 
-    for (const Cell &cell: u.grid().cellZone("fluid"))
+    for (const Cell &cell: u.grid()->cellZone("fluid"))
     {
         if (isForcingCell[cell.id()])
             continue;
@@ -162,7 +162,7 @@ Equation<Vector2D> qibm::laplacian(const ScalarFiniteVolumeField &mu,
                                    Scalar theta)
 {
     Equation<Vector2D> eqn(u);
-    std::vector<bool> isForcingCell(u.grid().cells().size(), false);
+    std::vector<bool> isForcingCell(u.grid()->cells().size(), false);
 
     for (auto ibObj: ib)
     {
@@ -179,9 +179,9 @@ Equation<Vector2D> qibm::laplacian(const ScalarFiniteVolumeField &mu,
 
                 if (ibObj)
                 {
-                    QuadraticIbmStencil st = QuadraticIbmStencil(cell, nb.cell(), ib, flux);
-                    eqn.add(cell, st.cells(), st.coeffs());
-                    eqn.addSource(cell, st.src());
+                    QuadraticIbmStencil st = QuadraticIbmStencil(nb, ib);
+                    eqn.add(cell, st.cells(), std::valarray<Scalar>(flux * st.coeffs()));
+                    eqn.addSource(cell, flux * st.src());
                 }
                 else
                     eqn.add(cell, nb.cell(), flux);
@@ -190,7 +190,7 @@ Equation<Vector2D> qibm::laplacian(const ScalarFiniteVolumeField &mu,
             }
     }
 
-    for (const Cell &cell: u.grid().cellZone("fluid"))
+    for (const Cell &cell: u.grid()->cellZone("fluid"))
     {
         if (isForcingCell[cell.id()])
             continue;

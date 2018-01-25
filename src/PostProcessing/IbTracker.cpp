@@ -9,7 +9,7 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
 {
     outputDir_ = outputDir_ / "IbTracker";
 
-    if (solver.grid().comm().isMainProc())
+    if (solver.grid()->comm().isMainProc())
     {
         createOutputDirectory();
 
@@ -43,7 +43,7 @@ void IbTracker::compute(Scalar time)
                 ibObjs_.end());
 
         //- Loop over remaining
-        if (solver_.grid().comm().isMainProc())
+        if (solver_.grid()->comm().isMainProc())
             for (auto ptr: ibObjs_)
             {
                 auto ibObj = ptr.lock();

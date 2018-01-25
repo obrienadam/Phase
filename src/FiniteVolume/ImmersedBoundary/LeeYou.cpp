@@ -4,7 +4,7 @@
 
 ScalarFiniteVolumeField lee::massSrc(const VectorFiniteVolumeField &u, const ImmersedBoundary &ib)
 {
-    ScalarFiniteVolumeField q(u.gridPtr(), "q", 0., false, false);
+    ScalarFiniteVolumeField q(u.grid(), "q", 0., false, false);
 
     for (auto ibObj: ib)
     {
@@ -31,8 +31,8 @@ ScalarFiniteVolumeField lee::massSrc(const VectorFiniteVolumeField &u, const Imm
 //                        const Node& lNode = nb.face().lNode();
 //                        const Node& rNode = nb.face().rNode();
 //
-//                        const Face& f1 = u.grid().interiorFaces().nearestItem(2*lNode - nb.face().centroid());
-//                        const Face& f2 = u.grid().interiorFaces().nearestItem(2*rNode - nb.face().centroid());
+//                        const Face& f1 = u.grid()->interiorFaces().nearestItem(2*lNode - nb.face().centroid());
+//                        const Face& f2 = u.grid()->interiorFaces().nearestItem(2*rNode - nb.face().centroid());
 //
 //                        if(ibObj->isInIb(f1) && ibObj->isInIb(f2))
 //                        {

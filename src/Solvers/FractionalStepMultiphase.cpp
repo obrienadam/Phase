@@ -13,7 +13,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
         mu(addScalarField("mu")),
         gamma(addScalarField(input, "gamma")),
         rhoU(addVectorField("rhoU")),
-        ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma))),
+        ft(addVectorField(std::make_shared<Celeste>(input, *ib_, gamma, rho, mu, u, gradGamma))),
         sg(addVectorField("sg")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
@@ -59,8 +59,8 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    //ib_.computeForce(rho, mu, u, p, g_);
-    ib_.update(timeStep);
+    //ib_->computeForce(rho, mu, u, p, g_);
+    ib_->update(timeStep);
 
     printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -77,7 +77,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5)
-                 == ft.contactLineBcs(ib_));
+                 == ft.contactLineBcs(*ib_));
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma);
@@ -100,7 +100,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     const VectorFiniteVolumeField &sg0 = sg.oldField(0);
 
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_.velocityBcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_->velocityBcs(u)
              == fv::laplacian(mu, u, 0.5) + src::src(ft0 + sg0, fluid_));
 
     Scalar error = uEqn_.solve();
@@ -138,7 +138,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, p, fluid_) + ib_.bcs(p) == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho, p, fluid_) + ib_->bcs(p) == src::div(u, fluid_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
@@ -248,13 +248,13 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.compute(ib_);
+    ft.compute(*ib_);
 
     //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
     auto p = [this](const Cell& cell)
     {
         for(const CellLink& nb: cell.neighbours())
-            if(ib_.ibObj(nb.cell().centroid()))
+            if(ib_->ibObj(nb.cell().centroid()))
                 return false;
         return true;
     };

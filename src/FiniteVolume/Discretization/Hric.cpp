@@ -7,9 +7,9 @@ ScalarFiniteVolumeField hric::beta(const VectorFiniteVolumeField &u,
                                    const ScalarFiniteVolumeField &gamma,
                                    Scalar timeStep)
 {
-    ScalarFiniteVolumeField beta(gamma.gridPtr(), "beta");
+    ScalarFiniteVolumeField beta(gamma.grid(), "beta");
 
-    for(const Face& face: gamma.grid().interiorFaces())
+    for(const Face& face: gamma.grid()->interiorFaces())
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());
         Scalar flux = dot(u(face), sf);

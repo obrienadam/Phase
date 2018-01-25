@@ -37,14 +37,12 @@ void Matrix::zero()
 
 void Matrix::init(const Scalar *begin, const Scalar *end)
 {
-    std::transform(begin, end, this->begin(), [](Scalar val) {
-        return val;
-    });
+    std::copy(begin, end, this->begin());
 }
 
 void Matrix::setRow(int i, const std::initializer_list<Scalar> &coeffs)
 {
-    std::transform(coeffs.begin(), coeffs.end(), begin() + n_ * i, [](Scalar v) { return v; });
+    std::copy(coeffs.begin(), coeffs.end(), begin() + n_ * i);
 }
 
 void Matrix::scaleRow(Size i, Scalar factor)
@@ -62,7 +60,7 @@ Scalar &Matrix::operator()(Size i, Size j)
 
 Scalar Matrix::operator()(Size i, Size j) const
 {
-    return (*this)[i * n_ + j];
+    return std::vector<Scalar>::operator[](i * n_ + j);
 }
 
 Matrix &Matrix::operator=(const std::initializer_list<Scalar> &coeffs)
@@ -98,19 +96,13 @@ Matrix &Matrix::operator-=(const Matrix &rhs)
 
 Matrix &Matrix::operator*=(Scalar rhs)
 {
-    std::transform(begin(), end(), begin(), [rhs](Scalar a) {
-        return a * rhs;
-    });
-
+    std::for_each(begin(), end(), [rhs](Scalar &val) { val *= rhs; });
     return *this;
 }
 
 Matrix &Matrix::operator/=(Scalar rhs)
 {
-    std::transform(begin(), end(), begin(), [rhs](Scalar a) {
-        return a / rhs;
-    });
-
+    std::for_each(begin(), end(), [rhs](Scalar &val) { val /= rhs; });
     return *this;
 }
 

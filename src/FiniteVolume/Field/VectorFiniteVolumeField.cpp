@@ -52,14 +52,14 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     {
         Vector2D refVal = Vector2D(valStr);
 
-        for (const Patch &patch: grid().patches())
+        for (const Patch &patch: grid()->patches())
         {
             BoundaryType type = patchBoundaries_[patch.id()].first;
             patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
         }
     }
 
-    for (const Patch &patch: grid().patches())
+    for (const Patch &patch: grid()->patches())
     {
         valStr = input.boundaryInput().get<string>("Boundaries." + name_ + "." + patch.name() + ".value", "");
 
@@ -73,7 +73,7 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     }
 
     auto &self = *this;
-    for (const Patch &patch: grid().patches())
+    for (const Patch &patch: grid()->patches())
     {
         Vector2D bRefVal = boundaryRefValue(patch);
 
@@ -122,12 +122,12 @@ VectorFiniteVolumeField operator*(VectorFiniteVolumeField lhs, const ScalarFinit
 
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, const Vector2D &rhs)
 {
-    VectorFiniteVolumeField result(lhs.gridPtr(), lhs.name());
+    VectorFiniteVolumeField result(lhs.grid(), lhs.name());
 
-    for (const Cell &cell: lhs.grid().cells())
+    for (const Cell &cell: lhs.grid()->cells())
         result[cell.id()] = lhs[cell.id()] * rhs;
 
-    for (const Face &face: lhs.grid().faces())
+    for (const Face &face: lhs.grid()->faces())
         result.faces()[face.id()] = lhs.faces()[face.id()] * rhs;
 
     return result;

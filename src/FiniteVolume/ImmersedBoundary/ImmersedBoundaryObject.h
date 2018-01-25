@@ -5,6 +5,8 @@
 #include "Equation.h"
 #include "Motion.h"
 
+class ImmersedBoundary;
+
 class ImmersedBoundaryObject
 {
 public:
@@ -25,6 +27,7 @@ public:
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
                            Label id,
+                           const ImmersedBoundary &ib,
                            const std::shared_ptr<FiniteVolumeGrid2D>& grid);
 
     virtual Type type() const = 0;
@@ -37,21 +40,21 @@ public:
     template<class const_iterator>
     void initPolygon(const_iterator begin, const_iterator end)
     {
-        shapePtr_ = std::make_shared<Polygon>(begin, end);
+        shape_ = std::unique_ptr<Polygon>(new Polygon(begin, end));
     }
 
     Shape2D &shape()
-    { return *shapePtr_; }
+    { return *shape_; }
 
     const Shape2D &shape() const
-    { return *shapePtr_; }
+    { return *shape_; }
 
     bool isInIb(const Point2D &pt) const
-    { return shapePtr_->isInside(pt); }
+    { return shape_->isInside(pt); }
 
     template<class T>
     bool isInIb(const T &item) const
-    { return shapePtr_->isInside(item.centroid()); }
+    { return shape_->isInside(item.centroid()); }
 
     template<class const_iterator>
     bool allInIb(const_iterator begin, const_iterator end) const
@@ -97,7 +100,7 @@ public:
     LineSegment2D intersectionLine(const Point2D &ptA, const Point2D &ptB) const;
 
     Point2D nearestIntersect(const Point2D &pt) const
-    { return shapePtr_->nearestIntersect(pt); }
+    { return shape_->nearestIntersect(pt); }
 
     Vector2D nearestEdgeNormal(const Point2D &pt) const;
 
@@ -182,10 +185,10 @@ public:
     }
 
     Scalar mass() const
-    { return rho * shapePtr_->area(); }
+    { return rho * shape_->area(); }
 
     Scalar momentOfInertia() const
-    { return rho * shapePtr_->momentOfInertia(); }
+    { return rho * shape_->momentOfInertia(); }
 
     const Vector2D &force() const
     { return force_; }
@@ -233,7 +236,9 @@ protected:
     CellZone cells_, ibCells_, solidCells_, freshCells_, deadCells_;
     CellZone *fluid_ = nullptr;
 
-    std::shared_ptr<Shape2D> shapePtr_;
+    const ImmersedBoundary *ib_ = nullptr;
+
+    std::unique_ptr<Shape2D> shape_;
 
     std::unordered_map<std::string, BoundaryType> boundaryTypes_;
     std::unordered_map<std::string, Scalar> boundaryRefScalars_;

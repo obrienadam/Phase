@@ -3,6 +3,7 @@
 
 #include "ImmersedBoundaryObject.h"
 #include "CollisionModel.h"
+#include "FiniteVolumeField.h"
 
 class SurfaceTensionForce;
 
@@ -99,13 +100,17 @@ public:
                       const ScalarFiniteVolumeField &p,
                       const Vector2D &g = Vector2D(0., 0.));
 
+    const std::shared_ptr<FiniteVolumeField<int>> &cellStatus()
+    { return cellStatus_; }
+
 protected:
 
     void setCellStatus();
 
     const CellZone *zone_ = nullptr;
-    NodeGroup fluidNodes_;
+    std::shared_ptr<FiniteVolumeField<int>> cellStatus_;
 
+    NodeGroup fluidNodes_;
 
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;

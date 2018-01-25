@@ -14,46 +14,46 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
         Viewer(input, solver)
 {
     char filename[256];
-    sprintf(filename, "solution/Proc%d/", solver.grid().comm().rank());
+    sprintf(filename, "solution/Proc%d/", solver.grid()->comm().rank());
 
     boost::filesystem::create_directories(filename);
 
-    sprintf(filename, "solution/Proc%d/Grid.cgns", solver.grid().comm().rank());
+    sprintf(filename, "solution/Proc%d/Grid.cgns", solver.grid()->comm().rank());
 
     gridfile_ = filename;
 
     int fid, bid, zid, sid;
     cg_open(filename, CG_MODE_WRITE, &fid);
     bid = createBase(fid, filename_);
-    zid = createZone(fid, bid, solver_.grid(), "Cells");
-    writeCoords(fid, bid, zid, solver_.grid());
-    writeConnectivity(fid, bid, zid, solver_.grid());
-    writeBoundaryConnectivity(fid, bid, zid, solver_.grid());
+    zid = createZone(fid, bid, *solver_.grid(), "Cells");
+    writeCoords(fid, bid, zid, *solver_.grid());
+    writeConnectivity(fid, bid, zid, *solver_.grid());
+    writeBoundaryConnectivity(fid, bid, zid, *solver_.grid());
     //writeImmersedBoundaries(fid, solver_);
 
     //- Write data necessary to reuse partitioned grid
     cg_sol_write(fid, bid, zid, "Info", CGNS_ENUMV(CellCenter), &sid);
 
-    std::vector<int> procNo(solver.grid().cells().size(), solver.grid().comm().rank());
-    if (!solver.grid().bufferZones().empty())
-        for (int proc = 0; proc < solver.grid().comm().nProcs(); ++proc)
-            for (const Cell &cell: solver.grid().bufferZones()[proc])
+    std::vector<int> procNo(solver.grid()->cells().size(), solver.grid()->comm().rank());
+    if (!solver.grid()->bufferZones().empty())
+        for (int proc = 0; proc < solver.grid()->comm().nProcs(); ++proc)
+            for (const Cell &cell: solver.grid()->bufferZones()[proc])
                 procNo[cell.id()] = proc;
 
     int fieldId;
     cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "ProcNo", procNo.data(), &fieldId);
 
-    std::vector<int> globalId(solver.grid().cells().size(), -1);
+    std::vector<int> globalId(solver.grid()->cells().size(), -1);
     std::vector<int> globalIdStart(1, 0);
-    CellGroup localCells = solver.grid().localActiveCells() + solver.grid().localInactiveCells();
-    for (int size: solver.grid().comm().allGather(localCells.size()))
+    CellGroup localCells = solver.grid()->localActiveCells() + solver.grid()->localInactiveCells();
+    for (int size: solver.grid()->comm().allGather(localCells.size()))
         globalIdStart.push_back(globalIdStart.back() + size);
 
-    int id = globalIdStart[solver.grid().comm().rank()];
+    int id = globalIdStart[solver.grid()->comm().rank()];
     for (const Cell &cell: localCells)
         globalId[cell.id()] = id++;
 
-    solver.grid().sendMessages(globalId);
+    solver.grid()->sendMessages(globalId);
     cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "GlobalID", globalId.data(), &fieldId);
     cg_close(fid);
 }
@@ -61,19 +61,19 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
 void CgnsViewer::write(Scalar solutionTime)
 {
     char filename[256];
-    sprintf(filename, "solution/%lf/Proc%d", solutionTime, solver_.grid().comm().rank());
+    sprintf(filename, "solution/%lf/Proc%d", solutionTime, solver_.grid()->comm().rank());
 
     boost::filesystem::create_directories(filename);
 
-    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, solver_.grid().comm().rank());
+    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, solver_.grid()->comm().rank());
 
     int fid, bid, zid, sid;
 
     cg_open(filename, CG_MODE_WRITE, &fid);
 
     bid = createBase(fid, filename_);
-    zid = createZone(fid, bid, solver_.grid(), "Cells");
-    linkGrid(fid, bid, zid, solver_.grid().comm());
+    zid = createZone(fid, bid, *solver_.grid(), "Cells");
+    linkGrid(fid, bid, zid, solver_.grid()->comm());
 
     cg_sol_write(fid, bid, zid, "Solution", CGNS_ENUMV(CellCenter), &sid);
 
@@ -87,7 +87,7 @@ void CgnsViewer::write(Scalar solutionTime)
 
     for (const VectorFiniteVolumeField &field: vectorFields_)
     {
-        std::vector<Scalar> x(field.grid().nCells()), y(field.grid().nCells());
+        std::vector<Scalar> x(field.grid()->nCells()), y(field.grid()->nCells());
         std::transform(field.begin(), field.end(), x.begin(), [](const Vector2D &vec) { return vec.x; });
         std::transform(field.begin(), field.end(), y.begin(), [](const Vector2D &vec) { return vec.y; });
 
@@ -240,10 +240,10 @@ void CgnsViewer::linkGrid(int fid, int bid, int zid, const Communicator &comm)
     cg_link_write("GridCoordinates", filename, ("/" + filename_ + "/Cells/GridCoordinates").c_str());
     cg_link_write("GridElements", filename, ("/" + filename_ + "/Cells/GridElements").c_str());
 
-    if (!solver_.grid().patches().empty())
+    if (!solver_.grid()->patches().empty())
         cg_link_write("ZoneBC", filename, ("/" + filename_ + "/Cells/ZoneBC").c_str());
 
-    for (const Patch &patch: solver_.grid().patches())
+    for (const Patch &patch: solver_.grid()->patches())
     {
         std::string name(patch.name());
         cg_link_write((name + "Elements").c_str(), filename, ("/" + filename_ + "/Cells/" + name + "Elements").c_str());

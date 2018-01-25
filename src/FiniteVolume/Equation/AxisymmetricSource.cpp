@@ -2,7 +2,7 @@
 
 ScalarFiniteVolumeField axi::src::div(const VectorFiniteVolumeField &u)
 {
-    ScalarFiniteVolumeField divU(u.gridPtr(), "", 0.);
+    ScalarFiniteVolumeField divU(u.grid(), "", 0.);
 
     for (const Cell &cell: u.cells())
     {

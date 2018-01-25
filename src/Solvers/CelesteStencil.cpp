@@ -64,7 +64,7 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
         }
         else
         {
-            compatPts_.push_back(std::make_pair(ibObj, nb.cell().centroid()));
+            compatPts_.push_back(std::make_pair(std::cref(nb.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
         }
     }
 
@@ -76,7 +76,8 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
             cells_.push_back(std::cref(dg.cell()));
         else
         {
-            compatPts_.push_back(std::make_pair(ibObj, dg.cell().centroid()));
+            //compatPts_.push_back(std::make_pair(ibObj, dg.cell().centroid()));
+            compatPts_.push_back(std::make_pair(std::cref(dg.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
         }
     }
 
@@ -170,7 +171,10 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
 
     for (const auto &compatPt: compatPts_)
     {
-        Vector2D dn = fst.contactLineNormal(cell, compatPt.second, *compatPt.first.lock()) - n(cell);
+        auto ibObj = compatPt.second.lock();
+        //Point2D pt = ibObj->intersectionLine(cell.centroid(), compatPt.first.get().centroid()).ptB();
+
+        Vector2D dn = fst.contactLineNormal(cell, compatPt.first.get().centroid(), *ibObj) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
@@ -193,11 +197,13 @@ void Celeste::CelesteStencil::initMatrix()
 
         if (weighted_) r /= r.magSqr();
 
-        A(i, 0) = r.x * r.x / 2.;
-        A(i, 1) = r.y * r.y / 2.;
-        A(i, 2) = r.x * r.y;
-        A(i, 3) = r.x;
-        A(i++, 4) = r.y;
+        A.setRow(i++, {
+                r.x * r.x / 2.,
+                r.y * r.y / 2.,
+                r.x * r.y,
+                r.x,
+                r.y
+        });
     }
 
     for (const Face &face: faces_)
@@ -206,24 +212,28 @@ void Celeste::CelesteStencil::initMatrix()
 
         if (weighted_) r /= r.magSqr();
 
-        A(i, 0) = r.x * r.x / 2.;
-        A(i, 1) = r.y * r.y / 2.;
-        A(i, 2) = r.x * r.y;
-        A(i, 3) = r.x;
-        A(i++, 4) = r.y;
+        A.setRow(i++, {
+                r.x * r.x / 2.,
+                r.y * r.y / 2.,
+                r.x * r.y,
+                r.x,
+                r.y
+        });
     }
 
     for (const auto &compatPt: compatPts_)
     {
-        Vector2D r = compatPt.second - cell.centroid();
+        Vector2D r = compatPt.first.get().centroid() - cell.centroid();
 
         if (weighted_) r /= r.magSqr();
 
-        A(i, 0) = r.x * r.x / 2.;
-        A(i, 1) = r.y * r.y / 2.;
-        A(i, 2) = r.x * r.y;
-        A(i, 3) = r.x;
-        A(i++, 4) = r.y;
+        A.setRow(i++, {
+                r.x * r.x / 2.,
+                r.y * r.y / 2.,
+                r.x * r.y,
+                r.x,
+                r.y
+        });
     }
 
     pInv_ = pseudoInverse(A);

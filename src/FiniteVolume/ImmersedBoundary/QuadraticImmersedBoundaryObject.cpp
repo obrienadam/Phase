@@ -1,12 +1,13 @@
 #include "QuadraticImmersedBoundaryObject.h"
-#include "GhostCellStencil.h"
+#include "BilinearInterpolator.h"
 #include "StaticMatrix.h"
 
 QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
+                                                                 const ImmersedBoundary &ib,
                                                                  const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, id, ib, grid)
 {
 
 }
@@ -16,6 +17,7 @@ QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::stri
 void QuadraticImmersedBoundaryObject::clear()
 {
     ImmersedBoundaryObject::clear();
+    stencils_.clear();
     forcingCells_.clear();
 }
 
@@ -23,10 +25,10 @@ void QuadraticImmersedBoundaryObject::clear()
 void QuadraticImmersedBoundaryObject::updateCells()
 {
     //std::cout << "Add cells back to fluid for \"" << name_ << "\"...\n";
-    fluid_->add(cells_);
+    clear();
 
     //std::cout << "Find cells inside \"" << name_ << "\"...\n";
-    auto items = fluid_->itemsWithin(*shapePtr_);
+    auto items = fluid_->itemsWithin(*shape_);
 
     //std::cout << "Add items to cell zone for \"" << name_ << "\"...\n";
     cells_.add(items.begin(), items.end());
@@ -40,9 +42,6 @@ void QuadraticImmersedBoundaryObject::updateCells()
         return false;
     };
 
-    ibCells_.clear();
-    solidCells_.clear();
-
     for (const Cell &cell: cells_)
     {
         if (isIbCell(cell))
@@ -51,11 +50,19 @@ void QuadraticImmersedBoundaryObject::updateCells()
             solidCells_.add(cell);
     }
 
-    forcingCells_.clear();
     for (const Cell &cell: ibCells_)
         for (const InteriorLink &nb: cell.neighbours())
-            if (fluid_->isInGroup(nb.cell()) && !isInIb(nb.cell()))
+            if (fluid_->isInGroup(nb.cell()))
                 forcingCells_.add(nb.cell());
+
+    for (const Cell &cell: forcingCells_)
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            auto ibObj = ib_->ibObj(nb.cell().centroid());
+
+            if(ibObj)
+                stencils_.push_back(QuadraticIbmStencil(nb, *ib_));
+        }
 }
 
 //- Boundary conditions
@@ -315,21 +322,24 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     std::vector<Point2D> points;
     std::vector<Scalar> pressures;
     std::vector<Scalar> shears;
-    std::vector<GhostCellStencil> stencils;
 
     points.reserve(ibCells_.size());
     pressures.reserve(ibCells_.size());
     shears.reserve(ibCells_.size());
-    stencils.reserve(ibCells_.size());
 
+    auto bi = BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
-        stencils.push_back(GhostCellStencil(cell, *this));
-
-    for (const GhostCellStencil &st: stencils)
     {
-        points.push_back(st.boundaryPoint());
-        pressures.push_back(st.bpValue(p) + rho * dot(st.boundaryPoint(), g));
-        shears.push_back(mu * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec()));
+        Point2D pt = nearestIntersect(cell.centroid());
+        Vector2D wn = nearestEdgeNormal(pt).unitVec();
+        bi.setPoint(pt);
+
+        if(bi.isValid())
+        {
+            points.push_back(pt);
+            pressures.push_back(bi(p) + rho * dot(pt, g));
+            shears.push_back(mu * dot(dot(bi.grad(u), wn), wn.tangentVec()));
+        }
     }
 
     points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
@@ -346,8 +356,8 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
 
         std::sort(stresses.begin(), stresses.end(),
                   [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b) {
-                      return (std::get<0>(a) - shapePtr_->centroid()).angle() <
-                             (std::get<0>(b) - shapePtr_->centroid()).angle();
+                      return (std::get<0>(a) - shape_->centroid()).angle() <
+                             (std::get<0>(b) - shape_->centroid()).angle();
                   });
 
         for (int i = 0; i < stresses.size(); ++i)
@@ -366,7 +376,12 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
         }
     }
 
-    force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shapePtr_->area() * this->rho * g;
+    force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shape_->area() * this->rho * g;
+
+    auto maxF = grid_->comm().max(force_.mag());
+
+    if(grid_->comm().isMainProc())
+        std::cout << "MAX PARTICLE FORCE = " << maxF << std::endl;
 }
 
 void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -540,21 +555,23 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
     std::vector<Point2D> points;
     std::vector<Scalar> pressures;
     std::vector<Scalar> shears;
-    std::vector<GhostCellStencil> stencils;
-
     points.reserve(ibCells_.size());
     pressures.reserve(ibCells_.size());
     shears.reserve(ibCells_.size());
-    stencils.reserve(ibCells_.size());
 
+    auto bi = BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
-        stencils.push_back(GhostCellStencil(cell, *this));
-
-    for (const GhostCellStencil &st: stencils)
     {
-        points.push_back(st.boundaryPoint());
-        pressures.push_back(st.bpValue(p) + st.bpValue(rho) * dot(st.boundaryPoint(), g));
-        shears.push_back(st.bpValue(mu) * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec()));
+        Point2D pt = nearestIntersect(cell.centroid());
+        Vector2D wn = nearestEdgeNormal(pt).unitVec();
+        bi.setPoint(pt);
+
+        if(bi.isValid())
+        {
+            points.push_back(pt);
+            pressures.push_back(bi(p) + bi(rho) * dot(pt, g));
+            shears.push_back(bi(mu) * dot(dot(bi.grad(u), wn), wn.tangentVec()));
+        }
     }
 
     points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
@@ -573,8 +590,8 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
         std::sort(stresses.begin(), stresses.end(),
                   [this](const std::tuple<Point2D, Scalar, Scalar> &a,
                                                const std::tuple<Point2D, Scalar, Scalar> &b) {
-                      return (std::get<0>(a) - shapePtr_->centroid()).angle() <
-                             (std::get<0>(b) - shapePtr_->centroid()).angle();
+                      return (std::get<0>(a) - shape_->centroid()).angle() <
+                             (std::get<0>(b) - shape_->centroid()).angle();
                   });
 
         for (int i = 0; i < stresses.size(); ++i)
@@ -593,5 +610,5 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
         }
     }
 
-    force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shapePtr_->area() * this->rho * g;
+    force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shape_->area() * this->rho * g;
 }

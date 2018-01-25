@@ -52,19 +52,19 @@ namespace fv
     template <class T>
     Equation<T> ddt(Scalar rho, FiniteVolumeField<T>& field, Scalar timeStep)
     {
-        return ddt(rho, field, timeStep, field.grid().cellZone("fluid"));
+        return ddt(rho, field, timeStep, field.grid()->cellZone("fluid"));
     }
 
     template <class T>
     Equation<T> ddt(const ScalarFiniteVolumeField& rho, FiniteVolumeField<T>& field, Scalar timeStep)
     {
-        return ddt(rho, field, timeStep, field.grid().cellZone("fluid"));
+        return ddt(rho, field, timeStep, field.grid()->cellZone("fluid"));
     }
 
     template <class T>
     Equation<T> ddt(FiniteVolumeField<T>& field, Scalar timeStep)
     {
-        return ddt(field, timeStep, field.grid().cellZone("fluid"));
+        return ddt(field, timeStep, field.grid()->cellZone("fluid"));
     }
 }
 

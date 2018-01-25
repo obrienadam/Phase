@@ -8,7 +8,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const VectorFiniteVolumeField &u,
                                          const ScalarGradient &gradGamma)
         :
-        VectorFiniteVolumeField(gamma.gridPtr(), "ft", Vector2D(0., 0.), true, false),
+        VectorFiniteVolumeField(gamma.grid(), "ft", Vector2D(0., 0.), true, false),
         ib_(ib),
         gamma_(gamma),
         rho_(rho),

@@ -2,7 +2,7 @@
 
 JacobianField::JacobianField(const VectorFiniteVolumeField& u)
         :
-        TensorFiniteVolumeField(u.gridPtr(),
+        TensorFiniteVolumeField(u.grid(),
                                 u.name() + "Jacobian",
                                 Tensor2D(),
                                 true,

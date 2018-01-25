@@ -7,7 +7,7 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
                                      Scalar timeStep,
                                      Scalar k)
 {
-    ScalarFiniteVolumeField beta(gamma.gridPtr(), "beta");
+    ScalarFiniteVolumeField beta(gamma.grid(), "beta");
 
     auto hc = [](Scalar gammaDTilde, Scalar coD) {
         return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
@@ -19,7 +19,7 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
                gammaDTilde;
     };
 
-    for (const Face &face: gamma.grid().interiorFaces())
+    for (const Face &face: gamma.grid()->interiorFaces())
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());
         Scalar flux = dot(u(face), sf);
@@ -108,5 +108,5 @@ Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                              ScalarFiniteVolumeField &gamma,
                              Scalar theta)
 {
-    return div(u, beta, gamma, gamma.grid().cellZone("fluid"), theta);
+    return div(u, beta, gamma, gamma.grid()->cellZone("fluid"), theta);
 }

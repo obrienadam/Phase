@@ -11,7 +11,7 @@ Equation<T>::Equation(const Input &input,
         :
         Equation<T>::Equation(field, name)
 {
-    configureSparseSolver(input, field.grid().comm());
+    configureSparseSolver(input, field.grid()->comm());
 }
 
 template<class T>
@@ -100,7 +100,7 @@ Equation<T> &Equation<T>::operator=(Equation<T> &&rhs)
 template<class T>
 Equation<T> &Equation<T>::operator+=(const Equation<T> &rhs)
 {
-    for (int i = 0; i < rhs.coeffs_.size(); ++i)
+    for (int i = 0; i < coeffs_.size(); ++i)
         for (const auto &entry: rhs.coeffs_[i])
             addValue(i, entry.first, entry.second);
 
@@ -112,9 +112,9 @@ Equation<T> &Equation<T>::operator+=(const Equation<T> &rhs)
 template<class T>
 Equation<T> &Equation<T>::operator-=(const Equation<T> &rhs)
 {
-    for (int i = 0; i < rhs.coeffs_.size(); ++i)
+    for (int i = 0; i < coeffs_.size(); ++i)
         for (const auto &entry: rhs.coeffs_[i])
-            add(i, entry.first, -entry.second);
+            addValue(i, entry.first, -entry.second);
 
     sources_ -= rhs.sources_;
 
@@ -126,7 +126,7 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 {
     for (int i = 0; i < coeffs_.size(); ++i)
         for (const auto &entry: coeffs_[i])
-            set(i, entry.first, rhs * entry.second);
+            setValue(i, entry.first, rhs * entry.second);
 
     sources_ *= rhs;
 
@@ -136,11 +136,8 @@ Equation<T> &Equation<T>::operator*=(Scalar rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(Scalar rhs)
 {
-    if (rhs == 0.) // for efficiency
-        return *this;
-
-    for (Scalar &src: sources_)
-        src -= rhs;
+    if (rhs != 0.)
+        sources_ -= rhs;
 
     return *this;
 }
@@ -160,7 +157,7 @@ Equation<T> &Equation<T>::operator==(const Equation<T> &rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 {
-    for (const Cell &cell: rhs.grid().localActiveCells())
+    for (const Cell &cell: rhs.grid()->localActiveCells())
         sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell);
 
     return *this;
@@ -177,7 +174,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     else if (lib == "trilinos" || lib == "belos")
         spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
     else if (lib == "muelu")
-        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, field_.gridPtr());
+        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, field_.grid());
     else
         throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
 

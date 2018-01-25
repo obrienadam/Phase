@@ -6,7 +6,7 @@ GhostCellImmersedBoundaryObjectForceIntegrator::GhostCellImmersedBoundaryObjectF
 {
     outputDir_ /= "GhostCellImmersedBoundaryObjectForceIntegrator";
 
-    if (solver.grid().comm().isMainProc())
+    if (solver.grid()->comm().isMainProc())
         createOutputDirectory();
 
     for (const auto &ibObj: solver_.ib())
@@ -15,7 +15,7 @@ GhostCellImmersedBoundaryObjectForceIntegrator::GhostCellImmersedBoundaryObjectF
 
         if (gcIbObj)
         {
-            if (solver.grid().comm().isMainProc())
+            if (solver.grid()->comm().isMainProc())
             {
                 std::ofstream fout((outputDir_ / (gcIbObj->name() + "_contactLines.dat")).string());
                 fout << "time\tf_x\tf_y\n";

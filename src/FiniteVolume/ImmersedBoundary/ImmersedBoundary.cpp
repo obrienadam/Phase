@@ -30,13 +30,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             std::shared_ptr<ImmersedBoundaryObject> ibObject;
 
             if (method == "step")
-                ibObject = std::make_shared<StepImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
+                ibObject = std::make_shared<StepImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else if (method == "quadratic")
-                ibObject = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
+                ibObject = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else if (method == "ghost-cell")
-                ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
+                ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else if (method == "high-order")
-                ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
+                ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary",
                                 "invalid immersed boundary method \"" + method + "\".");
@@ -223,11 +223,13 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                 std::string ibObjName = name + "_" + std::to_string(i) + "_" + std::to_string(j);
 
                 if (method == "step")
-                    ibObj = std::make_shared<StepImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<StepImmersedBoundaryObject>(ibObjName, id++, *this, grid_);
                 else if (method == "ghost-cell")
-                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjName, id++, *this, grid_);
                 else if (method == "quadratic")
-                    ibObj = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<QuadraticImmersedBoundaryObject>(ibObjName, id++, *this, grid_);
+                else if (method == "high-order")
+                    ibObj = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjName, id++, *this, grid_);
                 if (shape == "circle")
                 {
                     ibObj->initCircle(
@@ -270,6 +272,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
         if (!ibObj(node))
             fluidNodes_.add(node);
     }
+
+    cellStatus_ = std::make_shared<FiniteVolumeField<int>>(grid_, "cellStatus", FLUID_CELLS, false, false);
 }
 
 void ImmersedBoundary::initCellZones(CellZone &zone)
@@ -353,9 +357,6 @@ const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string &name) c
 
 void ImmersedBoundary::update(Scalar timeStep)
 {
-    for (auto &ibObj: ibObjs_)
-        ibObj->clear();
-
     for (auto &ibObj: ibObjs_)
         ibObj->update(timeStep);
 
@@ -457,27 +458,13 @@ void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
 
 void ImmersedBoundary::setCellStatus()
 {
-//    cellStatus_.fill(0);
-//
-//    for (const Cell &cell: solver_.grid()->cellZone("fluid"))
-//        cellStatus_(cell) = FLUID_CELLS;
-//
-//    for (const CellZone &bufferZone: solver_.grid()->bufferZones())
-//        for (const Cell &cell: bufferZone)
-//            cellStatus_(cell) = BUFFER_CELLS;
-//
-//    for (const auto &ibObj: ibObjs_)
-//    {
-//        for (const Cell &cell: ibObj->ibCells())
-//            cellStatus_(cell) = IB_CELLS;
-//
-//        for (const Cell &cell: ibObj->solidCells())
-//            cellStatus_(cell) = SOLID_CELLS;
-//
-//        for (const Cell &cell: ibObj->freshCells())
-//            cellStatus_(cell) = FRESH_CELLS;
-//
-//        for (const Cell &cell: ibObj->deadCells())
-//            cellStatus_(cell) = DEAD_CELLS;
-//    }
+    cellStatus_->fill(FLUID_CELLS, *zone_);
+
+    for(const auto &ibObj: ibObjs_)
+    {
+        cellStatus_->fill(IB_CELLS, ibObj->ibCells());
+        cellStatus_->fill(SOLID_CELLS, ibObj->solidCells());
+    }
+
+    grid_->sendMessages(*cellStatus_);
 }
