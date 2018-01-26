@@ -5,7 +5,7 @@
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
                                                                  const ImmersedBoundary &ib,
-                                                                 const std::shared_ptr<FiniteVolumeGrid2D>& grid)
+                                                                 const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         ImmersedBoundaryObject(name, id, ib, grid)
 {
@@ -43,9 +43,9 @@ void GhostCellImmersedBoundaryObject::updateCells()
     constructStencils();
 }
 
-Equation <Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
+Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
 {
-    Equation <Scalar> eqn(field);
+    Equation<Scalar> eqn(field);
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
@@ -54,7 +54,7 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &
         case FIXED:
             for (const GhostCellStencil &st: stencils_)
             {
-                eqn.add(st.cell(), st.cells(), st.dirichletCoeffs());
+                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
             }
 
@@ -68,7 +68,7 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &
         case NORMAL_GRADIENT:
             for (const GhostCellStencil &st: stencils_)
             {
-                eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
+                eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
             }
 
@@ -83,9 +83,9 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &
     return eqn;
 }
 
-Equation <Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
+Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
 {
-    Equation <Vector2D> eqn(field);
+    Equation<Vector2D> eqn(field);
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
@@ -95,12 +95,12 @@ Equation <Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField
         switch (bType)
         {
             case FIXED:
-                eqn.add(st.cell(), st.cells(), st.dirichletCoeffs());
+                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
             case ImmersedBoundaryObject::NORMAL_GRADIENT:
-                eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
+                eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
@@ -118,16 +118,16 @@ Equation <Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField
     return eqn;
 }
 
-Equation <Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation <Vector2D> eqn(u);
+    Equation<Vector2D> eqn(u);
 
     switch (boundaryType(u.name()))
     {
         case FIXED:
             for (const GhostCellStencil &st: stencils_)
             {
-                eqn.add(st.cell(), st.cells(), st.dirichletCoeffs());
+                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
                 eqn.addSource(st.cell(), -velocity(st.boundaryPoint()));
             }
             break;
@@ -144,12 +144,12 @@ Equation <Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVol
     return eqn;
 }
 
-Equation <Scalar> GhostCellImmersedBoundaryObject::pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
+Equation<Scalar> GhostCellImmersedBoundaryObject::pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
 {
-    Equation <Scalar> eqn(p);
+    Equation<Scalar> eqn(p);
 
     for (const GhostCellStencil &st: stencils_)
-        eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
+        eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
 
     if (motion_)
         for (const GhostCellStencil &st: stencils_)
@@ -166,9 +166,11 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::pressureBcs(Scalar rho, Scala
     return eqn;
 }
 
-Equation <Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
+Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
 {
-    Equation <Scalar> eqn(gamma);
+    Equation<Scalar> eqn(gamma);
+    Scalar minDistSqr = 100;
+    int i = 0;
 
     for (const GhostCellStencil &st: stencils_)
     {
@@ -179,21 +181,48 @@ Equation <Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVo
 
         GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), *grid_);
         GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), *grid_);
+        Scalar g1 = m1.ipValue(gamma);
+        Scalar g2 = m2.ipValue(gamma);
 
-        if (theta < M_PI_2)
+        if (std::abs(g1 - g2) > 1e-8)
         {
-            if (m1.ipValue(gamma) > m2.ipValue(gamma))
-                eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
-            else
-                eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+            if (g2 < g1)
+                std::swap(m1, m2);
         }
         else
         {
-            if (m1.ipValue(gamma) < m2.ipValue(gamma))
-                eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
-            else
-                eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+            Vector2D grad1 = m1.bpGrad(gamma);
+            Vector2D grad2 = m2.bpGrad(gamma);
+
+            if(dot(grad1, r1.r()) < 0 && theta > M_PI_2)
+                std::swap(m1, m2);
         }
+
+
+
+//        if(!(g1 < 0.5 && g2 > 0.5))
+//        {
+//            eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
+//            continue;
+//        }
+
+        if (theta > M_PI_2)
+            eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
+        else
+            eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
+
+//        Scalar distSqr = (st.cell().centroid() - nearestIntersect(st.cell().centroid())).magSqr();
+//
+//        if (distSqr < minDistSqr && st.cell().centroid().y > 0.85)
+//        {
+//            minDistSqr = distSqr;
+//            std::cout << "NEW MIN CELL FOUND.\n"
+//                      << st.cell().centroid() << "\n"
+//                      << m1.boundaryPoint() << "\n"
+//                      << m2.boundaryPoint() << "\n"
+//                      << m1.bpGrad(gamma) << "\n" << m2.bpGrad(gamma) << "\n"
+//                      << g1 << "\n" << g2 << "\n";
+//        }
     }
 
     for (const Cell &cell: solidCells_)
@@ -210,9 +239,9 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    std::vector <Point2D> points;
-    std::vector <Scalar> pressures;
-    std::vector <Scalar> shears;
+    std::vector<Point2D> points;
+    std::vector<Scalar> pressures;
+    std::vector<Scalar> shears;
 
     for (const GhostCellStencil &st: stencils_)
     {
@@ -229,12 +258,12 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
     {
         force_ = Vector2D(0., 0.);
 
-        std::vector <std::tuple<Point2D, Scalar, Scalar>> stresses(points.size());
+        std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses(points.size());
         for (int i = 0; i < points.size(); ++i)
             stresses[i] = std::make_tuple(points[i], pressures[i], shears[i]);
 
         std::sort(stresses.begin(), stresses.end(),
-                  [this](const std::tuple <Point2D, Scalar, Scalar> &a, std::tuple <Point2D, Scalar, Scalar> &b) {
+                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b) {
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });

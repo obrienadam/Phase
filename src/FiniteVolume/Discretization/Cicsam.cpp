@@ -25,11 +25,15 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
         Scalar flux = dot(u(face), sf);
         const Cell &donor = flux >= 0. ? face.lCell() : face.rCell();
         const Cell &acceptor = flux >= 0. ? face.rCell() : face.lCell();
+        const Cell &upwind = gamma.grid()->globalActiveCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
+
         Vector2D rc = acceptor.centroid() - donor.centroid();
 
         Scalar gammaD = clamp(gamma(donor), 0., 1.);
         Scalar gammaA = clamp(gamma(acceptor), 0., 1.);
-        Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
+        //Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
+        Scalar gammaU = clamp(gamma(upwind), 0., 1.);
+
         Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
         Scalar coD = 0.; //- Cell courant number

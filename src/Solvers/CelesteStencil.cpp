@@ -172,9 +172,8 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     for (const auto &compatPt: compatPts_)
     {
         auto ibObj = compatPt.second.lock();
-        //Point2D pt = ibObj->intersectionLine(cell.centroid(), compatPt.first.get().centroid()).ptB();
-
-        Vector2D dn = fst.contactLineNormal(cell, compatPt.first.get().centroid(), *ibObj) - n(cell);
+        Point2D pt = ibObj->intersectionLine(cell.centroid(), compatPt.first.get().centroid()).ptB();
+        Vector2D dn = fst.contactLineNormal(cell, pt, *ibObj) - n(cell);
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }

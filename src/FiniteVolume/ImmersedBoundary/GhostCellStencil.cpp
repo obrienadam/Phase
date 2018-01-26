@@ -1,153 +1,60 @@
 #include "GhostCellStencil.h"
 
 GhostCellStencil::GhostCellStencil(const Cell &cell,
-                                   const ImmersedBoundaryObject &ibObj,
-                                   bool throwExceptionOnError)
+                                   const ImmersedBoundaryObject &ibObj)
+
         :
-        ImmersedBoundaryStencil(cell)
+        cell_(std::cref(cell))
 {
     bp_ = ibObj.nearestIntersect(cell.centroid());
     ip_ = 2. * bp_ - cell.centroid();
     nw_ = ibObj.nearestEdgeNormal(bp_).unitVec();
-    cells_ = ibObj.grid()->findNearestNode(ip_).cells();
+    dirichletCells_ = ibObj.grid()->findNearestNode(ip_).cells();
+    neumannCells_ = ibObj.grid()->findNearestNode(bp_).cells();
 
-    if (cells_.size() != 4)
+    if (dirichletCells_.size() != 4 || neumannCells_.size() != 4)
     {
-        if (throwExceptionOnError)
-        {
-            std::ostringstream sout;
-            sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_
-                 << ".";
-            throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
-        }
-        else
-            return;
+        std::ostringstream sout;
+        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
+        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
     }
 
-    Point2D x1 = cells_[0].get().centroid();
-    Point2D x2 = cells_[1].get().centroid();
-    Point2D x3 = cells_[2].get().centroid();
-    Point2D x4 = cells_[3].get().centroid();
-
-    bool ghostCellInStencil = false;
-    for (const Cell &cell: cells_)
-        if (cell_.get().id() == cell.id())
-        {
-            ghostCellInStencil = true;
-            break;
-        }
-
-    A_ = inverse<4, 4>(
-            {
-                    x1.x * x1.y, x1.x, x1.y, 1.,
-                    x2.x * x2.y, x2.x, x2.y, 1.,
-                    x3.x * x3.y, x3.x, x3.y, 1.,
-                    x4.x * x4.y, x4.x, x4.y, 1.,
-            });
-
-    if (ghostCellInStencil)
-    {
-        Vector2D n = ibObj.nearestEdgeNormal(bp_).unitVec();
-        auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * A_;
-        auto xn = StaticMatrix<1, 4>({{bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}}) * A_;
-
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
-        neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-    }
-    else
-    {
-        cells_.push_back(cell_);
-
-        auto xd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / 2.;
-        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / -length();
-
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
-        dirichletCoeffs_.push_back(1. / 2.);
-
-        neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-        neumannCoeffs_.push_back(1. / length());
-    }
+    initDirichletCoeffs();
+    initNeumannCoeffs();
 }
 
 GhostCellStencil::GhostCellStencil(const Cell &cell,
                                    const Point2D &bp,
-                                   const Vector2D &cl,
-                                   const FiniteVolumeGrid2D &grid,
-                                   bool throwExceptionOnError)
+                                   const Vector2D &nw,
+                                   const FiniteVolumeGrid2D &grid)
         :
-        ImmersedBoundaryStencil(cell)
+        cell_(std::cref(cell))
 {
     bp_ = bp;
     ip_ = 2 * bp - cell.centroid();
-    nw_ = (bp_ - ip_).unitVec();
-    cells_ = grid.findNearestNode(ip_).cells();
+    nw_ = nw.unitVec();
+    dirichletCells_ = grid.findNearestNode(ip_).cells();
+    neumannCells_ = grid.findNearestNode(bp_).cells();
 
-    if (cells_.size() != 4)
+    if (dirichletCells_.size() != 4 || neumannCells_.size() != 4)
     {
-        if (throwExceptionOnError)
-        {
-            std::ostringstream sout;
-            sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_
-                 << ".";
-            throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
-        }
-        else
-            return;
+        std::ostringstream sout;
+        sout << "number of image point cells must be 4. Boundary point = " << bp_ << ", image point = " << ip_ << ".";
+        throw Exception("GhostCellStencil", "GhostCellStencil", sout.str());
     }
 
-    Point2D x1 = cells_[0].get().centroid();
-    Point2D x2 = cells_[1].get().centroid();
-    Point2D x3 = cells_[2].get().centroid();
-    Point2D x4 = cells_[3].get().centroid();
-
-    bool ghostCellInStencil = false;
-    for (const Cell &cell: cells_)
-        if (cell_.get().id() == cell.id())
-        {
-            ghostCellInStencil = true;
-            break;
-        }
-
-    A_ = inverse<4, 4>(
-            {
-                    x1.x * x1.y, x1.x, x1.y, 1.,
-                    x2.x * x2.y, x2.x, x2.y, 1.,
-                    x3.x * x3.y, x3.x, x3.y, 1.,
-                    x4.x * x4.y, x4.x, x4.y, 1.,
-            });
-
-    if (ghostCellInStencil)
-    {
-        Vector2D n = cl.unitVec();
-        auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * A_;
-        auto xn = StaticMatrix<1, 4>({{bp_.y * n.x + bp_.x * n.y, n.x, n.y, 0.}}) * A_;
-
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
-        neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-    }
-    else
-    {
-        cells_.push_back(cell_);
-
-        auto xd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / 2.;
-        auto xn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * A_ / -length();
-
-        dirichletCoeffs_.insert(dirichletCoeffs_.end(), xd.data(), xd.data() + 4);
-        dirichletCoeffs_.push_back(1. / 2.);
-
-        neumannCoeffs_.insert(neumannCoeffs_.end(), xn.data(), xn.data() + 4);
-        neumannCoeffs_.push_back(1. / length());
-    }
+    initDirichletCoeffs();
+    initNeumannCoeffs();
 }
 
 Scalar GhostCellStencil::ipValue(const ScalarFiniteVolumeField &field) const
 {
-    auto c = A_ * StaticMatrix<4, 1>(
+    auto c = Ad_ * StaticMatrix<4, 1>(
             {
-                    field(cells_[0]),
-                    field(cells_[1]),
-                    field(cells_[2]),
-                    field(cells_[3])
+                    field(dirichletCells_[0]),
+                    field(dirichletCells_[1]),
+                    field(dirichletCells_[2]),
+                    field(dirichletCells_[3])
             });
 
     return c(0, 0) * ip_.x * ip_.y + c(1, 0) * ip_.x + c(2, 0) * ip_.y + c(3, 0);
@@ -155,12 +62,12 @@ Scalar GhostCellStencil::ipValue(const ScalarFiniteVolumeField &field) const
 
 Vector2D GhostCellStencil::ipValue(const VectorFiniteVolumeField &field) const
 {
-    auto c = A_ * StaticMatrix<4, 2>(
+    auto c = Ad_ * StaticMatrix<4, 2>(
             {
-                    field(cells_[0]).x, field(cells_[0]).y,
-                    field(cells_[1]).x, field(cells_[1]).y,
-                    field(cells_[2]).x, field(cells_[2]).y,
-                    field(cells_[3]).x, field(cells_[3]).y
+                    field(dirichletCells_[0]).x, field(dirichletCells_[0]).y,
+                    field(dirichletCells_[1]).x, field(dirichletCells_[1]).y,
+                    field(dirichletCells_[2]).x, field(dirichletCells_[2]).y,
+                    field(dirichletCells_[3]).x, field(dirichletCells_[3]).y
             });
 
     return Vector2D(
@@ -226,19 +133,6 @@ Vector2D GhostCellStencil::bpValue(const VectorFiniteVolumeField &field) const
     return Vector2D(u(0, 0), u(0, 1));
 }
 
-Vector2D GhostCellStencil::ipGrad(const ScalarFiniteVolumeField &field) const
-{
-    auto x = StaticMatrix<2, 4>({ip_.y, 1., 0., 0., ip_.x, 0., 1., 0.}) * A_ * StaticMatrix<4, 1>(
-            {
-                    field(cells_[0]),
-                    field(cells_[1]),
-                    field(cells_[2]),
-                    field(cells_[3])
-            });
-
-    return Vector2D(x(0, 0), x(1, 0));
-}
-
 Vector2D GhostCellStencil::bpGrad(const ScalarFiniteVolumeField &field) const
 {
     auto cells = field.grid()->findNearestNode(bp_).cells();
@@ -297,4 +191,80 @@ Tensor2D GhostCellStencil::bpGrad(const VectorFiniteVolumeField &field) const
     auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * A * b;
 
     return Tensor2D(x(0, 0), x(1, 0), x(1, 0), x(1, 1));
+}
+
+//- Private helpers
+
+void GhostCellStencil::initDirichletCoeffs()
+{
+    Point2D x1 = dirichletCells_[0].get().centroid();
+    Point2D x2 = dirichletCells_[1].get().centroid();
+    Point2D x3 = dirichletCells_[2].get().centroid();
+    Point2D x4 = dirichletCells_[3].get().centroid();
+
+    bool ghostCellInStencil = false;
+    for (const Cell &cell: dirichletCells_)
+        if (cell_.get().id() == cell.id())
+        {
+            ghostCellInStencil = true;
+            break;
+        }
+
+    Ad_ = inverse<4, 4>(
+            {
+                    x1.x * x1.y, x1.x, x1.y, 1.,
+                    x2.x * x2.y, x2.x, x2.y, 1.,
+                    x3.x * x3.y, x3.x, x3.y, 1.,
+                    x4.x * x4.y, x4.x, x4.y, 1.,
+            });
+
+    if (ghostCellInStencil)
+    {
+        auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * Ad_;
+        dirichletCoeffs_.assign(xd.data(), xd.data() + 4);
+    }
+    else
+    {
+        dirichletCells_.push_back(cell_);
+        auto xd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * Ad_ / 2.;
+        dirichletCoeffs_.assign(xd.data(), xd.data() + 4);
+        dirichletCoeffs_.push_back(1. / 2.);
+    }
+}
+
+void GhostCellStencil::initNeumannCoeffs()
+{
+    Point2D x1 = neumannCells_[0].get().centroid();
+    Point2D x2 = neumannCells_[1].get().centroid();
+    Point2D x3 = neumannCells_[2].get().centroid();
+    Point2D x4 = neumannCells_[3].get().centroid();
+
+    bool ghostCellInStencil = false;
+    for (const Cell &cell: neumannCells_)
+        if (cell_.get().id() == cell.id())
+        {
+            ghostCellInStencil = true;
+            break;
+        }
+
+    An_ = inverse<4, 4>(
+            {
+                    x1.x * x1.y, x1.x, x1.y, 1.,
+                    x2.x * x2.y, x2.x, x2.y, 1.,
+                    x3.x * x3.y, x3.x, x3.y, 1.,
+                    x4.x * x4.y, x4.x, x4.y, 1.,
+            });
+
+    if (ghostCellInStencil)
+    {
+        auto xn = StaticMatrix<1, 4>({bp_.y * nw_.x + bp_.x * nw_.y, nw_.x, nw_.y, 0.}) * An_;
+        neumannCoeffs_.assign(xn.data(), xn.data() + 4);
+    }
+    else
+    {
+        neumannCells_.push_back(cell_);
+        auto xn = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * An_ / -length();
+        neumannCoeffs_.assign(xn.data(), xn.data() + 4);
+        neumannCoeffs_.push_back(1. / length());
+    }
 }

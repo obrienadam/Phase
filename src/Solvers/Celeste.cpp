@@ -109,16 +109,16 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                     if (theta < M_PI_2)
                     {
                         if (m1.ipValue(gamma_) > m2.ipValue(gamma_))
-                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                            eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
                         else
-                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                            eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
                     }
                     else
                     {
                         if (m1.ipValue(gamma_) < m2.ipValue(gamma_))
-                            eqn.add(m1.cell(), m1.cells(), m1.neumannCoeffs());
+                            eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
                         else
-                            eqn.add(m2.cell(), m2.cells(), m2.neumannCoeffs());
+                            eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
                     }
                 }
 

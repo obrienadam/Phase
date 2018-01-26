@@ -7,22 +7,17 @@
 #include "VectorFiniteVolumeField.h"
 #include "StaticMatrix.h"
 
-class GhostCellStencil : public ImmersedBoundaryStencil
+class GhostCellStencil
 {
 public:
 
-    GhostCellStencil(const Cell &cell) : ImmersedBoundaryStencil(cell)
-    {}
-
     GhostCellStencil(const Cell &cell,
-                     const ImmersedBoundaryObject &ibObj,
-                     bool throwExceptionOnError = true);
+                     const ImmersedBoundaryObject &ibObj);
 
     GhostCellStencil(const Cell &cell,
                      const Point2D &bp,
                      const Vector2D &cl,
-                     const FiniteVolumeGrid2D &grid,
-                     bool throwExceptionOnError = true);
+                     const FiniteVolumeGrid2D &grid);
 
 
     const Point2D &boundaryPoint() const
@@ -32,15 +27,25 @@ public:
     { return ip_; }
 
     const Vector2D &wallNormal() const
-    {
-        return nw_;
-    }
+    { return nw_; }
 
-    const std::vector<Ref<const Cell>> &cells() const
-    { return cells_; }
+    const Cell &cell() const
+    { return cell_; }
+
+    const std::vector<Ref<const Cell>> &dirichletCells() const
+    { return dirichletCells_; }
+
+    const std::vector<Ref<const Cell>> &neumannCells() const
+    { return neumannCells_; }
+
+    const std::vector<Scalar> &dirichletCoeffs() const
+    { return dirichletCoeffs_; }
+
+    const std::vector<Scalar> &neumannCoeffs() const
+    { return neumannCoeffs_; }
 
     Scalar length() const
-    { return (ip_ - cell().centroid()).mag(); }
+    { return (ip_ - cell_.get().centroid()).mag(); }
 
     Scalar ipValue(const ScalarFiniteVolumeField &field) const;
 
@@ -58,7 +63,15 @@ public:
 
 protected:
 
-    StaticMatrix<4, 4> A_;
+    void initDirichletCoeffs();
+
+    void initNeumannCoeffs();
+
+    StaticMatrix<4, 4> Ad_, An_;
+    Ref<const Cell> cell_;
+    std::vector<Ref<const Cell>> dirichletCells_, neumannCells_;
+    std::vector<Scalar> dirichletCoeffs_, neumannCoeffs_;
+
     Point2D ip_, bp_, nw_;
 };
 
