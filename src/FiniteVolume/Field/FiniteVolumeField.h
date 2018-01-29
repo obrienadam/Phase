@@ -4,7 +4,6 @@
 #include "Field.h"
 #include "FiniteVolumeGrid2D.h"
 #include "Input.h"
-#include "Vector.h"
 #include "IndexMap.h"
 
 template<class T>

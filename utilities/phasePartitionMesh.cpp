@@ -7,7 +7,6 @@
 
 #include "Input.h"
 #include "ConstructGrid.h"
-#include "CgnsViewer.h"
 
 int main(int argc, char *argv[])
 {

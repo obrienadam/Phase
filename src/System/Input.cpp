@@ -1,10 +1,6 @@
-#include <functional>
-
 #include <boost/property_tree/info_parser.hpp>
 
 #include "Input.h"
-#include "Solver.h"
-#include "Exception.h"
 
 Input::Input(const std::string &caseDirectory, const std::string &outputPath)
     :

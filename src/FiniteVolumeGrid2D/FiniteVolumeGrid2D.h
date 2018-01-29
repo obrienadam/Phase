@@ -81,16 +81,23 @@ public:
     std::vector<int> elementList() const;
 
     //- Cell groups and zones
-    void setCellActive(const Cell &cell);
-
     template<class const_iterator>
     void setCellsActive(const_iterator begin, const_iterator end)
     {
         localActiveCells_.add(begin, end);
-        globalActiveCells_.add(begin, end);
     }
 
+    template<class const_iterator>
+    void setCellsInActive(const_iterator begin, const_iterator end)
+    {
+        localInactiveCells_.add(begin, end);
+    }
+
+    void setCellActive(const Cell &cell);
+
     void setCellInactive(const Cell &cell);
+
+    void updateGlobalActiveCells();
 
     template<class const_iterator>
     void setCellsInactive(const_iterator begin, const_iterator end)
@@ -133,11 +140,11 @@ public:
     const CellZone &localActiveCells() const
     { return localActiveCells_; }
 
-    const CellZone &globalActiveCells() const
-    { return globalActiveCells_; }
-
     const CellZone &localInactiveCells() const
     { return localActiveCells_; }
+
+    const CellZone &globalActiveCells() const
+    { return globalActiveCells_; }
 
     const CellZone &globalInactiveCells() const
     { return globalInactiveCells_; }

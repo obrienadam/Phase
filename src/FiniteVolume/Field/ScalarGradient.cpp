@@ -118,6 +118,11 @@ void ScalarGradient::compute(const CellGroup &group, Method method)
     }
 }
 
+void ScalarGradient::compute(Method method)
+{
+    compute(phi_.cells(), method);
+}
+
 void ScalarGradient::computeAxisymmetric(const CellGroup &cells,
                                          Method method)
 {
@@ -165,32 +170,5 @@ void ScalarGradient::computeAxisymmetric(const CellGroup &cells,
 //                gradPhi(cell) /= cell.polarVolume();
 //            }
             break;
-    }
-}
-
-void ScalarGradient::compute(const ScalarFiniteVolumeField &weight)
-{
-    computeFaces();
-    VectorFiniteVolumeField &gradPhi = *this;
-
-    for (const Cell &cell: grid_->cells())
-    {
-        Vector2D sum(0., 0.), tmp(0., 0.);
-
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Vector2D sf = nb.outwardNorm().abs();
-            tmp += pointwise(gradPhi(nb.face()), sf) / weight(nb.face());
-            sum += sf;
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            Vector2D sf = bd.outwardNorm().abs();
-            tmp += pointwise(gradPhi(bd.face()), sf) / weight(bd.face());
-            sum += sf;
-        }
-
-        gradPhi(cell) = weight(cell) * Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }
 }

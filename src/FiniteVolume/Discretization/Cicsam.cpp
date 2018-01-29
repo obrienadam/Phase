@@ -1,14 +1,13 @@
 #include "Cicsam.h"
 #include "Algorithm.h"
 
-ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
-                                     const VectorFiniteVolumeField &gradGamma,
-                                     const ScalarFiniteVolumeField &gamma,
-                                     Scalar timeStep,
-                                     Scalar k)
+void cicsam::beta(const VectorFiniteVolumeField &u,
+                  const VectorFiniteVolumeField &gradGamma,
+                  const ScalarFiniteVolumeField &gamma,
+                  Scalar timeStep,
+                  ScalarFiniteVolumeField &beta,
+                  Scalar k)
 {
-    ScalarFiniteVolumeField beta(gamma.grid(), "beta");
-
     auto hc = [](Scalar gammaDTilde, Scalar coD) {
         return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
     };
@@ -51,8 +50,43 @@ ScalarFiniteVolumeField cicsam::beta(const VectorFiniteVolumeField &u,
         //- If stencil cannot be computed, default to upwind
         beta(face) = std::isnan(betaFace) ? 0. : clamp(betaFace, 0., 1.);
     }
+}
 
-    return beta;
+void cicsam::computeMomentumFlux(Scalar rho1,
+                                 Scalar rho2,
+                                 const VectorFiniteVolumeField &u,
+                                 const ScalarFiniteVolumeField &gamma,
+                                 const ScalarFiniteVolumeField &beta,
+                                 Scalar timeStep,
+                                 VectorFiniteVolumeField &rhoU)
+{
+    rhoU.savePreviousTimeStep(timeStep, 1);
+
+    rhoU.oldField(0).computeInteriorFaces([rho1, rho2, &u, &gamma, &beta](const Face &f) {
+        Scalar flux = dot(u(f), f.outwardNorm());
+        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
+        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
+        Scalar g = (1. - beta(f)) * gamma.oldField(0)(d) + beta(f) * gamma.oldField(0)(a);
+        return ((1. - g) * rho1 + g * rho2) * u(f);
+    });
+
+    rhoU.oldField(0).computeBoundaryFaces([rho1, rho2, &u, &gamma](const Face &f) {
+        Scalar g = gamma.oldField(0)(f);
+        return ((1. - g) * rho1 + g * rho2) * u(f);
+    });
+
+    rhoU.computeInteriorFaces([rho1, rho2, &u, &gamma, &beta](const Face &f) {
+        Scalar flux = dot(u(f), f.outwardNorm());
+        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
+        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
+        Scalar g = (1. - beta(f)) * gamma(d) + beta(f) * gamma(a);
+        return ((1. - g) * rho1 + g * rho2) * u(f);
+    });
+
+    rhoU.computeBoundaryFaces([rho1, rho2, &u, &gamma](const Face &f) {
+        Scalar g = gamma(f);
+        return ((1. - g) * rho1 + g * rho2) * u(f);
+    });
 }
 
 Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,

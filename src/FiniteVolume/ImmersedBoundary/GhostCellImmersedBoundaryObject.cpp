@@ -181,8 +181,8 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVol
 
         GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), *grid_);
         GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), *grid_);
-        Scalar g1 = m1.ipValue(gamma);
-        Scalar g2 = m2.ipValue(gamma);
+        Scalar g1 = m1.bpValue(gamma);
+        Scalar g2 = m2.bpValue(gamma);
 
         if (std::abs(g1 - g2) > 1e-8)
         {

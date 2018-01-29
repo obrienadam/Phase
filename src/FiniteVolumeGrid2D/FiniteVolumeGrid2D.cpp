@@ -225,7 +225,15 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
 
     for (const Cell &cell: cells_)
     {
-        elems.push_back(cell.nodes().size() == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4));
+        switch (cell.nodes().size())
+        {
+            case 3:
+                elems.push_back(CGNS_ENUMV(TRI_3));
+                break;
+            case 4:
+                elems.push_back(CGNS_ENUMV(QUAD_4));
+                break;
+        }
 
         for (const Node &node: cell.nodes())
             elems.push_back(node.id() + 1);
@@ -237,25 +245,27 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
 void FiniteVolumeGrid2D::setCellActive(const Cell &cell)
 {
     localActiveCells_.add(cell);
-    globalActiveCells_.add(cell);
 }
 
 void FiniteVolumeGrid2D::setCellInactive(const Cell &cell)
 {
     localInactiveCells_.add(cell);
-    globalInactiveCells_.add(cell);
+}
+
+void FiniteVolumeGrid2D::updateGlobalActiveCells()
+{
+    globalActiveCells_.add(globalCellGroup(localActiveCells_));
+    localInactiveCells_.add(globalCellGroup(localInactiveCells_));
 }
 
 CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
 {
-    std::vector<int> isInGlobalGroup(cells_.size(), 0);
-    CellGroup globalGroup(localGroup.name());
+    CellGroup globalGroup(localGroup);
+    std::vector<int> isInGlobalGroup(cells_.size());
 
-    for (const Cell &cell: localGroup)
-    {
-        isInGlobalGroup[cell.id()] = 1;
-        globalGroup.add(cell);
-    }
+    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell& cell) {
+        return globalGroup.isInGroup(cell);
+    });
 
     sendMessages(isInGlobalGroup);
 
@@ -560,6 +570,9 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     }
 
     comm_->waitAll();
+
+    //- Update the global cell zones
+    updateGlobalActiveCells();
 }
 
 //- Protected methods
@@ -616,7 +629,13 @@ void FiniteVolumeGrid2D::initCells()
             }
     }
 
-    setCellsActive(cells_.begin(), cells_.end());
+    localActiveCells_.clear();
+    localInactiveCells_.clear();
+    globalActiveCells_.clear();
+    globalInactiveCells_.clear();
+
+    localActiveCells_.add(cells_.begin(), cells_.end());
+    globalActiveCells_.add(cells_.begin(), cells_.end());
 }
 
 void FiniteVolumeGrid2D::initConnectivity()

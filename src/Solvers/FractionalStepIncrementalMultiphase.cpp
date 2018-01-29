@@ -13,6 +13,7 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
         gamma(addScalarField(input, "gamma")),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
+        beta(addScalarField("beta")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
         ft(addVectorField(std::make_shared<Celeste>(input, *ib_, gamma, rho, mu, u, gradGamma))),
@@ -80,7 +81,7 @@ Scalar FractionalStepIncrementalMultiphase::computeMaxTimeStep(Scalar maxCo, Sca
 
 Scalar FractionalStepIncrementalMultiphase::solveGammaEqn(Scalar timeStep)
 {
-    auto beta = cicsam::beta(u, gradGamma, gamma, timeStep);
+    cicsam::beta(u, gradGamma, gamma, timeStep, beta, 0.5);
 
     gamma.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) + ib_->contactLineBcs(ft, gamma) == 0.);
@@ -95,33 +96,7 @@ Scalar FractionalStepIncrementalMultiphase::solveGammaEqn(Scalar timeStep)
     grid_->sendMessages(gradGamma); //- In case donor cell is on another proc
 
     //- Update mass flux
-    rhoU.savePreviousTimeStep(timeStep, 1);
-    rhoU.oldField(0).computeInteriorFaces([this, &beta](const Face &f) {
-        Scalar flux = dot(u(f), f.outwardNorm());
-        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
-        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma.oldField(0)(d) + beta(f) * gamma.oldField(0)(a);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.oldField(0).computeBoundaryFaces([this](const Face &f) {
-        Scalar g = gamma.oldField(0)(f);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.computeInteriorFaces([this, &beta](const Face &f) {
-        Scalar flux = dot(u(f), f.outwardNorm());
-        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
-        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma(d) + beta(f) * gamma(a);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.computeBoundaryFaces([this](const Face &f) {
-        Scalar g = gamma(f);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
+    cicsam::computeMomentumFlux(rho1_, rho2_, u, gamma, beta, timeStep, rhoU);
     updateProperties(timeStep);
 
     return error;

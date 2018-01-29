@@ -1,6 +1,5 @@
 #include "QuadraticImmersedBoundaryObject.h"
 #include "BilinearInterpolator.h"
-#include "StaticMatrix.h"
 
 QuadraticImmersedBoundaryObject::QuadraticImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
@@ -35,8 +34,12 @@ void QuadraticImmersedBoundaryObject::updateCells()
 
     //std::cout << "Constructing cell zones for \"" << name_ << "\"...\n";
     auto isIbCell = [this](const Cell &cell) {
-        for (const InteriorLink &nb: cell.neighbours())
+        for (const CellLink &nb: cell.neighbours())
             if (!isInIb(nb.cell()))
+                return true;
+        
+        for (const CellLink &dg: cell.diagonals())
+            if (!isInIb(dg.cell()))
                 return true;
 
         return false;
@@ -559,7 +562,7 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
     pressures.reserve(ibCells_.size());
     shears.reserve(ibCells_.size());
 
-    auto bi = BilinearInterpolator(grid_);
+    auto bi =BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
     {
         Point2D pt = nearestIntersect(cell.centroid());

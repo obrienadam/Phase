@@ -12,6 +12,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
         gamma(addScalarField(input, "gamma")),
+        beta(addScalarField("beta")),
         rhoU(addVectorField("rhoU")),
         ft(addVectorField(std::make_shared<Celeste>(input, *ib_, gamma, rho, mu, u, gradGamma))),
         sg(addVectorField("sg")),
@@ -72,7 +73,7 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
-    auto beta = cicsam::beta(u, gradGamma, gamma, timeStep, 0.5);
+    cicsam::beta(u, gradGamma, gamma, timeStep, beta, 0.5);
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
@@ -88,7 +89,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     grid_->sendMessages(gradGamma);
 
     //- Update all other properties
-    computeMomentumFlux(beta, timeStep);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u, gamma, beta, timeStep, rhoU);
     updateProperties(timeStep);
 
     return error;
@@ -179,37 +180,6 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
         }
 }
 
-void FractionalStepMultiphase::computeMomentumFlux(const ScalarFiniteVolumeField &beta, Scalar timeStep)
-{
-    rhoU.savePreviousTimeStep(timeStep, 1);
-
-    rhoU.oldField(0).computeInteriorFaces([this, &beta](const Face &f) {
-        Scalar flux = dot(u(f), f.outwardNorm());
-        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
-        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma.oldField(0)(d) + beta(f) * gamma.oldField(0)(a);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.oldField(0).computeBoundaryFaces([this, &beta](const Face &f) {
-        Scalar g = gamma.oldField(0)(f);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.computeInteriorFaces([this, &beta](const Face &f) {
-        Scalar flux = dot(u(f), f.outwardNorm());
-        const Cell &d = flux > 0. ? f.lCell() : f.rCell();
-        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma(d) + beta(f) * gamma(a);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-
-    rhoU.computeBoundaryFaces([this](const Face &f) {
-        Scalar g = gamma(f);
-        return ((1. - g) * rho1_ + g * rho2_) * u(f);
-    });
-}
-
 void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 {
     //- Update density
@@ -219,12 +189,12 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         return (1. - g) * rho1_ + g * rho2_;
     });
 
+    // grid_->sendMessages(rho); //- For correct gradient computation
+
     rho.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
         return (1. - g) * rho1_ + g * rho2_;
     });
-
-    //grid_->sendMessages(rho); //- For correct gradient computation
 
     //- Update the gravitational source term
     gradRho.computeFaces();
@@ -235,12 +205,19 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
     sg.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
     sg.faceToCell(rho, rho, fluid_);
 
+    //- Must be communicated for proper momentum interpolation
+    grid_->sendMessages(sg);
+    grid_->sendMessages(sg.oldField(0));
+
     //- Update viscosity from kinematic viscosity
     mu.savePreviousTimeStep(timeStep, 1);
     mu.computeCells([this](const Cell &cell) {
         Scalar g = gamma(cell);
         return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
     });
+
+    // grid_->sendMessages(mu);
+
     mu.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
         return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
@@ -261,4 +238,8 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_, p);
     ft.faceToCell(rho, rho, fluid_, p);
+
+    //- Must be communicated for proper momentum interpolation
+    grid_->sendMessages(ft);
+    grid_->sendMessages(ft.oldField(0));
 }

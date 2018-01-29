@@ -94,41 +94,50 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                 eqn += ibObj->contactLineBcs(gamma_, getTheta(*ibObj));
                 break;
             case ImmersedBoundaryObject::QUADRATIC:
-                for (const Cell &cell: ibObj->ibCells())
+                for (const auto &ibObj: ib)
                 {
-                    Vector2D wn = -ibObj->nearestEdgeNormal(ibObj->nearestIntersect(cell.centroid()));
-
                     Scalar theta = getTheta(*ibObj);
 
-                    Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
-                    Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
-
-                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid());
-                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid());
-
-                    if (theta < M_PI_2)
+                    for (const Cell &cell: ibObj->ibCells())
                     {
-                        if (m1.ipValue(gamma_) > m2.ipValue(gamma_))
+                        Vector2D wn = -ibObj->nearestEdgeNormal(cell.centroid());
+
+                        Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
+                        Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
+
+                        GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid_);
+                        GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid_);
+                        Scalar g1 = m1.bpValue(gamma_);
+                        Scalar g2 = m2.bpValue(gamma_);
+
+                        if (std::abs(g1 - g2) > 1e-8)
+                        {
+                            if (g2 < g1)
+                                std::swap(m1, m2);
+                        }
+                        else
+                        {
+                            Vector2D grad1 = m1.bpGrad(gamma_);
+                            Vector2D grad2 = m2.bpGrad(gamma_);
+
+                            if (dot(grad1, r1.r()) < 0 && theta > M_PI_2)
+                                std::swap(m1, m2);
+                        }
+
+                        if (theta > M_PI_2)
                             eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
                         else
                             eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
                     }
-                    else
-                    {
-                        if (m1.ipValue(gamma_) < m2.ipValue(gamma_))
-                            eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
-                        else
-                            eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
-                    }
+
+                    for (const Cell &cell: ibObj->solidCells())
+                        eqn.add(cell, cell, 1.);
                 }
-
-                for (const Cell &cell: ibObj->solidCells())
-                    eqn.add(cell, cell, 1.);
 
                 break;
 
             case ImmersedBoundaryObject::HIGH_ORDER:
-                for(auto ibObj: ib)
+                for (auto ibObj: ib)
                     eqn += ibObj->contactLineBcs(gamma_, getTheta(*ibObj));
 
                 break;
@@ -194,13 +203,13 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
     grid_->sendMessages(kappa);
     kappa.interpolateFaces();
 
-    for(const Face& face: grid_->interiorFaces())
+    for (const Face &face: grid_->interiorFaces())
     {
-        if(ib.ibObj(face.lCell().centroid()))
+        if (ib.ibObj(face.lCell().centroid()))
         {
             kappa(face) = kappa(face.rCell());
         }
-        else if(ib.ibObj(face.rCell().centroid()))
+        else if (ib.ibObj(face.rCell().centroid()))
         {
             kappa(face) = kappa(face.lCell());
         }
@@ -228,7 +237,7 @@ void Celeste::updateStencils(const ImmersedBoundary &ib)
     {
         CelesteStencil &st = kappaStencils_[cell.id()];
 
-    //    if (updateRequired(st))
-            st.init(ib);
+        //    if (updateRequired(st))
+        st.init(ib);
     }
 }

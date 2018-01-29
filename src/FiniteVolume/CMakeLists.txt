@@ -91,3 +91,4 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         ImmersedBoundary/CollisionModel.cpp)
 
 add_library(FiniteVolume ${HEADERS} ${SOURCES})
+target_link_libraries(FiniteVolume FiniteVolumeGrid2D Math)

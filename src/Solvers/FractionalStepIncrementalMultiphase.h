@@ -18,7 +18,7 @@ public:
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
 
-    ScalarFiniteVolumeField &gamma, &rho, &mu;
+    ScalarFiniteVolumeField &gamma, &rho, &mu, &beta;
     ScalarGradient &gradGamma, &gradRho;
     VectorFiniteVolumeField &sg, &rhoU;
     Celeste &ft;

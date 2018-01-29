@@ -1,4 +1,6 @@
-set(HEADERS PostProcessing.h
+set(HEADERS Viewer.h
+        CgnsViewer.h
+        PostProcessing.h
         PostProcessingObject.h
         VolumeIntegrator.h
         ReynoldsNumber.h
@@ -8,7 +10,9 @@ set(HEADERS PostProcessing.h
         ForceIntegrator.h
         IbTracker.h)
 
-set(SOURCE PostProcessing.cpp
+set(SOURCE Viewer.cpp
+        CgnsViewer.cpp
+        PostProcessing.cpp
         PostProcessingObject.cpp
         VolumeIntegrator.cpp
         ReynoldsNumber.cpp
@@ -19,4 +23,4 @@ set(SOURCE PostProcessing.cpp
         IbTracker.cpp)
 
 add_library(PostProcessing ${HEADERS} ${SOURCE})
-target_link_libraries(PostProcessing ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+target_link_libraries(PostProcessing FiniteVolumeGrid2D ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})

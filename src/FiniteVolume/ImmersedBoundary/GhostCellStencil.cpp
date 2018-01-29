@@ -78,118 +78,59 @@ Vector2D GhostCellStencil::ipValue(const VectorFiniteVolumeField &field) const
 
 Scalar GhostCellStencil::bpValue(const ScalarFiniteVolumeField &field) const
 {
-    auto cells = field.grid()->findNearestNode(bp_).cells();
+    auto c = An_ * StaticMatrix<4, 1>(
+            {
+                    field(neumannCells_[0]),
+                    field(neumannCells_[1]),
+                    field(neumannCells_[2]),
+                    field(neumannCells_[3])
+            });
 
-    Point2D x1 = cells[0].get().centroid();
-    Point2D x2 = cells[1].get().centroid();
-    Point2D x3 = cells[2].get().centroid();
-    Point2D x4 = cells[3].get().centroid();
-
-    auto A = inverse<4, 4>({
-                                   x1.x * x1.y, x1.x, x1.y, 1.,
-                                   x2.x * x2.y, x2.x, x2.y, 1.,
-                                   x3.x * x3.y, x3.x, x3.y, 1.,
-                                   x4.x * x4.y, x4.x, x4.y, 1.,
-                           });
-
-    auto x = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.});
-    auto b = StaticMatrix<4, 1>({
-                                        field(cells[0]),
-                                        field(cells[1]),
-                                        field(cells[2]),
-                                        field(cells[3])
-                                });
-
-    return (x * A * b)(0, 0);
+    return c(0, 0) * bp_.x * bp_.y + c(1, 0) * bp_.x + c(2, 0) * bp_.y + c(3, 0);
 }
 
 Vector2D GhostCellStencil::bpValue(const VectorFiniteVolumeField &field) const
 {
-    auto cells = field.grid()->findNearestNode(bp_).cells();
+    auto c = An_ * StaticMatrix<4, 2>(
+            {
+                    field(neumannCells_[0]).x, field(neumannCells_[0]).y,
+                    field(neumannCells_[1]).x, field(neumannCells_[1]).y,
+                    field(neumannCells_[2]).x, field(neumannCells_[2]).y,
+                    field(neumannCells_[3]).x, field(neumannCells_[3]).y
+            });
 
-    Point2D x1 = cells[0].get().centroid();
-    Point2D x2 = cells[1].get().centroid();
-    Point2D x3 = cells[2].get().centroid();
-    Point2D x4 = cells[3].get().centroid();
-
-    auto A = inverse<4, 4>({
-                                   x1.x * x1.y, x1.x, x1.y, 1.,
-                                   x2.x * x2.y, x2.x, x2.y, 1.,
-                                   x3.x * x3.y, x3.x, x3.y, 1.,
-                                   x4.x * x4.y, x4.x, x4.y, 1.,
-                           });
-
-    auto x = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.});
-
-    auto b = StaticMatrix<4, 2>({
-                                        field(cells[0]).x, field(cells[0]).y,
-                                        field(cells[1]).x, field(cells[1]).y,
-                                        field(cells[2]).x, field(cells[2]).y,
-                                        field(cells[3]).x, field(cells[3]).y
-                                });
-
-    StaticMatrix<1, 2> u = x * A * b;
-
-    return Vector2D(u(0, 0), u(0, 1));
+    return Vector2D(
+            c(0, 0) * bp_.x * bp_.y + c(1, 0) * bp_.x + c(2, 0) * bp_.y + c(3, 0),
+            c(0, 1) * bp_.x * bp_.y + c(1, 1) * bp_.x + c(2, 1) * bp_.y + c(3, 1)
+    );
 }
 
 Vector2D GhostCellStencil::bpGrad(const ScalarFiniteVolumeField &field) const
 {
-    auto cells = field.grid()->findNearestNode(bp_).cells();
-
-    Point2D x1 = cells[0].get().centroid();
-    Point2D x2 = cells[1].get().centroid();
-    Point2D x3 = cells[2].get().centroid();
-    Point2D x4 = cells[3].get().centroid();
-
-    auto A = inverse<4, 4>(
-            {
-                    x1.x * x1.y, x1.x, x1.y, 1.,
-                    x2.x * x2.y, x2.x, x2.y, 1.,
-                    x3.x * x3.y, x3.x, x3.y, 1.,
-                    x4.x * x4.y, x4.x, x4.y, 1.,
-            });
-
     auto b = StaticMatrix<4, 1>(
             {
-                    field(cells[0]),
-                    field(cells[1]),
-                    field(cells[2]),
-                    field(cells[3])
+                    field(neumannCells_[0]),
+                    field(neumannCells_[1]),
+                    field(neumannCells_[2]),
+                    field(neumannCells_[3])
             });
 
-    auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * A * b;
+    auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * An_ * b;
 
     return Vector2D(x(0, 0), x(1, 0));
 }
 
 Tensor2D GhostCellStencil::bpGrad(const VectorFiniteVolumeField &field) const
 {
-    auto cells = field.grid()->findNearestNode(bp_).cells();
-
-    Point2D x1 = cells[0].get().centroid();
-    Point2D x2 = cells[1].get().centroid();
-    Point2D x3 = cells[2].get().centroid();
-    Point2D x4 = cells[3].get().centroid();
-
-    auto A = inverse<4, 4>(
-            {
-                    x1.x * x1.y, x1.x, x1.y, 1.,
-                    x2.x * x2.y, x2.x, x2.y, 1.,
-                    x3.x * x3.y, x3.x, x3.y, 1.,
-                    x4.x * x4.y, x4.x, x4.y, 1.,
-            });
-
     auto b = StaticMatrix<4, 2>(
             {
-                    field(cells[0]).x, field(cells[0]).y,
-                    field(cells[1]).x, field(cells[1]).y,
-                    field(cells[2]).x, field(cells[2]).y,
-                    field(cells[3]).x, field(cells[3]).y
+                    field(neumannCells_[0]).x, field(neumannCells_[0]).y,
+                    field(neumannCells_[1]).x, field(neumannCells_[1]).y,
+                    field(neumannCells_[2]).x, field(neumannCells_[2]).y,
+                    field(neumannCells_[3]).x, field(neumannCells_[3]).y
             });
 
-    auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * A * b;
-
+    auto x = StaticMatrix<2, 4>({bp_.y, 1., 0., 0., bp_.x, 0., 1., 0.}) * An_ * b;
     return Tensor2D(x(0, 0), x(1, 0), x(1, 0), x(1, 1));
 }
 

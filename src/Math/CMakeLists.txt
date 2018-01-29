@@ -16,8 +16,8 @@ set(SOURCES Matrix.cpp
         Vector.cpp)
 
 add_library(Math ${HEADERS} ${SOURCES})
-
-target_link_libraries(Math ${BLAS_LIBRARIES}
+target_link_libraries(Math Communicator
+        ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
         ${Trilinos_LIBRARIES}
         ${Trilinos_TPL_LIBRARIES})

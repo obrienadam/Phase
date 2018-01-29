@@ -16,7 +16,7 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &rho, &mu, &gamma;
+    ScalarFiniteVolumeField &rho, &mu, &gamma, &beta;
     ScalarGradient &gradGamma, &gradRho;
     VectorFiniteVolumeField &rhoU, &sg;
     Celeste &ft;
@@ -31,7 +31,6 @@ protected:
 
     virtual void correctVelocity(Scalar timeStep);
 
-    void computeMomentumFlux(const ScalarFiniteVolumeField &beta, Scalar timeStep);
 
     void updateProperties(Scalar timeStep);
 

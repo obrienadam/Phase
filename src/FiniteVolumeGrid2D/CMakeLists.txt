@@ -16,7 +16,8 @@ set(HEADERS FiniteVolumeGrid2D.h
         Link/BoundaryLink.h
         Link/InteriorLink.h
         FiniteVolumeZone.h
-        BilinearInterpolator.h)
+        BilinearInterpolator.h
+        QuadraticInterpolator.h)
 
 set(SOURCES FiniteVolumeGrid2D.cpp
         FiniteVolumeGrid2D.tpp
@@ -34,7 +35,8 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         Link/BoundaryLink.cpp
         Link/InteriorLink.cpp
         FiniteVolumeZone.cpp
-        BilinearInterpolator.cpp)
+        BilinearInterpolator.cpp
+        QuadraticInterpolator.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
-target_link_libraries(FiniteVolumeGrid2D metis cgns hdf5)
+target_link_libraries(FiniteVolumeGrid2D Communicator Geometry System metis cgns hdf5)

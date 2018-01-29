@@ -1,9 +1,6 @@
 #ifndef FACE_H
 #define FACE_H
 
-#include <vector>
-#include <memory>
-
 #include "Node.h"
 #include "Cell.h"
 

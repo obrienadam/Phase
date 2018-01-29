@@ -2,7 +2,6 @@
 #define PISO_H
 
 #include "Solver.h"
-#include "Communicator.h"
 #include "FiniteVolumeEquation.h"
 #include "ForceIntegrator.h"
 #include "ScalarGradient.h"

@@ -9,6 +9,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
         :
         Piso(input, grid),
         gamma(addScalarField(input, "gamma")),
+        beta(addScalarField("beta")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
         sg(addVectorField("sg")),
@@ -150,7 +151,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 {
     gamma.savePreviousTimeStep(timeStep, 1);
 
-    auto beta = cicsam::beta(u, gradGamma, gamma, timeStep, 0.5);
+    cicsam::beta(u, gradGamma, gamma, timeStep, beta, 0.5);
 
     switch (interfaceAdvectionMethod_)
     {
@@ -164,7 +165,7 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 
     grid_->sendMessages(gamma);
 
-    gamma.interpolateFaces([this, &beta](const Face& face){
+    gamma.interpolateFaces([this](const Face& face){
         return dot(u(face), face.outwardNorm(face.lCell().centroid())) > 0 ? 1. - beta(face): beta(face);
     });
 

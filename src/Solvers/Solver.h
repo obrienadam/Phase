@@ -5,7 +5,6 @@
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 #include "TensorFiniteVolumeField.h"
-#include "SparseMatrixSolver.h"
 #include "ImmersedBoundary.h"
 
 class Solver

@@ -33,3 +33,4 @@ set(SOURCES Solver.cpp
         CelesteStencil.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
+target_link_libraries(Solvers Math FiniteVolumeGrid2D FiniteVolume)
