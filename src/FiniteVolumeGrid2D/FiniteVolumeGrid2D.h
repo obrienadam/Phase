@@ -226,10 +226,6 @@ public:
 
 protected:
 
-    void initNodes();
-
-    void initCells();
-
     void initConnectivity();
 
     void computeBoundingBox();

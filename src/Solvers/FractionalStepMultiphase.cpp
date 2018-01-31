@@ -111,7 +111,8 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     {
         Scalar g = face.volumeWeight();
         u(face) = g * (u(face.lCell()) - timeStep / rho(face.lCell()) * (ft0(face.lCell()) + sg0(face.lCell())))
-                  + (1. - g) * (u(face.rCell()) - timeStep / rho(face.rCell()) * (ft0(face.rCell()) + sg0(face.rCell())))
+                  +
+                  (1. - g) * (u(face.rCell()) - timeStep / rho(face.rCell()) * (ft0(face.rCell()) + sg0(face.rCell())))
                   + timeStep / rho(face) * (ft(face) + sg(face));
     }
 
@@ -228,10 +229,9 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
     ft.compute(*ib_);
 
     //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
-    auto p = [this](const Cell& cell)
-    {
-        for(const CellLink& nb: cell.neighbours())
-            if(ib_->ibObj(nb.cell().centroid()))
+    auto p = [this](const Cell &cell) {
+        for (const CellLink &nb: cell.neighbours())
+            if (ib_->ibObj(nb.cell().centroid()))
                 return false;
         return true;
     };

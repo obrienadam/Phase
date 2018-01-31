@@ -143,11 +143,11 @@ void GhostCellStencil::initDirichletCoeffs()
     Point2D x3 = dirichletCells_[2].get().centroid();
     Point2D x4 = dirichletCells_[3].get().centroid();
 
-    bool ghostCellInStencil = false;
+    ghostCellInDirichletStencil_ = false;
     for (const Cell &cell: dirichletCells_)
         if (cell_.get().id() == cell.id())
         {
-            ghostCellInStencil = true;
+            ghostCellInDirichletStencil_ = true;
             break;
         }
 
@@ -159,7 +159,7 @@ void GhostCellStencil::initDirichletCoeffs()
                     x4.x * x4.y, x4.x, x4.y, 1.,
             });
 
-    if (ghostCellInStencil)
+    if (ghostCellInDirichletStencil_)
     {
         auto xd = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.}) * Ad_;
         dirichletCoeffs_.assign(xd.data(), xd.data() + 4);
@@ -180,11 +180,11 @@ void GhostCellStencil::initNeumannCoeffs()
     Point2D x3 = neumannCells_[2].get().centroid();
     Point2D x4 = neumannCells_[3].get().centroid();
 
-    bool ghostCellInStencil = false;
+    ghostCellInNeumannStencil_ = false;
     for (const Cell &cell: neumannCells_)
         if (cell_.get().id() == cell.id())
         {
-            ghostCellInStencil = true;
+            ghostCellInNeumannStencil_ = true;
             break;
         }
 
@@ -196,7 +196,7 @@ void GhostCellStencil::initNeumannCoeffs()
                     x4.x * x4.y, x4.x, x4.y, 1.,
             });
 
-    if (ghostCellInStencil)
+    if (ghostCellInNeumannStencil_)
     {
         auto xn = StaticMatrix<1, 4>({bp_.y * nw_.x + bp_.x * nw_.y, nw_.x, nw_.y, 0.}) * An_;
         neumannCoeffs_.assign(xn.data(), xn.data() + 4);

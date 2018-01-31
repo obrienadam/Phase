@@ -120,7 +120,7 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                             Vector2D grad1 = m1.bpGrad(gamma_);
                             Vector2D grad2 = m2.bpGrad(gamma_);
 
-                            if (dot(grad1, r1.r()) < 0 && theta > M_PI_2)
+                            if(dot(grad1, r1.r()) < 0 && theta > M_PI_2)
                                 std::swap(m1, m2);
                         }
 

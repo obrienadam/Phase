@@ -439,7 +439,7 @@ void Solver::restartSolution()
             std::regex_search(dir->path().filename().string(), match, re);
             Scalar time = std::stod(match.str());
 
-            if (time > maxTime)
+            if (time >= maxTime)
             {
                 path = dir->path();
                 maxTime = time;

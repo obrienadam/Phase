@@ -49,6 +49,7 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
     printf("Loading zone \"%s\" with %d nodes and %d cells...\n", name, sizes[0], sizes[1]);
 
     //- Read all zone relevant data
+    reset();
     readNodes(fileId, baseId, zoneId, sizes[0], convertToMeters, input.caseInput().get<std::string>("Grid.origin", "(0,0)"));
     readElements(fileId, baseId, zoneId);
     readBoundaries(fileId, baseId, zoneId);
@@ -77,7 +78,7 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
 
     nodes_.reserve(sizes[0]);
     cells_.reserve(sizes[1]);
-
+    reset();
     readNodes(fid, bid, zid, sizes[0], 1., Point2D(0., 0.));
     readElements(fid, bid, zid);
     readBoundaries(fid, bid, zid);
@@ -134,6 +135,7 @@ void CgnsUnstructuredGrid::loadPartitionedGrid(std::shared_ptr<Communicator> com
     }
 
     comm_->waitAll();
+    updateGlobalActiveCells();
 }
 
 //- Private helper methods
@@ -238,7 +240,7 @@ void CgnsUnstructuredGrid::readElements(int fileId, int baseId, int zoneId)
         }
     } // end for
 
-    //initCells();
+    localActiveCells_.add(cells_.begin(), cells_.end());
 }
 
 void CgnsUnstructuredGrid::readBoundaries(int fileId, int baseId, int zoneId)
