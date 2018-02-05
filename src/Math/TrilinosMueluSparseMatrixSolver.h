@@ -4,6 +4,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <MueLu_Ifpack2Smoother.hpp>
 #include <MueLu.hpp>
+#include <MueLu_HierarchyManager.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosSolverManager.hpp>

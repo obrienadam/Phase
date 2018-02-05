@@ -34,24 +34,17 @@ public:
     bool isContactLineIbObj(const ImmersedBoundaryObject &ibObj) const
     { return ibContactAngles_.find(ibObj.id()) != ibContactAngles_.end(); }
 
-    //- Internal fields
-    const ScalarFiniteVolumeField &kappa() const
-    { return *kappa_; }
-
-    const VectorFiniteVolumeField &n() const
-    { return *n_; }
-
     //- Internal field pointers
-    std::shared_ptr<ScalarFiniteVolumeField> kappaPtr() const
+    std::shared_ptr<ScalarFiniteVolumeField> kappa() const
     { return kappa_; }
 
-    std::shared_ptr<ScalarFiniteVolumeField> gammaTildePtr() const
+    std::shared_ptr<ScalarFiniteVolumeField> gammaTilde() const
     { return gammaTilde_; }
 
-    std::shared_ptr<VectorFiniteVolumeField> nPtr() const
+    std::shared_ptr<VectorFiniteVolumeField> n() const
     { return n_; }
 
-    std::shared_ptr<VectorFiniteVolumeField> gradGammaTildePtr() const
+    std::shared_ptr<VectorFiniteVolumeField> gradGammaTilde() const
     { return gradGammaTilde_; }
 
     //- Return properties

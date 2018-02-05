@@ -16,7 +16,7 @@ constexpr const T& clamp(const T& val, const T& low, const T& high)
 }
 
 template<class T, class TFunc>
-constexpr T bisectionSearch(std::pair<T, T> bounds, const TFunc& func, const T& tolerance, size_t maxIters)
+T bisectionSearch(std::pair<T, T> bounds, const TFunc& func, const T& tolerance, size_t maxIters)
 {
     T x = (bounds.first + bounds.second) / 2.;
     T y = func(x);
@@ -39,7 +39,7 @@ constexpr T bisectionSearch(std::pair<T, T> bounds, const TFunc& func, const T& 
 }
 
 template<class T, class TFunc>
-constexpr T secantSearch(std::pair<T, T> x, const TFunc& func, const T& tolerance, size_t maxIters)
+T secantSearch(std::pair<T, T> x, const TFunc& func, const T& tolerance, size_t maxIters)
 {
     std::pair<T, T> f = std::make_pair(
             func(x.first),

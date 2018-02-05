@@ -45,22 +45,11 @@ public:
     template <class iterator>
     void remove(iterator begin, iterator end)
     {
-        std::unordered_set<Label> items(end - begin);
-        std::transform(begin, end, std::inserter(items, items.begin()), [](const Cell &item) {
-            return item.id();
-        });
+        for(auto it = begin; it != end; ++it)
+            if(isInGroup(*it))
+                registry_->erase(static_cast<const Cell&>(*it).id());
 
-        items_.erase(std::remove_if(items_.begin(), items_.end(), [this, &items](const Cell& item) {
-            if(items.find(item.id()) != items.end())
-            {
-                registry_->erase(item.id());
-                itemSet_.erase(item.id());
-                rTree_.remove(Value(item.centroid(), std::cref(item)));
-                return true;
-            }
-
-            return false;
-        }), items_.end());
+        CellGroup::remove(begin, end);
     }
 
     void clear();

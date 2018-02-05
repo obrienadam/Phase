@@ -45,7 +45,8 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     Scalar error = gammaEqn_.solve();
 
-    std::for_each(gamma.begin(), gamma.end(), [](Scalar &g) {
+    std::for_each(gamma.begin(), gamma.end(), [](Scalar &g)
+    {
         g = std::max(std::min(g, 1.), 0.);
     });
 
@@ -53,7 +54,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
     gamma.interpolateFaces();
 
     //- Update the gradient
-    gradGamma.compute(fluid_);
+    gradGamma.compute(grid_->localActiveCells());
     grid_->sendMessages(gradGamma);
 
     //- Update all other properties
@@ -66,15 +67,11 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, *ib_) + ib_->velocityBcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, *ib_, 0.5) + ib_->velocityBcs(u)
              == qibm::laplacian(mu, u, *ib_) + src::src(ft + sg, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
-    //u.interpolateFaces();
-    //qibm::computeFaceVelocities(u, ib_);
-
-    gradP.faceToCell(rho, rho.oldField(0), grid_->localActiveCells());
 
     for (const Face &f: grid_->interiorFaces())
     {

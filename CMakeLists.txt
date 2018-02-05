@@ -14,7 +14,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
 else ()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-reorder -Wno-sign-compare -Wno-switch -march=native")
 
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
         message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
     endif ()
 

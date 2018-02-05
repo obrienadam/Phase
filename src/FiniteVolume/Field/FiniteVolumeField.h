@@ -43,18 +43,18 @@ public:
 
     void fillInterior(const T &val);
 
-    void assign(const FiniteVolumeField<T>& field);
+    void assign(const FiniteVolumeField<T> &field);
 
     //- Index map
     void computeOrdering();
 
-    std::shared_ptr<IndexMap>& indexMap()
+    std::shared_ptr<IndexMap> &indexMap()
     { return indexMap_; }
 
-    const std::shared_ptr<const IndexMap>& indexMap() const
+    const std::shared_ptr<const IndexMap> &indexMap() const
     { return indexMap_; }
-    
-    void setIndexMap(const std::shared_ptr<IndexMap>& indexMap)
+
+    void setIndexMap(const std::shared_ptr<IndexMap> &indexMap)
     { indexMap_ = indexMap; }
 
     template<class TFunc>
@@ -89,7 +89,7 @@ public:
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,
                     const CellGroup &cells,
-                    const UnaryPredicate& p);
+                    const UnaryPredicate &p);
 
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,
@@ -125,14 +125,16 @@ public:
         switch (type)
         {
             case VOLUME:
-                interpolateFaces([](const Face &face) {
-                    return face.volumeWeight();
-                });
+                interpolateFaces([](const Face &face)
+                                 {
+                                     return face.volumeWeight();
+                                 });
                 break;
             case DISTANCE:
-                interpolateFaces([](const Face &face) {
-                    return face.distanceWeight();
-                });
+                interpolateFaces([](const Face &face)
+                                 {
+                                     return face.distanceWeight();
+                                 });
                 break;
         }
     }
@@ -191,13 +193,13 @@ public:
     const CellGroup &cells() const
     { return cellGroup_ ? *cellGroup_ : grid_->localActiveCells(); }
 
-    void setCellGroup(const CellGroup& cellGroup)
+    void setCellGroup(const CellGroup &cellGroup)
     { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
 
-    void setCellGroup(CellGroup&& cellGroup)
+    void setCellGroup(CellGroup &&cellGroup)
     { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
 
-    void setCellGroup(const std::shared_ptr<const CellGroup>& cellGroup)
+    void setCellGroup(const std::shared_ptr<const CellGroup> &cellGroup)
     { cellGroup_ = cellGroup; }
 
     //- Field history

@@ -34,6 +34,11 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
     }
 
     capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
+
+    addScalarField(ft.gammaTilde());
+    addScalarField(ft.kappa());
+    addVectorField(ft.gradGammaTilde());
+    addVectorField(ft.n());
 }
 
 void FractionalStepMultiphase::initialize()

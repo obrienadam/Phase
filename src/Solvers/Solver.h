@@ -46,7 +46,7 @@ public:
     VectorFiniteVolumeField &addVectorField(const std::string &name);
 
     template<class T>
-    T &addScalarField(std::shared_ptr<T> field)
+    T &addScalarField(const std::shared_ptr<T> &field)
     {
         auto insert = scalarFields_.insert(std::make_pair(field->name(), field));
 
@@ -57,7 +57,7 @@ public:
     }
 
     template<class T>
-    T &addVectorField(std::shared_ptr<T> field)
+    T &addVectorField(const std::shared_ptr<T> &field)
     {
         auto insert = vectorFields_.insert(std::make_pair(field->name(), field));
 

@@ -101,7 +101,7 @@ SurfaceTensionForce::contactLineNormal(const Cell &cell, const Point2D &pt, cons
     Vector2D ns = -ibObj.nearestEdgeNormal(pt);
     Vector2D ts = (n - dot(n, ns) * ns).unitVec();
 
-    if(n.magSqr() == 0)
+    if (n.magSqr() == 0)
         return n;
 
     Scalar theta = getTheta(ibObj);
@@ -137,7 +137,8 @@ void SurfaceTensionForce::smoothGammaField()
            cellsToSmooth,
            kernelWidth_,
            *gammaTilde_,
-           [](const Cell &cell, const Cell &kCell, Scalar e) {
+           [](const Cell &cell, const Cell &kCell, Scalar e)
+           {
                Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
                return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
            });
@@ -154,7 +155,8 @@ void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary &ib)
            grid_->globalCellGroup(cellsToSmooth),
            kernelWidth_,
            *gammaTilde_,
-           [](const Cell &cell, const Cell &kCell, Scalar e) {
+           [](const Cell &cell, const Cell &kCell, Scalar e)
+           {
                Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
                return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
            });

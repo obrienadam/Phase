@@ -28,10 +28,10 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
     mu2_ = input.caseInput().get<Scalar>("Properties.mu2", mu_);
     g_ = Vector2D(input.caseInput().get<std::string>("Properties.g", "(0,0)"));
 
-    addScalarField(ft.kappaPtr());
-    addScalarField(ft.gammaTildePtr());
-    addVectorField(ft.nPtr());
-    addVectorField(ft.gradGammaTildePtr());
+    addScalarField(ft.kappa());
+    addScalarField(ft.gammaTilde());
+    addVectorField(ft.n());
+    addVectorField(ft.gradGammaTilde());
 
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
     for (const Face &face: grid_->interiorFaces())

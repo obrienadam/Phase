@@ -12,13 +12,11 @@ Celeste::Celeste(const Input &input,
                  const VectorFiniteVolumeField &u,
                  const ScalarGradient &gradGamma)
         :
-        SurfaceTensionForce(input, ib, gamma, rho, mu, u, gradGamma)
-{
+        SurfaceTensionForce(input, ib, gamma, rho, mu, u, gradGamma) {
     constructMatrices();
 }
 
-void Celeste::computeFaces()
-{
+void Celeste::computeFaces() {
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
@@ -30,8 +28,7 @@ void Celeste::computeFaces()
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
 }
 
-void Celeste::computeFaces(const ImmersedBoundary &ib)
-{
+void Celeste::computeFaces(const ImmersedBoundary &ib) {
     computeGradGammaTilde(ib);
     computeInterfaceNormals();
     computeCurvature(ib);
@@ -43,8 +40,7 @@ void Celeste::computeFaces(const ImmersedBoundary &ib)
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
 }
 
-void Celeste::compute()
-{
+void Celeste::compute() {
     computeGradGammaTilde();
     computeInterfaceNormals();
     computeCurvature();
@@ -59,8 +55,7 @@ void Celeste::compute()
     ft.interpolateFaces();
 }
 
-void Celeste::compute(const ImmersedBoundary &ib)
-{
+void Celeste::compute(const ImmersedBoundary &ib) {
     computeFaces(ib);
 
     auto &ft = *this;
@@ -70,36 +65,29 @@ void Celeste::compute(const ImmersedBoundary &ib)
         ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
 }
 
-void Celeste::constructMatrices()
-{
+void Celeste::constructMatrices() {
     kappaStencils_.resize(grid_->cells().size());
     gradGammaTildeStencils_.resize(grid_->cells().size());
 
-    for (const Cell &cell: grid_->localActiveCells())
-    {
+    for (const Cell &cell: grid_->localActiveCells()) {
         kappaStencils_[cell.id()] = CelesteStencil(cell, false);
         gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
     }
 }
 
-Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
-{
+Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib) {
     Equation<Scalar> eqn(gamma_);
 
-    for (auto ibObj: ib)
-    {
-        switch (ibObj->type())
-        {
+    for (auto ibObj: ib) {
+        switch (ibObj->type()) {
             case ImmersedBoundaryObject::GHOST_CELL:
                 eqn += ibObj->contactLineBcs(gamma_, getTheta(*ibObj));
                 break;
             case ImmersedBoundaryObject::QUADRATIC:
-                for (const auto &ibObj: ib)
-                {
+                for (const auto &ibObj: ib) {
                     Scalar theta = getTheta(*ibObj);
 
-                    for (const Cell &cell: ibObj->ibCells())
-                    {
+                    for (const Cell &cell: ibObj->ibCells()) {
                         Vector2D wn = -ibObj->nearestEdgeNormal(cell.centroid());
 
                         Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
@@ -120,7 +108,7 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                             Vector2D grad1 = m1.bpGrad(gamma_);
                             Vector2D grad2 = m2.bpGrad(gamma_);
 
-                            if(dot(grad1, r1.r()) < 0 && theta > M_PI_2)
+                            if (g2 + dot(grad2, r2.r()) < g1 + dot(grad1, r1.r()))
                                 std::swap(m1, m2);
                         }
 
@@ -128,6 +116,13 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
                             eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
                         else
                             eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
+
+                        auto cells = theta > M_PI_2 ? m1.neumannCells() : m2.neumannCells();
+
+                        for (const Cell &cell: cells) {
+                            if (ibObj->solidCells().isInGroup(cell))
+                                std::cout << "\nALERT!\n\n";
+                        }
                     }
 
                     for (const Cell &cell: ibObj->solidCells())
@@ -151,8 +146,7 @@ Equation<Scalar> Celeste::contactLineBcs(const ImmersedBoundary &ib)
 
 //- Protected methods
 
-void Celeste::computeGradGammaTilde()
-{
+void Celeste::computeGradGammaTilde() {
     smoothGammaField();
 
     auto &gammaTilde = *gammaTilde_;
@@ -163,8 +157,7 @@ void Celeste::computeGradGammaTilde()
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
-void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
-{
+void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib) {
     smoothGammaField(ib);
 
     auto &gammaTilde = *gammaTilde_;
@@ -175,8 +168,7 @@ void Celeste::computeGradGammaTilde(const ImmersedBoundary &ib)
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
-void Celeste::computeCurvature()
-{
+void Celeste::computeCurvature() {
     auto &n = *n_;
     auto &kappa = *kappa_;
 
@@ -187,8 +179,7 @@ void Celeste::computeCurvature()
     kappa.interpolateFaces();
 }
 
-void Celeste::computeCurvature(const ImmersedBoundary &ib)
-{
+void Celeste::computeCurvature(const ImmersedBoundary &ib) {
     updateStencils(ib);
     kappa_->fill(0.);
 
@@ -203,21 +194,16 @@ void Celeste::computeCurvature(const ImmersedBoundary &ib)
     grid_->sendMessages(kappa);
     kappa.interpolateFaces();
 
-    for (const Face &face: grid_->interiorFaces())
-    {
-        if (ib.ibObj(face.lCell().centroid()))
-        {
+    for (const Face &face: grid_->interiorFaces()) {
+        if (ib.ibObj(face.lCell().centroid())) {
             kappa(face) = kappa(face.rCell());
-        }
-        else if (ib.ibObj(face.rCell().centroid()))
-        {
+        } else if (ib.ibObj(face.rCell().centroid())) {
             kappa(face) = kappa(face.lCell());
         }
     }
 }
 
-void Celeste::updateStencils(const ImmersedBoundary &ib)
-{
+void Celeste::updateStencils(const ImmersedBoundary &ib) {
 //    auto updateRequired = [&ib](const CelesteStencil &st) {
 //        if (st.truncated())
 //            return true;
@@ -233,8 +219,7 @@ void Celeste::updateStencils(const ImmersedBoundary &ib)
 //        return false;
 //    };
 
-    for (const Cell &cell: grid_->cellZone("fluid"))
-    {
+    for (const Cell &cell: grid_->cellZone("fluid")) {
         CelesteStencil &st = kappaStencils_[cell.id()];
 
         //    if (updateRequired(st))

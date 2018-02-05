@@ -201,11 +201,9 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
     {
         switch (cell.nodes().size())
         {
-            case 3:
-                elems.push_back(CGNS_ENUMV(TRI_3));
+            case 3:elems.push_back(CGNS_ENUMV(TRI_3));
                 break;
-            case 4:
-                elems.push_back(CGNS_ENUMV(QUAD_4));
+            case 4:elems.push_back(CGNS_ENUMV(QUAD_4));
                 break;
         }
 
@@ -237,8 +235,9 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
     CellGroup globalGroup(localGroup);
     std::vector<int> isInGlobalGroup(cells_.size());
 
-    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell) {
-        return globalGroup.isInGroup(cell);
+    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell)->int
+    {
+        return (int) globalGroup.isInGroup(cell);
     });
 
     sendMessages(isInGlobalGroup);
@@ -256,7 +255,8 @@ CellGroup &FiniteVolumeGrid2D::createCellGroup(const std::string &name)
     return *(cellGroups_[name] = std::make_shared<CellGroup>(name));
 }
 
-CellZone &FiniteVolumeGrid2D::createCellZone(const std::string &name, std::shared_ptr<CellZone::ZoneRegistry> registry)
+CellZone &
+FiniteVolumeGrid2D::createCellZone(const std::string &name, std::shared_ptr<CellZone::ZoneRegistry> registry)
 {
     return *(cellZones_[name] = std::make_shared<CellZone>(name, registry ? registry : cellZoneRegistry_));
 }
@@ -419,7 +419,8 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     comm_->broadcast(comm_->mainProcNo(), cellPartition);
 
     //- Criteria to see if a cell is retained on a particular proc
-    auto addCellToThisProc = [this, &cellPartition](const Cell &cell, Scalar r = 0.) -> bool {
+    auto addCellToThisProc = [this, &cellPartition](const Cell &cell, Scalar r = 0.) -> bool
+    {
         if (cellPartition[cell.id()] == comm_->rank())
             return true;
 
@@ -520,9 +521,10 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
     for (int proc = 0; proc < comm_->nProcs(); ++proc)
     {
         std::transform(bufferCellZones_[proc].begin(), bufferCellZones_[proc].end(),
-                       std::back_inserter(recvOrders[proc]), [&cellLocalToGlobalIdMap](const Cell &cell) {
-                    return cellLocalToGlobalIdMap[cell.id()];
-                });
+                       std::back_inserter(recvOrders[proc]), [&cellLocalToGlobalIdMap](const Cell &cell)
+                       {
+                           return cellLocalToGlobalIdMap[cell.id()];
+                       });
 
         comm_->isend(proc, recvOrders[proc], proc);
     }

@@ -16,6 +16,33 @@ public:
 
     typedef typename std::vector<Ref<const T> >::iterator iterator;
     typedef typename std::vector<Ref<const T> >::const_iterator const_iterator;
+    typedef boost::geometry::index::quadratic<8, 4> Parameters;
+
+    struct IndexableGetter
+    {
+        typedef Point2D result_type;
+
+        result_type operator()(const T &item) const
+        {
+            return item.centroid();
+        }
+    };
+
+    struct EqualTo
+    {
+        bool operator()(const T &lhs, const T &rhs) const
+        {
+            return lhs.id() == rhs.id();
+        }
+    };
+
+    struct Hash
+    {
+        std::size_t operator()(const T &item) const
+        {
+            return std::hash<Label>()(item.id());
+        }
+    };
 
     Group(const std::string &name = "N/A") : name_(name)
     {}
@@ -42,7 +69,7 @@ public:
 
     virtual void add(const Group<T> &items);
 
-    template <class iterator>
+    template<class iterator>
     void add(iterator first, iterator last)
     {
         for (; first != last; ++first)
@@ -53,24 +80,24 @@ public:
 
     virtual void remove(const Group<T> &other);
 
-    template <class iterator>
+    template<class iterator>
     void remove(iterator begin, iterator end)
     {
-        std::unordered_set<Label> items(end - begin);
-        std::transform(begin, end, std::inserter(items, items.begin()), [](const T &item) {
-            return item.id();
-        });
+        std::unordered_set<Ref<const T>, Hash, EqualTo> items(begin, end);
 
-        items_.erase(std::remove_if(items_.begin(), items_.end(), [this, &items](const T &item) {
-            if(items.find(item.id()) != items.end())
+        auto itr = std::remove_if(items_.begin(), items_.end(), [&items, this](const T &item)
+        {
+            if(items.find(std::cref(item)) != items.end())
             {
-                itemSet_.erase(item.id());
-                rTree_.remove(Value(item.id(), std::cref(item)));
+                itemSet_.erase(std::cref(item));
+                rTree_.remove(std::cref(item));
                 return true;
             }
 
             return false;
-        }), items_.end());
+        });
+
+        items_.erase(itr, items_.end());
     }
 
     //- Operators
@@ -114,31 +141,19 @@ public:
     const_iterator end() const
     { return items_.end(); }
 
+    //- Access
+    const std::unordered_set<Ref<const T>, Hash, EqualTo> &itemSet() const
+    { return itemSet_; }
+
     bool isInGroup(const T &item) const;
 
 protected:
 
-    typedef std::pair<Point2D, Ref<const T>> Value;
-    typedef boost::geometry::index::quadratic<8, 4> Parameters;
-    typedef boost::geometry::index::indexable<Value> IndexableGetter;
-
-    struct EqualTo
-    {
-        bool operator()(const Value& lhs, const Value& rhs) const
-        {
-            return lhs.second.get().id() == rhs.second.get().id();
-        }
-    };
-
-    typedef boost::geometry::index::rtree<Value, Parameters, IndexableGetter, EqualTo> Rtree;
-
-    std::vector<Ref<const T> > getRefs(const std::vector<Value> &vals) const;
-
     //- Data
     std::string name_;
-    std::unordered_map<Label, Ref<const T> > itemSet_; // Allows cell lookup via an id
+    std::unordered_set<Ref<const T>, Hash, EqualTo> itemSet_; // Allows cell lookup via an id
     std::vector<Ref<const T> > items_; // Used for faster iteration over all cells
-    Rtree rTree_; //- For searching
+    boost::geometry::index::rtree<Ref<const T>, Parameters, IndexableGetter, EqualTo> rTree_; //- For searching
 };
 
 template<class T>

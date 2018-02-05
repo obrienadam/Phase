@@ -39,4 +39,4 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         QuadraticInterpolator.cpp)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
-target_link_libraries(FiniteVolumeGrid2D Communicator Geometry System metis cgns hdf5)
+target_link_libraries(FiniteVolumeGrid2D Communicator Geometry System metis cgns ${HDF5_LIBRARIES})
