@@ -394,7 +394,7 @@ Equation<Scalar> ImmersedBoundary::contactLineBcs(const SurfaceTensionForce &fst
     Equation<Scalar> eqn(gamma);
 
     for (const auto &ibObj: ibObjs_)
-        eqn += ibObj->contactLineBcs(gamma, fst.getTheta(*ibObj));
+        eqn += ibObj->contactLineBcs(gamma, fst.theta(*ibObj));
 
     return eqn;
 }

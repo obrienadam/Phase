@@ -1,7 +1,8 @@
 #include "SurfaceTensionForce.h"
+#include "GhostCellStencil.h"
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
-                                         const ImmersedBoundary &ib,
+                                         const std::weak_ptr<ImmersedBoundary> &ib,
                                          ScalarFiniteVolumeField &gamma,
                                          const ScalarFiniteVolumeField &rho,
                                          const ScalarFiniteVolumeField &mu,
@@ -37,17 +38,12 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     }
 
     //- Determine which IBs contact angles will be enforced on
-
-    if (input.boundaryInput().find("ImmersedBoundaries") == input.boundaryInput().not_found())
-        return;
-
-    for (const auto &input: input.boundaryInput().get_child("ImmersedBoundaries"))
-    {
-        ibContactAngles_.insert(std::make_pair(
-                ib_.ibObj(input.first).id(),
-                input.second.get<Scalar>(gamma.name() + ".contactAngle", 90) * M_PI / 180.
-        ));
-    }
+    if (ib_.lock())
+        for (const auto &ibObj: *ib_.lock())
+        {
+            ibContactAngles_[ibObj->id()] = input.boundaryInput().get<Scalar>(
+                    "ImmersedBoundaries." + ibObj->name() + "." + gamma.name() + ".contactAngle", 90) * M_PI / 180.;
+        }
 }
 
 void SurfaceTensionForce::computeInterfaceNormals()
@@ -63,7 +59,7 @@ void SurfaceTensionForce::computeInterfaceNormals()
     {
         for (const Face &face: patch)
         {
-            Scalar theta = getTheta(patch);
+            Scalar theta = this->theta(patch);
             Vector2D t = face.norm().tangentVec().unitVec();
             t = dot(t, n(face.lCell())) > 0. ? t : -t;
             Scalar phi = cross(t, face.outwardNorm()) < 0. ? M_PI_2 - theta : theta - M_PI_2;
@@ -72,26 +68,6 @@ void SurfaceTensionForce::computeInterfaceNormals()
     }
 
     grid_->sendMessages(n);
-}
-
-Vector2D SurfaceTensionForce::contactLineNormal(const Cell &lCell,
-                                                const Cell &rCell,
-                                                const ImmersedBoundaryObject &ibObj) const
-{
-    //LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
-    Vector2D en = ibObj.nearestEdgeNormal(rCell.centroid());
-
-    const VectorFiniteVolumeField &n = *n_;
-
-    if (n(lCell) == Vector2D(0., 0.))
-        return Vector2D(0., 0.);
-
-    Vector2D t = en.tangentVec().unitVec();
-    Scalar theta = getTheta(ibObj);
-
-    t = dot(t, n(lCell)) > 0. ? t : -t;
-    Scalar phi = cross(t, en) < 0. ? M_PI_2 - theta : theta - M_PI_2;
-    return t.rotate(phi) * n(lCell).magSqr();
 }
 
 Vector2D
@@ -104,63 +80,117 @@ SurfaceTensionForce::contactLineNormal(const Cell &cell, const Point2D &pt, cons
     if (n.magSqr() == 0)
         return n;
 
-    Scalar theta = getTheta(ibObj);
+    Scalar theta = this->theta(ibObj);
     return ns * std::cos(theta) + ts * std::sin(theta);
-}
-
-Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const ImmersedBoundaryObject &ibObj) const
-{
-    //LineSegment2D ln = ibObj.intersectionLine(LineSegment2D(lCell.centroid(), rCell.centroid()));
-    Vector2D en = ibObj.nearestEdgeNormal(cell.centroid());
-
-    const VectorFiniteVolumeField &n = *n_;
-
-    Vector2D t = en.tangentVec().unitVec();
-    Scalar theta = getTheta(ibObj);
-
-    t = dot(t, n(cell)) > 0. ? t : -t;
-    Scalar phi = cross(t, en) < 0. ? M_PI_2 - theta : theta - M_PI_2;
-    return t.rotate(phi) * n(cell).magSqr();
-}
-
-Vector2D SurfaceTensionForce::contactLineNormal(const Cell &cell, const ImmersedBoundary &ib) const
-{
-    auto ibObj = ib.nearestIbObj(cell.centroid());
-    return contactLineNormal(cell, *ibObj);
 }
 
 void SurfaceTensionForce::smoothGammaField()
 {
-    const CellGroup &cellsToSmooth = grid_->globalActiveCells();
+    gammaTilde_->fill(0);
 
-    smooth(gamma_, cellsToSmooth,
-           cellsToSmooth,
-           kernelWidth_,
-           *gammaTilde_,
-           [](const Cell &cell, const Cell &kCell, Scalar e)
-           {
-               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
-               return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
-           });
+    if (ib_.lock())
+    {
+        CellGroup cellsToSmooth = grid_->localActiveCells() - ib_.lock()->solidCells();
 
-    grid_->sendMessages(*gammaTilde_);
+        smooth(gamma_,
+               cellsToSmooth,
+               grid_->globalCellGroup(cellsToSmooth),
+               kernelWidth_,
+               *gammaTilde_,
+               [](const Cell &cell, const Cell &kCell, Scalar e)
+               {
+                   Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+                   return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
+               });
+
+        grid_->sendMessages(*gammaTilde_);
+    }
+    else
+    {
+        smooth(gamma_,
+               grid_->localActiveCells(),
+               grid_->globalActiveCells(),
+               kernelWidth_,
+               *gammaTilde_,
+               [](const Cell &cell, const Cell &kCell, Scalar e)
+               {
+                   Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
+                   return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
+               });
+    }
+
     gammaTilde_->setBoundaryFaces();
 }
 
-void SurfaceTensionForce::smoothGammaField(const ImmersedBoundary &ib)
+Equation<Scalar> SurfaceTensionForce::contactLineBcs()
 {
-    CellGroup cellsToSmooth = grid_->localActiveCells() - ib.solidCells();
+    Equation<Scalar> eqn(gamma_);
 
-    smooth(gamma_, cellsToSmooth,
-           grid_->globalCellGroup(cellsToSmooth),
-           kernelWidth_,
-           *gammaTilde_,
-           [](const Cell &cell, const Cell &kCell, Scalar e)
-           {
-               Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
-               return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
-           });
+    for (auto ibObj: *ib_.lock())
+    {
+        switch (ibObj->type())
+        {
+            case ImmersedBoundaryObject::GHOST_CELL:
+                eqn += ibObj->contactLineBcs(gamma_, theta(*ibObj));
+                break;
+            case ImmersedBoundaryObject::QUADRATIC:
+            {
+                Scalar theta = this->theta(*ibObj);
 
-    grid_->sendMessages(*gammaTilde_);
-    gammaTilde_->setBoundaryFaces();
+                for (const Cell &cell: ibObj->ibCells())
+                {
+                    Vector2D wn = -ibObj->nearestEdgeNormal(cell.centroid());
+
+                    Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
+                    Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
+
+                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid_);
+                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid_);
+                    Scalar g1 = m1.bpValue(gamma_);
+                    Scalar g2 = m2.bpValue(gamma_);
+
+                    if (std::abs(g1 - g2) > 1e-8)
+                    {
+                        if (g2 < g1)
+                            std::swap(m1, m2);
+                    }
+                    else
+                    {
+                        Vector2D grad1 = m1.bpGrad(gamma_);
+                        Vector2D grad2 = m2.bpGrad(gamma_);
+
+                        if (g2 + dot(grad2, r2.r()) < g1 + dot(grad1, r1.r()))
+                            std::swap(m1, m2);
+                    }
+
+                    if (theta > M_PI_2)
+                        eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
+                    else
+                        eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
+
+                    auto cells = theta > M_PI_2 ? m1.neumannCells() : m2.neumannCells();
+
+                    for (const Cell &cell: cells)
+                    {
+                        if (ibObj->solidCells().isInGroup(cell))
+                            std::cout << "\nALERT!\n\n";
+                    }
+                }
+
+                for (const Cell &cell: ibObj->solidCells())
+                    eqn.add(cell, cell, 1.);
+            }
+
+                break;
+
+            case ImmersedBoundaryObject::HIGH_ORDER:
+                eqn += ibObj->contactLineBcs(gamma_, theta(*ibObj));
+
+                break;
+            default:
+                throw Exception("SurfaceTensionForce", "contactLineBcs", "unrecognized immersed boundary object type.");
+        }
+    }
+
+    return eqn;
 }

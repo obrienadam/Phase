@@ -10,7 +10,7 @@ class Celeste : public SurfaceTensionForce
 public:
 
     Celeste(const Input &input,
-            const ImmersedBoundary &ib,
+            const std::weak_ptr<ImmersedBoundary> &ib,
             ScalarFiniteVolumeField &gamma,
             const ScalarFiniteVolumeField &rho,
             const ScalarFiniteVolumeField &mu,
@@ -19,15 +19,9 @@ public:
 
     void computeFaces();
 
-    void computeFaces(const ImmersedBoundary &ib);
-
     void compute();
 
-    void compute(const ImmersedBoundary &ib);
-
     void constructMatrices();
-
-    Equation<Scalar> contactLineBcs(const ImmersedBoundary& ib);
 
 protected:
 
@@ -79,8 +73,6 @@ protected:
     };
 
     virtual void computeGradGammaTilde();
-
-    void computeGradGammaTilde(const ImmersedBoundary &ib);
 
     virtual void computeCurvature();
 

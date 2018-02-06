@@ -40,8 +40,8 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep, fluid_) + cicsam::div(u, beta, gamma, fluid_, 0.5)
-                 == ft.contactLineBcs(*ib_));
+    gammaEqn_ = (fv::ddt(gamma, timeStep, fluid_) + cicsam::div(u, beta, gamma, fluid_, 1)
+                 == ft.contactLineBcs());
 
     Scalar error = gammaEqn_.solve();
 
@@ -54,7 +54,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
     gamma.interpolateFaces();
 
     //- Update the gradient
-    gradGamma.compute(grid_->localActiveCells());
+    gradGamma.compute(grid_->localActiveCells(), ScalarGradient::FACE_TO_CELL);
     grid_->sendMessages(gradGamma);
 
     //- Update all other properties
@@ -67,7 +67,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, *ib_, 0.5) + ib_->velocityBcs(u)
+    uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, *ib_, 1) + ib_->velocityBcs(u)
              == qibm::laplacian(mu, u, *ib_) + src::src(ft + sg, fluid_));
 
     Scalar error = uEqn_.solve();

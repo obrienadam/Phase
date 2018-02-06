@@ -33,11 +33,12 @@ void QuadraticImmersedBoundaryObject::updateCells()
     cells_.add(items.begin(), items.end());
 
     //std::cout << "Constructing cell zones for \"" << name_ << "\"...\n";
-    auto isIbCell = [this](const Cell &cell) {
+    auto isIbCell = [this](const Cell &cell)
+    {
         for (const CellLink &nb: cell.neighbours())
             if (!isInIb(nb.cell()))
                 return true;
-        
+
         for (const CellLink &dg: cell.diagonals())
             if (!isInIb(dg.cell()))
                 return true;
@@ -59,11 +60,11 @@ void QuadraticImmersedBoundaryObject::updateCells()
                 forcingCells_.add(nb.cell());
 
     for (const Cell &cell: forcingCells_)
-        for(const InteriorLink &nb: cell.neighbours())
+        for (const InteriorLink &nb: cell.neighbours())
         {
             auto ibObj = ib_->ibObj(nb.cell().centroid());
 
-            if(ibObj)
+            if (ibObj)
                 stencils_.push_back(QuadraticIbmStencil(nb, *ib_));
         }
 }
@@ -337,7 +338,7 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
         Vector2D wn = nearestEdgeNormal(pt).unitVec();
         bi.setPoint(pt);
 
-        if(bi.isValid())
+        if (bi.isValid())
         {
             points.push_back(pt);
             pressures.push_back(bi(p) + rho * dot(pt, g));
@@ -358,7 +359,8 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
             stresses[i] = std::make_tuple(points[i], pressures[i], shears[i]);
 
         std::sort(stresses.begin(), stresses.end(),
-                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b) {
+                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b)
+                  {
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });
@@ -383,7 +385,7 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
 
     auto maxF = grid_->comm().max(force_.mag());
 
-    if(grid_->comm().isMainProc())
+    if (grid_->comm().isMainProc())
         std::cout << "MAX PARTICLE FORCE = " << maxF << std::endl;
 }
 
@@ -562,14 +564,14 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
     pressures.reserve(ibCells_.size());
     shears.reserve(ibCells_.size());
 
-    auto bi =BilinearInterpolator(grid_);
+    auto bi = BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
     {
         Point2D pt = nearestIntersect(cell.centroid());
         Vector2D wn = nearestEdgeNormal(pt).unitVec();
         bi.setPoint(pt);
 
-        if(bi.isValid())
+        if (bi.isValid())
         {
             points.push_back(pt);
             pressures.push_back(bi(p) + bi(rho) * dot(pt, g));
@@ -592,7 +594,8 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
 
         std::sort(stresses.begin(), stresses.end(),
                   [this](const std::tuple<Point2D, Scalar, Scalar> &a,
-                                               const std::tuple<Point2D, Scalar, Scalar> &b) {
+                         const std::tuple<Point2D, Scalar, Scalar> &b)
+                  {
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });

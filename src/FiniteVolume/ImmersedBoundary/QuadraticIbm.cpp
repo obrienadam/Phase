@@ -21,8 +21,10 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
             for (const InteriorLink &nb: cell.neighbours())
             {
                 Scalar flux = dot(phi(nb.face()), nb.outwardNorm());
+                Scalar flux0 = dot(phi0(nb.face()), nb.outwardNorm());
 
-                eqn.add(cell, cell, std::max(flux, 0.));
+                eqn.add(cell, cell, theta * std::max(flux, 0.));
+                eqn.addSource(cell, (1. - theta) * std::max(flux0, 0.) * u(cell));
 
                 auto ibObj = ib.ibObj(nb.cell().centroid());
 
@@ -33,7 +35,10 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
                     eqn.addSource(cell, std::min(flux, 0.) * st.src());
                 }
                 else
-                    eqn.add(cell, nb.cell(), std::min(flux, 0.));
+                {
+                    eqn.add(cell, nb.cell(), theta * std::min(flux, 0.));
+                    eqn.addSource(cell, (1. - theta) * std::min(flux0, 0.) * u(nb.cell()));
+                }
 
                 isForcingCell[cell.id()] = true;
             }
@@ -52,8 +57,8 @@ Equation<Vector2D> qibm::div(const VectorFiniteVolumeField &phi,
             eqn.add(cell, cell, std::max(flux, 0.));
             eqn.add(cell, nb.cell(), std::min(flux, 0.));
 
-            eqn.addSource(cell, std::max(flux0, 0.) * u.oldField(0)(cell));
-            eqn.addSource(cell, std::min(flux0, 0.) * u.oldField(0)(nb.cell()));
+            eqn.addSource(cell, std::max(flux0, 0.) * u(cell));
+            eqn.addSource(cell, std::min(flux0, 0.) * u(nb.cell()));
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
