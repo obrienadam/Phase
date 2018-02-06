@@ -14,7 +14,7 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
         gamma(addScalarField(input, "gamma")),
         beta(addScalarField("beta")),
         rhoU(addVectorField("rhoU")),
-        ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, gradGamma, rho, mu, u))),
+        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_, rho, mu, u))),
         sg(addVectorField("sg")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
@@ -83,7 +83,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5)
-                 == ft.contactLineBcs());
+                 == ft.contactLineBcs(gamma));
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma);
@@ -231,7 +231,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.compute();
+    ft.compute(gamma, gradGamma);
 
     //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
     auto p = [this](const Cell &cell) {

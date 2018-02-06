@@ -1,21 +1,20 @@
 #include "Celeste.h"
 
 Celeste::Celeste(const Input &input,
+                 const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                  const std::weak_ptr<ImmersedBoundary> &ib,
-                 ScalarFiniteVolumeField &gamma,
-                 const ScalarGradient &gradGamma,
                  const ScalarFiniteVolumeField &rho,
                  const ScalarFiniteVolumeField &mu,
                  const VectorFiniteVolumeField &u)
         :
-        SurfaceTensionForce(input, ib, gamma, gradGamma, rho, mu, u)
+        SurfaceTensionForce(input, grid, ib)
 {
     constructMatrices();
 }
 
-void Celeste::computeFaces()
+void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
-    computeGradGammaTilde();
+    computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
 
@@ -23,12 +22,12 @@ void Celeste::computeFaces()
     auto &kappa = *kappa_;
 
     for (const Face &face: grid_->faces())
-        ft(face) = sigma_ * kappa(face) * gradGamma_(face);
+        ft(face) = sigma_ * kappa(face) * gradGamma(face);
 }
 
-void Celeste::compute()
+void Celeste::compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
-    computeGradGammaTilde();
+    computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
 
@@ -37,7 +36,7 @@ void Celeste::compute()
 
     ft.fill(Vector2D(0., 0.));
     for (const Cell &cell: grid_->cellZone("fluid"))
-        ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
+        ft(cell) = sigma_ * kappa(cell) * gradGamma(cell);
 
     ft.interpolateFaces();
 }
@@ -56,9 +55,9 @@ void Celeste::constructMatrices()
 
 //- Protected methods
 
-void Celeste::computeGradGammaTilde()
+void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
 {
-    smoothGammaField();
+    smoothGammaField(gamma);
 
     auto &gammaTilde = *gammaTilde_;
     auto &gradGammaTilde = *gradGammaTilde_;

@@ -15,7 +15,7 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
         beta(addScalarField("beta")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
-        ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, gradGamma, rho, mu, u))),
+        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_, rho, mu, u))),
         sg(addVectorField("sg")),
         rhoU(addVectorField("rhoU")),
         gammaEqn_(input, gamma, "gammaEqn")
@@ -235,7 +235,7 @@ void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.compute();
+    ft.compute(gamma, gradGamma);
 
     //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
     auto p = [this](const Cell& cell)

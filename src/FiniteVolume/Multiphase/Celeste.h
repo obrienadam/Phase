@@ -10,16 +10,15 @@ class Celeste : public SurfaceTensionForce
 public:
 
     Celeste(const Input &input,
+            const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
             const std::weak_ptr<ImmersedBoundary> &ib,
-            ScalarFiniteVolumeField &gamma,
-            const ScalarGradient &gradGamma,
             const ScalarFiniteVolumeField &rho,
             const ScalarFiniteVolumeField &mu,
             const VectorFiniteVolumeField &u);
 
-    void computeFaces();
+    void computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
-    void compute();
+    void compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
     void constructMatrices();
 
@@ -72,11 +71,9 @@ protected:
         std::vector<std::pair<Ref<const Cell>, std::weak_ptr<const ImmersedBoundaryObject>>> compatPts_;
     };
 
-    virtual void computeGradGammaTilde();
+    void computeGradGammaTilde(const ScalarFiniteVolumeField &gamma);
 
-    virtual void computeCurvature();
-
-    void computeCurvature(const ImmersedBoundary &ib);
+    void computeCurvature();
 
     void updateStencils(const ImmersedBoundary& ib);
 

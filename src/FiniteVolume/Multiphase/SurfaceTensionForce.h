@@ -12,12 +12,8 @@ public:
 
     //- Constructor
     SurfaceTensionForce(const Input &input,
-                        const std::weak_ptr<ImmersedBoundary> &ib,
-                        ScalarFiniteVolumeField &gamma,
-                        const ScalarGradient &gradGamma,
-                        const ScalarFiniteVolumeField &rho,
-                        const ScalarFiniteVolumeField &mu,
-                        const VectorFiniteVolumeField &u);
+                        const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                        const std::weak_ptr<ImmersedBoundary> &ib);
 
     //- Internal field pointers
     const std::shared_ptr<ScalarFiniteVolumeField> &kappa() const
@@ -41,9 +37,9 @@ public:
     Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
     //- Compute
-    virtual void computeFaces() = 0;
+    virtual void computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
-    virtual void compute() = 0;
+    virtual void compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
     virtual void computeInterfaceNormals();
 
@@ -54,22 +50,16 @@ public:
                                const ImmersedBoundaryObject &ibObj) const
     { return contactLineNormal(cell, ibObj.nearestIntersect(cell.centroid()), ibObj); }
 
-    void smoothGammaField();
+    void smoothGammaField(const ScalarFiniteVolumeField &gamma);
 
     //- Misc special gamma boundary equations
-    virtual Equation<Scalar> contactLineBcs();
+    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma);
 
 protected:
 
     Scalar sigma_, kernelWidth_, eps_ = 1e-8;
 
     std::unordered_map<Label, Scalar> ibContactAngles_, patchContactAngles_;
-
-    const ScalarFiniteVolumeField &gamma_;
-    const ScalarGradient &gradGamma_;
-    const ScalarFiniteVolumeField &rho_;
-    const ScalarFiniteVolumeField &mu_;
-    const VectorFiniteVolumeField &u_;
 
     std::weak_ptr<ImmersedBoundary> ib_;
 

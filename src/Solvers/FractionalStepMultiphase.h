@@ -31,8 +31,7 @@ protected:
 
     virtual void correctVelocity(Scalar timeStep);
 
-
-    void updateProperties(Scalar timeStep);
+    virtual void updateProperties(Scalar timeStep);
 
     //- Properties
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
