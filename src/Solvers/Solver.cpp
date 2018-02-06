@@ -6,7 +6,6 @@
 #include <cgnslib.h>
 
 #include "Solver.h"
-#include "FaceInterpolation.h"
 #include "EigenSparseMatrixSolver.h"
 
 Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
@@ -257,7 +256,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
     }
 
     grid_->sendMessages(field);
-    interpolateFaces(fv::INVERSE_VOLUME, field);
+    field.interpolateFaces();
 }
 
 void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field)
@@ -275,7 +274,7 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
     }
 
     grid_->sendMessages(field);
-    interpolateFaces(fv::INVERSE_VOLUME, field);
+    field.interpolateFaces();
 }
 
 void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar thetaMax, Scalar innerValue,
@@ -321,7 +320,7 @@ void Solver::setCircleSector(const Circle &circle, Scalar thetaMin, Scalar theta
     }
 
     grid_->sendMessages(field);
-    interpolateFaces(fv::INVERSE_VOLUME, field);
+    field.interpolateFaces();
 }
 
 void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeField &field)
@@ -337,7 +336,7 @@ void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeFie
     }
 
     grid_->sendMessages(field);
-    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
+    field.interpolateFaces();
 }
 
 void Solver::setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field)
@@ -353,7 +352,7 @@ void Solver::setBox(const Polygon &box, const Vector2D &innerValue, VectorFinite
     }
 
     grid_->sendMessages(field);
-    fv::interpolateFaces(fv::INVERSE_VOLUME, field);
+    field.interpolateFaces();
 }
 
 void Solver::setRotating(const std::string &function, Scalar amplitude, const Vector2D &center,

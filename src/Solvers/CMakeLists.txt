@@ -11,9 +11,7 @@ set(HEADERS Solver.h
         PisoMultiphase.h
         FractionalStepIncrementalMultiphase.h
         FractionalStepMultiphase.h
-        FractionalStepMultiphaseQuadraticIbm.h
-        SurfaceTensionForce.h
-        Celeste.h)
+        FractionalStepMultiphaseQuadraticIbm.h)
 
 set(SOURCES Solver.cpp
         Poisson.cpp
@@ -27,10 +25,7 @@ set(SOURCES Solver.cpp
         PisoMultiphase.cpp
         FractionalStepIncrementalMultiphase.cpp
         FractionalStepMultiphase.cpp
-        FractionalStepMultiphaseQuadraticIbm.cpp
-        SurfaceTensionForce.cpp
-        Celeste.cpp
-        CelesteStencil.cpp)
+        FractionalStepMultiphaseQuadraticIbm.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
 target_link_libraries(Solvers Math FiniteVolumeGrid2D FiniteVolume)

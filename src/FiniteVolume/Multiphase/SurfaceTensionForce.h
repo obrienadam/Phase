@@ -14,10 +14,10 @@ public:
     SurfaceTensionForce(const Input &input,
                         const std::weak_ptr<ImmersedBoundary> &ib,
                         ScalarFiniteVolumeField &gamma,
+                        const ScalarGradient &gradGamma,
                         const ScalarFiniteVolumeField &rho,
                         const ScalarFiniteVolumeField &mu,
-                        const VectorFiniteVolumeField &u,
-                        const ScalarGradient &gradGamma);
+                        const VectorFiniteVolumeField &u);
 
     //- Internal field pointers
     const std::shared_ptr<ScalarFiniteVolumeField> &kappa() const
@@ -36,17 +36,9 @@ public:
     Scalar sigma() const
     { return sigma_; }
 
-    Scalar theta(const ImmersedBoundaryObject &ibObj) const
-    {
-        auto it = ibContactAngles_.find(ibObj.id());
-        return it != ibContactAngles_.end() ? it->second : M_PI_2;
-    }
+    Scalar theta(const Patch &patch) const;
 
-    Scalar theta(const Patch &patch) const
-    {
-        auto it = patchContactAngles_.find(patch.id());
-        return it != patchContactAngles_.end() ? it->second : M_PI_2;
-    }
+    Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
     //- Compute
     virtual void computeFaces() = 0;
@@ -73,11 +65,11 @@ protected:
 
     std::unordered_map<Label, Scalar> ibContactAngles_, patchContactAngles_;
 
+    const ScalarFiniteVolumeField &gamma_;
+    const ScalarGradient &gradGamma_;
     const ScalarFiniteVolumeField &rho_;
     const ScalarFiniteVolumeField &mu_;
     const VectorFiniteVolumeField &u_;
-    const ScalarGradient &gradGamma_;
-    ScalarFiniteVolumeField &gamma_;
 
     std::weak_ptr<ImmersedBoundary> ib_;
 

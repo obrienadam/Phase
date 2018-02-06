@@ -1,7 +1,7 @@
 #include <fstream>
 
 #include "ImmersedBoundary.h"
-#include "SurfaceTensionForce.h"
+#include "Multiphase/SurfaceTensionForce.h"
 #include "StepImmersedBoundaryObject.h"
 #include "QuadraticImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"

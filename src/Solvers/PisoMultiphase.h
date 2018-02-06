@@ -2,7 +2,7 @@
 #define PISO_MULTIPHASE_H
 
 #include "Piso.h"
-#include "SurfaceTensionForce.h"
+#include "Multiphase/SurfaceTensionForce.h"
 
 class PisoMultiphase : public Piso
 {

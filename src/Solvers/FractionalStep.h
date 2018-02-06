@@ -10,8 +10,6 @@ class FractionalStep: public Solver
 {
 public:
 
-    enum{};
-
     FractionalStep(const Input& input,
                          std::shared_ptr<FiniteVolumeGrid2D> &grid);
 

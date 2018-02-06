@@ -2,7 +2,6 @@
 #include "FractionalStepIncrementalMultiphase.h"
 #include "Cicsam.h"
 #include "Hric.h"
-#include "FaceInterpolation.h"
 #include "Source.h"
 #include "GhostCellImmersedBoundaryObjectContactLineTracker.h"
 
@@ -16,7 +15,7 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
         beta(addScalarField("beta")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
-        ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma))),
+        ft(addVectorField(std::make_shared<Celeste>(input, ib_, gamma, gradGamma, rho, mu, u))),
         sg(addVectorField("sg")),
         rhoU(addVectorField("rhoU")),
         gammaEqn_(input, gamma, "gammaEqn")

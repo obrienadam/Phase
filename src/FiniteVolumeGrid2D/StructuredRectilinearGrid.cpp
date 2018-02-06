@@ -91,28 +91,16 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
 
 Cell &StructuredRectilinearGrid::operator()(Label i, Label j)
 {
-    if (i < 0 || i >= nCellsX_
-        || j < 0 || j >= nCellsY_)
-        throw Exception("StructuredRectilinearGrid", "operator()", "index is out of range.");
-
     return cells_[nCellsX_ * j + i];
 }
 
 const Cell &StructuredRectilinearGrid::operator()(Label i, Label j) const
 {
-    if (i < 0 || i >= nCellsX_
-        || j < 0 || j >= nCellsY_)
-        throw Exception("StructuredRectilinearGrid", "operator()", "index is out of range.");
-
     return cells_[nCellsX_ * j + i];
 }
 
 const Node &StructuredRectilinearGrid::node(Label i, Label j) const
 {
-    if (i < 0 || i > nCellsX_
-        || j < 0 || j > nCellsY_)
-        throw Exception("StructuredRectilinearGrid", "node", "index is out of range.");
-
     return nodes_[(nCellsX_ + 1) * j + i];
 }
 

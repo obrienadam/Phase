@@ -3,7 +3,7 @@
 
 #include "ImmersedBoundaryObject.h"
 #include "GhostCellStencil.h"
-#include "Celeste.h"
+#include "Multiphase/Celeste.h"
 
 class GhostCellImmersedBoundaryObject : public ImmersedBoundaryObject
 {

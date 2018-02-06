@@ -3,12 +3,12 @@
 Celeste::Celeste(const Input &input,
                  const std::weak_ptr<ImmersedBoundary> &ib,
                  ScalarFiniteVolumeField &gamma,
+                 const ScalarGradient &gradGamma,
                  const ScalarFiniteVolumeField &rho,
                  const ScalarFiniteVolumeField &mu,
-                 const VectorFiniteVolumeField &u,
-                 const ScalarGradient &gradGamma)
+                 const VectorFiniteVolumeField &u)
         :
-        SurfaceTensionForce(input, ib, gamma, rho, mu, u, gradGamma)
+        SurfaceTensionForce(input, ib, gamma, gradGamma, rho, mu, u)
 {
     constructMatrices();
 }
@@ -22,7 +22,7 @@ void Celeste::computeFaces()
     auto &ft = *this;
     auto &kappa = *kappa_;
 
-    for (const Face &face: gamma_.grid()->faces())
+    for (const Face &face: grid_->faces())
         ft(face) = sigma_ * kappa(face) * gradGamma_(face);
 }
 
@@ -36,7 +36,7 @@ void Celeste::compute()
     auto &kappa = *kappa_;
 
     ft.fill(Vector2D(0., 0.));
-    for (const Cell &cell: gamma_.grid()->cellZone("fluid"))
+    for (const Cell &cell: grid_->cellZone("fluid"))
         ft(cell) = sigma_ * kappa(cell) * gradGamma_(cell);
 
     ft.interpolateFaces();

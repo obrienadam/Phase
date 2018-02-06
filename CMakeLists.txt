@@ -62,6 +62,7 @@ set(PHASE_INCLUDE_DIRS src/Types
         src/FiniteVolume/Equation
         src/FiniteVolume/Discretization
         src/FiniteVolume/ImmersedBoundary
+        src/FiniteVolume/Multiphase
         src/Solvers
         src/Communicator
         src/Viewers

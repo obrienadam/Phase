@@ -2,7 +2,7 @@
 #define FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE_H
 
 #include "FractionalStepIncremental.h"
-#include "Celeste.h"
+#include "Multiphase/Celeste.h"
 
 class FractionalStepIncrementalMultiphase : public FractionalStepIncremental
 {

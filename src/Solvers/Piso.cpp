@@ -1,5 +1,4 @@
 #include "Piso.h"
-#include "FaceInterpolation.h"
 #include "ScalarGradient.h"
 #include "Source.h"
 
@@ -164,8 +163,7 @@ void Piso::rhieChowInterpolation()
     }
 
     grid_->sendMessages(d);
-
-    interpolateFaces(fv::INVERSE_VOLUME, d);
+    d.interpolateFaces();
 
     for (const Face &face: grid_->interiorFaces())
     {

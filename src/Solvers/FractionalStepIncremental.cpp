@@ -1,6 +1,5 @@
 #include "FractionalStepIncremental.h"
 #include "ScalarGradient.h"
-#include "FaceInterpolation.h"
 #include "Source.h"
 
 FractionalStepIncremental::FractionalStepIncremental(const Input &input,

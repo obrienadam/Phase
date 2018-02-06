@@ -12,10 +12,10 @@ public:
     Celeste(const Input &input,
             const std::weak_ptr<ImmersedBoundary> &ib,
             ScalarFiniteVolumeField &gamma,
+            const ScalarGradient &gradGamma,
             const ScalarFiniteVolumeField &rho,
             const ScalarFiniteVolumeField &mu,
-            const VectorFiniteVolumeField &u,
-            const ScalarGradient &gradGamma);
+            const VectorFiniteVolumeField &u);
 
     void computeFaces();
 

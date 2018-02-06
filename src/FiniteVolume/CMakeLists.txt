@@ -1,4 +1,4 @@
-set(HEADERS Discretization/FaceInterpolation.h
+set(HEADERS
         Field/ScalarGradient.h
         Discretization/Cicsam.h
         Discretization/Hric.h
@@ -42,10 +42,11 @@ set(HEADERS Discretization/FaceInterpolation.h
         ImmersedBoundary/SeoMittal.h
         ImmersedBoundary/LeeYou.h
         ImmersedBoundary/QuadraticIbm.h
-        ImmersedBoundary/CollisionModel.h)
+        ImmersedBoundary/CollisionModel.h
+        Multiphase/SurfaceTensionForce.h
+        Multiphase/Celeste.h)
 
-set(SOURCES Discretization/FaceInterpolation.tpp
-        Discretization/FaceInterpolation.cpp
+set(SOURCES
         Field/ScalarGradient.cpp
         Discretization/Cicsam.cpp
         Discretization/Hric.cpp
@@ -88,7 +89,10 @@ set(SOURCES Discretization/FaceInterpolation.tpp
         ImmersedBoundary/SeoMittal.cpp
         ImmersedBoundary/LeeYou.cpp
         ImmersedBoundary/QuadraticIbm.cpp
-        ImmersedBoundary/CollisionModel.cpp)
+        ImmersedBoundary/CollisionModel.cpp
+        Multiphase/SurfaceTensionForce.cpp
+        Multiphase/Celeste.cpp
+        Multiphase/CelesteStencil.cpp)
 
 add_library(FiniteVolume ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolume FiniteVolumeGrid2D Math)

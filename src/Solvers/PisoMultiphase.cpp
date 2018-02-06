@@ -1,7 +1,6 @@
 #include "PisoMultiphase.h"
 #include "Cicsam.h"
 #include "Celeste.h"
-#include "FaceInterpolation.h"
 #include "Source.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input,
@@ -28,7 +27,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
-    ft_ = std::make_shared<Celeste>(input, ib_, gamma, rho, mu, u, gradGamma);
+    ft_ = std::make_shared<Celeste>(input, ib_, gamma, gradGamma, rho, mu, u);
 
     addVectorField(ft_);
 
@@ -100,7 +99,7 @@ void PisoMultiphase::computeRho()
 
     grid_->sendMessages(rho);
 
-    harmonicInterpolateFaces(fv::INVERSE_VOLUME, rho);
+    rho.interpolateFaces();
     gradRho.compute(fluid_);
 
     for (const Cell &cell: sg.grid()->cellZone("fluid"))
@@ -125,8 +124,7 @@ void PisoMultiphase::computeMu()
     }
 
     grid_->sendMessages(mu);
-
-    interpolateFaces(fv::INVERSE_VOLUME, mu);
+    mu.interpolateFaces();
 }
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)

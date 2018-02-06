@@ -4,18 +4,18 @@
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const std::weak_ptr<ImmersedBoundary> &ib,
                                          ScalarFiniteVolumeField &gamma,
+                                         const ScalarGradient &gradGamma,
                                          const ScalarFiniteVolumeField &rho,
                                          const ScalarFiniteVolumeField &mu,
-                                         const VectorFiniteVolumeField &u,
-                                         const ScalarGradient &gradGamma)
+                                         const VectorFiniteVolumeField &u)
         :
         VectorFiniteVolumeField(gamma.grid(), "ft", Vector2D(0., 0.), true, false),
         ib_(ib),
         gamma_(gamma),
+        gradGamma_(gradGamma),
         rho_(rho),
         mu_(mu),
         u_(u),
-        gradGamma_(gradGamma),
         kappa_(std::make_shared<ScalarFiniteVolumeField>(grid_, "kappa")),
         gammaTilde_(std::make_shared<ScalarFiniteVolumeField>(grid_, "gammaTilde")),
         gradGammaTilde_(std::make_shared<ScalarGradient>(*gammaTilde_)),
@@ -68,6 +68,18 @@ void SurfaceTensionForce::computeInterfaceNormals()
     }
 
     grid_->sendMessages(n);
+}
+
+Scalar SurfaceTensionForce::theta(const Patch &patch) const
+{
+    auto it = patchContactAngles_.find(patch.id());
+    return it != patchContactAngles_.end() ? it->second : M_PI_2;
+}
+
+Scalar SurfaceTensionForce::theta(const ImmersedBoundaryObject &ibObj) const
+{
+    auto it = ibContactAngles_.find(ibObj.id());
+    return it != ibContactAngles_.end() ? it->second : M_PI_2;
 }
 
 Vector2D
@@ -124,6 +136,7 @@ void SurfaceTensionForce::smoothGammaField()
 
 Equation<Scalar> SurfaceTensionForce::contactLineBcs()
 {
+    /*
     Equation<Scalar> eqn(gamma_);
 
     for (auto ibObj: *ib_.lock())
@@ -192,5 +205,5 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs()
         }
     }
 
-    return eqn;
+    return eqn; */
 }

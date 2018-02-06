@@ -2,7 +2,7 @@
 #define FRACTIONAL_STEP_MULTIPHASE_QUADRATIC_IBM_H
 
 #include "FractionalStepMultiphase.h"
-#include "Celeste.h"
+#include "Multiphase/Celeste.h"
 
 class FractionalStepMultiphaseQuadraticIbm: public FractionalStepMultiphase
 {
