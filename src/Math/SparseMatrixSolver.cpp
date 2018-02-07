@@ -2,6 +2,7 @@
 
 Scalar SparseMatrixSolver::solve(const Vector &x0)
 {
+    setGuess(x0);
     return solve();
 }
 

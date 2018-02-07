@@ -35,7 +35,7 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 find_package(MPI REQUIRED)
-find_package(Trilinos REQUIRED COMPONENTS Xpetra Tpetra Belos MueLu)
+find_package(Trilinos REQUIRED COMPONENTS Tpetra Belos MueLu Amesos2)
 find_package(HDF5 REQUIRED)
 find_package(OpenMP)
 

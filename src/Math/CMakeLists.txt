@@ -3,7 +3,9 @@ set(HEADERS StaticMatrix.h
         StaticMatrix.h
         SparseMatrixSolver.h
         EigenSparseMatrixSolver.h
+        TrilinosSparseMatrixSolver.h
         TrilinosBelosSparseMatrixSolver.h
+        TrilinosAmesosSparseMatrixSolver.h
         TrilinosMueluSparseMatrixSolver.h
         Vector.h
         Algorithm.h)
@@ -11,7 +13,9 @@ set(HEADERS StaticMatrix.h
 set(SOURCES Matrix.cpp
         SparseMatrixSolver.cpp
         EigenSparseMatrixSolver.cpp
+        TrilinosSparseMatrixSolver.cpp
         TrilinosBelosSparseMatrixSolver.cpp
+        TrilinosAmesosSparseMatrixSolver.cpp
         TrilinosMueluSparseMatrixSolver.cpp
         Vector.cpp)
 

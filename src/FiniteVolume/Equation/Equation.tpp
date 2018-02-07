@@ -2,7 +2,10 @@
 
 #include "Equation.h"
 #include "Exception.h"
-#include "SparseMatrixSolver.h"
+#include "EigenSparseMatrixSolver.h"
+#include "TrilinosBelosSparseMatrixSolver.h"
+#include "TrilinosMueluSparseMatrixSolver.h"
+#include "TrilinosAmesosSparseMatrixSolver.h"
 
 template<class T>
 Equation<T>::Equation(const Input &input,
@@ -173,6 +176,8 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
         spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
     else if (lib == "trilinos" || lib == "belos")
         spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
+    else if (lib == "amesos" || lib == "amesos2")
+        spSolver_ = std::make_shared<TrilinosAmesosSparseMatrixSolver>(comm);
     else if (lib == "muelu")
         spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm, field_.grid());
     else

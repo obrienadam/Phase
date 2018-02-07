@@ -6,9 +6,8 @@
 
 TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communicator &comm)
         :
-        comm_(comm)
+        TrilinosSparseMatrixSolver(comm)
 {
-    Tcomm_ = rcp(new TeuchosComm(comm.communicator()));
     belosParams_ = rcp(new Teuchos::ParameterList());
     ifpackParams_ = rcp(new Teuchos::ParameterList());
     linearProblem_ = rcp(new LinearProblem());
@@ -17,54 +16,14 @@ TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communica
 void TrilinosBelosSparseMatrixSolver::setRank(int rank)
 {
     using namespace Teuchos;
+    typedef Tpetra::RowMatrix<Scalar, Index, Index> TpetraRowMatrix;
 
-    auto map = rcp(new const TpetraMap(OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
+    TrilinosSparseMatrixSolver::setRank(rank);
 
-    if (map_.is_null() || !map_->isSameAs(*map)) //- Check if a new map is needed
-    {
-        map_ = map;
-        x_ = rcp(new TpetraVector(map_, true));
-        b_ = rcp(new TpetraVector(map_, false));
-    }
-
-    mat_ = rcp(new TpetraCrsMatrix(map_, 9, Tpetra::StaticProfile));
     precon_ = Ifpack2::Factory().create(precType_, rcp_static_cast<const TpetraRowMatrix>(mat_));
     precon_->setParameters(*ifpackParams_);
     linearProblem_->setOperator(mat_);
     linearProblem_->setRightPrec(precon_);
-}
-
-void TrilinosBelosSparseMatrixSolver::set(const SparseMatrixSolver::CoefficientList &eqn)
-{
-    using namespace Teuchos;
-
-    Index minGlobalIndex = map_->getMinGlobalIndex();
-
-    for (Index localRow = 0, nLocalRows = eqn.size(); localRow < nLocalRows; ++localRow)
-    {
-        std::vector<Index> cols;
-        std::vector<Scalar> vals;
-
-        for (const auto &entry: eqn[localRow])
-        {
-            cols.push_back(entry.first);
-            vals.push_back(entry.second);
-        }
-
-        mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
-    }
-
-    mat_->fillComplete();
-}
-
-void TrilinosBelosSparseMatrixSolver::setGuess(const Vector &x0)
-{
-    x_->getDataNonConst().assign(std::begin(x0.data()), std::end(x0.data()));
-}
-
-void TrilinosBelosSparseMatrixSolver::setRhs(const Vector &rhs)
-{
-    b_->getDataNonConst().assign(std::begin(rhs.data()), std::end(rhs.data()));
 }
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
@@ -78,25 +37,6 @@ Scalar TrilinosBelosSparseMatrixSolver::solve()
     solver_->solve();
 
     return error();
-}
-
-void TrilinosBelosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
-{
-    Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-    for (const Cell &cell: field.grid()->localActiveCells())
-        field(cell) = soln[field.indexMap()->local(cell, 0)];
-}
-
-void TrilinosBelosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
-{
-    Teuchos::ArrayRCP<const Scalar> soln = x_->getData();
-
-    for (const Cell &cell: field.grid()->localActiveCells())
-    {
-        Vector2D &vec = field(cell);
-        vec.x = soln[field.indexMap()->local(cell, 0)];
-        vec.y = soln[field.indexMap()->local(cell, 1)];
-    }
 }
 
 void TrilinosBelosSparseMatrixSolver::setup(const boost::property_tree::ptree& parameters)

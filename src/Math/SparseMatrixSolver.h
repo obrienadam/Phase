@@ -43,8 +43,4 @@ protected:
     int nPreconUses_ = 1, maxPreconUses_ = 1;
 };
 
-#include "EigenSparseMatrixSolver.h"
-#include "TrilinosBelosSparseMatrixSolver.h"
-#include "TrilinosMueluSparseMatrixSolver.h"
-
 #endif
