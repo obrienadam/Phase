@@ -8,6 +8,8 @@ TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communica
         :
         TrilinosSparseMatrixSolver(comm)
 {
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
+
     belosParams_ = rcp(new Teuchos::ParameterList());
     ifpackParams_ = rcp(new Teuchos::ParameterList());
     linearProblem_ = rcp(new LinearProblem());

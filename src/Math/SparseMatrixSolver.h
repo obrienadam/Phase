@@ -1,6 +1,8 @@
 #ifndef SPARSE_MATRIX_SOLVER
 #define SPARSE_MATRIX_SOLVER
 
+#include <tuple>
+
 #include "Vector.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
@@ -14,6 +16,8 @@ public:
     typedef std::vector<Row> CoefficientList;
 
     virtual void setRank(int rank) = 0;
+
+    virtual void set(const std::vector<std::tuple<Index, Index, Scalar>> &entries);
 
     virtual void set(const CoefficientList &eqn) = 0;
 
@@ -29,7 +33,8 @@ public:
 
     virtual void mapSolution(VectorFiniteVolumeField &field) = 0;
 
-    virtual void setup(const boost::property_tree::ptree& parameters) {}
+    virtual void setup(const boost::property_tree::ptree &parameters)
+    {}
 
     virtual int nIters() const = 0;
 

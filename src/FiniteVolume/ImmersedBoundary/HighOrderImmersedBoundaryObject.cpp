@@ -1,7 +1,6 @@
-#include <eigen3/Eigen/SparseLU>
-
 #include "HighOrderImmersedBoundaryObject.h"
 #include "HighOrderStencil.h"
+#include "TrilinosAmesosSparseMatrixSolver.h"
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
                                                                  Label id,

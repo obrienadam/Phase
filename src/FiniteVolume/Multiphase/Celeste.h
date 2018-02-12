@@ -20,8 +20,6 @@ public:
 
     void compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
-    void constructMatrices();
-
 protected:
 
     class CelesteStencil
@@ -75,9 +73,9 @@ protected:
 
     void computeCurvature();
 
-    void updateStencils(const ImmersedBoundary& ib);
+    void updateStencils();
 
-    std::vector<bool> modifiedStencil_;
+    std::vector<bool> updateStencil_;
     std::vector<CelesteStencil> kappaStencils_, gradGammaTildeStencils_;
 };
 

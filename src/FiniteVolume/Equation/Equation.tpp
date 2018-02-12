@@ -167,6 +167,13 @@ Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 }
 
 template<class T>
+void Equation<T>::setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &spSolver)
+{
+    field_.computeOrdering();
+    spSolver_ = spSolver;
+}
+
+template<class T>
 void Equation<T>::configureSparseSolver(const Input &input, const Communicator &comm)
 {
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib", "Eigen3");

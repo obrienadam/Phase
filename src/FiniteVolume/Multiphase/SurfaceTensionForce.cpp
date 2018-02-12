@@ -170,14 +170,6 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
                         eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
                     else
                         eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
-
-                    auto cells = theta > M_PI_2 ? m1.neumannCells() : m2.neumannCells();
-
-                    for (const Cell &cell: cells)
-                    {
-                        if (ibObj->solidCells().isInGroup(cell))
-                            std::cout << "\nALERT!\n\n";
-                    }
                 }
 
                 for (const Cell &cell: ibObj->solidCells())

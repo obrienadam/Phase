@@ -31,3 +31,10 @@ target_link_libraries(phaseFractionalStepIncremental Solvers)
 
 add_executable(phaseFractionalStepIncrementalMultiphase phaseFractionalStepIncrementalMultiphase.cpp)
 target_link_libraries(phaseFractionalStepIncrementalMultiphase Solvers)
+
+install(TARGETS
+        phaseFractionalStep
+        phaseFractionalStepMultiphase
+        phaseFractionalStepQuadraticIbm
+        phaseFractionalStepMultiphaseQuadraticIbm
+        RUNTIME DESTINATION bin)

@@ -98,6 +98,7 @@ Thumbs.db
 # Build directories
 bin
 lib
+build
 cmake-build-*
 cmake-build-*
 
@@ -112,3 +113,4 @@ submit.sh
 *.mp4
 *.avi
 .idea
+

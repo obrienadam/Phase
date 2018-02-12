@@ -23,16 +23,16 @@ void Celeste::CelesteStencil::init(bool weighted)
 
     reset();
 
-    for(const InteriorLink& nb: cell.neighbours())
+    for (const InteriorLink &nb: cell.neighbours())
     {
         cells_.push_back(std::cref(nb.cell()));
 
-        if(!cell.boundaries().empty())
-            for(const BoundaryLink& bd: nb.cell().boundaries())
+        if (!cell.boundaries().empty())
+            for (const BoundaryLink &bd: nb.cell().boundaries())
                 faces_.push_back(std::cref(bd.face()));
     }
 
-    for(const CellLink& dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
         cells_.push_back(std::cref(dg.cell()));
 
     for (const BoundaryLink &bd: cell.boundaries())
@@ -50,11 +50,11 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
 
     reset();
 
-    for(const InteriorLink& nb: cell.neighbours())
+    for (const InteriorLink &nb: cell.neighbours())
     {
         auto ibObj = ib.ibObj(nb.cell().centroid());
 
-        if(!ibObj)
+        if (!ibObj)
         {
             cells_.push_back(std::cref(nb.cell()));
 
@@ -64,20 +64,22 @@ void Celeste::CelesteStencil::init(const ImmersedBoundary &ib, bool weighted)
         }
         else
         {
-            compatPts_.push_back(std::make_pair(std::cref(nb.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
+            compatPts_.push_back(
+                    std::make_pair(std::cref(nb.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
         }
     }
 
-    for(const CellLink& dg: cell.diagonals())
+    for (const CellLink &dg: cell.diagonals())
     {
         auto ibObj = ib.ibObj(dg.cell().centroid());
 
-        if(!ibObj)
+        if (!ibObj)
             cells_.push_back(std::cref(dg.cell()));
         else
         {
             //compatPts_.push_back(std::make_pair(ibObj, dg.cell().centroid()));
-            compatPts_.push_back(std::make_pair(std::cref(dg.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
+            compatPts_.push_back(
+                    std::make_pair(std::cref(dg.cell()), std::weak_ptr<const ImmersedBoundaryObject>(ibObj)));
         }
     }
 
@@ -158,6 +160,9 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     for (const Cell &kCell: cells_)
     {
         Vector2D dn = n(kCell) - n(cell);
+
+        if (weighted_) dn /= (kCell.centroid() - cell.centroid()).magSqr();
+
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
@@ -165,6 +170,9 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
     for (const Face &face: faces_)
     {
         Vector2D dn = n(face) - n(cell);
+
+        if (weighted_) dn /= (face.centroid() - cell.centroid()).magSqr();
+
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }
@@ -174,6 +182,9 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
         auto ibObj = compatPt.second.lock();
         Point2D pt = ibObj->intersectionLine(cell.centroid(), compatPt.first.get().centroid()).ptB();
         Vector2D dn = fst.contactLineNormal(cell, pt, *ibObj) - n(cell);
+
+        if (weighted_) dn /= (compatPt.first.get().centroid() - cell.centroid()).magSqr();
+
         b(i, 0) = dn.x;
         b(i++, 1) = dn.y;
     }

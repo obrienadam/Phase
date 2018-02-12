@@ -12,3 +12,9 @@ set(SOURCES Input.cpp
 
 add_library(System ${HEADERS} ${SOURCES})
 target_link_libraries(System PostProcessing ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+
+install(TARGETS
+        System
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

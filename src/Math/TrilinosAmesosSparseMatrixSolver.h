@@ -9,7 +9,7 @@ class TrilinosAmesosSparseMatrixSolver: public TrilinosSparseMatrixSolver
 {
 public:
 
-    TrilinosAmesosSparseMatrixSolver(const Communicator &comm);
+    TrilinosAmesosSparseMatrixSolver(const Communicator &comm, const std::string &solverName = "klu2");
 
     Scalar solve();
 

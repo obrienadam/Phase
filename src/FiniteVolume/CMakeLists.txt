@@ -96,3 +96,9 @@ set(SOURCES
 
 add_library(FiniteVolume ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolume FiniteVolumeGrid2D Math)
+
+install(TARGETS
+        FiniteVolume
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

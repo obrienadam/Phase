@@ -4,23 +4,21 @@
 
 #include "TrilinosMueluSparseMatrixSolver.h"
 
-TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm)
-        :
-        TrilinosSparseMatrixSolver(comm)
-{
-//    h_ = Teuchos::rcp(new MueLuHierarchy());
-//    h_->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-//    h_->GetLevel()->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-//    h_->IsPreconditioner(false);
-}
-
 TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm,
-                                                                 const std::weak_ptr<const FiniteVolumeGrid2D> &grid)
+                                                                 const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                 const std::string &solverName)
         :
         TrilinosSparseMatrixSolver(comm),
         grid_(grid)
 {
+    typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
+    belosParams_ = rcp(new Teuchos::ParameterList());
+    mueluParams_ = rcp(new Teuchos::ParameterList());
+    solver_ = SolverFactory().create(solverName, belosParams_);
+
+    linearProblem_ = rcp(new LinearProblem());
+    solver_->setProblem(linearProblem_);
 }
 
 void TrilinosMueluSparseMatrixSolver::setRank(int rank)

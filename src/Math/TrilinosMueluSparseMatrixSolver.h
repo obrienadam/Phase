@@ -11,9 +11,9 @@ class TrilinosMueluSparseMatrixSolver : public TrilinosSparseMatrixSolver
 {
 public:
 
-    TrilinosMueluSparseMatrixSolver(const Communicator &comm);
-
-    TrilinosMueluSparseMatrixSolver(const Communicator &comm, const std::weak_ptr<const FiniteVolumeGrid2D> &grid);
+    TrilinosMueluSparseMatrixSolver(const Communicator &comm,
+                                    const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
+                                    const std::string &solverName = "BiCGSTAB");
 
     void setRank(int rank);
 

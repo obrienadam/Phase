@@ -26,3 +26,9 @@ target_link_libraries(Math Communicator
         lapacke
         ${Trilinos_LIBRARIES}
         ${Trilinos_TPL_LIBRARIES})
+
+install(TARGETS
+        Math
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

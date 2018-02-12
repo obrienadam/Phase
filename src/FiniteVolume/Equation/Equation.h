@@ -109,6 +109,8 @@ public:
 
     Equation<T> &operator==(const FiniteVolumeField<T> &rhs);
 
+    void setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &spSolver);
+
     std::shared_ptr<SparseMatrixSolver> &sparseSolver()
     { return spSolver_; }
 

@@ -2,11 +2,12 @@
 
 #include "TrilinosAmesosSparseMatrixSolver.h"
 
-TrilinosAmesosSparseMatrixSolver::TrilinosAmesosSparseMatrixSolver(const Communicator &comm)
+TrilinosAmesosSparseMatrixSolver::TrilinosAmesosSparseMatrixSolver(const Communicator &comm, const std::string &solverName)
         :
         TrilinosSparseMatrixSolver(comm)
 {
-
+    solverName_ = solverName;
+    amesos2Params_ = rcp(new Teuchos::ParameterList());
 }
 
 Scalar TrilinosAmesosSparseMatrixSolver::solve()
@@ -32,12 +33,10 @@ void TrilinosAmesosSparseMatrixSolver::setup(const boost::property_tree::ptree &
 {
     using namespace Teuchos;
 
-    solverName_ = parameters.get<std::string>("solver", "klu2");
+    solverName_ = parameters.get<std::string>("solver", solverName_);
 
     std::string filename = parameters.get<std::string>("amesosParamFile", "");
 
     if (!filename.empty())
         amesos2Params_ = Teuchos::getParametersFromXmlFile("case/" + filename);
-    else
-        amesos2Params_ = rcp(new Teuchos::ParameterList());
 }

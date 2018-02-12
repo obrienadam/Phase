@@ -1,11 +1,6 @@
 project(Phase)
 cmake_minimum_required(VERSION 3.6.0)
 
-# Output paths
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
-
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -xHost")
 
@@ -90,3 +85,5 @@ message(STATUS "Trilinos directory: " ${Trilinos_DIR})
 add_subdirectory(src)
 add_subdirectory(modules)
 add_subdirectory(utilities)
+
+

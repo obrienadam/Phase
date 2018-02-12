@@ -3,11 +3,14 @@
 #include "Cicsam.h"
 #include "QuadraticIbm.h"
 #include "Source.h"
+#include "TrilinosAmesosSparseMatrixSolver.h"
 
 FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input,
                                                                            std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
-        FractionalStepMultiphase(input, grid)
+        FractionalStepMultiphase(input, grid),
+        gammaCl(addScalarField("gammaCl")),
+        gradGammaCl(addVectorField(std::make_shared<ScalarGradient>(gammaCl)))
 {
     for (const auto &ibObj: *ib_)
     {
@@ -16,6 +19,8 @@ FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const
                             "FractionalStepMultiphaseQuadraticIbm",
                             "immersed boundary object \"" + ibObj->name() + "\" is not type \"quadratic\".");
     }
+
+    gammaCl.copyBoundaryTypes(gamma);
 }
 
 Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
@@ -40,21 +45,22 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep, grid_->localActiveCells()) + cicsam::div(u, beta, gamma, grid_->localActiveCells(), 1)
-                 == ft.contactLineBcs(gamma));
+    gammaEqn_ = (fv::ddt(gamma, timeStep, grid_->localActiveCells())
+                 + cicsam::div(u, beta, gamma, grid_->localActiveCells(), 1)
+                 == 0);
 
     Scalar error = gammaEqn_.solve();
 
     std::for_each(gamma.begin(), gamma.end(), [](Scalar &g)
     {
-        g = std::max(std::min(g, 1.), 0.);
+        g = clamp(g, 0., 1.);
     });
 
     grid_->sendMessages(gamma);
     gamma.interpolateFaces();
 
     //- Update the gradient
-    gradGamma.compute(grid_->localActiveCells(), ScalarGradient::FACE_TO_CELL);
+    gradGamma.compute(grid_->localActiveCells());
     grid_->sendMessages(gradGamma);
 
     //- Update all other properties
@@ -68,7 +74,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + qibm::div(rhoU, u, *ib_, 1) + ib_->velocityBcs(u)
-             == qibm::laplacian(mu, u, *ib_) + src::src(ft + sg, fluid_));
+             == qibm::laplacian(mu, u, *ib_, 1) + src::src(ft + sg, fluid_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
@@ -148,5 +154,129 @@ void FractionalStepMultiphaseQuadraticIbm::correctVelocity(Scalar timeStep)
 
 void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 {
-    FractionalStepMultiphase::updateProperties(timeStep);
+    Equation<Scalar> eqn(gammaCl);
+    eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm()));
+
+    for (const Cell &cell: fluid_)
+    {
+        eqn.set(cell, cell, 1.);
+        eqn.setSource(cell, -gamma(cell));
+    }
+
+    for (const auto &ibObj: *ib_)
+    {
+        Scalar theta = ft.theta(*ibObj);
+
+        for (const Cell &cell: ibObj->ibCells())
+        {
+            Vector2D wn = -ibObj->nearestEdgeNormal(cell.centroid());
+
+            Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
+            Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
+
+            GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid_);
+            GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid_);
+            Scalar g1 = m1.bpValue(gamma);
+            Scalar g2 = m2.bpValue(gamma);
+
+            if (std::abs(g1 - g2) > 1e-8)
+            {
+                if (g2 < g1)
+                    std::swap(m1, m2);
+            }
+            else
+            {
+                Vector2D grad1 = m1.bpGrad(gamma);
+                Vector2D grad2 = m2.bpGrad(gamma);
+
+                if (g2 + dot(grad2, r2.r()) < g1 + dot(grad1, r1.r()))
+                    std::swap(m1, m2);
+            }
+
+            if (theta > M_PI_2)
+                eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
+            else
+                eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
+        }
+
+        for (const Cell &cell: ibObj->solidCells())
+        {
+            eqn.set(cell, cell, 1.);
+            eqn.setSource(cell, 0.);
+        }
+    }
+
+    eqn.solve();
+
+    std::for_each(gammaCl.begin(), gammaCl.end(), [](Scalar &g) {
+        g = clamp(g, 0., 1.);
+    });
+
+    grid_->sendMessages(gammaCl);
+    gradGammaCl.compute(grid_->localActiveCells());
+
+    //- Update density
+    rho.savePreviousTimeStep(timeStep, 1);
+    rho.computeCells([this](const Cell &cell)
+                     {
+                         Scalar g = gamma(cell);
+                         return (1. - g) * rho1_ + g * rho2_;
+                     });
+
+    // grid_->sendMessages(rho); //- For correct gradient computation
+
+    rho.computeFaces([this](const Face &face)
+                     {
+                         Scalar g = gamma(face);
+                         return (1. - g) * rho1_ + g * rho2_;
+                     });
+
+    //- Update the gravitational source term
+    gradRho.computeFaces();
+    sg.savePreviousTimeStep(timeStep, 1.);
+    for (const Face &face: grid_->faces())
+        sg(face) = dot(g_, -face.centroid()) * gradRho(face);
+
+    sg.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
+    sg.faceToCell(rho, rho, fluid_);
+
+    //- Must be communicated for proper momentum interpolation
+    grid_->sendMessages(sg.oldField(0));
+    grid_->sendMessages(sg);
+
+    //- Update viscosity from kinematic viscosity
+    mu.savePreviousTimeStep(timeStep, 1);
+    mu.computeCells([this](const Cell &cell)
+                    {
+                        Scalar g = gamma(cell);
+                        return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+                    });
+
+    // grid_->sendMessages(mu);
+
+    mu.computeFaces([this](const Face &face)
+                    {
+                        Scalar g = gamma(face);
+                        return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+                    });
+
+    //- Update the surface tension
+    ft.savePreviousTimeStep(timeStep, 1);
+    ft.computeFaces(gammaCl, gradGamma);
+//
+//    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
+//    auto p = [this](const Cell &cell)
+//    {
+//        for (const CellLink &nb: cell.neighbours())
+//            if (ib_->ibObj(nb.cell().centroid()))
+//                return false;
+//        return true;
+//    };
+
+    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
+    ft.faceToCell(rho, rho, fluid_);
+
+    //- Must be communicated for proper momentum interpolation
+    grid_->sendMessages(ft.oldField(0));
+    grid_->sendMessages(ft);
 }

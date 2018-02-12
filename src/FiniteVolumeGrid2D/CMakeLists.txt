@@ -40,3 +40,9 @@ set(SOURCES FiniteVolumeGrid2D.cpp
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolumeGrid2D Communicator Geometry System metis cgns ${HDF5_LIBRARIES})
+
+install(TARGETS
+        FiniteVolumeGrid2D
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

@@ -9,11 +9,13 @@ Celeste::Celeste(const Input &input,
         :
         SurfaceTensionForce(input, grid, ib)
 {
-    constructMatrices();
+
 }
 
 void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
+    updateStencils();
+
     computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
@@ -27,6 +29,8 @@ void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGra
 
 void Celeste::compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
+    updateStencils();
+
     computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
@@ -39,18 +43,6 @@ void Celeste::compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient
         ft(cell) = sigma_ * kappa(cell) * gradGamma(cell);
 
     ft.interpolateFaces();
-}
-
-void Celeste::constructMatrices()
-{
-    kappaStencils_.resize(grid_->cells().size());
-    gradGammaTildeStencils_.resize(grid_->cells().size());
-
-    for (const Cell &cell: grid_->localActiveCells())
-    {
-        kappaStencils_[cell.id()] = CelesteStencil(cell, false);
-        gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
-    }
 }
 
 //- Protected methods
@@ -69,40 +61,28 @@ void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
 
 void Celeste::computeCurvature()
 {
+    kappa_->fill(0.);
+
     auto &n = *n_;
     auto &kappa = *kappa_;
+    const auto &gradGammaTilde = *gradGammaTilde_;
 
-    if(!ib_.lock())
+    for (const Cell &cell: grid_->cellZone("fluid"))
+        if (gradGammaTilde(cell).magSqr() > 0.)
+            kappa(cell) = kappaStencils_[cell.id()].kappa(n, *ib_.lock(), *this);
+
+    grid_->sendMessages(kappa);
+    kappa.interpolateFaces();
+
+    for (const Face &face: grid_->interiorFaces())
     {
-        for (const Cell &cell: grid_->cellZone("fluid"))
-            kappa(cell) = kappaStencils_[cell.id()].div(n);
-    }
-    else
-    {
-        updateStencils(*ib_.lock());
-        kappa_->fill(0.);
-
-        auto &n = *n_;
-        auto &kappa = *kappa_;
-        const auto &gradGammaTilde = *gradGammaTilde_;
-
-        for (const Cell &cell: grid_->cellZone("fluid"))
-            if (gradGammaTilde(cell).magSqr() > 0.)
-                kappa(cell) = kappaStencils_[cell.id()].kappa(n, *ib_.lock(), *this);
-
-        grid_->sendMessages(kappa);
-        kappa.interpolateFaces();
-
-        for (const Face &face: grid_->interiorFaces())
+        if (ib_.lock()->ibObj(face.lCell().centroid()))
         {
-            if (ib_.lock()->ibObj(face.lCell().centroid()))
-            {
-                kappa(face) = kappa(face.rCell());
-            }
-            else if (ib_.lock()->ibObj(face.rCell().centroid()))
-            {
-                kappa(face) = kappa(face.lCell());
-            }
+            kappa(face) = kappa(face.rCell());
+        }
+        else if (ib_.lock()->ibObj(face.rCell().centroid()))
+        {
+            kappa(face) = kappa(face.lCell());
         }
     }
 
@@ -110,28 +90,22 @@ void Celeste::computeCurvature()
     kappa.interpolateFaces();
 }
 
-void Celeste::updateStencils(const ImmersedBoundary &ib)
+void Celeste::updateStencils()
 {
-//    auto updateRequired = [&ib](const CelesteStencil &st) {
-//        if (st.truncated())
-//            return true;
-//
-//        for (const InteriorLink &nb: st.cell().neighbours())
-//            if (ib.ibObj(nb.cell().centroid()))
-//                return true;
-//
-//        for (const CellLink &dg: st.cell().diagonals())
-//            if (ib.ibObj(dg.cell().centroid()))
-//                return true;
-//
-//        return false;
-//    };
+    auto ib = ib_.lock();
 
-    for (const Cell &cell: grid_->cellZone("fluid"))
+    if (kappaStencils_.empty() || gradGammaTildeStencils_.empty())
     {
-        CelesteStencil &st = kappaStencils_[cell.id()];
-
-        //    if (updateRequired(st))
-        st.init(ib);
+        kappaStencils_.resize(grid_->cells().size());
+        gradGammaTildeStencils_.resize(grid_->cells().size());
+        updateStencil_.assign(grid_->cells().size(), true);
     }
+
+    for (Label i = 0; i < grid_->cells().size(); ++i)
+        if (updateStencil_[i])
+        {
+            kappaStencils_[i] = CelesteStencil(grid_->cells()[i], false);
+            gradGammaTildeStencils_[i] = CelesteStencil(grid_->cells()[i], true);
+            updateStencil_[i] = false;
+        }
 }
