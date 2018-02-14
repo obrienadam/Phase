@@ -213,7 +213,7 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
     });
 
     grid_->sendMessages(gammaCl);
-    gradGammaCl.compute(grid_->localActiveCells());
+    gradGammaCl.compute(fluid_);
 
     //- Update density
     rho.savePreviousTimeStep(timeStep, 1);
@@ -262,7 +262,7 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeFaces(gammaCl, gradGamma);
+    ft.computeFaces(gammaCl, gradGammaCl);
 //
 //    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
 //    auto p = [this](const Cell &cell)

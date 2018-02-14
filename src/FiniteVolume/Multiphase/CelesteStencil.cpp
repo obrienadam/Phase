@@ -105,12 +105,14 @@ Vector2D Celeste::CelesteStencil::grad(const ScalarFiniteVolumeField &phi) const
 
     for (const Cell &kCell: cells_)
     {
-        b(i++, 0) = (phi(kCell) - phi(cell)) / (weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.);
+        Scalar s = weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.;
+        b(i++, 0) = (phi(kCell) - phi(cell)) / s;
     }
 
     for (const Face &face: faces_)
     {
-        b(i++, 0) = (phi(face) - phi(cell)) / (weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.);
+        Scalar s = weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.;
+        b(i++, 0) = (phi(face) - phi(cell)) / s;
     }
 
     b = pInv_ * b;
@@ -126,14 +128,16 @@ Scalar Celeste::CelesteStencil::div(const VectorFiniteVolumeField &u) const
     int i = 0;
     for (const Cell &kCell: cells_)
     {
-        Vector2D du = (u(kCell) - u(cell)) / (weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.);
+        Scalar s = weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.;
+        Vector2D du = (u(kCell) - u(cell)) / s;
         b(i, 0) = du.x;
         b(i++, 1) = du.y;
     }
 
     for (const Face &face: faces_)
     {
-        Vector2D du = (u(face) - u(cell)) / (weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.);
+        Scalar s = weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.;
+        Vector2D du = (u(face) - u(cell)) / s;
         b(i, 0) = du.x;
         b(i++, 1) = du.y;
     }
@@ -152,29 +156,34 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
                                       const ImmersedBoundary &ib,
                                       const Celeste &fst) const
 {
-    Matrix b(pInv_.n(), 2);
-
     const Cell &cell = *cellPtr_;
 
+    //- Check if it needs to be computed
+    if(n(cell).magSqr() == 0.)
+        return 0.;
+
+    for(const Cell& cell: cells_)
+        if(n(cell).magSqr() == 0.)
+            return 0.;
+
+    Matrix b(pInv_.n(), 2);
     int i = 0;
     for (const Cell &kCell: cells_)
     {
         Vector2D dn = n(kCell) - n(cell);
+        Scalar s = weighted_ ? (kCell.centroid() - cell.centroid()).magSqr() : 1.;
 
-        if (weighted_) dn /= (kCell.centroid() - cell.centroid()).magSqr();
-
-        b(i, 0) = dn.x;
-        b(i++, 1) = dn.y;
+        b(i, 0) = dn.x / s;
+        b(i++, 1) = dn.y / s;
     }
 
     for (const Face &face: faces_)
     {
         Vector2D dn = n(face) - n(cell);
+        Scalar s = weighted_ ? (face.centroid() - cell.centroid()).magSqr() : 1.;
 
-        if (weighted_) dn /= (face.centroid() - cell.centroid()).magSqr();
-
-        b(i, 0) = dn.x;
-        b(i++, 1) = dn.y;
+        b(i, 0) = dn.x / s;
+        b(i++, 1) = dn.y / s;
     }
 
     for (const auto &compatPt: compatPts_)
@@ -182,11 +191,10 @@ Scalar Celeste::CelesteStencil::kappa(const VectorFiniteVolumeField &n,
         auto ibObj = compatPt.second.lock();
         Point2D pt = ibObj->intersectionLine(cell.centroid(), compatPt.first.get().centroid()).ptB();
         Vector2D dn = fst.contactLineNormal(cell, pt, *ibObj) - n(cell);
+        Scalar s = weighted_ ? (compatPt.first.get().centroid() - cell.centroid()).magSqr() : 1.;
 
-        if (weighted_) dn /= (compatPt.first.get().centroid() - cell.centroid()).magSqr();
-
-        b(i, 0) = dn.x;
-        b(i++, 1) = dn.y;
+        b(i, 0) = dn.x / s;
+        b(i++, 1) = dn.y / s;
     }
 
     b = pInv_ * b;
@@ -204,45 +212,42 @@ void Celeste::CelesteStencil::initMatrix()
     for (const Cell &kCell: cells_)
     {
         Vector2D r = (kCell.centroid() - cell.centroid());
-
-        if (weighted_) r /= r.magSqr();
+        Scalar s = weighted_ ? r.magSqr() : 1.;
 
         A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
+                r.x * r.x / 2. / s,
+                r.y * r.y / 2. / s,
+                r.x * r.y / s,
+                r.x / s,
+                r.y / s
         });
     }
 
     for (const Face &face: faces_)
     {
         Vector2D r = face.centroid() - cell.centroid();
-
-        if (weighted_) r /= r.magSqr();
+        Scalar s = weighted_ ? r.magSqr() : 1.;
 
         A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
+                r.x * r.x / 2. / s,
+                r.y * r.y / 2. / s,
+                r.x * r.y / s,
+                r.x / s,
+                r.y / s
         });
     }
 
     for (const auto &compatPt: compatPts_)
     {
         Vector2D r = compatPt.first.get().centroid() - cell.centroid();
-
-        if (weighted_) r /= r.magSqr();
+        Scalar s = weighted_ ? r.magSqr() : 1.;
 
         A.setRow(i++, {
-                r.x * r.x / 2.,
-                r.y * r.y / 2.,
-                r.x * r.y,
-                r.x,
-                r.y
+                r.x * r.x / 2. / s,
+                r.y * r.y / 2. / s,
+                r.x * r.y / s,
+                r.x / s,
+                r.y / s
         });
     }
 

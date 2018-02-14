@@ -9,7 +9,7 @@ Celeste::Celeste(const Input &input,
         :
         SurfaceTensionForce(input, grid, ib)
 {
-
+    updateStencils();
 }
 
 void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
@@ -101,11 +101,13 @@ void Celeste::updateStencils()
         updateStencil_.assign(grid_->cells().size(), true);
     }
 
-    for (Label i = 0; i < grid_->cells().size(); ++i)
-        if (updateStencil_[i])
-        {
-            kappaStencils_[i] = CelesteStencil(grid_->cells()[i], false);
-            gradGammaTildeStencils_[i] = CelesteStencil(grid_->cells()[i], true);
-            updateStencil_[i] = false;
-        }
+    if(ib)
+        for(const Cell& cell: grid_->cells())
+            kappaStencils_[cell.id()] = CelesteStencil(cell, *ib, false);
+    else
+        for(const Cell& cell: grid_->cells())
+            kappaStencils_[cell.id()] = CelesteStencil(cell, false);
+    
+    for(const Cell& cell: grid_->cells())
+        gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
 }
