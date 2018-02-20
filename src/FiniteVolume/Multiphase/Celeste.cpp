@@ -85,9 +85,6 @@ void Celeste::computeCurvature()
             kappa(face) = kappa(face.lCell());
         }
     }
-
-    grid_->sendMessages(kappa);
-    kappa.interpolateFaces();
 }
 
 void Celeste::updateStencils()
