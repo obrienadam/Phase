@@ -389,16 +389,6 @@ Equation<Scalar> ImmersedBoundary::pressureBcs(Scalar rho, ScalarFiniteVolumeFie
     return eqn;
 }
 
-Equation<Scalar> ImmersedBoundary::contactLineBcs(const SurfaceTensionForce &fst, ScalarFiniteVolumeField &gamma) const
-{
-    Equation<Scalar> eqn(gamma);
-
-    for (const auto &ibObj: ibObjs_)
-        eqn += ibObj->contactLineBcs(gamma, fst.theta(*ibObj));
-
-    return eqn;
-}
-
 void ImmersedBoundary::clearFreshCells()
 {
     for (auto &ibObj: ibObjs_)

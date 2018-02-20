@@ -5,8 +5,6 @@
 #include "CollisionModel.h"
 #include "FiniteVolumeField.h"
 
-class SurfaceTensionForce;
-
 class ImmersedBoundary
 {
 public:
@@ -81,8 +79,6 @@ public:
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const;
-
-    Equation<Scalar> contactLineBcs(const SurfaceTensionForce &fst, ScalarFiniteVolumeField &gamma) const;
 
     void clearFreshCells();
 

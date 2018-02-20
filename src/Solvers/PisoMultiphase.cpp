@@ -27,7 +27,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
-    ft_ = std::make_shared<Celeste>(input, grid_, ib_, rho, mu, u);
+    ft_ = std::make_shared<Celeste>(input, grid_, ib_);
 
     addVectorField(ft_);
 
@@ -129,7 +129,7 @@ void PisoMultiphase::computeMu()
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft_->compute(gamma, gradGamma);
+    ft_->computeInterfaceForces(gamma, gradGamma);
     computeRho();
     computeMu();
 

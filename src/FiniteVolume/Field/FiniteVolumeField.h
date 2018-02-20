@@ -54,9 +54,6 @@ public:
     const std::shared_ptr<const IndexMap> &indexMap() const
     { return indexMap_; }
 
-    void setIndexMap(const std::shared_ptr<IndexMap> &indexMap)
-    { indexMap_ = indexMap; }
-
     template<class TFunc>
     void computeCells(const TFunc &fcn)
     {

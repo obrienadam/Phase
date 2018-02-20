@@ -2,17 +2,14 @@
 
 Celeste::Celeste(const Input &input,
                  const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                 const std::weak_ptr<ImmersedBoundary> &ib,
-                 const ScalarFiniteVolumeField &rho,
-                 const ScalarFiniteVolumeField &mu,
-                 const VectorFiniteVolumeField &u)
+                 const std::weak_ptr<ImmersedBoundary> &ib)
         :
         SurfaceTensionForce(input, grid, ib)
 {
     updateStencils();
 }
 
-void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
+void Celeste::computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
     updateStencils();
 
@@ -27,7 +24,7 @@ void Celeste::computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGra
         ft(face) = sigma_ * kappa(face) * gradGamma(face);
 }
 
-void Celeste::compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
+void Celeste::computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
     updateStencils();
 
@@ -98,13 +95,13 @@ void Celeste::updateStencils()
         updateStencil_.assign(grid_->cells().size(), true);
     }
 
-    if(ib)
-        for(const Cell& cell: grid_->cells())
+    if (ib)
+        for (const Cell &cell: grid_->cells())
             kappaStencils_[cell.id()] = CelesteStencil(cell, *ib, false);
     else
-        for(const Cell& cell: grid_->cells())
+        for (const Cell &cell: grid_->cells())
             kappaStencils_[cell.id()] = CelesteStencil(cell, false);
-    
-    for(const Cell& cell: grid_->cells())
+
+    for (const Cell &cell: grid_->cells())
         gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
 }

@@ -37,18 +37,15 @@ public:
     Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
     //- Compute
-    virtual void computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
+    virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
-    virtual void compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
+    virtual void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
     virtual void computeInterfaceNormals();
 
-    Vector2D contactLineNormal(const Cell &cell, const Point2D &pt,
-                               const ImmersedBoundaryObject &ibObj) const;
-
     Vector2D contactLineNormal(const Cell &cell,
-                               const ImmersedBoundaryObject &ibObj) const
-    { return contactLineNormal(cell, ibObj.nearestIntersect(cell.centroid()), ibObj); }
+                               const Point2D &pt,
+                               const ImmersedBoundaryObject &ibObj) const;
 
     void smoothGammaField(const ScalarFiniteVolumeField &gamma);
 

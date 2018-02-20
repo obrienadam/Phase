@@ -4,6 +4,7 @@
 #include "QuadraticIbm.h"
 #include "Source.h"
 #include "TrilinosAmesosSparseMatrixSolver.h"
+#include "GhostCellStencil.h"
 
 FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input,
                                                                            std::shared_ptr<FiniteVolumeGrid2D> &grid)
@@ -262,7 +263,7 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeFaces(gammaCl, gradGammaCl);
+    ft.computeFaceInterfaceForces(gammaCl, gradGammaCl);
 //
 //    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
 //    auto p = [this](const Cell &cell)

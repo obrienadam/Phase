@@ -3,7 +3,6 @@
 
 #include "SurfaceTensionForce.h"
 #include "Matrix.h"
-#include "GhostCellStencil.h"
 
 class Celeste : public SurfaceTensionForce
 {
@@ -11,14 +10,11 @@ public:
 
     Celeste(const Input &input,
             const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-            const std::weak_ptr<ImmersedBoundary> &ib,
-            const ScalarFiniteVolumeField &rho,
-            const ScalarFiniteVolumeField &mu,
-            const VectorFiniteVolumeField &u);
+            const std::weak_ptr<ImmersedBoundary> &ib);
 
-    void computeFaces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
+    void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
-    void compute(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
+    void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
 protected:
 

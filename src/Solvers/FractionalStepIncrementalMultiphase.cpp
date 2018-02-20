@@ -15,7 +15,7 @@ FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const I
         beta(addScalarField("beta")),
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
-        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_, rho, mu, u))),
+        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_))),
         sg(addVectorField("sg")),
         rhoU(addVectorField("rhoU")),
         gammaEqn_(input, gamma, "gammaEqn")
@@ -83,7 +83,7 @@ Scalar FractionalStepIncrementalMultiphase::solveGammaEqn(Scalar timeStep)
     cicsam::beta(u, gradGamma, gamma, timeStep, beta, 0.5);
 
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) + ib_->contactLineBcs(ft, gamma) == 0.);
+    gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5) + ft.contactLineBcs(gamma) == 0.);
 
     //- Solve and update faces
     Scalar error = gammaEqn_.solve();
@@ -235,7 +235,7 @@ void FractionalStepIncrementalMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.compute(gamma, gradGamma);
+    ft.computeInterfaceForces(gamma, gradGamma);
 
     //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
     auto p = [this](const Cell& cell)
