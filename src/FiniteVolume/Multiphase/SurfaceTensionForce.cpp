@@ -50,11 +50,18 @@ void SurfaceTensionForce::computeInterfaceNormals()
     {
         for (const Face &face: patch)
         {
+            if (n(face.lCell()).magSqr() == 0.)
+            {
+                n(face) = Vector2D(0., 0.);
+                continue;
+            }
+
+            Vector2D ns = -face.outwardNorm(face.lCell().centroid());
+            Vector2D ts = (n(face.lCell()) - dot(n(face.lCell()), ns) * ns).unitVec();
+
             Scalar theta = this->theta(patch);
-            Vector2D t = face.norm().tangentVec().unitVec();
-            t = dot(t, n(face.lCell())) > 0. ? t : -t;
-            Scalar phi = cross(t, face.outwardNorm()) < 0. ? M_PI_2 - theta : theta - M_PI_2;
-            n(face) = t.rotate(phi) * n(face.lCell()).magSqr();
+
+            n(face) = ns * std::cos(theta) + ts * std::sin(theta);
         }
     }
 

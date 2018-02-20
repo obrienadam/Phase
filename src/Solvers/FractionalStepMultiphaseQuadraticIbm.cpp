@@ -214,6 +214,8 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
     });
 
     grid_->sendMessages(gammaCl);
+
+    gammaCl.setBoundaryFaces();
     gradGammaCl.compute(fluid_);
 
     //- Update density

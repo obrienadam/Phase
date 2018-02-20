@@ -2,7 +2,7 @@
 #define PISO_MULTIPHASE_H
 
 #include "Piso.h"
-#include "Multiphase/SurfaceTensionForce.h"
+#include "Celeste.h"
 
 class PisoMultiphase : public Piso
 {
@@ -23,6 +23,7 @@ public:
     ScalarFiniteVolumeField &gamma, &beta;
     ScalarGradient &gradGamma, &gradRho;
     VectorFiniteVolumeField &sg;
+    Celeste &ft;
 
 protected:
 
@@ -39,8 +40,6 @@ protected:
     Vector2D g_;
     Scalar rho1_, rho2_, mu1_, mu2_;
     Scalar capillaryTimeStep_;
-
-    std::shared_ptr<SurfaceTensionForce> ft_;
 
     Equation<Scalar> gammaEqn_;
 

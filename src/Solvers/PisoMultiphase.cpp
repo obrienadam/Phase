@@ -1,6 +1,5 @@
 #include "PisoMultiphase.h"
 #include "Cicsam.h"
-#include "Celeste.h"
 #include "Source.h"
 
 PisoMultiphase::PisoMultiphase(const Input &input,
@@ -12,6 +11,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
         gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
         gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
         sg(addVectorField("sg")),
+        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_))),
         gammaEqn_(input, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1");
@@ -27,15 +27,11 @@ PisoMultiphase::PisoMultiphase(const Input &input,
     interfaceAdvectionMethod_ = CICSAM;
     const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
-    ft_ = std::make_shared<Celeste>(input, grid_, ib_);
-
-    addVectorField(ft_);
-
     //surfaceTensionForce_->compute();
     computeRho();
     computeMu();
 
-    Scalar sigma = ft_->sigma();
+    Scalar sigma = ft.sigma();
     capillaryTimeStep_ = std::numeric_limits<Scalar>::infinity();
 
     for (const Face &face: grid_->interiorFaces())
@@ -129,12 +125,12 @@ void PisoMultiphase::computeMu()
 
 Scalar PisoMultiphase::solveUEqn(Scalar timeStep)
 {
-    ft_->computeInterfaceForces(gamma, gradGamma);
+    ft.computeInterfaceForces(gamma, gradGamma);
     computeRho();
     computeMu();
 
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rho*u, u) + ib_->bcs(u)
-             == fv::laplacian(mu, u) + src::src(*ft_ - gradP - sg, fluid_));
+             == fv::laplacian(mu, u) + src::src(ft - gradP - sg, fluid_));
 
     Scalar error = uEqn_.solve();
 
@@ -177,7 +173,6 @@ Scalar PisoMultiphase::solveGammaEqn(Scalar timeStep)
 void PisoMultiphase::rhieChowInterpolation()
 {
     Piso::rhieChowInterpolation();
-    const auto& ft = *ft_;
 
     for (const Face &face: u.grid()->interiorFaces())
     {
