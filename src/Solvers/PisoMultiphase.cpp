@@ -25,7 +25,7 @@ PisoMultiphase::PisoMultiphase(const Input &input,
 
     //- Configuration
     interfaceAdvectionMethod_ = CICSAM;
-    const std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
+    std::string tmp = input.caseInput().get<std::string>("Solver.surfaceTensionModel");
 
     //surfaceTensionForce_->compute();
     computeRho();

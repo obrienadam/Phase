@@ -1,15 +1,15 @@
 add_executable(phasePoisson phasePoisson.cpp)
 target_link_libraries(phasePoisson Solvers)
 
-add_executable(phasePiso phasePiso.cpp)
-target_link_libraries(phasePiso Solvers)
+#add_executable(phasePiso phasePiso.cpp)
+#target_link_libraries(phasePiso Solvers)
 
-add_executable(phasePisoMultiphase phasePisoMultiphase.cpp)
-target_link_libraries(phasePisoMultiphase Solvers)
+#add_executable(phasePisoMultiphase phasePisoMultiphase.cpp)
+#target_link_libraries(phasePisoMultiphase Solvers)
 
 # This target has been deprecated
 #add_executable(phaseCoupled phaseCoupled.cpp)
-#target_link_libraries(phaseCoupled ${PHASE_LIBRARIES})
+#target_link_libraries(phaseCoupled Solvers)
 
 add_executable(phaseFractionalStep phaseFractionalStep.cpp)
 target_link_libraries(phaseFractionalStep Solvers)

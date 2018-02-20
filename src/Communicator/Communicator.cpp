@@ -51,42 +51,6 @@ int Communicator::printf(const char *format, ...) const
     return n;
 }
 
-int Communicator::sync_printf(const char *format, ...) const
-{
-    int n = 0;
-
-    for(int proc = 0; proc < nProcs(); ++proc)
-    {
-        if(proc == rank())
-        {
-            va_list argsPtr;
-            va_start(argsPtr, format);
-            n = vfprintf(stdout, format, argsPtr);
-            va_end(argsPtr);
-            fflush(stdout);
-        }
-
-        barrier();
-    }
-
-    return n;
-}
-
-int Communicator::printf(const std::string& format, ...) const
-{
-    int n = 0;
-
-    if (isMainProc())
-    {
-        va_list argsPtr;
-        va_start(argsPtr, format);
-        n = vfprintf(stdout, format.c_str(), argsPtr);
-        va_end(argsPtr);
-    }
-
-    return n;
-}
-
 //- Info
 int Communicator::rank() const
 {
@@ -177,9 +141,9 @@ std::vector<Vector2D> Communicator::allGather(const Vector2D &val) const
     return result;
 }
 
-std::vector<Scalar> Communicator::allGatherv(const std::vector<double>& vals) const
+std::vector<Scalar> Communicator::allGatherv(const std::vector<double> &vals) const
 {
-    std::vector<int> sizes = allGather((int)vals.size());
+    std::vector<int> sizes = allGather((int) vals.size());
     std::vector<double> result(std::accumulate(sizes.begin(), sizes.end(), 0));
     std::vector<int> displs(1, 0);
     std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
@@ -188,13 +152,14 @@ std::vector<Scalar> Communicator::allGatherv(const std::vector<double>& vals) co
     return result;
 }
 
-std::vector<Vector2D> Communicator::allGatherv(const std::vector<Vector2D>& vals) const
+std::vector<Vector2D> Communicator::allGatherv(const std::vector<Vector2D> &vals) const
 {
-    std::vector<int> sizes = allGather((int)vals.size());
+    std::vector<int> sizes = allGather((int) vals.size());
     std::vector<Vector2D> result(std::accumulate(sizes.begin(), sizes.end(), 0));
     std::vector<int> displs(1, 0);
     std::partial_sum(sizes.begin(), sizes.end() - 1, std::back_inserter(displs));
-    MPI_Allgatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_, comm_);
+    MPI_Allgatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_,
+                   comm_);
 
     return result;
 }
@@ -215,23 +180,25 @@ std::vector<unsigned long> Communicator::gather(int root, unsigned long val) con
 
 std::vector<double> Communicator::gatherv(int root, const std::vector<double> &vals) const
 {
-    std::vector<int> sizes = gather(root, (int)vals.size());
+    std::vector<int> sizes = gather(root, (int) vals.size());
     std::vector<double> result(std::accumulate(sizes.begin(), sizes.end(), 0));
     std::vector<int> displs(sizes.size(), 0);
     std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
 
-    MPI_Gatherv(vals.data(), vals.size(), MPI_DOUBLE, result.data(), sizes.data(), displs.data(), MPI_DOUBLE, root, comm_);
+    MPI_Gatherv(vals.data(), vals.size(), MPI_DOUBLE, result.data(), sizes.data(), displs.data(), MPI_DOUBLE, root,
+                comm_);
     return result;
 }
 
-std::vector<Vector2D> Communicator::gatherv(int root, const std::vector<Vector2D>& vals) const
+std::vector<Vector2D> Communicator::gatherv(int root, const std::vector<Vector2D> &vals) const
 {
-    std::vector<int> sizes = gather(root, (int)vals.size());
+    std::vector<int> sizes = gather(root, (int) vals.size());
     std::vector<Vector2D> result(std::accumulate(sizes.begin(), sizes.end(), 0));
     std::vector<int> displs(sizes.size(), 0);
     std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
 
-    MPI_Gatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_, root, comm_);
+    MPI_Gatherv(vals.data(), vals.size(), MPI_VECTOR2D_, result.data(), sizes.data(), displs.data(), MPI_VECTOR2D_,
+                root, comm_);
     return result;
 }
 
@@ -255,7 +222,7 @@ void Communicator::ssend(int dest, const std::vector<Vector2D> &vals, int tag) c
     MPI_Ssend(vals.data(), vals.size(), MPI_VECTOR2D_, dest, tag, comm_);
 }
 
-void Communicator::ssend(int dest, const std::vector<Tensor2D>& vals, int tag) const
+void Communicator::ssend(int dest, const std::vector<Tensor2D> &vals, int tag) const
 {
     MPI_Ssend(vals.data(), vals.size(), MPI_TENSOR2D_, dest, tag, comm_);
 }
@@ -316,7 +283,7 @@ void Communicator::irecv(int source, std::vector<Vector2D> &vals, int tag) const
     currentRequests_.push_back(request);
 }
 
-void Communicator::irecv(int source, std::vector<Tensor2D>& vals, int tag) const
+void Communicator::irecv(int source, std::vector<Tensor2D> &vals, int tag) const
 {
     MPI_Request request;
     MPI_Irecv(vals.data(), vals.size(), MPI_TENSOR2D_, source, tag, comm_, &request);
@@ -350,7 +317,7 @@ int Communicator::probeSize<unsigned long>(int source, int tag) const
     return count;
 }
 
-template <>
+template<>
 int Communicator::probeSize<double>(int source, int tag) const
 {
     MPI_Status status;
@@ -360,7 +327,7 @@ int Communicator::probeSize<double>(int source, int tag) const
     return count;
 }
 
-template <>
+template<>
 int Communicator::probeSize<Vector2D>(int source, int tag) const
 {
     MPI_Status status;
@@ -393,7 +360,7 @@ double Communicator::sum(double val) const
     return result;
 }
 
-Vector2D Communicator::sum(const Vector2D& val) const
+Vector2D Communicator::sum(const Vector2D &val) const
 {
     std::vector<Vector2D> vals = allGather(val);
     return std::accumulate(vals.begin(), vals.end(), Vector2D(0., 0.));

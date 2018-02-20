@@ -23,10 +23,6 @@ public:
 
     int printf(const char *format, ...) const;
 
-    int sync_printf(const char *format, ...) const;
-
-    int printf(const std::string& format, ...) const;
-
     //- Info
     int rank() const;
 
@@ -38,7 +34,7 @@ public:
     bool isMainProc() const
     { return rank() == mainProcNo(); }
 
-    const MPI_Comm& communicator() const
+    const MPI_Comm &communicator() const
     { return comm_; }
 
     //- Sync
@@ -69,12 +65,12 @@ public:
 
     std::vector<unsigned long> allGather(unsigned long val) const;
 
-    std::vector<Vector2D> allGather(const Vector2D& val) const;
+    std::vector<Vector2D> allGather(const Vector2D &val) const;
 
     //- Allgatherv
-    std::vector<Scalar> allGatherv(const std::vector<double>& vals) const;
+    std::vector<Scalar> allGatherv(const std::vector<double> &vals) const;
 
-    std::vector<Vector2D> allGatherv(const std::vector<Vector2D>& vals) const;
+    std::vector<Vector2D> allGatherv(const std::vector<Vector2D> &vals) const;
 
     //- gather
     std::vector<int> gather(int root, int val) const;
@@ -82,9 +78,9 @@ public:
     std::vector<unsigned long> gather(int root, unsigned long val) const;
 
     //- gatherv
-    std::vector<double> gatherv(int root, const std::vector<double>& vals) const;
+    std::vector<double> gatherv(int root, const std::vector<double> &vals) const;
 
-    std::vector<Vector2D> gatherv(int root, const std::vector<Vector2D>& vals) const;
+    std::vector<Vector2D> gatherv(int root, const std::vector<Vector2D> &vals) const;
 
     //- Blocking point-to-point communication
     void ssend(int dest, const std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
@@ -99,13 +95,13 @@ public:
 
     void ssend(int dest, unsigned long val, int tag = MPI_ANY_TAG) const;
 
-    void recv(int source, std::vector<unsigned long>& vals, int tag = MPI_ANY_TAG) const;
+    void recv(int source, std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
 
-    void recv(int source, std::vector<Vector2D>& vals, int tag = MPI_ANY_TAG) const;
+    void recv(int source, std::vector<Vector2D> &vals, int tag = MPI_ANY_TAG) const;
 
     //- Non-blocking point-to-point communication
 
-    void isend(int dest, const std::vector<unsigned long>& vals, int tag = MPI_ANY_TAG) const;
+    void isend(int dest, const std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
 
     void irecv(int source, std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
 
@@ -115,15 +111,15 @@ public:
 
     void irecv(int source, std::vector<Vector2D> &vals, int tag = MPI_ANY_TAG) const;
 
-    void irecv(int source, std::vector<Tensor2D>& vals, int tag = MPI_ANY_TAG) const;
+    void irecv(int source, std::vector<Tensor2D> &vals, int tag = MPI_ANY_TAG) const;
 
-    void irecv(int source, unsigned long& val, int tag = MPI_ANY_TAG) const;
+    void irecv(int source, unsigned long &val, int tag = MPI_ANY_TAG) const;
 
     void waitAll() const;
 
     //- Dynamic
 
-    template <typename T>
+    template<typename T>
     int probeSize(int source, int tag = MPI_ANY_TAG) const;
 
     //- Collective communications
@@ -133,7 +129,7 @@ public:
 
     double sum(double val) const;
 
-    Vector2D sum(const Vector2D& val) const;
+    Vector2D sum(const Vector2D &val) const;
 
     int min(int val) const;
 
