@@ -8,10 +8,16 @@ class Tensor2D
 {
 public:
 
+    static Tensor2D eye()
+    { return Tensor2D(1., 0., 0., 1.); }
+
     Tensor2D(Scalar xx = 0., Scalar xy = 0., Scalar yx = 0., Scalar yy = 0.) : xx(xx), xy(xy), yx(yx), yy(yy)
     {}
 
     Scalar xx, xy, yx, yy;
+
+    Tensor2D transpose() const
+    { return Tensor2D(xx, yx, xy, yy); }
 
     Tensor2D &operator+=(const Tensor2D &rhs);
 

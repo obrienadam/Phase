@@ -31,6 +31,8 @@ public:
 
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
+    //- Forcing
+
     void computeForce(Scalar rho,
                       Scalar mu,
                       const VectorFiniteVolumeField &u,
@@ -39,6 +41,15 @@ public:
 
     void computeForce(const ScalarFiniteVolumeField &rho,
                       const ScalarFiniteVolumeField &mu,
+                      const VectorFiniteVolumeField &u,
+                      const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.));
+
+    void computeForce(Scalar rho1,
+                      Scalar rho2,
+                      Scalar mu1,
+                      Scalar mu2,
+                      const ScalarFiniteVolumeField &gamma,
                       const VectorFiniteVolumeField &u,
                       const ScalarFiniteVolumeField &p,
                       const Vector2D &g = Vector2D(0., 0.));

@@ -28,7 +28,7 @@ public:
     ImmersedBoundaryObject(const std::string &name,
                            Label id,
                            const ImmersedBoundary &ib,
-                           const std::shared_ptr<FiniteVolumeGrid2D>& grid);
+                           const std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     virtual Type type() const = 0;
 
@@ -110,7 +110,7 @@ public:
     //- Boundary methods
     void addBoundary(const std::string &name, BoundaryType bType, Scalar ref);
 
-    void addBoundary(const std::string &name, BoundaryType bType, const Vector2D& ref);
+    void addBoundary(const std::string &name, BoundaryType bType, const Vector2D &ref);
 
     void addBoundaryType(const std::string &name, BoundaryType boundaryType);
 
@@ -167,6 +167,8 @@ public:
 
     Scalar alpha() const;
 
+    virtual std::vector<Point2D> forcingPoints() const;
+
     virtual void computeForce(Scalar rho,
                               Scalar mu,
                               const VectorFiniteVolumeField &u,
@@ -178,6 +180,16 @@ public:
                               const VectorFiniteVolumeField &u,
                               const ScalarFiniteVolumeField &p,
                               const Vector2D &g = Vector2D(0., 0.));
+
+    virtual void computeForce(Scalar rho1,
+                              Scalar rho2,
+                              Scalar mu1,
+                              Scalar mu2,
+                              const ScalarFiniteVolumeField &gamma,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.))
+    {}
 
     void addForce(const Vector2D &force)
     {

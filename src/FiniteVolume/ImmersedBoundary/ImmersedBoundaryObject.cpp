@@ -89,7 +89,7 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
         {
             auto edge = shape_->nearestEdge(pt);
             return dot(edge.norm(), shape_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
-                                                                                : -edge.norm().unitVec();
+                                                                             : -edge.norm().unitVec();
         }
         default:
             throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
@@ -222,6 +222,23 @@ Scalar ImmersedBoundaryObject::omega() const
 Scalar ImmersedBoundaryObject::alpha() const
 {
     return motion_ ? motion_->alpha() : 0.;
+}
+
+std::vector<Point2D> ImmersedBoundaryObject::forcingPoints() const
+{
+    std::vector<Point2D> points(ibCells_.size());
+
+    std::transform(ibCells_.begin(), ibCells_.end(), points.begin(), [this](const Cell &cell)
+    {
+        return nearestIntersect(cell.centroid());
+    });
+
+    std::sort(points.begin(), points.end(), [this](const Point2D &lhs, const Point2D &rhs)
+    {
+        return (lhs - shape_->centroid()).angle() < (rhs - shape_->centroid()).angle();
+    });
+
+    return points;
 }
 
 void ImmersedBoundaryObject::computeForce(Scalar rho,
