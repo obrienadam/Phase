@@ -11,9 +11,6 @@ class ImmersedBoundaryObject
 {
 public:
 
-    typedef typename std::vector<std::shared_ptr<ImmersedBoundaryObject>>::iterator iterator;
-    typedef typename std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator const_iterator;
-
     enum Type
     {
         GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER
@@ -32,7 +29,7 @@ public:
 
     virtual Type type() const = 0;
 
-    //- The shape
+    //- Geometry related methods
     void initCircle(const Point2D &center, Scalar radius);
 
     void initBox(const Point2D &center, Scalar width, Scalar height);
@@ -75,7 +72,8 @@ public:
     }
 
     //- Motion
-    void setMotion(std::shared_ptr<Motion> motion);
+    void setMotion(const std::shared_ptr<Motion> &motion)
+    { motion_ = motion; }
 
     std::shared_ptr<Motion> motion()
     { return motion_; }
@@ -153,13 +151,15 @@ public:
     const Vector2D &position() const
     { return shape().centroid(); }
 
-    Vector2D acceleration() const;
+    Vector2D velocity(const Point2D &point) const;
 
     Vector2D acceleration(const Point2D &point) const;
 
-    Vector2D velocity() const;
+    Vector2D velocity() const
+    { return velocity(position()); }
 
-    Vector2D velocity(const Point2D &point) const;
+    Vector2D acceleration() const
+    { return acceleration(position()); }
 
     Scalar theta() const;
 

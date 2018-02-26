@@ -165,7 +165,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             if (motionType == "translating")
             {
                 motion = std::make_shared<TranslatingMotion>(
-                        ibObject,
+                        ibObject->position(),
                         ibObjectInput.second.get<std::string>("motion.velocity"),
                         ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)")
                 );
@@ -173,7 +173,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             else if (motionType == "oscillating")
             {
                 motion = std::make_shared<OscillatingMotion>(
-                        ibObject,
+                        ibObject->position(),
                         ibObjectInput.second.get<std::string>("motion.frequency"),
                         ibObjectInput.second.get<std::string>("motion.amplitude"),
                         ibObjectInput.second.get<std::string>("motion.phase", "(0,0)"),
@@ -195,7 +195,6 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
 
             ibObject->setMotion(motion);
-
             ibObjs_.push_back(ibObject);
         }
 

@@ -140,8 +140,7 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
     {
         switch (ibObj->type())
         {
-            case ImmersedBoundaryObject::GHOST_CELL:
-                eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
+            case ImmersedBoundaryObject::GHOST_CELL:eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
                 break;
             case ImmersedBoundaryObject::QUADRATIC:
             {
@@ -154,24 +153,14 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
                     Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
                     Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
 
-                    GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid_);
-                    GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid_);
-                    Scalar g1 = m1.bpValue(gamma);
-                    Scalar g2 = m2.bpValue(gamma);
+                    GhostCellStencil m1(cell, ibObj->nearestIntersect(cell.centroid()), r1.r(), *grid_);
+                    GhostCellStencil m2(cell, ibObj->nearestIntersect(cell.centroid()), r2.r(), *grid_);
 
-                    if (std::abs(g1 - g2) > 1e-8)
-                    {
-                        if (g2 < g1)
-                            std::swap(m1, m2);
-                    }
-                    else
-                    {
-                        Vector2D grad1 = m1.bpGrad(gamma);
-                        Vector2D grad2 = m2.bpGrad(gamma);
+                    Vector2D grad1 = m1.bpGrad(gamma);
+                    Vector2D grad2 = m2.bpGrad(gamma);
 
-                        if (g2 + dot(grad2, r2.r()) < g1 + dot(grad1, r1.r()))
-                            std::swap(m1, m2);
-                    }
+                    if (dot(grad2, r2.r()) < dot(grad1, r1.r()))
+                        std::swap(m1, m2);
 
                     if (theta > M_PI_2)
                         eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
@@ -185,8 +174,7 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
 
                 break;
 
-            case ImmersedBoundaryObject::HIGH_ORDER:
-                eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
+            case ImmersedBoundaryObject::HIGH_ORDER:eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
 
                 break;
             default:

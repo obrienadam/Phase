@@ -3,7 +3,8 @@
 
 SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj, const Vector2D& v0)
         :
-        Motion(ibObj)
+        Motion(),
+        ibObj_(ibObj)
 {
     if (ibObj.lock()->mass() <= 0.)
         throw Exception("SolidBodyMotion",
@@ -11,6 +12,7 @@ SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj, co
                         "must specify a non-zero density for immersed boundary object \"" + ibObj.lock()->name() +
                         "\".");
 
+    pos_ = ibObj_.lock()->position();
     vel_ = v0;
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
@@ -38,6 +40,6 @@ void SolidBodyMotion::update(Scalar timeStep)
     omega_ += timeStep / 2. * (alpha_ + alpha0);
     theta_ = std::fmod(theta_ + timeStep / 2. * (omega_ + omega0), 2. * M_PI);
 
-    ibObj->shape().move(pos_);
-    ibObj->shape().rotate(theta_ - theta0);
+    //ibObj->shape().move(pos_);
+    //ibObj->shape().rotate(theta_ - theta0);
 }

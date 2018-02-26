@@ -2,6 +2,7 @@
 #define SOLID_BODY_MOTION_H
 
 #include "Motion.h"
+#include "ImmersedBoundaryObject.h"
 #include "ScalarFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 
@@ -18,6 +19,7 @@ private:
     Vector2D force_;
     Scalar torque_;
 
+    std::weak_ptr<ImmersedBoundaryObject> ibObj_;
 };
 
 #endif

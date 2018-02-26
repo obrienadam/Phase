@@ -40,11 +40,6 @@ void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar
     ));
 }
 
-void ImmersedBoundaryObject::setMotion(std::shared_ptr<Motion> motion)
-{
-    motion_ = motion;
-}
-
 void ImmersedBoundaryObject::setZone(CellZone &zone)
 {
     fluid_ = &zone;
@@ -82,8 +77,7 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
 {
     switch (shape_->type())
     {
-        case Shape2D::CIRCLE:
-            return (shape_->centroid() - pt).unitVec();
+        case Shape2D::CIRCLE:return (shape_->centroid() - pt).unitVec();
         case Shape2D::BOX:
         case Shape2D::POLYGON:
         {
@@ -91,8 +85,7 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
             return dot(edge.norm(), shape_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
                                                                              : -edge.norm().unitVec();
         }
-        default:
-            throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
+        default:throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
     }
 }
 
@@ -189,24 +182,14 @@ void ImmersedBoundaryObject::addBoundaryRefValue(const std::string &name, const 
     }
 }
 
-Vector2D ImmersedBoundaryObject::acceleration() const
+Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
 {
-    return motion_ ? motion_->acceleration() : Vector2D(0., 0.);
+    return motion_ ? motion_->velocity(point) : Vector2D(0., 0.);
 }
 
 Vector2D ImmersedBoundaryObject::acceleration(const Point2D &point) const
 {
     return motion_ ? motion_->acceleration(point) : Vector2D(0., 0.);
-}
-
-Vector2D ImmersedBoundaryObject::velocity() const
-{
-    return motion_ ? motion_->velocity() : Vector2D(0., 0.);
-}
-
-Vector2D ImmersedBoundaryObject::velocity(const Point2D &point) const
-{
-    return motion_ ? motion_->velocity(point) : Vector2D(0., 0.);
 }
 
 Scalar ImmersedBoundaryObject::theta() const
@@ -264,6 +247,7 @@ void ImmersedBoundaryObject::update(Scalar timeStep)
     if (motion_)
     {
         motion_->update(timeStep);
+        shape_->move(motion_->position());
         updateCells();
     }
 }

@@ -1,13 +1,13 @@
 #include "OscillatingMotion.h"
 #include "ImmersedBoundaryObject.h"
 
-OscillatingMotion::OscillatingMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj,
-                                     const Vector2D &freq,
+OscillatingMotion::OscillatingMotion(const Point2D &pos,
+				     const Vector2D &freq,
                                      const Vector2D &amp,
                                      const Vector2D &phase,
                                      Scalar time)
         :
-        Motion(ibObj),
+        Motion(pos),
         freq_(freq),
         amp_(amp),
         phase_(phase),
@@ -25,5 +25,5 @@ void OscillatingMotion::update(Scalar timeStep)
     Point2D x = pos_ + Vector2D(amp_.x * std::sin(omega.x * time_), amp_.y * sin(omega.y * time_));
     vel_ = Vector2D(amp_.x * omega.x * cos(omega.x * time_), amp_.y * omega.y * cos(omega.y * time_));
     acc_ = Vector2D(-amp_.x * pow(omega.x, 2) * sin(omega.x * time_), -amp_.y * pow(omega.y, 2) * sin(omega.y * time_));
-    ibObj_.lock()->shape().move(x);
+    //ibObj_.lock()->shape().move(x);
 }

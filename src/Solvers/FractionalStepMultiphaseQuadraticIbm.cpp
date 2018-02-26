@@ -18,7 +18,7 @@ FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const
         if (ibObj->type() != ImmersedBoundaryObject::QUADRATIC)
             throw Exception("FractionalStepMultiphaseQuadraticIbm",
                             "FractionalStepMultiphaseQuadraticIbm",
-                            "immersed boundary object \"" + ibObj->name() + "\" is not type \"quadratic\".");
+                            "immersed boundary object \"" + ibObj->name() + "\" is not of type \"quadratic\".");
     }
 
     gammaCl.copyBoundaryTypes(gamma);
@@ -46,8 +46,8 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma, timeStep, grid_->localActiveCells())
-                 + cicsam::div(u, beta, gamma, grid_->localActiveCells(), 1)
+    gammaEqn_ = (fv::ddt(gamma, timeStep, fluid_) + ft.contactLineBcs(gamma)
+                 + cicsam::div(u, beta, gamma, fluid_, 1)
                  == 0);
 
     Scalar error = gammaEqn_.solve();
@@ -61,7 +61,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveGammaEqn(Scalar timeStep)
     gamma.interpolateFaces();
 
     //- Update the gradient
-    gradGamma.compute(grid_->localActiveCells());
+    gradGamma.compute(fluid_);
     grid_->sendMessages(gradGamma);
 
     //- Update all other properties
@@ -94,8 +94,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solveUEqn(Scalar timeStep)
     for (const Patch &patch: u.grid()->patches())
         switch (u.boundaryType(patch))
         {
-            case VectorFiniteVolumeField::FIXED:
-                break;
+            case VectorFiniteVolumeField::FIXED:break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &f: patch)
                 {
@@ -138,8 +137,7 @@ void FractionalStepMultiphaseQuadraticIbm::correctVelocity(Scalar timeStep)
     for (const Patch &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
-            case VectorFiniteVolumeField::FIXED:
-                break;
+            case VectorFiniteVolumeField::FIXED:break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &face: patch)
                     u(face) -= timeStep / rho(face) * gradP(face);
@@ -155,6 +153,7 @@ void FractionalStepMultiphaseQuadraticIbm::correctVelocity(Scalar timeStep)
 
 void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 {
+    /*
     Equation<Scalar> eqn(gammaCl);
     eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm()));
 
@@ -175,24 +174,14 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
             Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
             Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
 
-            GhostCellStencil m1(cell, ibObj->shape().intersections(r1)[0], r1.r(), *grid_);
-            GhostCellStencil m2(cell, ibObj->shape().intersections(r2)[0], r2.r(), *grid_);
-            Scalar g1 = m1.bpValue(gamma);
-            Scalar g2 = m2.bpValue(gamma);
+            GhostCellStencil m1(cell, ibObj->nearestIntersect(cell.centroid()), r1.r(), *grid_);
+            GhostCellStencil m2(cell, ibObj->nearestIntersect(cell.centroid()), r2.r(), *grid_);
 
-            if (std::abs(g1 - g2) > 1e-8)
-            {
-                if (g2 < g1)
-                    std::swap(m1, m2);
-            }
-            else
-            {
-                Vector2D grad1 = m1.bpGrad(gamma);
-                Vector2D grad2 = m2.bpGrad(gamma);
+            Vector2D grad1 = m1.bpGrad(gamma);
+            Vector2D grad2 = m2.bpGrad(gamma);
 
-                if (g2 + dot(grad2, r2.r()) < g1 + dot(grad1, r1.r()))
-                    std::swap(m1, m2);
-            }
+            if (dot(grad2, r2.r()) < dot(grad1, r1.r()))
+                std::swap(m1, m2);
 
             if (theta > M_PI_2)
                 eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
@@ -209,7 +198,8 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 
     eqn.solve();
 
-    std::for_each(gammaCl.begin(), gammaCl.end(), [](Scalar &g) {
+    std::for_each(gammaCl.begin(), gammaCl.end(), [](Scalar &g)
+    {
         g = clamp(g, 0., 1.);
     });
 
@@ -217,7 +207,7 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 
     gammaCl.setBoundaryFaces();
     gradGammaCl.compute(fluid_);
-
+*/
     //- Update density
     rho.savePreviousTimeStep(timeStep, 1);
     rho.computeCells([this](const Cell &cell)
@@ -265,7 +255,7 @@ void FractionalStepMultiphaseQuadraticIbm::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeFaceInterfaceForces(gammaCl, gradGammaCl);
+    ft.computeFaceInterfaceForces(gamma, gradGamma);
 //
 //    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
 //    auto p = [this](const Cell &cell)

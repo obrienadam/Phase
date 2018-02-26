@@ -1,14 +1,18 @@
 #include "Motion.h"
-#include "ImmersedBoundaryObject.h"
 
-Motion::Motion(std::weak_ptr<ImmersedBoundaryObject> ibObj)
+Motion::Motion(const Point2D &pos,
+               const Vector2D &vel,
+               const Vector2D &acc,
+               Scalar theta,
+               Scalar omega,
+               Scalar alpha)
+        :
+        pos_(pos),
+        vel_(vel),
+        acc_(acc),
+        theta_(theta),
+        omega_(omega),
+        alpha_(alpha)
 {
-    ibObj_ = ibObj;
-    acc_ = Vector2D(0., 0.);
-    vel_ = Vector2D(0., 0.);
-    pos_ = ibObj_.lock()->position();
 
-    alpha_ = 0.;
-    omega_ = 0.;
-    theta_ = 0.;
 }
