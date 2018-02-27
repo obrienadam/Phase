@@ -34,7 +34,8 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
 
     gcIbObjs_.erase(
             std::remove_if(gcIbObjs_.begin(), gcIbObjs_.end(),
-                           [](std::weak_ptr <GhostCellImmersedBoundaryObject> &ibObj) {
+                           [](std::weak_ptr<GhostCellImmersedBoundaryObject> &ibObj)
+                           {
                                return !ibObj.lock();
                            }), gcIbObjs_.end());
 
@@ -44,38 +45,31 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
         {
             auto gcIbObj = ptr.lock();
 
-            std::vector <Vector2D> pts;
-            std::vector <Scalar> gammaVals;
+            std::vector<std::pair<Point2D, Scalar>> gammaIb;
+            gammaIb.reserve(gcIbObj->stencils().size());
 
             for (const GhostCellStencil &st: gcIbObj->stencils())
-            {
-                pts.push_back(st.boundaryPoint());
-                gammaVals.push_back(st.bpValue(gamma));
-            }
+                gammaIb.push_back(std::make_pair(st.boundaryPoint(), st.bpValue(gamma)));
 
             //- Gather all data to the main proc
-            pts = solver_.grid()->comm().gatherv(solver_.grid()->comm().mainProcNo(), pts);
-            gammaVals = solver_.grid()->comm().gatherv(solver_.grid()->comm().mainProcNo(), gammaVals);
+            gammaIb = solver_.grid()->comm().gatherv(solver_.grid()->comm().mainProcNo(), gammaIb);
 
             if (solver_.grid()->comm().isMainProc())
             {
-                std::vector <std::pair<Point2D, Scalar>> gammaBps;
-                std::transform(pts.begin(), pts.end(), gammaVals.begin(), std::back_inserter(gammaBps),
-                               [](const Point2D &pt, Scalar val) { return std::make_pair(pt, val); });
-
                 //- Sort ccw
-                std::sort(gammaBps.begin(), gammaBps.end(), [gcIbObj](const std::pair <Point2D, Scalar> &valA,
-                                                              const std::pair <Point2D, Scalar> &valB) {
+                std::sort(gammaIb.begin(), gammaIb.end(), [gcIbObj](const std::pair<Point2D, Scalar> &valA,
+                                                                    const std::pair<Point2D, Scalar> &valB)
+                {
                     Vector2D rA = valA.first - gcIbObj->shape().centroid();
                     Vector2D rB = valB.first - gcIbObj->shape().centroid();
                     return rA.angle() < rB.angle();
                 });
 
-                std::vector <Vector2D> clPoints;
-                for (int i = 0; i < gammaBps.size(); ++i)
+                std::vector<Vector2D> clPoints;
+                for (int i = 0; i < gammaIb.size(); ++i)
                 {
-                    const auto &ptA = gammaBps[i];
-                    const auto &ptB = gammaBps[(i + 1) % gammaBps.size()];
+                    const auto &ptA = gammaIb[i];
+                    const auto &ptB = gammaIb[(i + 1) % gammaIb.size()];
                     bool isCandidate = (ptA.second < 0.5) != (ptB.second < 0.5);
 
                     if (isCandidate)
@@ -96,7 +90,8 @@ void GhostCellImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                 for (const auto &cl: clPoints)
                 {
                     Vector2D r = cl - gcIbObj->shape().centroid();
-                    fout << time << "\t" << cl.x << "\t" << cl.y << "\t" << 0 << "\t" << 0 << "\t" << std::atan2(r.y, r.x) << "\n";
+                    fout << time << "\t" << cl.x << "\t" << cl.y << "\t" << 0 << "\t" << 0 << "\t"
+                         << std::atan2(r.y, r.x) << "\n";
                 }
 
                 fout.close();

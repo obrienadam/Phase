@@ -1,5 +1,6 @@
 #include "SurfaceTensionForce.h"
 #include "GhostCellStencil.h"
+#include "BilinearInterpolator.h"
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
@@ -87,11 +88,25 @@ SurfaceTensionForce::contactLineNormal(const Cell &cell, const Point2D &pt, cons
     Vector2D ns = -ibObj.nearestEdgeNormal(pt);
     Vector2D ts = (n - dot(n, ns) * ns).unitVec();
 
-    if (n.magSqr() == 0)
+    if (n.magSqr() == 0.)
         return n;
 
     Scalar theta = this->theta(ibObj);
     return ns * std::cos(theta) + ts * std::sin(theta);
+}
+
+Vector2D
+SurfaceTensionForce::contactLineTangent(const Cell &cell, const Point2D &pt, const ImmersedBoundaryObject &ibObj) const
+{
+    const Vector2D &n = (*n_)(cell);
+    Vector2D ns = -ibObj.nearestEdgeNormal(pt);
+    Vector2D ts = (n - dot(n, ns) * ns).unitVec();
+
+    if(n.magSqr() == 0.)
+        return n;
+
+    Scalar theta = this->theta(ibObj);
+    return ns * std::sin(theta) - ts * std::cos(theta);
 }
 
 void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
@@ -130,6 +145,44 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
     }
 
     gammaTilde_->setBoundaryFaces();
+}
+
+void SurfaceTensionForce::computeCapillaryForces(ScalarFiniteVolumeField &gamma)
+{
+    typedef std::tuple<Point2D, Scalar, Vector2D> IbPoint;
+
+    for(const auto &ibObj: *ib_.lock())
+    {
+        std::vector<IbPoint> ibPoints(ibObj->ibCells().size());
+
+        std::transform(ibObj->ibCells().begin(), ibObj->ibCells().end(), ibPoints.begin(), [this, &gamma, &ibObj](const Cell& cell) {
+            Point2D pt = ibObj->nearestIntersect(cell.centroid());
+            Scalar g = BilinearInterpolator(grid_, pt)(gamma);
+            Vector2D cl = contactLineTangent(cell, pt, *ibObj);
+            return std::make_tuple(pt, g, cl);
+        });
+
+        ibPoints = grid_->comm().gatherv(grid_->comm().mainProcNo(), ibPoints);
+
+        std::sort(ibPoints.begin(), ibPoints.end(), [&ibObj](const IbPoint &lhs, const IbPoint &rhs) {
+            return (std::get<0>(lhs) - ibObj->shape().centroid()).angle() < (std::get<0>(rhs) - ibObj->shape().centroid()).angle();
+        });
+
+        Vector2D force = Vector2D(0., 0.);
+
+//        for(int i = 0; i < ibNodes.size(); ++i)
+//        {
+//            const auto &a = ibNodes[i];
+//            const auto &b = ibNodes[(i + 1) % ibNodes.size()];
+//
+//            if((std::get<1>(a) < 0.5) != (std::get<1>(b) <= 0.5))
+//            {
+//                Scalar alpha = (0.5 - std::get<1>(b)) / (std::get<1>(a) - std::get<1>(b));
+//                Point2D xcl = ibObj->nearestIntersect(alpha * std::get<0>(a) + (1. - alpha) * std::get<0>(b));
+//                Vector2D t = contactLineTangent()
+//            }
+//        }
+    }
 }
 
 Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &gamma)

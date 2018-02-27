@@ -12,6 +12,8 @@ public:
 
     BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D>& grid) : grid_(grid) {}
 
+    BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D>& grid, const Point2D &pt);
+
     void setPoint(const Point2D& pt);
 
     Scalar operator()(const ScalarFiniteVolumeField &field) const;

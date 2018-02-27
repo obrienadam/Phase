@@ -93,8 +93,7 @@ Equation<Scalar> QuadraticImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
             }
 
             break;
-        default:
-            throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
+        default:throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
     }
 
     return eqn;
@@ -123,8 +122,7 @@ Equation<Vector2D> QuadraticImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
             }
 
             break;
-        default:
-            throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
+        default:throw Exception("QuadraticImmersedBoundaryObject", "bcs", "only fixed boundaries are supported.");
     }
 
     return eqn;
@@ -165,13 +163,8 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    std::vector<Point2D> points;
-    std::vector<Scalar> pressures;
-    std::vector<Scalar> shears;
-
-    points.reserve(ibCells_.size());
-    pressures.reserve(ibCells_.size());
-    shears.reserve(ibCells_.size());
+    std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses;
+    stresses.reserve(ibCells_.size());
 
     auto bi = BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
@@ -182,30 +175,29 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
 
         if (bi.isValid())
         {
-            points.push_back(pt);
-            pressures.push_back(bi(p) + rho * dot(pt, g));
-            shears.push_back(mu * dot(dot(bi.grad(u), wn), wn.tangentVec()));
+            stresses.push_back(
+                    std::make_tuple(
+                            pt,
+                            bi(p) + rho * (dot(pt, g) + 0.5 * std::pow(dot(bi(u), wn), 2)),
+                            mu * dot(dot(bi.grad(u), wn), wn.tangentVec())
+                    )
+            );
         }
     }
 
-    points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
-    pressures = grid_->comm().gatherv(grid_->comm().mainProcNo(), pressures);
-    shears = grid_->comm().gatherv(grid_->comm().mainProcNo(), shears);
+    stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
 
     if (grid_->comm().isMainProc())
     {
-        force_ = Vector2D(0., 0.);
-
-        std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses(points.size());
-        for (int i = 0; i < points.size(); ++i)
-            stresses[i] = std::make_tuple(points[i], pressures[i], shears[i]);
-
         std::sort(stresses.begin(), stresses.end(),
-                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b)
+                  [this](const std::tuple<Point2D, Scalar, Scalar> &a,
+                         const std::tuple<Point2D, Scalar, Scalar> &b)
                   {
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });
+
+        force_ = Vector2D(0., 0.);
 
         for (int i = 0; i < stresses.size(); ++i)
         {
@@ -224,11 +216,6 @@ void QuadraticImmersedBoundaryObject::computeForce(Scalar rho,
     }
 
     force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shape_->area() * this->rho * g;
-
-    auto maxF = grid_->comm().max(force_.mag());
-
-    if (grid_->comm().isMainProc())
-        std::cout << "MAX PARTICLE FORCE = " << maxF << std::endl;
 }
 
 void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -237,12 +224,8 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    std::vector<Point2D> points;
-    std::vector<Scalar> pressures;
-    std::vector<Scalar> shears;
-    points.reserve(ibCells_.size());
-    pressures.reserve(ibCells_.size());
-    shears.reserve(ibCells_.size());
+    std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses;
+    stresses.reserve(ibCells_.size());
 
     auto bi = BilinearInterpolator(grid_);
     for (const Cell &cell: ibCells_)
@@ -253,25 +236,20 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
 
         if (bi.isValid())
         {
-            points.push_back(pt);
-            pressures.push_back(bi(p) + bi(rho) * (dot(pt, g) + 0.5 * std::pow(dot(bi(u), wn), 2)));
-            shears.push_back(bi(mu) * dot(dot(bi.grad(u), wn), wn.tangentVec()));
+            stresses.push_back(
+                    std::make_tuple(
+                            pt,
+                            bi(p) + bi(rho) * (dot(pt, g) + 0.5 * std::pow(dot(bi(u), wn), 2)),
+                            bi(mu) * dot(dot(bi.grad(u), wn), wn.tangentVec())
+                    )
+            );
         }
     }
 
-    points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
-    pressures = grid_->comm().gatherv(grid_->comm().mainProcNo(), pressures);
-    shears = grid_->comm().gatherv(grid_->comm().mainProcNo(), shears);
+    stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
 
     if (grid_->comm().isMainProc())
     {
-        force_ = Vector2D(0., 0.);
-
-        std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses(points.size());
-
-        for (int i = 0; i < points.size(); ++i)
-            stresses[i] = std::make_tuple(points[i], pressures[i], shears[i]);
-
         std::sort(stresses.begin(), stresses.end(),
                   [this](const std::tuple<Point2D, Scalar, Scalar> &a,
                          const std::tuple<Point2D, Scalar, Scalar> &b)
@@ -279,6 +257,8 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });
+
+        force_ = Vector2D(0., 0.);
 
         for (int i = 0; i < stresses.size(); ++i)
         {

@@ -1,12 +1,19 @@
 #include "BilinearInterpolator.h"
 
+BilinearInterpolator::BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D> &grid, const Point2D &pt)
+        :
+        BilinearInterpolator(grid)
+{
+    setPoint(pt);
+}
+
 void BilinearInterpolator::setPoint(const Point2D &pt)
 {
     pt_ = pt;
     cells_ = grid_.lock()->findNearestNode(pt_).cells();
     isValid_ = cells_.size() == 4;
 
-    if(isValid_)
+    if (isValid_)
     {
         Point2D x1 = cells_[0].get().centroid();
         Point2D x2 = cells_[1].get().centroid();

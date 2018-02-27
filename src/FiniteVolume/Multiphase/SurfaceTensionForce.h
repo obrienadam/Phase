@@ -47,7 +47,13 @@ public:
                                const Point2D &pt,
                                const ImmersedBoundaryObject &ibObj) const;
 
+    Vector2D contactLineTangent(const Cell &cell,
+                                const Point2D &pt,
+                                const ImmersedBoundaryObject &ibObj) const;
+
     void smoothGammaField(const ScalarFiniteVolumeField &gamma);
+
+    virtual void computeCapillaryForces(ScalarFiniteVolumeField &gamma);
 
     //- Misc special gamma boundary equations
     virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma);

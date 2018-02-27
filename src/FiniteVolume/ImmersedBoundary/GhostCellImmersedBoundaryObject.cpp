@@ -19,7 +19,8 @@ void GhostCellImmersedBoundaryObject::updateCells()
     auto items = fluid_->itemsWithin(*shape_);
     cells_.add(items.begin(), items.end());
 
-    auto isIbCell = [this](const Cell &cell) {
+    auto isIbCell = [this](const Cell &cell)
+    {
         if (!isInIb(cell.centroid()))
             return false;
 
@@ -76,8 +77,7 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
                 eqn.add(cell, cell, 1.);
             break;
 
-        default:
-            throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+        default:throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
     }
 
     return eqn;
@@ -94,18 +94,15 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
         //- Boundary assembly
         switch (bType)
         {
-            case FIXED:
-                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
+            case FIXED:eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
-            case ImmersedBoundaryObject::NORMAL_GRADIENT:
-                eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
+            case ImmersedBoundaryObject::NORMAL_GRADIENT:eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
-            default:
-                throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+            default:throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
         }
     }
 
@@ -131,8 +128,7 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
                 eqn.addSource(st.cell(), -velocity(st.boundaryPoint()));
             }
             break;
-        case PARTIAL_SLIP:
-            break;
+        case PARTIAL_SLIP:break;
     }
 
     for (const Cell &cell: solidCells_)
@@ -194,7 +190,7 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVol
             Vector2D grad1 = m1.bpGrad(gamma);
             Vector2D grad2 = m2.bpGrad(gamma);
 
-            if(dot(grad1, r1.r()) < 0 && theta > M_PI_2)
+            if (dot(grad1, r1.r()) < 0 && theta > M_PI_2)
                 std::swap(m1, m2);
         }
 
@@ -239,34 +235,32 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
                                                    const ScalarFiniteVolumeField &p,
                                                    const Vector2D &g)
 {
-    std::vector<Point2D> points;
-    std::vector<Scalar> pressures;
-    std::vector<Scalar> shears;
+    std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses;
+    stresses.reserve(stencils_.size());
 
     for (const GhostCellStencil &st: stencils_)
     {
-        points.push_back(st.boundaryPoint());
-        pressures.push_back(st.bpValue(p) + rho * dot(st.boundaryPoint(), g));
-        shears.push_back(mu * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec()));
+        stresses.push_back(
+                std::make_tuple(
+                        st.boundaryPoint(),
+                        st.bpValue(p) + rho * dot(st.boundaryPoint(), g),
+                        mu * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec())
+                )
+        );
     }
 
-    points = grid_->comm().gatherv(grid_->comm().mainProcNo(), points);
-    pressures = grid_->comm().gatherv(grid_->comm().mainProcNo(), pressures);
-    shears = grid_->comm().gatherv(grid_->comm().mainProcNo(), shears);
+    stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
 
     if (grid_->comm().isMainProc())
     {
-        force_ = Vector2D(0., 0.);
-
-        std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses(points.size());
-        for (int i = 0; i < points.size(); ++i)
-            stresses[i] = std::make_tuple(points[i], pressures[i], shears[i]);
-
         std::sort(stresses.begin(), stresses.end(),
-                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b) {
+                  [this](const std::tuple<Point2D, Scalar, Scalar> &a, std::tuple<Point2D, Scalar, Scalar> &b)
+                  {
                       return (std::get<0>(a) - shape_->centroid()).angle() <
                              (std::get<0>(b) - shape_->centroid()).angle();
                   });
+
+        force_ = Vector2D(0., 0.);
 
         for (int i = 0; i < stresses.size(); ++i)
         {

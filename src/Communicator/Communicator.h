@@ -3,6 +3,7 @@
 
 #include <mpi.h>
 #include <vector>
+#include <numeric>
 
 #include "Vector2D.h"
 #include "Tensor2D.h"
@@ -40,80 +41,100 @@ public:
     //- Sync
     void barrier() const;
 
-    //- Communication
-    int broadcast(int root, int integer) const;
+    //- Broadcast
+    template<class T>
+    T broadcast(int root, T val) const
+    {
+        MPI_Bcast(&val, sizeof(T), MPI_BYTE, root, comm_);
+        return val;
+    }
 
-    Vector2D broadcast(int root, Vector2D vec) const;
-
-    double broadcast(int root, double val) const;
-
-    void broadcast(int root, std::vector<int> &ints) const;
-
-    void broadcast(int root, std::vector<unsigned long> &vals) const;
-
-    void broadcast(int root, std::vector<double> &doubles) const;
-
-    void broadcast(int root, std::vector<Vector2D> &vector2Ds) const;
-
-    //- Collectives
-
-    //- Scatter
-    int scatter(int root, const std::vector<int> &send) const;
-
-    //- Allgather
-    std::vector<int> allGather(int val) const;
-
-    std::vector<unsigned long> allGather(unsigned long val) const;
-
-    std::vector<Vector2D> allGather(const Vector2D &val) const;
-
-    //- Allgatherv
-    std::vector<Scalar> allGatherv(const std::vector<double> &vals) const;
-
-    std::vector<Vector2D> allGatherv(const std::vector<Vector2D> &vals) const;
+    template<class T>
+    void broadcast(int root, std::vector<T> &vals) const
+    {
+        MPI_Bcast(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, root, comm_);
+    }
 
     //- gather
-    std::vector<int> gather(int root, int val) const;
-
-    std::vector<unsigned long> gather(int root, unsigned long val) const;
+    template<class T>
+    std::vector<T> gather(int root, const T &val) const
+    {
+        std::vector<T> result(nProcs());
+        MPI_Gather(&val, sizeof(T), MPI_BYTE, result.data(), sizeof(T), MPI_BYTE, root, comm_);
+        return result;
+    }
 
     //- gatherv
-    std::vector<double> gatherv(int root, const std::vector<double> &vals) const;
+    template<class T>
+    std::vector<T> gatherv(int root, const std::vector<T> &vals) const
+    {
+        std::vector<int> sizes = gather(root, (int) (sizeof(T) * vals.size()));
+        std::vector<T> result(std::accumulate(sizes.begin(), sizes.end(), 0) / sizeof(T));
+        std::vector<int> displs(sizes.size(), 0);
+        std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
 
-    std::vector<Vector2D> gatherv(int root, const std::vector<Vector2D> &vals) const;
+        MPI_Gatherv(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, result.data(), sizes.data(), displs.data(),
+                    MPI_BYTE, root,
+                    comm_);
+
+        return result;
+    }
+
+    //- Allgather
+    template<class T>
+    std::vector<T> allGather(const T &val) const
+    {
+        std::vector<T> result(nProcs());
+        MPI_Allgather(&val, sizeof(T), MPI_BYTE, result.data(), sizeof(T), MPI_BYTE, comm_);
+        return result;
+    }
+
+    //- Allgatherv
+    template<class T>
+    std::vector<T> allGatherv(const std::vector<T> &vals) const
+    {
+        std::vector<int> sizes = allGather((int) (sizeof(T) * vals.size()));
+        std::vector<T> result(std::accumulate(sizes.begin(), sizes.end(), 0) / sizeof(T));
+        std::vector<int> displs(sizes.size(), 0);
+        std::partial_sum(sizes.begin(), sizes.end() - 1, displs.begin() + 1);
+
+        MPI_Allgatherv(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, result.data(), sizes.data(), displs.data(),
+                       MPI_BYTE, comm_);
+
+        return result;
+    }
 
     //- Blocking point-to-point communication
-    void ssend(int dest, const std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
+    template<class T>
+    void ssend(int dest, const std::vector<T> &vals, int tag = MPI_ANY_TAG) const
+    {
+        MPI_Ssend(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, dest, tag, comm_);
+    }
 
-    void ssend(int dest, const std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
-
-    void ssend(int dest, const std::vector<double> &vals, int tag = MPI_ANY_TAG) const;
-
-    void ssend(int dest, const std::vector<Vector2D> &vals, int tag = MPI_ANY_TAG) const;
-
-    void ssend(int dest, const std::vector<Tensor2D> &vals, int tag = MPI_ANY_TAG) const;
-
-    void ssend(int dest, unsigned long val, int tag = MPI_ANY_TAG) const;
-
-    void recv(int source, std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
-
-    void recv(int source, std::vector<Vector2D> &vals, int tag = MPI_ANY_TAG) const;
+    template<class T>
+    void recv(int source, std::vector<T> &vals, int tag = MPI_ANY_TAG) const
+    {
+        MPI_Status status;
+        MPI_Recv(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, source, tag, comm_, &status);
+    }
 
     //- Non-blocking point-to-point communication
 
-    void isend(int dest, const std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
+    template<class T>
+    void isend(int dest, std::vector<T> &vals, int tag = MPI_ANY_TAG) const
+    {
+        MPI_Request request;
+        MPI_Isend(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, dest, tag, comm_, &request);
+        currentRequests_.push_back(request);
+    }
 
-    void irecv(int source, std::vector<int> &vals, int tag = MPI_ANY_TAG) const;
-
-    void irecv(int source, std::vector<unsigned long> &vals, int tag = MPI_ANY_TAG) const;
-
-    void irecv(int source, std::vector<double> &vals, int tag = MPI_ANY_TAG) const;
-
-    void irecv(int source, std::vector<Vector2D> &vals, int tag = MPI_ANY_TAG) const;
-
-    void irecv(int source, std::vector<Tensor2D> &vals, int tag = MPI_ANY_TAG) const;
-
-    void irecv(int source, unsigned long &val, int tag = MPI_ANY_TAG) const;
+    template <class T>
+    void irecv(int source, std::vector<T> &vals, int tag = MPI_ANY_TAG) const
+    {
+        MPI_Request request;
+        MPI_Irecv(vals.data(), sizeof(T) * vals.size(), MPI_BYTE, source, tag, comm_, &request);
+        currentRequests_.push_back(request);
+    }
 
     void waitAll() const;
 
