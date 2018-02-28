@@ -159,4 +159,3 @@ double Communicator::max(double val) const
     MPI_Allreduce(&val, &result, 1, MPI_DOUBLE, MPI_MAX, comm_);
     return result;
 }
-

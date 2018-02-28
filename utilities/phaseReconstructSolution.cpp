@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     std::vector<cgsize_t> nodeIds(nodes.size(), -1);
 
     {
-        boost::geometry::index::rtree<pair<Node, cgsize_t>, boost::geometry::index::quadratic<32>> rtree;
+        boost::geometry::index::rtree<pair<Node, cgsize_t>, boost::geometry::index::linear<16, 4>> rtree;
 
         cgsize_t id = 1;
         for (const Node &node: nodes)

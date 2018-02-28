@@ -4,6 +4,7 @@
 #include "ImmersedBoundaryObject.h"
 #include "CollisionModel.h"
 #include "FiniteVolumeField.h"
+#include "SurfaceTensionForce.h"
 
 class ImmersedBoundary
 {
@@ -17,7 +18,7 @@ public:
     ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
     //- Solver/grid info
-    const std::shared_ptr<FiniteVolumeGrid2D>& grid()
+    const std::shared_ptr<FiniteVolumeGrid2D> &grid()
     { return grid_; }
 
     std::shared_ptr<const FiniteVolumeGrid2D> grid() const
@@ -39,13 +40,13 @@ public:
     //- Immersed boundary object access
     std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D &pt) const;
 
-    std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj(const Point2D& pt) const;
+    std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj(const Point2D &pt) const;
 
-    std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> nearestIntersect(const Point2D& pt) const;
+    std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> nearestIntersect(const Point2D &pt) const;
 
     const ImmersedBoundaryObject &ibObj(const std::string &name) const;
 
-    const std::vector<std::shared_ptr<ImmersedBoundaryObject>>& ibObjs() const
+    const std::vector<std::shared_ptr<ImmersedBoundaryObject>> &ibObjs() const
     { return ibObjs_; }
 
     std::vector<std::shared_ptr<ImmersedBoundaryObject>>::const_iterator begin() const
@@ -94,6 +95,14 @@ public:
                       const ScalarFiniteVolumeField &mu,
                       const VectorFiniteVolumeField &u,
                       const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.));
+
+    void computeForce(const ScalarFiniteVolumeField &rho,
+                      const ScalarFiniteVolumeField &mu,
+                      const VectorFiniteVolumeField &u,
+                      const ScalarFiniteVolumeField &p,
+                      const ScalarFiniteVolumeField &gamma,
+                      const SurfaceTensionForce &ft,
                       const Vector2D &g = Vector2D(0., 0.));
 
     const std::shared_ptr<FiniteVolumeField<int>> &cellStatus()

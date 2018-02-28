@@ -24,17 +24,6 @@ Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
     integerFields_[ib_->cellStatus()->name()] = ib_->cellStatus();
 }
 
-void Solver::printf(const char *format, ...) const
-{
-    va_list argsPtr;
-    va_start(argsPtr, format);
-
-    if (grid_->comm().isMainProc())
-        vfprintf(stdout, format, argsPtr);
-
-    va_end(argsPtr);
-}
-
 Scalar Solver::getStartTime(const Input &input) const
 {
     if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")

@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     solver.solve(0);
     time.stop();
 
-    solver.printf("Time elapsed = %s\n", time.elapsedTime().c_str());
+    solver.grid()->comm().printf("Time elapsed = %s\n", time.elapsedTime().c_str());
 
     viewer.write(1);
 

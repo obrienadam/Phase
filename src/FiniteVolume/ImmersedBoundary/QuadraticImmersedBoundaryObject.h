@@ -45,13 +45,12 @@ public:
                       const ScalarFiniteVolumeField &p,
                       const Vector2D &g = Vector2D(0., 0.));
 
-    void computeForce(Scalar rho1,
-                      Scalar rho2,
-                      Scalar mu1,
-                      Scalar mu2,
-                      const ScalarFiniteVolumeField &gamma,
+    void computeForce(const ScalarFiniteVolumeField &rho,
+                      const ScalarFiniteVolumeField &mu,
                       const VectorFiniteVolumeField &u,
                       const ScalarFiniteVolumeField &p,
+                      const ScalarFiniteVolumeField &gamma,
+                      const SurfaceTensionForce &ft,
                       const Vector2D &g = Vector2D(0., 0.));
 
     const CellGroup &forcingCells() const

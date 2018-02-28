@@ -1,5 +1,5 @@
-#ifndef COMMUNICATOR_H
-#define COMMUNICATOR_H
+#ifndef PHASE__COMMUNICATOR_H
+#define PHASE__COMMUNICATOR_H
 
 #include <mpi.h>
 #include <vector>
@@ -128,7 +128,7 @@ public:
         currentRequests_.push_back(request);
     }
 
-    template <class T>
+    template<class T>
     void irecv(int source, std::vector<T> &vals, int tag = MPI_ANY_TAG) const
     {
         MPI_Request request;
@@ -158,6 +158,9 @@ public:
 
     double max(double val) const;
 
+    //- Additional operators
+
+
 private:
 
     static MPI_Datatype MPI_VECTOR2D_, MPI_TENSOR2D_;
@@ -165,5 +168,14 @@ private:
     MPI_Comm comm_;
     mutable std::vector<MPI_Request> currentRequests_;
 };
+
+template<class T>
+const Communicator &operator<<(const Communicator &comm, const T &val)
+{
+    if (comm.isMainProc())
+        std::cout << val;
+
+    return comm;
+}
 
 #endif

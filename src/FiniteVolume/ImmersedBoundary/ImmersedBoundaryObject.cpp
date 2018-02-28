@@ -1,9 +1,6 @@
-#include <memory>
-
 #include "ImmersedBoundaryObject.h"
 #include "ImmersedBoundary.h"
-#include "TranslatingMotion.h"
-#include "OscillatingMotion.h"
+#include "NotImplementedException.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
                                                Label id,
@@ -230,7 +227,7 @@ void ImmersedBoundaryObject::computeForce(Scalar rho,
                                           const ScalarFiniteVolumeField &p,
                                           const Vector2D &g)
 {
-
+    throw NotImplementedException("ImmersedBoundaryObject", "computeForce");
 }
 
 void ImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
@@ -239,7 +236,18 @@ void ImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
                                           const ScalarFiniteVolumeField &p,
                                           const Vector2D &g)
 {
-    throw Exception("ImmersedBoundaryObject", "computeForce", "not implemented.");
+    throw NotImplementedException("ImmersedBoundaryObject", "computeForce");
+}
+
+void ImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
+                                          const ScalarFiniteVolumeField &mu,
+                                          const VectorFiniteVolumeField &u,
+                                          const ScalarFiniteVolumeField &p,
+                                          const ScalarFiniteVolumeField &gamma,
+                                          const SurfaceTensionForce &ft,
+                                          const Vector2D &g)
+{
+    throw NotImplementedException("ImmersedBoundaryObject", "computeForce");
 }
 
 void ImmersedBoundaryObject::update(Scalar timeStep)

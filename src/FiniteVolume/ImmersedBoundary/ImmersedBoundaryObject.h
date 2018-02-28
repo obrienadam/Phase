@@ -6,6 +6,7 @@
 #include "Motion.h"
 
 class ImmersedBoundary;
+class SurfaceTensionForce;
 
 class ImmersedBoundaryObject
 {
@@ -181,15 +182,13 @@ public:
                               const ScalarFiniteVolumeField &p,
                               const Vector2D &g = Vector2D(0., 0.));
 
-    virtual void computeForce(Scalar rho1,
-                              Scalar rho2,
-                              Scalar mu1,
-                              Scalar mu2,
-                              const ScalarFiniteVolumeField &gamma,
+    virtual void computeForce(const ScalarFiniteVolumeField &rho,
+                              const ScalarFiniteVolumeField &mu,
                               const VectorFiniteVolumeField &u,
                               const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.))
-    {}
+                              const ScalarFiniteVolumeField &gamma,
+                              const SurfaceTensionForce &ft,
+                              const Vector2D &g = Vector2D(0., 0.));
 
     void addForce(const Vector2D &force)
     {

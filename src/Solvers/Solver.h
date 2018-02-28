@@ -18,9 +18,6 @@ public:
     virtual std::string info() const
     { return ""; }
 
-    //- Print
-    void printf(const char* format, ...) const;
-
     //- Solve
     virtual Scalar solve(Scalar timeStep) = 0;
 

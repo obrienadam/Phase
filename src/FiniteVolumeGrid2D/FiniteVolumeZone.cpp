@@ -3,8 +3,8 @@
 FiniteVolumeZone::FiniteVolumeZone(const std::string &name, const std::shared_ptr<std::unordered_map<Label, Ref<CellZone> > > &cellZoneRegistry)
     :
       name_(name),
-      cells_(name_ + "Cells", cellZoneRegistry),
-      faces_(name_ + "Faces")
+      cells_(name + "Cells", cellZoneRegistry),
+      faces_(name + "Faces")
 {
 
 }

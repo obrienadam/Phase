@@ -31,7 +31,7 @@ Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    ib_->computeForce(rho, mu, u, p, g_);
+    ib_->computeForce(rho, mu, u, p, gamma, ft,  g_);
     ib_->update(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));

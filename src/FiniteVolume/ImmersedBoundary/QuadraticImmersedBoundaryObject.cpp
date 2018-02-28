@@ -279,13 +279,14 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
     force_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), force_) + shape_->area() * this->rho * g;
 }
 
-void QuadraticImmersedBoundaryObject::computeForce(Scalar rho1,
-                                                   Scalar rho2,
-                                                   Scalar mu1,
-                                                   Scalar mu2,
+void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho,
+                                                   const ScalarFiniteVolumeField &mu,
+                                                   const VectorFiniteVolumeField &u,
+                                                   const ScalarFiniteVolumeField &p,
                                                    const ScalarFiniteVolumeField &gamma,
-                                                   const VectorFiniteVolumeField &u, const ScalarFiniteVolumeField &p,
+                                                   const SurfaceTensionForce &ft,
                                                    const Vector2D &g)
 {
-
+    computeForce(rho, mu, u, p, g);
+    force_ += ft.computeCapillaryForce(gamma, *this);
 }

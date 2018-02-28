@@ -322,8 +322,7 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(con
     return nearestIntersect(pt).first;
 }
 
-std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D>
-ImmersedBoundary::nearestIntersect(const Point2D &pt) const
+std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> ImmersedBoundary::nearestIntersect(const Point2D &pt) const
 {
     std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj = nullptr;
     Point2D minXc;
@@ -432,6 +431,27 @@ void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
 {
     for (auto ibObj: ibObjs_)
         ibObj->computeForce(rho, mu, u, p, g);
+
+    if (collisionModel_)
+        for (auto ibObjP: ibObjs_)
+        {
+            for (auto ibObjQ: ibObjs_)
+                ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
+
+            ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjP->grid()));
+        }
+}
+
+void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
+                                    const ScalarFiniteVolumeField &mu,
+                                    const VectorFiniteVolumeField &u,
+                                    const ScalarFiniteVolumeField &p,
+                                    const ScalarFiniteVolumeField &gamma,
+                                    const SurfaceTensionForce &ft,
+                                    const Vector2D &g)
+{
+    for (auto ibObj: ibObjs_)
+        ibObj->computeForce(rho, mu, u, p, gamma, ft, g);
 
     if (collisionModel_)
         for (auto ibObjP: ibObjs_)

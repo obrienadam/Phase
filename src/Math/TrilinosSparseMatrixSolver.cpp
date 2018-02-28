@@ -79,5 +79,5 @@ void TrilinosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
 
 void TrilinosSparseMatrixSolver::printStatus(const std::string &msg) const
 {
-    comm_.printf("%s iterations = %d, error = %lf.\n", msg.c_str(), nIters(), error());
+    comm_ << msg << " iterations = " << nIters() << ", error = " << error() << ".\n";
 }
