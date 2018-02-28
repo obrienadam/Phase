@@ -187,8 +187,6 @@ Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeFiel
                    < (std::get<0>(rhs) - ibObj.shape().centroid()).angle();
         });
 
-        Vector2D force = Vector2D(0., 0.);
-
         for (int i = 0; i < ibPoints.size(); ++i)
         {
             const auto &a = ibPoints[i];
