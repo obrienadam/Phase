@@ -239,7 +239,7 @@ void QuadraticImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField
             stresses.push_back(
                     std::make_tuple(
                             pt,
-                            bi(p) + bi(rho) * (dot(pt, g) + 0.5 * std::pow(dot(bi(u), wn), 2)),
+                            bi(p) + bi(rho) * dot(pt, g),
                             bi(mu) * dot(dot(bi.grad(u), wn), wn.tangentVec())
                     )
             );

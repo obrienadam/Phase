@@ -20,7 +20,8 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
             fout << "Title = \"" << ibObj->name() << "\"\n";
             fout.close();
 
-            fout.open((outputDir_ / (ibObj->name() + "_timeSeriesPlot.dat")).string());
+            fout.open((outputDir_ / (ibObj->name() + "_time_series.csv")).string());
+            fout << "time,x,y,theta,vx,vy,omega,fx,fy,tau\n";
             fout.close();
         }
     }
@@ -88,7 +89,7 @@ void IbTracker::compute(Scalar time)
 
                 fout.close();
 
-                fout.open((outputDir_ / (ibObj->name() + "_timeSeriesPlot.dat")).string(),
+                fout.open((outputDir_ / (ibObj->name() + "_time_series.csv")).string(),
                           std::ofstream::out | std::ofstream::app);
 
                 fout << time << ","

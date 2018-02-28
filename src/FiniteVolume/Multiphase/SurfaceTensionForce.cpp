@@ -208,7 +208,7 @@ Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeFiel
             }
         }
 
-        std::cout << "Capillary force = " << force;
+        std::cout << "Capillary force = " << force << "\n";
     }
 
     return grid_->comm().broadcast(grid_->comm().mainProcNo(), force);
