@@ -88,7 +88,7 @@ ImmersedBoundaries
 {
   Cylinder1
   {
-    method high-order
+    method euler-lagrange
 
     geometry
     {

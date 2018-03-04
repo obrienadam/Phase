@@ -9,7 +9,7 @@ class Matrix : public std::vector<Scalar>
 {
 public:
 
-    Matrix(Size m = 0, Size n = 0, const std::initializer_list<Scalar>& coeffs = {});
+    Matrix(Size m = 0, Size n = 0, const std::initializer_list<Scalar> &coeffs = {});
 
     void resize(Size m, Size n);
 
@@ -26,7 +26,7 @@ public:
     bool isSquare() const
     { return m_ == n_; }
 
-    void setRow(int i, const std::initializer_list<Scalar>& coeffs);
+    void setRow(int i, const std::initializer_list<Scalar> &coeffs);
 
     void scaleRow(Size i, Scalar factor);
 
@@ -45,6 +45,8 @@ public:
     Matrix &operator/=(Scalar rhs);
 
     Matrix &solve(Matrix &b);
+
+    Matrix solve(const Matrix &b);
 
     Matrix &transpose();
 
@@ -77,7 +79,7 @@ Matrix eye(int m);
 
 Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max);
 
-Matrix transpose(Matrix mat);
+Matrix transpose(const Matrix &mat);
 
 Matrix inverse(Matrix mat);
 

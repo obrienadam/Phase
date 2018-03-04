@@ -20,6 +20,9 @@ target_link_libraries(phaseFractionalStepAxisymmetric Solvers)
 add_executable(phaseFractionalStepQuadraticIbm phaseFractionalStepQuadraticIbm.cpp)
 target_link_libraries(phaseFractionalStepQuadraticIbm Solvers)
 
+add_executable(phaseFractionalStepEulerLagrange phaseFractionalStepEulerLagrange.cpp)
+target_link_libraries(phaseFractionalStepEulerLagrange Solvers)
+
 add_executable(phaseFractionalStepMultiphase phaseFractionalStepMultiphase.cpp)
 target_link_libraries(phaseFractionalStepMultiphase Solvers)
 

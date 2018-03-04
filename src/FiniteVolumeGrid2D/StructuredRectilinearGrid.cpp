@@ -104,6 +104,14 @@ const Node &StructuredRectilinearGrid::node(Label i, Label j) const
     return nodes_[(nCellsX_ + 1) * j + i];
 }
 
+Scalar StructuredRectilinearGrid::h() const
+{
+    if(!isEquidistant())
+        throw Exception("StructuredRectilinearGrid", "h", "not an equidistant grid.");
+
+    return width_ / nCellsX_;
+}
+
 void StructuredRectilinearGrid::refineDims(Scalar start, Scalar end, std::vector<Scalar> &dims)
 {
     std::vector<Scalar> newDims;

@@ -24,6 +24,8 @@ public:
 
     Tensor2D grad(const VectorFiniteVolumeField &field) const;
 
+
+
     bool isValid() const
     { return isValid_; }
 

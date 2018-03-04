@@ -6,11 +6,12 @@
 #include "QuadraticImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
 #include "HighOrderImmersedBoundaryObject.h"
+#include "EulerLagrangeImmersedBoundaryObject.h"
 #include "TranslatingMotion.h"
 #include "OscillatingMotion.h"
 #include "SolidBodyMotion.h"
 
-ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D>& grid)
+ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D> &grid)
         :
         grid_(grid)
 {
@@ -37,6 +38,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                 ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else if (method == "high-order")
                 ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
+            else if (method == "euler-lagrange")
+                ibObject = std::make_shared<EulerLagrangeImmersedBoundaryObject>(ibObjectInput.first, id++, *this,
+                                                                                 grid_);
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary",
                                 "invalid immersed boundary method \"" + method + "\".");
@@ -68,7 +72,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                                     "failed to open file \"" + filename + "\".");
 
                 grid_->comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(),
-                                            filename.c_str());
+                                     filename.c_str());
 
                 while (!fin.eof())
                 {
@@ -98,7 +102,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             if (scaleFactor)
             {
                 grid_->comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(),
-                                            scaleFactor.get());
+                                     scaleFactor.get());
                 ibObject->shape().scale(scaleFactor.get());
             }
 
@@ -107,8 +111,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             if (rotationAngle)
             {
                 grid_->comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n",
-                                            ibObjectInput.first.c_str(),
-                                            rotationAngle.get());
+                                     ibObjectInput.first.c_str(),
+                                     rotationAngle.get());
 
                 if (ibObject->shape().type() == Shape2D::BOX)
                 {
@@ -154,7 +158,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                                     "unrecognized boundary type \"" + type + "\".");
 
                 grid_->comm().printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(),
-                                            child.first.c_str());
+                                     child.first.c_str());
                 ibObject->addBoundaryType(child.first, boundaryType);
             }
 
@@ -322,7 +326,8 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(con
     return nearestIntersect(pt).first;
 }
 
-std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> ImmersedBoundary::nearestIntersect(const Point2D &pt) const
+std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D>
+ImmersedBoundary::nearestIntersect(const Point2D &pt) const
 {
     std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj = nullptr;
     Point2D minXc;
@@ -469,7 +474,7 @@ void ImmersedBoundary::setCellStatus()
 {
     cellStatus_->fill(FLUID_CELLS, *zone_);
 
-    for(const auto &ibObj: ibObjs_)
+    for (const auto &ibObj: ibObjs_)
     {
         cellStatus_->fill(IB_CELLS, ibObj->ibCells());
         cellStatus_->fill(SOLID_CELLS, ibObj->solidCells());

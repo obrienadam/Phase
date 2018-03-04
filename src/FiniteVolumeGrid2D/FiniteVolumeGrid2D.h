@@ -24,15 +24,15 @@ public:
     FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
                        const std::vector<Label> &cellInds,
                        const std::vector<Label> &cells,
-                       const Point2D& origin);
+                       const Point2D &origin);
 
     //- Initialization
-    void init(const std::vector<Point2D> &nodes,
-              const std::vector<Label> &cellInds,
-              const std::vector<Label> &cells,
-              const Point2D &origin);
+    virtual void init(const std::vector<Point2D> &nodes,
+                      const std::vector<Label> &cellInds,
+                      const std::vector<Label> &cells,
+                      const Point2D &origin);
 
-    void reset();
+    virtual void reset();
 
     //- Size info
     Size nNodes() const
@@ -44,9 +44,9 @@ public:
     std::string gridInfo() const;
 
     //- Create grid entities
-    Label createCell(const std::vector<Label> &nodeIds);
+    virtual Label createCell(const std::vector<Label> &nodeIds);
 
-    Label addNode(const Point2D &point);
+    virtual Label addNode(const Point2D &point);
 
     //- Node related methods
     const std::vector<Node> &nodes() const

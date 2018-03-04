@@ -105,6 +105,9 @@ public:
 
     Group<T> &operator-=(const Group<T> &rhs);
 
+    const T& operator[](size_t i) const
+    { return items_[i]; }
+
     Group<T> intersection(const Group<T> &other) const;
 
     Group<T> difference(const Group<T> &other) const;

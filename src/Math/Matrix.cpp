@@ -119,6 +119,14 @@ Matrix &Matrix::solve(Matrix &b)
     return b;
 }
 
+Matrix Matrix::solve(const Matrix &b)
+{
+    Matrix x(b.m(), b.n());
+    solve(x);
+
+    return x;
+}
+
 Matrix &Matrix::transpose()
 {
     if (isSquare()) // Square matrices
@@ -214,9 +222,15 @@ Matrix random(size_t nRows, size_t nCols, Scalar min, Scalar max)
     return mat;
 }
 
-Matrix transpose(Matrix mat)
+Matrix transpose(const Matrix &mat)
 {
-    return mat.transpose();
+    Matrix transMat(mat.n(), mat.m());
+
+    for(int i = 0; i < mat.m(); ++i)
+        for(int j = 0; j < mat.n(); ++j)
+            transMat(j, i) = mat(i, j);
+
+    return transMat;
 }
 
 Matrix inverse(Matrix mat)

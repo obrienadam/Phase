@@ -29,6 +29,7 @@ set(HEADERS
         ImmersedBoundary/QuadraticImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellImmersedBoundaryObject.h
         ImmersedBoundary/HighOrderImmersedBoundaryObject.h
+        ImmersedBoundary/EulerLagrangeImmersedBoundaryObject.h
         ImmersedBoundary/GhostCellStencil.h
         ImmersedBoundary/QuadraticIbmStencil.h
         ImmersedBoundary/HighOrderStencil.h
@@ -76,6 +77,7 @@ set(SOURCES
         ImmersedBoundary/QuadraticImmersedBoundaryObject.cpp
         ImmersedBoundary/GhostCellImmersedBoundaryObject.cpp
         ImmersedBoundary/HighOrderImmersedBoundaryObject.cpp
+        ImmersedBoundary/EulerLagrangeImmersedBoundaryObject.cpp
         ImmersedBoundary/ImmersedBoundaryStencil.cpp
         ImmersedBoundary/GhostCellStencil.cpp
         ImmersedBoundary/QuadraticIbmStencil.cpp

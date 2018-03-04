@@ -249,7 +249,10 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
                 }
 
                 for (const Cell &cell: ibObj->solidCells())
+                {
                     eqn.add(cell, cell, 1.);
+                    eqn.setSource(cell, -1.);
+                }
             }
 
                 break;

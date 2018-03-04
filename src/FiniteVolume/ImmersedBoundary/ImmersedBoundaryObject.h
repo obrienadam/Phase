@@ -14,7 +14,7 @@ public:
 
     enum Type
     {
-        GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER
+        GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER, EULER_LAGRANGE
     };
 
     enum BoundaryType
@@ -31,9 +31,9 @@ public:
     virtual Type type() const = 0;
 
     //- Geometry related methods
-    void initCircle(const Point2D &center, Scalar radius);
+    virtual void initCircle(const Point2D &center, Scalar radius);
 
-    void initBox(const Point2D &center, Scalar width, Scalar height);
+    virtual void initBox(const Point2D &center, Scalar width, Scalar height);
 
     template<class const_iterator>
     void initPolygon(const_iterator begin, const_iterator end)

@@ -19,8 +19,6 @@ public:
 
     void updateCells();
 
-    void updateContactLineStencils(Scalar theta);
-
     Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
 
     Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
