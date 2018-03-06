@@ -3,9 +3,12 @@
 
 #include "FractionalStepEulerLagrange.h"
 
-class FractionalStepMultiphaseEulerLagrange: public 
+class FractionalStepMultiphaseEulerLagrange : public FractionalStepEulerLagrange
 {
+public:
 
+    FractionalStepMultiphaseEulerLagrange(const Input &input,
+                                          std::shared_ptr<FiniteVolumeGrid2D> &grid);
 };
 
 

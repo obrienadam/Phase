@@ -26,8 +26,7 @@ public:
     Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const
     { throw NotImplementedException("EulerLagrangeImmersedBoundaryObject", "bcs"); }
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const
-    { throw NotImplementedException("EulerLagrangeImmersedBoundaryObject", "velocityBcs"); }
+    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     void computeForce(Scalar rho,
                               Scalar mu,

@@ -28,7 +28,6 @@ void CellZone::add(const Cell &cell)
     CellGroup::add(cell);
 }
 
-#include <iostream>
 void CellZone::add(const CellGroup &cells)
 {
     //- Must construct a temporary container since moving cells will modify the original

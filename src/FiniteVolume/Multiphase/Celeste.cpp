@@ -73,14 +73,19 @@ void Celeste::computeCurvature()
 
     for (const Face &face: grid_->interiorFaces())
     {
-        if (ib_.lock()->ibObj(face.lCell().centroid()))
+        //- According to Afkhami 2007
+
+        if(n(face.lCell()).magSqr() != 0. && n(face.rCell()).magSqr() != 0.)
         {
-            kappa(face) = kappa(face.rCell());
+            Scalar g = face.volumeWeight();
+            kappa(face) = g * kappa(face.lCell()) + (1. - g) * kappa(face.rCell());
         }
-        else if (ib_.lock()->ibObj(face.rCell().centroid()))
-        {
+        else if (n(face.lCell()).magSqr() != 0.)
             kappa(face) = kappa(face.lCell());
-        }
+        else if (n(face.rCell()).magSqr() != 0.)
+            kappa(face) = kappa(face.rCell());
+        else
+            kappa(face) = 0.;
     }
 }
 

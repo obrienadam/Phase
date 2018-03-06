@@ -478,6 +478,7 @@ void ImmersedBoundary::setCellStatus()
     {
         cellStatus_->fill(IB_CELLS, ibObj->ibCells());
         cellStatus_->fill(SOLID_CELLS, ibObj->solidCells());
+        cellStatus_->fill(FRESH_CELLS, ibObj->freshCells());
     }
 
     grid_->sendMessages(*cellStatus_);

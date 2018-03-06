@@ -106,6 +106,7 @@ cmake-build-*
 *.mp4
 *.log
 *.cbp
+*.csv
 submit.sh
 
 # Video files

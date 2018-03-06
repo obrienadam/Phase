@@ -1,29 +1,42 @@
 #include "QuadraticIbmStencil.h"
 #include "StaticMatrix.h"
 
-QuadraticIbmStencil::QuadraticIbmStencil(const InteriorLink &link,
+QuadraticIbmStencil::QuadraticIbmStencil(const Cell &cell0,
+                                         const Cell &cell1,
                                          const ImmersedBoundary &ib)
 {
-    auto ibObj = ib.ibObj(link.cell().centroid());
+    auto lIbObj = ib.ibObj(cell0.centroid());
+    auto rIbObj = ib.ibObj(cell1.centroid());
 
-    if (ibObj)
+    if (lIbObj == rIbObj)
     {
-        const Cell &stCell = ib.grid()->globalActiveCells().nearestItem(
-                2. * link.self().centroid() - link.cell().centroid()
-        );
-
-        auto ibObjStCell = ib.ibObj(stCell.centroid());
-
-        if (ibObjStCell)
-            initQuadraticCoeffs(stCell, link.self(), link.cell(), *ibObjStCell, *ibObj);
-        else
-            initQuadraticCoeffs(stCell, link.self(), link.cell(), *ibObj);
-    }
-    else
-    {
-        cells_ = {std::cref(link.cell())};
+        cells_ = {std::cref(cell1)};
         coeffs_ = {1.};
     }
+    else if (lIbObj)
+    {
+        const Cell &stCell = ib.grid()->globalActiveCells().nearestItem(
+                2. * cell0.centroid() - cell1.centroid()
+        );
+
+        initQuadraticCoeffs(stCell, cell0, cell1, *lIbObj);
+    }
+    else if (rIbObj)
+    {
+        const Cell &stCell = ib.grid()->globalActiveCells().nearestItem(
+                2. * cell0.centroid() - cell1.centroid()
+        );
+
+        initQuadraticCoeffs(stCell, cell0, cell1, *rIbObj);
+    }
+}
+
+QuadraticIbmStencil::QuadraticIbmStencil(const InteriorLink &link,
+                                         const ImmersedBoundary &ib)
+        :
+        QuadraticIbmStencil(link.self(), link.cell(), ib)
+{
+
 }
 
 void QuadraticIbmStencil::initQuadraticCoeffs(const Cell &stCell,

@@ -87,7 +87,7 @@ public:
 
         auto itr = std::remove_if(items_.begin(), items_.end(), [&items, this](const T &item)
         {
-            if(items.find(std::cref(item)) != items.end())
+            if (items.find(std::cref(item)) != items.end())
             {
                 itemSet_.erase(std::cref(item));
                 rTree_.remove(std::cref(item));
@@ -105,7 +105,7 @@ public:
 
     Group<T> &operator-=(const Group<T> &rhs);
 
-    const T& operator[](size_t i) const
+    const T &operator[](size_t i) const
     { return items_[i]; }
 
     Group<T> intersection(const Group<T> &other) const;
@@ -117,11 +117,7 @@ public:
     //- Searching
     std::vector<Ref<const T> > itemsWithin(const Shape2D &shape) const;
 
-    std::vector<Ref<const T> > itemsNotWithin(const Shape2D &shape) const;
-
     std::vector<Ref<const T> > itemsCoveredBy(const Shape2D &shape) const;
-
-    std::vector<Ref<const T> > itemsNotCoveredBy(const Shape2D &shape) const;
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 

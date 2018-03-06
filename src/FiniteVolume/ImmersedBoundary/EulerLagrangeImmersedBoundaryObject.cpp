@@ -34,6 +34,38 @@ void EulerLagrangeImmersedBoundaryObject::updateCells()
     updateLagrangePoints();
 }
 
+Equation<Vector2D> EulerLagrangeImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+{
+    Equation<Vector2D> eqn(u);
+
+    Matrix D(lagrangePoints_.size(), ibCells_.size());
+
+    for (int i = 0; i < lagrangePoints_.size(); ++i)
+        for (int j = 0; j < ibCells_.size(); ++j)
+            D(i, j) = kernel(lagrangePoints_[i], ibCells_[j].centroid());
+
+    Matrix Ainv = inverse(h_ * h_ * D * transpose(D));
+    Matrix ul(lagrangePoints_.size(), 2);
+
+    for (int i = 0; i < lagrangePoints_.size(); ++i)
+    {
+        ul(i, 0) = velocity(lagrangePoints_[i]).x;
+        ul(i, 1) = velocity(lagrangePoints_[i]).y;
+    }
+
+    Matrix rhs = transpose(D) * Ainv * ul;
+    Matrix coeffs = transpose(D) * Ainv * (-h_ * h_) * D;
+
+    for (int i = 0; i < ibCells_.size(); ++i)
+    {
+        for (int j = 0; j < ibCells_.size(); ++j)
+            eqn.add(ibCells_[i], ibCells_[j], coeffs(i, j));
+        eqn.addSource(ibCells_[i], Vector2D(rhs(i, 0), rhs(i, 1)));
+    }
+
+    return eqn;
+}
+
 void EulerLagrangeImmersedBoundaryObject::correctVelocity(VectorFiniteVolumeField &u) const
 {
     Matrix D(lagrangePoints_.size(), ibCells_.size());
@@ -70,10 +102,28 @@ Scalar EulerLagrangeImmersedBoundaryObject::kernel(const Point2D &x, const Point
     {
         r = std::abs(r);
 
-        if (r <= 1.)
-            return (3. - 2. * r + std::sqrt(1. + 4. * r - 4. * r * r)) / 8.;
-        else if (r <= 2.)
-            return (5. - 2. * r - std::sqrt(-7. + 12. * r - 4. * r * r)) / 8.;
+//        if (r <= 1.)
+//            return (3. - 2. * r + std::sqrt(1. + 4. * r - 4. * r * r)) / 8.;
+//        else if (r <= 2.)
+//            return (5. - 2. * r - std::sqrt(-7. + 12. * r - 4. * r * r)) / 8.;
+//        else
+//            return 0.;
+
+//        if (r < 1.)
+//            return 2. / 3. - r * r + r * r * r / 2.;
+//        else if (r < 2.)
+//            return 4. / 3. - 2. * r + r * r - r * r * r / 6.;
+//        else
+//            return 0.;
+
+        if (r < 1.)
+            return 11. / 20. - std::pow(r, 2) / 2. + std::pow(r, 4) / 4. - std::pow(r, 5) / 12.;
+        else if (r < 2.)
+            return 17. / 40. + 5. * r / 8. - 7. * std::pow(r, 2) / 4 + 5. * std::pow(r, 3) / 4. - 3 * std::pow(r, 4) / 8
+                   + std::pow(r, 5) / 24;
+        else if (r < 3)
+            return 81. / 40. - 27. * r / 8. + 9. * std::pow(r, 2) / 4. - 3. * std::pow(r, 3) / 4. + std::pow(r, 4) / 8.
+                   - std::pow(r, 5) / 120.;
         else
             return 0.;
     };
@@ -106,8 +156,8 @@ void EulerLagrangeImmersedBoundaryObject::initLagrangePoints(int nLagrangePoints
                 {
                     lagrangeStencils_.push_back(
                             fluid_->itemsCoveredBy(Box(
-                                    pt - 2. * Vector2D(h_, h_),
-                                    pt + 2. * Vector2D(h_, h_)
+                                    pt - 3. * Vector2D(h_, h_),
+                                    pt + 3. * Vector2D(h_, h_)
                             ))
                     );
 

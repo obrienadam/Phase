@@ -8,6 +8,11 @@
 class QuadraticIbmStencil
 {
 public:
+
+    QuadraticIbmStencil(const Cell& cell0,
+                        const Cell& cell1,
+                        const ImmersedBoundary& ib);
+
     QuadraticIbmStencil(const InteriorLink &link,
                         const ImmersedBoundary &ib);
 

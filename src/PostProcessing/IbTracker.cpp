@@ -60,7 +60,7 @@ void IbTracker::compute(Scalar time)
                         const Circle &circ = static_cast<const Circle &>(ibObj->shape());
 
                         fout << "Geometry x=" << circ.centroid().x << " y=" << circ.centroid().y
-                             << " T=CIRCLE C=BLACK LT=" << lineThickness_ << " FC=" << fillColor_
+                             << " T=CIRCLE C=BLACK LT=" << lineThickness_
                              << " CS=GRID EP=300 ZN=" << zoneNo_ << "\n" << circ.radius() << std::endl;
                     }
                         break;

@@ -21,6 +21,8 @@ namespace qibm
                                  VectorFiniteVolumeField &u,
                                  const ImmersedBoundary &ib,
                                  Scalar theta = 1.);
+
+    void interpolateFaces(VectorFiniteVolumeField& u, const ImmersedBoundary& ib);
 }
 
 #endif

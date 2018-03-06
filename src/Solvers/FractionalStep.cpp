@@ -40,15 +40,15 @@ std::string FractionalStep::info() const
 
 Scalar FractionalStep::solve(Scalar timeStep)
 {
+    grid_->comm().printf("Updating IB positions...\n");
+    ib_->update(timeStep);
+
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
-
-    grid_->comm().printf("Updating IB positions...\n");
-    ib_->update(timeStep);
 
     grid_->comm().printf("Computing IB forces...\n");
     ib_->computeForce(rho_, mu_, u, p, g_);
@@ -95,8 +95,8 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 0.5));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::divc(u, u, 0.5) + ib_->velocityBcs(u)
+             == fv::laplacian(mu_ / rho_, u, 1.5));
 
     Scalar error = uEqn_.solve();
 
@@ -111,7 +111,10 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) + ib_->bcs(p) == src::div(u, fluid_));
+    ib_->clearFreshCells();
+
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_, 1.) + ib_->bcs(p)
+             == src::div(u, fluid_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
@@ -136,8 +139,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     for (const Patch &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
-            case VectorFiniteVolumeField::FIXED:
-                break;
+            case VectorFiniteVolumeField::FIXED:break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &face: patch)
                     u(face) -= timeStep / rho_ * gradP(face);

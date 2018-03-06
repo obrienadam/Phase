@@ -14,22 +14,22 @@ HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::stri
 
 void HighOrderImmersedBoundaryObject::updateCells()
 {
-    fluid_->add(cells_);
-    ibCells_.clear();
-    solidCells_.clear();
-    auto items = fluid_->itemsWithin(*shape_);
+    clear();
+    auto items = fluid_->itemsCoveredBy(*shape_);
     cells_.add(items.begin(), items.end());
-    solidCells_.add(cells_.begin(), cells_.end());
+    solidCells_.add(cells_);
 
     for (const Cell &cell: solidCells_)
-        for (const InteriorLink &nb: cell.neighbours())
+    {
+        for (const CellLink &nb: cell.neighbours())
         {
-            if (!solidCells_.isInGroup(nb.cell()) && grid()->localActiveCells().isInGroup(nb.cell()))
+            if (!isInIb(nb.cell()))
             {
                 cells_.add(nb.cell());
                 ibCells_.add(nb.cell());
             }
         }
+    }
 
     //constructDirichletCoeffs();
     //constructNeumannCoeffs();
@@ -207,7 +207,10 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
 
         Matrix A(cells.size() + bps.size(), 6);
 
-        auto addRow = [&A](int i, const Point2D &x) {
+        auto addRow = [&A](int i, const Point2D &a, const Point2D &b)
+        {
+            Point2D x = b;
+
             A(i, 0) = x.x * x.x;
             A(i, 1) = x.y * x.y;
             A(i, 2) = x.x * x.y;
@@ -217,11 +220,11 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
         };
 
         int i = 0;
-        for (const Cell &cell: cells)
-            addRow(i++, cell.centroid());
+        for (const Cell &kcell: cells)
+            addRow(i++, cell.centroid(), kcell.centroid());
 
         for (const Point2D &pt: bps)
-            addRow(i++, pt);
+            addRow(i++, cell.centroid(), pt);
 
         Point2D x = cell.centroid();
         auto c = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
@@ -474,7 +477,8 @@ void HighOrderImmersedBoundaryObject::constructDirichletCoeffs()
         std::vector<Ref<const Cell>> stCells;
         std::vector<Point2D> bps;
 
-        auto addRow = [&A](int i, const Point2D &x) {
+        auto addRow = [&A](int i, const Point2D &x)
+        {
             A(i, 0) = x.x * x.x;
             A(i, 1) = x.y * x.y;
             A(i, 2) = x.x * x.y;
@@ -601,7 +605,8 @@ void HighOrderImmersedBoundaryObject::constructNeumannCoeffs()
         std::vector<Ref<const Cell>> stCells;
         std::vector<Vector2D> bns;
 
-        auto addFixedRow = [&A](int i, const Point2D &x) {
+        auto addFixedRow = [&A](int i, const Point2D &x)
+        {
             A(i, 0) = x.x * x.x;
             A(i, 1) = x.y * x.y;
             A(i, 2) = x.x * x.y;
@@ -610,7 +615,8 @@ void HighOrderImmersedBoundaryObject::constructNeumannCoeffs()
             A(i, 5) = 1.;
         };
 
-        auto addDerivRow = [&A](int i, const Point2D &x, const Vector2D &n) {
+        auto addDerivRow = [&A](int i, const Point2D &x, const Vector2D &n)
+        {
             A(i, 0) = 2. * x.x * n.x;
             A(i, 1) = 2. * x.y * n.y;
             A(i, 2) = x.y * n.x + x.x * n.y;

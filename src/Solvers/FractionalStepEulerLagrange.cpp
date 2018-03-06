@@ -7,30 +7,23 @@ FractionalStepEulerLagrange::FractionalStepEulerLagrange(const Input &input,
         :
         FractionalStep(input, grid)
 {
-    for (const auto &ibObj: *ib_)
-    {
-        if (ibObj->type() != ImmersedBoundaryObject::EULER_LAGRANGE)
-        {
-            throw Exception("FractionalStepEulerLagrange",
-                            "FractionalStepEulerLagrange",
-                            "immersed boundary objects must be of type \"euler-lagrange\".");
-        }
-    }
+
 }
 
 Scalar FractionalStepEulerLagrange::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0) == fv::laplacian(mu_ / rho_, u, 0.5));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::divc(u, u, 0.5)
+             == fv::laplacian(mu_ / rho_, u, 1.5) + 1. / timeStep * ib_->velocityBcs(u));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
 
-    for (auto &ibObj: *ib_)
-        std::static_pointer_cast<EulerLagrangeImmersedBoundaryObject>(ibObj)->correctVelocity(u);
-
-    grid_->sendMessages(u);
+//    for(auto& ibObj: *ib_)
+//        std::static_pointer_cast<EulerLagrangeImmersedBoundaryObject>(ibObj)->correctVelocity(u);
+//
+//    grid_->sendMessages(u);
 
     u.interpolateFaces();
 
