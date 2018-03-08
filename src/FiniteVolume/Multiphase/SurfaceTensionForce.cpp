@@ -1,6 +1,6 @@
 #include "SurfaceTensionForce.h"
-#include "GhostCellStencil.h"
 #include "BilinearInterpolator.h"
+#include "GhostCellImmersedBoundaryObject.h"
 
 SurfaceTensionForce::SurfaceTensionForce(const Input &input,
                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
@@ -220,32 +220,40 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
     {
         switch (ibObj->type())
         {
-            case ImmersedBoundaryObject::GHOST_CELL:eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
-                break;
+            case ImmersedBoundaryObject::GHOST_CELL:
             case ImmersedBoundaryObject::QUADRATIC:
             {
                 Scalar theta = this->theta(*ibObj);
 
                 for (const Cell &cell: ibObj->ibCells())
                 {
-                    Vector2D wn = -ibObj->nearestEdgeNormal(cell.centroid());
+                    Vector2D nw = -ibObj->nearestEdgeNormal(cell.centroid()).unitVec();
+                    Vector2D cl1 = nw.rotate(M_PI_2 - theta);
+                    Vector2D cl2 = nw.rotate(theta - M_PI_2);
+                    Vector2D t1 = dot(cl1, nw.tangentVec()) * nw.tangentVec();
+                    Vector2D t2 = dot(cl2, nw.tangentVec()) * nw.tangentVec();
 
-                    Ray2D r1 = Ray2D(cell.centroid(), wn.rotate(M_PI_2 - theta));
-                    Ray2D r2 = Ray2D(cell.centroid(), wn.rotate(theta - M_PI_2));
+                    //- m1 is more hydrophobic
+                    GhostCellImmersedBoundaryObject::Stencil m1(cell, *ibObj, cl1);
+                    GhostCellImmersedBoundaryObject::Stencil m2(cell, *ibObj, cl2);
+                    Vector2D grad = BilinearInterpolator(grid_, ibObj->nearestIntersect(cell.centroid())).grad(gamma);
 
-                    GhostCellStencil m1(cell, ibObj->nearestIntersect(cell.centroid()), r1.r(), *grid_);
-                    GhostCellStencil m2(cell, ibObj->nearestIntersect(cell.centroid()), r2.r(), *grid_);
+                    if (m2.bpValue(gamma) < m1.bpValue(gamma))
+                        std::swap(m1, m2);
 
-                    Vector2D grad1 = m1.bpGrad(gamma);
-                    Vector2D grad2 = m2.bpGrad(gamma);
-
-                    if (dot(grad2, r2.r()) < dot(grad1, r1.r()))
+                    if (dot(grad, t2) < dot(grad, t1))
                         std::swap(m1, m2);
 
                     if (theta > M_PI_2)
-                        eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
+                    {
+                        m1.initZeroGradientBc();
+                        eqn.add(m1.cell(), m1.normalGradBcCells(), m1.normalGradBcCoeffs());
+                    }
                     else
-                        eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
+                    {
+                        m2.initZeroGradientBc();
+                        eqn.add(m2.cell(), m2.normalGradBcCells(), m2.normalGradBcCoeffs());
+                    }
                 }
 
                 for (const Cell &cell: ibObj->solidCells())
@@ -257,11 +265,9 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
 
                 break;
 
-            case ImmersedBoundaryObject::HIGH_ORDER:eqn += ibObj->contactLineBcs(gamma, theta(*ibObj));
-
-                break;
+            case ImmersedBoundaryObject::HIGH_ORDER:
             default:
-                throw Exception("SurfaceTensionForce", "contactLineBcs", "unrecognized immersed boundary object type.");
+                throw Exception("SurfaceTensionForce", "contactLineBcs", "no contact line bcs for immersed boundary type.");
         }
     }
 

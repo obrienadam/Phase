@@ -2,11 +2,10 @@
 #include "Source.h"
 #include "LeeYou.h"
 
-FractionalStep::FractionalStep(const Input &input,
-                               std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStep::FractionalStep(const Input &input)
         :
-        Solver(input, grid),
-        fluid_(grid->createCellZone("fluid")),
+        Solver(input),
+        fluid_(grid_->createCellZone("fluid")),
         u(addVectorField(input, "u")),
         p(addScalarField(input, "p")),
         gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
@@ -95,10 +94,13 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //gradU.compute(fluid_);
     //grid_->sendMessages(gradU);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::divc(u, u, 0.5) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 1.5));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();
+
+    for (const Cell &cell: fluid_)
+        u(cell) += timeStep / rho_ * gradP(cell);
 
     //for (const Cell &cell: fluid_)
     //    u(cell) += timeStep / rho_ * gradP(cell);
@@ -111,24 +113,21 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    ib_->clearFreshCells();
-
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_, 1.) + ib_->bcs(p)
-             == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid_->localActiveCells()) == src::div(u, grid_->localActiveCells()));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
 
     //- Gradient
     p.setBoundaryFaces();
-    gradP.compute(fluid_);
+    gradP.compute(grid_->localActiveCells());
 
     return error;
 }
 
 void FractionalStep::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid_->localActiveCells())
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u); //- Necessary
@@ -139,7 +138,8 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     for (const Patch &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
-            case VectorFiniteVolumeField::FIXED:break;
+            case VectorFiniteVolumeField::FIXED:
+                break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &face: patch)
                     u(face) -= timeStep / rho_ * gradP(face);
@@ -155,7 +155,7 @@ Scalar FractionalStep::maxDivergenceError()
 {
     Scalar maxError = 0.;
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid_->localActiveCells())
     {
         Scalar div = 0.;
 

@@ -1,7 +1,6 @@
 set(HEADERS FiniteVolumeGrid2D.h
         StructuredRectilinearGrid.h
         CgnsUnstructuredGrid.h
-        ConstructGrid.h
         Node/Node.h
         Node/NodeGroup.h
         Group.h
@@ -15,7 +14,6 @@ set(HEADERS FiniteVolumeGrid2D.h
         Link/CellLink.h
         Link/BoundaryLink.h
         Link/InteriorLink.h
-        FiniteVolumeZone.h
         BilinearInterpolator.h
         QuadraticInterpolator.h)
 
@@ -23,7 +21,6 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         FiniteVolumeGrid2D.tpp
         StructuredRectilinearGrid.cpp
         CgnsUnstructuredGrid.cpp
-        ConstructGrid.cpp
         Node/Node.cpp
         Group.tpp
         Face/Face.cpp
@@ -34,9 +31,8 @@ set(SOURCES FiniteVolumeGrid2D.cpp
         Link/CellLink.cpp
         Link/BoundaryLink.cpp
         Link/InteriorLink.cpp
-        FiniteVolumeZone.cpp
         BilinearInterpolator.cpp
-        QuadraticInterpolator.cpp)
+        QuadraticInterpolator.cpp FiniteVolumeGrid2DFactory.cpp FiniteVolumeGrid2DFactory.h)
 
 add_library(FiniteVolumeGrid2D ${HEADERS} ${SOURCES})
 target_link_libraries(FiniteVolumeGrid2D Communicator Geometry System metis cgns ${HDF5_LIBRARIES})

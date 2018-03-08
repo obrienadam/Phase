@@ -4,10 +4,9 @@
 #include "AxisymmetricLaplacian.h"
 #include "AxisymmetricSource.h"
 
-FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input,
-                                                       std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input)
         :
-        FractionalStep(input, grid)
+        FractionalStep(input)
 {
 
 }

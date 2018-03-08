@@ -5,10 +5,9 @@
 #include "SeoMittal.h"
 #include "Algorithm.h"
 
-FractionalStepMultiphase::FractionalStepMultiphase(const Input &input,
-                                                   std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepMultiphase::FractionalStepMultiphase(const Input &input)
         :
-        FractionalStep(input, grid),
+        FractionalStep(input),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),
         gamma(addScalarField(input, "gamma")),

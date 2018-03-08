@@ -297,6 +297,22 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(Scalar rhs)
     return self;
 }
 
+template<class T>
+void FiniteVolumeField<T>::setGrid(const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
+{
+    grid_ = grid;
+
+    Field<T>::resize(grid_->cells().size());
+
+    if(!faces_.empty())
+        faces_.resize(grid_->faces().size());
+
+    if(!nodes_.empty())
+        nodes_.resize(grid_->nodes().size());
+
+    cellGroup_ = nullptr;
+}
+
 //- Debug
 
 template<class T>

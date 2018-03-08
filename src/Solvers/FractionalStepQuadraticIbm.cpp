@@ -2,9 +2,9 @@
 #include "QuadraticIbm.h"
 #include "Source.h"
 
-FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input)
         :
-        FractionalStep(input, grid)
+        FractionalStep(input)
 {
     for (const auto &ibObj: *ib_)
     {

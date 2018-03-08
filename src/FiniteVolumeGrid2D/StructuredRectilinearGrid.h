@@ -8,14 +8,16 @@ class StructuredRectilinearGrid : public FiniteVolumeGrid2D
 {
 public:
 
-    StructuredRectilinearGrid(Scalar width,
-                              Scalar height,
-                              Size nCellsX,
-                              Size nCellsY,
-                              Scalar convertToMeters,
-                              const std::vector<std::pair<Scalar, Scalar>> &xDimRefinements,
-                              const std::vector<std::pair<Scalar, Scalar>> &yDimRefinements,
-                              const Point2D &origin);
+    StructuredRectilinearGrid(const Input& input);
+
+    void init(Scalar width,
+              Scalar height,
+              Size nCellsX,
+              Size nCellsY,
+              Scalar convertToMeters,
+              const std::vector<std::pair<Scalar, Scalar>> &xDimRefinements,
+              const std::vector<std::pair<Scalar, Scalar>> &yDimRefinements,
+              const Point2D &origin);
 
     Cell &operator()(Label i, Label j);
 

@@ -30,20 +30,18 @@ set(HEADERS
         ImmersedBoundary/GhostCellImmersedBoundaryObject.h
         ImmersedBoundary/HighOrderImmersedBoundaryObject.h
         ImmersedBoundary/EulerLagrangeImmersedBoundaryObject.h
-        ImmersedBoundary/GhostCellStencil.h
+        ImmersedBoundary/DirectForcingImmersedBoundaryObject.h
         ImmersedBoundary/QuadraticIbmStencil.h
-        ImmersedBoundary/HighOrderStencil.h
         ImmersedBoundary/CutCell.h
         ImmersedBoundary/CutCellLink.h
-        ImmersedBoundary/ImmersedBoundaryStencil.h
-        ImmersedBoundary/Motion.h
-        ImmersedBoundary/TranslatingMotion.h
-        ImmersedBoundary/OscillatingMotion.h
-        ImmersedBoundary/SolidBodyMotion.h
         ImmersedBoundary/SeoMittal.h
         ImmersedBoundary/LeeYou.h
         ImmersedBoundary/QuadraticIbm.h
         ImmersedBoundary/CollisionModel.h
+        Motion/Motion.h
+        Motion/TranslatingMotion.h
+        Motion/OscillatingMotion.h
+        Motion/SolidBodyMotion.h
         Multiphase/SurfaceTensionForce.h
         Multiphase/Celeste.h)
 
@@ -78,20 +76,18 @@ set(SOURCES
         ImmersedBoundary/GhostCellImmersedBoundaryObject.cpp
         ImmersedBoundary/HighOrderImmersedBoundaryObject.cpp
         ImmersedBoundary/EulerLagrangeImmersedBoundaryObject.cpp
-        ImmersedBoundary/ImmersedBoundaryStencil.cpp
-        ImmersedBoundary/GhostCellStencil.cpp
+        ImmersedBoundary/DirectForcingImmersedBoundaryObject.cpp
         ImmersedBoundary/QuadraticIbmStencil.cpp
-        ImmersedBoundary/HighOrderStencil.cpp
         ImmersedBoundary/CutCell.cpp
         ImmersedBoundary/CutCellLink.cpp
-        ImmersedBoundary/Motion.cpp
-        ImmersedBoundary/TranslatingMotion.cpp
-        ImmersedBoundary/OscillatingMotion.cpp
-        ImmersedBoundary/SolidBodyMotion.cpp
         ImmersedBoundary/SeoMittal.cpp
         ImmersedBoundary/LeeYou.cpp
         ImmersedBoundary/QuadraticIbm.cpp
         ImmersedBoundary/CollisionModel.cpp
+        Motion/Motion.cpp
+        Motion/TranslatingMotion.cpp
+        Motion/OscillatingMotion.cpp
+        Motion/SolidBodyMotion.cpp
         Multiphase/SurfaceTensionForce.cpp
         Multiphase/Celeste.cpp
         Multiphase/CelesteStencil.cpp)

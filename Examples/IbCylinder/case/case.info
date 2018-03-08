@@ -4,16 +4,11 @@ CaseName ImmersedBoundaryCylinder2D
 
 Solver
 {
-	timeDependent On
-	maxIterations 100
+        type "fractional step"
 	timeStep 5e-3
 	maxCo 1
 	maxTime 200
 	smoothingKernelRadius 0
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
-	numInnerIterations 2
-	numPressureCorrections 1
 }
 
 LinearAlgebra

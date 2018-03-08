@@ -7,8 +7,7 @@ class FractionalStepAxisymmetric : public FractionalStep
 {
 public:
 
-    FractionalStepAxisymmetric(const Input &input,
-                               std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepAxisymmetric(const Input &input);
 
 protected:
 

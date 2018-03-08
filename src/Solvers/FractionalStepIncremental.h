@@ -12,8 +12,7 @@ class FractionalStepIncremental : public Solver
 {
 public:
 
-    FractionalStepIncremental(const Input &input,
-                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepIncremental(const Input &input);
 
     virtual void initialize();
 
@@ -32,7 +31,7 @@ public:
 
 protected:
 
-    virtual void restartSolution();
+    virtual void restartSolution(const Input &input);
 
     virtual Scalar solveUEqn(Scalar timeStep);
 

@@ -9,8 +9,7 @@ class Poisson : public Solver
 {
 public:
 
-    Poisson(const Input &input,
-            std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    Poisson(const Input &input);
 
     virtual Scalar solve(Scalar timeStep);
 

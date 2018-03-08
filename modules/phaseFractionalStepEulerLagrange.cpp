@@ -3,7 +3,6 @@
 #include "Input.h"
 #include "Communicator.h"
 #include "CommandLine.h"
-#include "ConstructGrid.h"
 #include "FractionalStepEulerLagrange.h"
 #include "CgnsViewer.h"
 #include "RunControl.h"
@@ -19,9 +18,7 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> grid = constructGrid(input, std::make_shared<Communicator>());
-
-    FractionalStepEulerLagrange solver(input, grid);
+    FractionalStepEulerLagrange solver(input);
     CgnsViewer viewer(input, solver);
 
     RunControl runControl;

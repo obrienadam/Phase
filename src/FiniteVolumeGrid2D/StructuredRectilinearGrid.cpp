@@ -1,14 +1,34 @@
 #include "StructuredRectilinearGrid.h"
-#include "Exception.h"
 
-StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height,
-                                                     Size nCellsX, Size nCellsY,
-                                                     Scalar convertToMeters,
-                                                     const std::vector<std::pair<Scalar, Scalar> > &xDimRefinements,
-                                                     const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements,
-                                                     const Point2D &origin)
+StructuredRectilinearGrid::StructuredRectilinearGrid(const Input &input)
         :
         FiniteVolumeGrid2D()
+{
+    Scalar width = input.caseInput().get<Scalar>("Grid.width");
+    Scalar height = input.caseInput().get<Scalar>("Grid.height");
+    int nCellsX = input.caseInput().get<int>("Grid.nCellsX");
+    int nCellsY = input.caseInput().get<int>("Grid.nCellsY");
+    Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
+
+    std::vector<std::pair<Scalar, Scalar>> xDimRefinements, yDimRefinements;
+
+    Vector2D tmp = input.caseInput().get<std::string>("Grid.refineX", "(0,0)");
+    xDimRefinements.push_back(std::make_pair(tmp.x, tmp.y));
+
+    tmp = input.caseInput().get<std::string>("Grid.refineY", "(0,0)");
+    yDimRefinements.push_back(std::make_pair(tmp.x, tmp.y));
+
+    Point2D origin = input.caseInput().get<std::string>("Grid.origin", "(0,0)");
+
+    init(width, height, nCellsX, nCellsY, convertToMeters, xDimRefinements, yDimRefinements, origin);
+}
+
+void StructuredRectilinearGrid::init(Scalar width, Scalar height,
+                                     Size nCellsX, Size nCellsY,
+                                     Scalar convertToMeters,
+                                     const std::vector<std::pair<Scalar, Scalar> > &xDimRefinements,
+                                     const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements,
+                                     const Point2D &origin)
 {
     width *= convertToMeters;
     height *= convertToMeters;
@@ -57,7 +77,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
             elems.push_back((j + 1) * nNodesX + i);
         }
 
-    init(nodes, elemInds, elems, origin);
+    FiniteVolumeGrid2D::init(nodes, elemInds, elems, origin);
 
     //- Construct default patches
     std::vector<Label> xm, xp, ym, yp;
@@ -89,6 +109,7 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(Scalar width, Scalar height
     createPatch("y+", yp);
 }
 
+
 Cell &StructuredRectilinearGrid::operator()(Label i, Label j)
 {
     return cells_[nCellsX_ * j + i];
@@ -106,7 +127,7 @@ const Node &StructuredRectilinearGrid::node(Label i, Label j) const
 
 Scalar StructuredRectilinearGrid::h() const
 {
-    if(!isEquidistant())
+    if (!isEquidistant())
         throw Exception("StructuredRectilinearGrid", "h", "not an equidistant grid.");
 
     return width_ / nCellsX_;

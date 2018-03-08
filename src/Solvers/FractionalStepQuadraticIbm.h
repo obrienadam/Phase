@@ -6,8 +6,7 @@
 class FractionalStepQuadraticIbm: public FractionalStep
 {
 public:
-    FractionalStepQuadraticIbm(const Input& input,
-                   std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepQuadraticIbm(const Input& input);
 
 protected:
     virtual Scalar solveUEqn(Scalar timeStep);

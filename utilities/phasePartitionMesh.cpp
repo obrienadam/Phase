@@ -6,7 +6,7 @@
 #include <cgnslib.h>
 
 #include "Input.h"
-#include "ConstructGrid.h"
+#include "FiniteVolumeGrid2DFactory.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     Input input;
     input.parseInputFile();
 
-    auto grid = constructGrid(input);
+    auto grid = FiniteVolumeGrid2DFactory::create(input);
 
     cout << "Successfully loaded grid.\n";
 

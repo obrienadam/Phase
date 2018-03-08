@@ -1,7 +1,6 @@
 #include <fstream>
 
 #include "ImmersedBoundary.h"
-#include "Multiphase/SurfaceTensionForce.h"
 #include "StepImmersedBoundaryObject.h"
 #include "QuadraticImmersedBoundaryObject.h"
 #include "GhostCellImmersedBoundaryObject.h"
@@ -378,16 +377,6 @@ Equation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) con
 
     for (const auto &ibObj: ibObjs_)
         eqn += ibObj->velocityBcs(u);
-
-    return eqn;
-}
-
-Equation<Scalar> ImmersedBoundary::pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
-{
-    Equation<Scalar> eqn(p);
-
-    for (const auto &ibObj: ibObjs_)
-        eqn += ibObj->pressureBcs(rho, p);
 
     return eqn;
 }

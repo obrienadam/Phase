@@ -3,12 +3,10 @@
 #include "Cicsam.h"
 #include "Hric.h"
 #include "Source.h"
-#include "GhostCellImmersedBoundaryObjectContactLineTracker.h"
 
-FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const Input &input,
-                                                                         std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const Input &input)
         :
-        FractionalStepIncremental(input, grid),
+        FractionalStepIncremental(input),
         gamma(addScalarField(input, "gamma")),
         rho(addScalarField("rho")),
         mu(addScalarField("mu")),

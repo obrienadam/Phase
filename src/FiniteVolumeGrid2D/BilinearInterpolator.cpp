@@ -20,13 +20,19 @@ void BilinearInterpolator::setPoint(const Point2D &pt)
         Point2D x3 = cells_[2].get().centroid();
         Point2D x4 = cells_[3].get().centroid();
 
-        A_ = inverse<4, 4>({
-                                   x1.x * x1.y, x1.x, x1.y, 1.,
-                                   x2.x * x2.y, x2.x, x2.y, 1.,
-                                   x3.x * x3.y, x3.x, x3.y, 1.,
-                                   x4.x * x4.y, x4.x, x4.y, 1.,
-                           });
+        A_ = inverse<4>({
+                                x1.x * x1.y, x1.x, x1.y, 1.,
+                                x2.x * x2.y, x2.x, x2.y, 1.,
+                                x3.x * x3.y, x3.x, x3.y, 1.,
+                                x4.x * x4.y, x4.x, x4.y, 1.,
+                        });
     }
+}
+
+std::vector<Scalar> BilinearInterpolator::coeffs() const
+{
+    auto c = StaticMatrix<1, 4>({pt_.x * pt_.y, pt_.x, pt_.y, 1.}) * A_;
+    return std::vector<Scalar>(c.begin(), c.end());
 }
 
 Scalar BilinearInterpolator::operator()(const ScalarFiniteVolumeField &field) const
@@ -85,5 +91,5 @@ Tensor2D BilinearInterpolator::grad(const VectorFiniteVolumeField &field) const
 
     auto x = StaticMatrix<2, 4>({pt_.y, 1., 0., 0., pt_.x, 0., 1., 0.}) * A_ * b;
 
-    return Tensor2D(x(0, 0), x(1, 0), x(1, 0), x(1, 1));
+    return Tensor2D(x(0, 0), x(0, 1), x(1, 0), x(1, 1));
 }

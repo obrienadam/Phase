@@ -11,8 +11,7 @@ class Solver
 {
 public:
     //- Constructors
-    Solver(const Input &input,
-           std::shared_ptr<FiniteVolumeGrid2D>& grid);
+    Solver(const Input &input);
 
     //- Info
     virtual std::string info() const
@@ -142,9 +141,10 @@ protected:
     void setRotating(const std::string &xFunction, const std::string &yFunction, const Vector2D &amplitude,
                      const Vector2D &center, VectorFiniteVolumeField &field);
 
-    virtual void restartSolution();
+    virtual void restartSolution(const Input &input);
 
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
+
     std::shared_ptr<ImmersedBoundary> ib_;
 
     //- Fields and geometries
@@ -154,6 +154,8 @@ protected:
     mutable std::unordered_map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
     //- Solver parameters
+    bool restartedSolution_;
+
     Scalar maxTimeStep_;
 };
 

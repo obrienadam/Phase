@@ -6,13 +6,19 @@
 #include <cgnslib.h>
 
 #include "Solver.h"
-#include "EigenSparseMatrixSolver.h"
+#include "FiniteVolumeGrid2DFactory.h"
 
-Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
-        :
-        ib_(std::make_shared<ImmersedBoundary>(input, grid)),
-        grid_(grid)
+Solver::Solver(const Input &input)
 {
+    restartedSolution_ = input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart";
+
+    if(restartedSolution_)
+        grid_ = FiniteVolumeGrid2DFactory::create(FiniteVolumeGrid2DFactory::RELOAD, input);
+    else
+        grid_ = FiniteVolumeGrid2DFactory::create(input);
+
+    ib_ = std::make_shared<ImmersedBoundary>(input, grid_);
+
     //- Set simulation time options
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
 
@@ -26,7 +32,7 @@ Solver::Solver(const Input &input, std::shared_ptr<FiniteVolumeGrid2D> &grid)
 
 Scalar Solver::getStartTime(const Input &input) const
 {
-    if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
+    if (restartedSolution_)
     {
         using namespace std;
         using namespace boost::filesystem;
@@ -111,7 +117,7 @@ void Solver::setInitialConditions(const Input &input)
 
     if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
     {
-        restartSolution();
+        restartSolution(input);
         return;
     }
 
@@ -411,7 +417,7 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
     }
 }
 
-void Solver::restartSolution()
+void Solver::restartSolution(const Input &input)
 {
     using namespace std;
     using namespace boost::filesystem;

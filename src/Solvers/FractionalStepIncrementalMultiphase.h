@@ -8,8 +8,7 @@ class FractionalStepIncrementalMultiphase : public FractionalStepIncremental
 {
 public:
 
-    FractionalStepIncrementalMultiphase(const Input &input,
-                             std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepIncrementalMultiphase(const Input &input);
 
     virtual void initialize();
 

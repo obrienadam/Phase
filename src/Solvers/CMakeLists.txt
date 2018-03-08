@@ -13,7 +13,9 @@ set(HEADERS Solver.h
         FractionalStepMultiphase.h
         FractionalStepMultiphaseQuadraticIbm.h
         FractionalStepEulerLagrange.h
-        FractionalStepMultiphaseEulerLagrange.h)
+        FractionalStepMultiphaseEulerLagrange.h
+        FractionalStepDirectForcing.h
+        SolverFactory.h)
 
 set(SOURCES Solver.cpp
         Poisson.cpp
@@ -29,7 +31,9 @@ set(SOURCES Solver.cpp
         FractionalStepMultiphase.cpp
         FractionalStepMultiphaseQuadraticIbm.cpp
         FractionalStepEulerLagrange.cpp
-        FractionalStepMultiphaseEulerLagrange.cpp)
+        FractionalStepMultiphaseEulerLagrange.cpp
+        FractionalStepDirectForcing.cpp
+        SolverFactory.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})
 target_link_libraries(Solvers Math FiniteVolumeGrid2D FiniteVolume)

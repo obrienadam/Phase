@@ -16,6 +16,8 @@ public:
 
     void setPoint(const Point2D& pt);
 
+    std::vector<Scalar> coeffs() const;
+
     Scalar operator()(const ScalarFiniteVolumeField &field) const;
 
     Vector2D operator()(const VectorFiniteVolumeField &field) const;

@@ -108,6 +108,7 @@ cmake-build-*
 *.cbp
 *.csv
 submit.sh
+Examples/*/solution
 
 # Video files
 *.wmv

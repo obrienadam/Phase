@@ -232,6 +232,8 @@ public:
 
     FiniteVolumeField &operator/=(Scalar lhs);
 
+    void setGrid(const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+
     const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
     { return grid_; }
 

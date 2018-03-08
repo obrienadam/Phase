@@ -7,8 +7,7 @@
 class FractionalStepMultiphaseQuadraticIbm: public FractionalStepMultiphase
 {
 public:
-    FractionalStepMultiphaseQuadraticIbm(const Input& input,
-                             std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepMultiphaseQuadraticIbm(const Input& input);
 
     virtual Scalar solve(Scalar timeStep);
 

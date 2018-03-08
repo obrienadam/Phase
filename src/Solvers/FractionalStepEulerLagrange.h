@@ -6,8 +6,7 @@
 class FractionalStepEulerLagrange : public FractionalStep
 {
 public:
-    FractionalStepEulerLagrange(const Input &input,
-                                std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStepEulerLagrange(const Input &input);
 
 protected:
 

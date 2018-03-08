@@ -2,6 +2,143 @@
 
 #include "GhostCellImmersedBoundaryObject.h"
 
+GhostCellImmersedBoundaryObject::Stencil::Stencil(const Cell &cell,
+                                                  const ImmersedBoundaryObject &ibObj,
+                                                  const Vector2D &d)
+        :
+        cell_(std::cref(cell)),
+        d_(d)
+{
+    bp_ = ibObj.shape().intersections(Ray2D(cell.centroid(), d_))[0];
+    ip_ = 2. * bp_ - cell.centroid();
+    nw_ = -ibObj.nearestEdgeNormal(bp_);
+
+    ipCells_ = ibObj.grid()->findNearestNode(ip_).cells();
+    bpCells_ = ibObj.grid()->findNearestNode(bp_).cells();
+
+    for (int i = 0; i < 4; ++i)
+    {
+        const Point2D &xi = ipCells_[i].get().centroid();
+        const Point2D &xb = bpCells_[i].get().centroid();
+
+        Aip_.setRow(i, {xi.x * xi.y, xi.x, xi.y, 1.});
+        Abp_.setRow(i, {xb.x * xb.y, xb.x, xb.y, 1.});
+    }
+
+    Aip_.invert();
+    Abp_.invert();
+}
+
+GhostCellImmersedBoundaryObject::Stencil::Stencil(const Cell &cell,
+                                                  const ImmersedBoundaryObject &ibObj)
+        :
+        Stencil(cell, ibObj, -ibObj.nearestEdgeNormal(cell.centroid()))
+{
+
+}
+
+void GhostCellImmersedBoundaryObject::Stencil::initFixedBc()
+{
+    fixedBcCells_ = ipCells_;
+    fixedBcCells_.push_back(std::cref(cell_));
+    auto cd = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * Aip_ / 2.;
+    fixedBcCoeffs_.assign(cd.begin(), cd.end());
+    fixedBcCoeffs_.push_back(0.5);
+}
+
+void GhostCellImmersedBoundaryObject::Stencil::initZeroGradientBc()
+{
+    zeroGradBcCells_ = bpCells_;
+    zeroGradBcCells_.push_back(std::cref(cell_));
+
+    bool bpInStencil = false;
+    for (const Cell &cell: bpCells_)
+        if (cell.id() == cell.id())
+        {
+            bpInStencil = true;
+            break;
+        }
+
+    if (bpInStencil)
+    {
+        auto cn = StaticMatrix<1, 4>({bp_.y * d_.x + bp_.x * d_.y, d_.x, d_.y, 0.}) * Abp_;
+        zeroGradBcCoeffs_.assign(cn.begin(), cn.end());
+        zeroGradBcCoeffs_.push_back(0.);
+    }
+    else
+    {
+        auto cn = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * Abp_;
+        zeroGradBcCoeffs_.assign(cn.begin(), cn.end());
+        zeroGradBcCoeffs_.push_back(-1.);
+    }
+}
+
+Scalar GhostCellImmersedBoundaryObject::Stencil::bpValue(const ScalarFiniteVolumeField &phi) const
+{
+    return (StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.})
+            * Abp_
+            * StaticMatrix<4, 1>(
+                    {
+                            phi(bpCells_[0]),
+                            phi(bpCells_[1]),
+                            phi(bpCells_[2]),
+                            phi(bpCells_[3])
+                    }))(0, 0);
+}
+
+Vector2D GhostCellImmersedBoundaryObject::Stencil::bpValue(const VectorFiniteVolumeField &u) const
+{
+    auto ubp = StaticMatrix<1, 4>({bp_.x * bp_.y, bp_.x, bp_.y, 1.})
+               * Abp_
+               * StaticMatrix<4, 2>(
+                       {
+                               u(bpCells_[0]).x, u(bpCells_[0]).y,
+                               u(bpCells_[1]).x, u(bpCells_[1]).y,
+                               u(bpCells_[2]).x, u(bpCells_[2]).y,
+                               u(bpCells_[3]).x, u(bpCells_[3]).y,
+                       });
+
+    return Vector2D(ubp(0, 0), ubp(0, 1));
+}
+
+Vector2D GhostCellImmersedBoundaryObject::Stencil::bpGrad(const ScalarFiniteVolumeField &phi) const
+{
+    auto x = StaticMatrix<2, 4>(
+            {
+                    bp_.y, 1., 0., 0.,
+                    bp_.x, 0., 1., 0.
+            })
+             * Abp_
+             * StaticMatrix<4, 1>(
+                     {
+                             phi(bpCells_[0]),
+                             phi(bpCells_[1]),
+                             phi(bpCells_[2]),
+                             phi(bpCells_[3]),
+                     });
+
+    return Vector2D(x(0, 0), x(1, 0));
+}
+
+Tensor2D GhostCellImmersedBoundaryObject::Stencil::bpGrad(const VectorFiniteVolumeField &u) const
+{
+    auto x = StaticMatrix<2, 4>(
+            {
+                    bp_.y, 1., 0., 0.,
+                    bp_.x, 0., 1., 0.
+            })
+             * Abp_
+             * StaticMatrix<4, 2>(
+                     {
+                             u(bpCells_[0]).x, u(bpCells_[0]).y,
+                             u(bpCells_[1]).x, u(bpCells_[1]).y,
+                             u(bpCells_[2]).x, u(bpCells_[2]).y,
+                             u(bpCells_[3]).x, u(bpCells_[3]).y
+                     });
+
+    return Tensor2D(x(0, 0), x(0, 1), x(1, 0), x(1, 1));
+}
+
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name,
                                                                  Label id,
                                                                  const ImmersedBoundary &ib,
@@ -41,6 +178,8 @@ void GhostCellImmersedBoundaryObject::updateCells()
         else
             solidCells_.add(cell);
 
+    fluid_->add(solidCells_);
+    solidCells_.clear();
     constructStencils();
 }
 
@@ -53,9 +192,9 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
     switch (bType)
     {
         case FIXED:
-            for (const GhostCellStencil &st: stencils_)
+            for (const Stencil &st: stencils_)
             {
-                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
+                eqn.add(st.cell(), st.fixedBcCells(), st.fixedBcCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
             }
 
@@ -67,17 +206,15 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
 
             break;
         case NORMAL_GRADIENT:
-            for (const GhostCellStencil &st: stencils_)
-            {
-                eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
-                eqn.addSource(st.cell(), -bRefValue);
-            }
+            for (const Stencil &st: stencils_)
+                eqn.add(st.cell(), st.normalGradBcCells(), st.normalGradBcCoeffs());
 
             for (const Cell &cell: solidCells_)
                 eqn.add(cell, cell, 1.);
             break;
 
-        default:throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+        default:
+            throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
     }
 
     return eqn;
@@ -89,20 +226,23 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
-    for (const GhostCellStencil &st: stencils_)
+    for (const Stencil &st: stencils_)
     {
         //- Boundary assembly
         switch (bType)
         {
-            case FIXED:eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
+            case FIXED:
+                eqn.add(st.cell(), st.fixedBcCells(), st.fixedBcCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
-            case ImmersedBoundaryObject::NORMAL_GRADIENT:eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
+            case ImmersedBoundaryObject::NORMAL_GRADIENT:
+                eqn.add(st.cell(), st.normalGradBcCells(), st.normalGradBcCoeffs());
                 eqn.addSource(st.cell(), -bRefValue);
                 break;
 
-            default:throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
+            default:
+                throw Exception("GhostCellImmersedBoundaryObject", "bcs", "invalid boundary type.");
         }
     }
 
@@ -122,13 +262,14 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
     switch (boundaryType(u.name()))
     {
         case FIXED:
-            for (const GhostCellStencil &st: stencils_)
+            for (const Stencil &st: stencils_)
             {
-                eqn.add(st.cell(), st.dirichletCells(), st.dirichletCoeffs());
-                eqn.addSource(st.cell(), -velocity(st.boundaryPoint()));
+                eqn.add(st.cell(), st.fixedBcCells(), st.fixedBcCoeffs());
+                eqn.addSource(st.cell(), -velocity(st.bp()));
             }
             break;
-        case PARTIAL_SLIP:break;
+        case PARTIAL_SLIP:
+            break;
     }
 
     for (const Cell &cell: solidCells_)
@@ -136,93 +277,6 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
         eqn.add(cell, cell, 1.);
         eqn.addSource(cell, -velocity(cell.centroid()));
     }
-
-    return eqn;
-}
-
-Equation<Scalar> GhostCellImmersedBoundaryObject::pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
-{
-    Equation<Scalar> eqn(p);
-
-    for (const GhostCellStencil &st: stencils_)
-        eqn.add(st.cell(), st.neumannCells(), st.neumannCoeffs());
-
-    if (motion_)
-        for (const GhostCellStencil &st: stencils_)
-        {
-            Scalar dUdN = dot(acceleration(st.boundaryPoint()), nearestEdgeNormal(st.boundaryPoint()).unitVec());
-            eqn.addSource(st.cell(), rho * dUdN);
-        }
-
-    for (const Cell &cell: solidCells())
-    {
-        eqn.add(cell, cell, 1.);
-    }
-
-    return eqn;
-}
-
-Equation<Scalar> GhostCellImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
-{
-    Equation<Scalar> eqn(gamma);
-    Scalar minDistSqr = 100;
-    int i = 0;
-
-    for (const GhostCellStencil &st: stencils_)
-    {
-        Vector2D wn = -nearestEdgeNormal(st.boundaryPoint());
-
-        Ray2D r1 = Ray2D(st.cell().centroid(), wn.rotate(M_PI_2 - theta));
-        Ray2D r2 = Ray2D(st.cell().centroid(), wn.rotate(theta - M_PI_2));
-
-        GhostCellStencil m1(st.cell(), shape().intersections(r1)[0], r1.r(), *grid_);
-        GhostCellStencil m2(st.cell(), shape().intersections(r2)[0], r2.r(), *grid_);
-        Scalar g1 = m1.bpValue(gamma);
-        Scalar g2 = m2.bpValue(gamma);
-
-        if (std::abs(g1 - g2) > 1e-8)
-        {
-            if (g2 < g1)
-                std::swap(m1, m2);
-        }
-        else
-        {
-            Vector2D grad1 = m1.bpGrad(gamma);
-            Vector2D grad2 = m2.bpGrad(gamma);
-
-            if (dot(grad1, r1.r()) < 0 && theta > M_PI_2)
-                std::swap(m1, m2);
-        }
-
-
-
-//        if(!(g1 < 0.5 && g2 > 0.5))
-//        {
-//            eqn.add(st.cell(), st.cells(), st.neumannCoeffs());
-//            continue;
-//        }
-
-        if (theta > M_PI_2)
-            eqn.add(m1.cell(), m1.neumannCells(), m1.neumannCoeffs());
-        else
-            eqn.add(m2.cell(), m2.neumannCells(), m2.neumannCoeffs());
-
-//        Scalar distSqr = (st.cell().centroid() - nearestIntersect(st.cell().centroid())).magSqr();
-//
-//        if (distSqr < minDistSqr && st.cell().centroid().y > 0.85)
-//        {
-//            minDistSqr = distSqr;
-//            std::cout << "NEW MIN CELL FOUND.\n"
-//                      << st.cell().centroid() << "\n"
-//                      << m1.boundaryPoint() << "\n"
-//                      << m2.boundaryPoint() << "\n"
-//                      << m1.bpGrad(gamma) << "\n" << m2.bpGrad(gamma) << "\n"
-//                      << g1 << "\n" << g2 << "\n";
-//        }
-    }
-
-    for (const Cell &cell: solidCells_)
-        eqn.add(cell, cell, 1.);
 
     return eqn;
 }
@@ -238,13 +292,13 @@ void GhostCellImmersedBoundaryObject::computeForce(Scalar rho,
     std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses;
     stresses.reserve(stencils_.size());
 
-    for (const GhostCellStencil &st: stencils_)
+    for (const Stencil &st: stencils_)
     {
         stresses.push_back(
                 std::make_tuple(
-                        st.boundaryPoint(),
-                        st.bpValue(p) + rho * dot(st.boundaryPoint(), g),
-                        mu * dot(dot(st.bpGrad(u), st.wallNormal()), st.wallNormal().tangentVec())
+                        st.bp(),
+                        st.bpValue(p) + rho * dot(st.bp(), g),
+                        mu * dot(dot(st.bpGrad(u), st.nw()), st.nw().tangentVec())
                 )
         );
     }
@@ -296,5 +350,9 @@ void GhostCellImmersedBoundaryObject::constructStencils()
 {
     stencils_.clear();
     for (const Cell &cell: ibCells_)
-        stencils_.push_back(GhostCellStencil(cell, *this));
+    {
+        stencils_.push_back(Stencil(cell, *this));
+        stencils_.back().initFixedBc();
+        stencils_.back().initZeroGradientBc();
+    }
 }

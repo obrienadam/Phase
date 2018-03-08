@@ -2,17 +2,16 @@
 #include "ScalarGradient.h"
 #include "Source.h"
 
-FractionalStepIncremental::FractionalStepIncremental(const Input &input,
-                                                     std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepIncremental::FractionalStepIncremental(const Input &input)
         :
-        Solver(input, grid),
+        Solver(input),
         u(addVectorField(input, "u")),
         p(addScalarField(input, "p")),
         gradP(addVectorField(std::make_shared<ScalarGradient>(p))),
         gradU(addTensorField(std::make_shared<JacobianField>(u))),
         uEqn_(input, u, "uEqn"),
         pEqn_(input, p, "pEqn"),
-        fluid_(grid->createCellZone("fluid"))
+        fluid_(grid_->createCellZone("fluid"))
 {
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1.);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1.);
@@ -52,9 +51,9 @@ Scalar FractionalStepIncremental::solve(Scalar timeStep)
 
 //- Protected methods
 
-void FractionalStepIncremental::restartSolution()
+void FractionalStepIncremental::restartSolution(const Input &input)
 {
-    Solver::restartSolution();
+    Solver::restartSolution(input);
     u.interpolateFaces();
     p.interpolateFaces();
 }

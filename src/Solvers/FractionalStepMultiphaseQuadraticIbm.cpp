@@ -4,12 +4,10 @@
 #include "QuadraticIbm.h"
 #include "Source.h"
 #include "TrilinosAmesosSparseMatrixSolver.h"
-#include "GhostCellStencil.h"
 
-FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input,
-                                                                           std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input)
         :
-        FractionalStepMultiphase(input, grid),
+        FractionalStepMultiphase(input),
         gammaCl(addScalarField("gammaCl")),
         gradGammaCl(addVectorField(std::make_shared<ScalarGradient>(gammaCl)))
 {

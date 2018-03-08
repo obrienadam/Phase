@@ -17,14 +17,14 @@ void QuadraticInterpolator::setPoint(const Point2D &pt)
                 cells_[5].get().centroid()
         };
 
-        A_ = inverse<6, 6>({
-                                   x[0].x * x[0].x, x[0].y * x[0].y, x[0].x * x[0].y, x[0].x, x[0].y, 1.,
-                                   x[1].x * x[1].x, x[1].y * x[1].y, x[1].x * x[1].y, x[1].x, x[1].y, 1.,
-                                   x[2].x * x[2].x, x[2].y * x[2].y, x[2].x * x[2].y, x[2].x, x[2].y, 1.,
-                                   x[3].x * x[3].x, x[3].y * x[3].y, x[3].x * x[3].y, x[3].x, x[3].y, 1.,
-                                   x[4].x * x[4].x, x[4].y * x[4].y, x[4].x * x[4].y, x[4].x, x[4].y, 1.,
-                                   x[5].x * x[5].x, x[5].y * x[5].y, x[5].x * x[5].y, x[5].x, x[5].y, 1.,
-                           });
+        A_ = inverse<6>({
+                                x[0].x * x[0].x, x[0].y * x[0].y, x[0].x * x[0].y, x[0].x, x[0].y, 1.,
+                                x[1].x * x[1].x, x[1].y * x[1].y, x[1].x * x[1].y, x[1].x, x[1].y, 1.,
+                                x[2].x * x[2].x, x[2].y * x[2].y, x[2].x * x[2].y, x[2].x, x[2].y, 1.,
+                                x[3].x * x[3].x, x[3].y * x[3].y, x[3].x * x[3].y, x[3].x, x[3].y, 1.,
+                                x[4].x * x[4].x, x[4].y * x[4].y, x[4].x * x[4].y, x[4].x, x[4].y, 1.,
+                                x[5].x * x[5].x, x[5].y * x[5].y, x[5].x * x[5].y, x[5].x, x[5].y, 1.,
+                        });
     }
 }
 

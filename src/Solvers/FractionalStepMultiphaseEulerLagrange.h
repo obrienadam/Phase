@@ -6,9 +6,7 @@
 class FractionalStepMultiphaseEulerLagrange : public FractionalStepEulerLagrange
 {
 public:
-
-    FractionalStepMultiphaseEulerLagrange(const Input &input,
-                                          std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    using FractionalStepEulerLagrange::FractionalStepEulerLagrange;
 };
 
 

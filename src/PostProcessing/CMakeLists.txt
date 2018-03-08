@@ -4,8 +4,6 @@ set(HEADERS Viewer.h
         PostProcessingObject.h
         VolumeIntegrator.h
         ReynoldsNumber.h
-        GhostCellImmersedBoundaryObjectForceIntegrator.h
-        GhostCellImmersedBoundaryObjectContactLineTracker.h
         ImmersedBoundaryObjectContactLineTracker.h
         ForceIntegrator.h
         IbTracker.h)
@@ -16,8 +14,6 @@ set(SOURCE Viewer.cpp
         PostProcessingObject.cpp
         VolumeIntegrator.cpp
         ReynoldsNumber.cpp
-        GhostCellImmersedBoundaryObjectForceIntegrator.cpp
-        GhostCellImmersedBoundaryObjectContactLineTracker.cpp
         ImmersedBoundaryObjectContactLineTracker.cpp
         ForceIntegrator.cpp
         IbTracker.cpp)

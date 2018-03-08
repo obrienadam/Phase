@@ -3,7 +3,7 @@
 
 #include "Shape2D.h"
 #include "Equation.h"
-#include "Motion.h"
+#include "Motion/Motion.h"
 
 class ImmersedBoundary;
 class SurfaceTensionForce;
@@ -100,6 +100,9 @@ public:
 
     Point2D nearestIntersect(const Point2D &pt) const
     { return shape_->nearestIntersect(pt); }
+
+    Point2D nearestIntersect(const Ray2D& ray) const
+    { return shape_->intersections(ray)[0]; }
 
     Vector2D nearestEdgeNormal(const Point2D &pt) const;
 
@@ -218,12 +221,6 @@ public:
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const = 0;
 
     virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
-
-    virtual Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const
-    { throw Exception("ImmersedBoundaryObject", "pressureBcs", "not implemented."); }
-
-    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
-    { return bcs(gamma); }
 
     void clearFreshCells();
 

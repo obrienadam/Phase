@@ -79,8 +79,6 @@ public:
 
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    Equation<Scalar> pressureBcs(Scalar rho, ScalarFiniteVolumeField &p) const;
-
     void clearFreshCells();
 
     bool isIbCell(const Cell &cell) const;

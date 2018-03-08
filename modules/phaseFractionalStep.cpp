@@ -1,10 +1,8 @@
 #include <iostream>
 
 #include "Input.h"
-#include "Communicator.h"
 #include "CommandLine.h"
-#include "ConstructGrid.h"
-#include "FractionalStep.h"
+#include "SolverFactory.h"
 #include "CgnsViewer.h"
 #include "RunControl.h"
 
@@ -19,13 +17,12 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> grid = constructGrid(input, std::make_shared<Communicator>());
+    shared_ptr<Solver> solver = SolverFactory::create(SolverFactory::FRACTIONAL_STEP, input);
 
-    FractionalStep solver(input, grid);
-    CgnsViewer viewer(input, solver);
-
+    CgnsViewer viewer(input, *solver);
     RunControl runControl;
-    runControl.run(input, solver, viewer);
+
+    runControl.run(input, *solver, viewer);
 
     Communicator::finalize();
 

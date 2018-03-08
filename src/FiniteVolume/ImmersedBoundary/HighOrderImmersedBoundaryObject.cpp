@@ -1,5 +1,4 @@
 #include "HighOrderImmersedBoundaryObject.h"
-#include "HighOrderStencil.h"
 #include "TrilinosAmesosSparseMatrixSolver.h"
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
@@ -14,22 +13,20 @@ HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::stri
 
 void HighOrderImmersedBoundaryObject::updateCells()
 {
-    clear();
-    auto items = fluid_->itemsCoveredBy(*shape_);
-    cells_.add(items.begin(), items.end());
-    solidCells_.add(cells_);
+    fluid_->add(ibCells_);
+    ibCells_.clear();
 
-    for (const Cell &cell: solidCells_)
-    {
-        for (const CellLink &nb: cell.neighbours())
+    auto items = fluid_->itemsWithin(*shape_);
+
+    for (const Cell &cell: items)
+        for (const InteriorLink &nb: cell.neighbours())
         {
-            if (!isInIb(nb.cell()))
+            if (!isInIb(nb.cell().centroid()))
             {
                 cells_.add(nb.cell());
                 ibCells_.add(nb.cell());
             }
         }
-    }
 
     //constructDirichletCoeffs();
     //constructNeumannCoeffs();

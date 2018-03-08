@@ -2,7 +2,6 @@
 
 #include "Input.h"
 #include "CommandLine.h"
-#include "ConstructGrid.h"
 #include "CgnsViewer.h"
 #include "Poisson.h"
 #include "Time.h"
@@ -18,9 +17,7 @@ int main(int argc, char *argv[])
 
     input.parseInputFile();
 
-    shared_ptr<FiniteVolumeGrid2D> grid = constructGrid(input, std::make_shared<Communicator>());
-
-    Poisson solver(input, grid);
+    Poisson solver(input);
     CgnsViewer viewer(input, solver);
 
     Time time;

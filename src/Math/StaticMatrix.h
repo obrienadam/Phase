@@ -26,7 +26,12 @@ public:
 
     StaticMatrix()
     {
-        std::fill(vals_, vals_ + M * N, 0.);
+        std::fill(begin(), end(), 0.);
+    }
+
+    StaticMatrix(Scalar val)
+    {
+        std::fill(begin(), end(), val);
     }
 
     StaticMatrix(const std::initializer_list<Scalar> &vals)
@@ -43,6 +48,12 @@ public:
     Scalar *data()
     { return vals_; }
 
+    Scalar *begin()
+    { return vals_; }
+
+    Scalar *end()
+    { return vals_ + M * N; }
+
     const Scalar *begin() const
     { return vals_; }
 
@@ -52,6 +63,11 @@ public:
     const Scalar *data() const
     { return vals_; }
 
+    void setRow(int i, const std::initializer_list<Scalar> &vals)
+    {
+        std::copy(vals.begin(), vals.begin() + N, vals_ + i * N);
+    }
+
     Scalar &operator()(int i, int j)
     { return vals_[i * N + j]; }
 
@@ -60,12 +76,12 @@ public:
 
     StaticMatrix<N, M> transpose() const
     {
-        StaticMatrix<N, M> matT;
+        StaticMatrix<N, M> trans;
         for (int i = 0; i < M; ++i)
             for (int j = 0; j < N; ++j)
-                matT(j, i) = vals_[i * N + j];
+                trans(j, i) = vals_[i * N + j];
 
-        return matT;
+        return trans;
     };
 
     StaticMatrix<M, 1> diag() const
@@ -79,6 +95,7 @@ public:
 
     StaticMatrix<M, N> &invert()
     {
+        static_assert(M == N, "Matrix must be square.");
         lapack_int info1 = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, M, N, vals_, N, ipiv_);
         lapack_int info2 = LAPACKE_dgetri(LAPACK_ROW_MAJOR, M, vals_, N, ipiv_);
 
@@ -126,8 +143,8 @@ StaticMatrix<M, M> eye()
     return I;
 };
 
-template<int M, int N>
-StaticMatrix<M, N> inverse(StaticMatrix<M, N> A)
+template<int M>
+StaticMatrix<M, M> inverse(StaticMatrix<M, M> A)
 {
     A.invert();
     return A;
@@ -147,8 +164,8 @@ StaticMatrix<N, M> pseudoInverse(StaticMatrix<M, N> A)
     return pInv;
 }
 
-template<int M, int N, int K>
-StaticMatrix<M, K> solve(StaticMatrix<M, N> A, StaticMatrix<M, K> b)
+template<int M, int K>
+StaticMatrix<M, K> solve(StaticMatrix<M, M> A, StaticMatrix<M, K> b)
 {
     A.solve(b);
     return b;

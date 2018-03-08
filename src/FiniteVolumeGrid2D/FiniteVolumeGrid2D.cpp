@@ -176,7 +176,8 @@ std::vector<Scalar> FiniteVolumeGrid2D::xCoords() const
 
     std::transform(nodes_.begin(), nodes_.end(),
                    xCoords.begin(),
-                   [](const Node &node) { return node.x; });
+                   [](const Node &node)
+                   { return node.x; });
 
     return xCoords;
 }
@@ -187,7 +188,8 @@ std::vector<Scalar> FiniteVolumeGrid2D::yCoords() const
 
     std::transform(nodes_.begin(), nodes_.end(),
                    yCoords.begin(),
-                   [](const Node &node) { return node.y; });
+                   [](const Node &node)
+                   { return node.y; });
 
     return yCoords;
 }
@@ -201,9 +203,11 @@ std::vector<int> FiniteVolumeGrid2D::elementList() const
     {
         switch (cell.nodes().size())
         {
-            case 3:elems.push_back(CGNS_ENUMV(TRI_3));
+            case 3:
+                elems.push_back(CGNS_ENUMV(TRI_3));
                 break;
-            case 4:elems.push_back(CGNS_ENUMV(QUAD_4));
+            case 4:
+                elems.push_back(CGNS_ENUMV(QUAD_4));
                 break;
         }
 
@@ -235,7 +239,7 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
     CellGroup globalGroup(localGroup);
     std::vector<int> isInGlobalGroup(cells_.size());
 
-    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell)->int
+    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell) -> int
     {
         return (int) globalGroup.isInGroup(cell);
     });
@@ -386,7 +390,7 @@ void FiniteVolumeGrid2D::partition(const Input &input, std::shared_ptr<Communica
 {
     using namespace std;
 
-    comm_ = comm;
+    comm_ = comm ? comm : comm_;
     if (comm_->nProcs() == 1) // no need to perform a partition
         return;
 

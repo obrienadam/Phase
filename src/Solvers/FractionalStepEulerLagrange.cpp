@@ -2,10 +2,9 @@
 #include "Source.h"
 #include "EulerLagrangeImmersedBoundaryObject.h"
 
-FractionalStepEulerLagrange::FractionalStepEulerLagrange(const Input &input,
-                                                         std::shared_ptr<FiniteVolumeGrid2D> &grid)
+FractionalStepEulerLagrange::FractionalStepEulerLagrange(const Input &input)
         :
-        FractionalStep(input, grid)
+        FractionalStep(input)
 {
 
 }

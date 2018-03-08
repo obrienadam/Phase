@@ -10,8 +10,7 @@ class FractionalStep: public Solver
 {
 public:
 
-    FractionalStep(const Input& input,
-                         std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    FractionalStep(const Input& input);
 
     void initialize();
 
