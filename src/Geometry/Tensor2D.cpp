@@ -83,6 +83,14 @@ Tensor2D operator-(Tensor2D lhs, const Tensor2D &rhs)
     return lhs -= rhs;
 }
 
+Tensor2D operator-(const Tensor2D &tau)
+{
+    return Tensor2D(
+            -tau.xx, -tau.xy,
+            -tau.yx, -tau.yy
+    );
+}
+
 Tensor2D operator*(Tensor2D lhs, Scalar a)
 {
     return lhs *= a;

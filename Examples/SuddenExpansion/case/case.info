@@ -4,16 +4,10 @@ CaseName SuddenExpansion2D
 
 Solver
 {
-	timeDependent Off
-	maxIterations 100
+	type "fractional step incremental"
 	timeStep 0.1
 	maxTime 10
 	maxCo 0.8
-
-	numInnerIterations 1
-	numPressureCorrections 1
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.7
 }
 
 LinearAlgebra

@@ -8,12 +8,12 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &
         coeffs_(2 * field.grid()->localActiveCells().size()),
         sources_(2 * field.grid()->localActiveCells().size(), 0.)
 {
-    std::for_each(coeffs_.begin(), coeffs_.end(), [](Row& row) {
+    std::for_each(coeffs_.begin(), coeffs_.end(), [](Row &row)
+    {
         row.reserve(5);
     });
 }
 
-template<>
 template<>
 void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
 {
@@ -26,7 +26,6 @@ void Equation<Vector2D>::set(const Cell &cell, const Cell &nb, Scalar val)
              val);
 }
 
-template<>
 template<>
 void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 {
@@ -41,7 +40,7 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Scalar val)
 
 template<>
 template<>
-void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Vector2D val)
+void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
     addValue(field_.indexMap()->local(cell, 0),
              field_.indexMap()->global(nb, 0),
@@ -54,15 +53,35 @@ void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, Vector2D val)
 
 template<>
 template<>
+void Equation<Vector2D>::add(const Cell &cell, const Cell &nb, const Tensor2D &val)
+{
+    addValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 0),
+             val.xx);
+
+    addValue(field_.indexMap()->local(cell, 0),
+             field_.indexMap()->global(nb, 1),
+             val.xy);
+
+    addValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 0),
+             val.yx);
+
+    addValue(field_.indexMap()->local(cell, 1),
+             field_.indexMap()->global(nb, 1),
+             val.yy);
+}
+
+template<>
 void Equation<Vector2D>::addCoupling(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
     addValue(field_.indexMap()->local(cell, 0),
              field_.indexMap()->global(nb, 1),
-             val.x);
+             val.y);
 
     addValue(field_.indexMap()->local(cell, 1),
              field_.indexMap()->global(nb, 0),
-             val.y);
+             val.x);
 }
 
 template<>
@@ -101,17 +120,41 @@ void Equation<Vector2D>::remove(const Cell &cell)
 }
 
 template<>
-void Equation<Vector2D>::addSource(const Cell &cell, Vector2D u)
+void Equation<Vector2D>::addSource(const Cell &cell, Scalar val)
+{
+    sources_(field_.indexMap()->local(cell, 0)) += val;
+    sources_(field_.indexMap()->local(cell, 1)) += val;
+}
+
+template<>
+void Equation<Vector2D>::setSource(const Cell &cell, Scalar val)
+{
+    sources_(field_.indexMap()->local(cell, 0)) = val;
+    sources_(field_.indexMap()->local(cell, 1)) = val;
+}
+
+template<>
+template<>
+void Equation<Vector2D>::addSource(const Cell &cell, const Vector2D &u)
 {
     sources_(field_.indexMap()->local(cell, 0)) += u.x;
     sources_(field_.indexMap()->local(cell, 1)) += u.y;
 }
 
 template<>
-void Equation<Vector2D>::setSource(const Cell &cell, Vector2D u)
+template<>
+void Equation<Vector2D>::setSource(const Cell &cell, const Vector2D &u)
 {
     sources_(field_.indexMap()->local(cell, 0)) = u.x;
     sources_(field_.indexMap()->local(cell, 1)) = u.y;
+}
+
+template<>
+template<>
+void Equation<Vector2D>::addSource(const Cell &cell, const Tensor2D &tau)
+{
+    sources_(field_.indexMap()->local(cell, 0)) += tau.xx + tau.xy;
+    sources_(field_.indexMap()->local(cell, 1)) += tau.yx + tau.yy;
 }
 
 template<>

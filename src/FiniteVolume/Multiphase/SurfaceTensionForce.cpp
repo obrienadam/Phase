@@ -234,8 +234,8 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
                     Vector2D t2 = dot(cl2, nw.tangentVec()) * nw.tangentVec();
 
                     //- m1 is more hydrophobic
-                    GhostCellImmersedBoundaryObject::Stencil m1(cell, *ibObj, cl1);
-                    GhostCellImmersedBoundaryObject::Stencil m2(cell, *ibObj, cl2);
+                    GhostCellImmersedBoundaryObject::ZeroGradientStencil m1(cell, *ibObj, cl1);
+                    GhostCellImmersedBoundaryObject::ZeroGradientStencil m2(cell, *ibObj, cl2);
                     Vector2D grad = BilinearInterpolator(grid_, ibObj->nearestIntersect(cell.centroid())).grad(gamma);
 
                     if (m2.bpValue(gamma) < m1.bpValue(gamma))
@@ -246,13 +246,13 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
 
                     if (theta > M_PI_2)
                     {
-                        m1.initZeroGradientBc();
-                        eqn.add(m1.cell(), m1.normalGradBcCells(), m1.normalGradBcCoeffs());
+                        m1.init();
+                        eqn.add(m1.cell(), m1.cells(), m1.coeffs());
                     }
                     else
                     {
-                        m2.initZeroGradientBc();
-                        eqn.add(m2.cell(), m2.normalGradBcCells(), m2.normalGradBcCoeffs());
+                        m2.init();
+                        eqn.add(m2.cell(), m2.cells(), m2.coeffs());
                     }
                 }
 

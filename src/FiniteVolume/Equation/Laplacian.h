@@ -5,7 +5,7 @@
 
 namespace fv
 {
-    template<typename T>
+    template<class T>
     Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, const CellGroup &cells, Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
@@ -45,7 +45,7 @@ namespace fv
         return eqn;
     }
 
-    template<typename T>
+    template<class T>
     Equation<T> laplacian(const ScalarFiniteVolumeField &gamma,
                           FiniteVolumeField<T> &phi,
                           const CellGroup &cells,
@@ -91,7 +91,7 @@ namespace fv
         return eqn;
     }
 
-    template<typename T>
+    template<class T>
     Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
         return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
@@ -102,6 +102,10 @@ namespace fv
     {
         return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
     }
+
+    //- Specialization prototypes
+//    template<>
+//    Equation<Vector2D> laplacian(Scalar gamma, FiniteVolumeField<Vector2D> &phi, const CellGroup &cells, Scalar theta);
 }
 
 #endif

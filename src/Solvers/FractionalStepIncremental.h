@@ -4,7 +4,6 @@
 #include <fstream>
 
 #include "Solver.h"
-#include "FiniteVolumeEquation.h"
 #include "ScalarGradient.h"
 #include "JacobianField.h"
 

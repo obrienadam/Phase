@@ -2,7 +2,6 @@
 #define SEO_MITTAL_H
 
 #include "ImmersedBoundary.h"
-#include "FiniteVolumeEquation.h"
 
 namespace seo
 {

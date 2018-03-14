@@ -172,6 +172,15 @@ StaticMatrix<M, K> solve(StaticMatrix<M, M> A, StaticMatrix<M, K> b)
 }
 
 template<int M, int N>
+StaticMatrix<M, N> operator-(StaticMatrix<M, N> A)
+{
+    std::for_each(A.begin(), A.end(), [](Scalar &a) {
+        a = -a;
+    });
+    return A;
+}
+
+template<int M, int N>
 StaticMatrix<M, N> operator*(Scalar lhs, StaticMatrix<M, N> A)
 {
     A *= lhs;

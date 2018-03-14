@@ -1,7 +1,6 @@
-#ifndef QUADRATIC_FACE_IBM_H
-#define QUADRATIC_FACE_IBM_H
+#ifndef QUADRATIC_IBM_H
+#define QUADRATIC_IBM_H
 
-#include "FiniteVolumeEquation.h"
 #include "ImmersedBoundary.h"
 
 namespace qibm

@@ -6,7 +6,9 @@
 class FractionalStepDirectForcing : public FractionalStep
 {
 public:
-    using FractionalStep::FractionalStep;
+    FractionalStepDirectForcing(const Input &input);
+
+    VectorFiniteVolumeField &fb;
 
 protected:
 

@@ -1,4 +1,7 @@
 #include "FractionalStepEulerLagrange.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
 #include "EulerLagrangeImmersedBoundaryObject.h"
 

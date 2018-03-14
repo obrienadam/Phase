@@ -73,7 +73,9 @@ namespace fv
                 Scalar flux = theta * dot(u(nb.face()), nb.outwardNorm());
                 Scalar flux0 = (1. - theta) * dot(u0(nb.face()), nb.outwardNorm());
 
-                Scalar g = nb.cell().volume() / (cell.volume() + nb.cell().volume());
+                Scalar lc = (nb.face().centroid() - cell.centroid()).mag();
+                Scalar ln = (nb.face().centroid() - nb.cell().centroid()).mag();
+                Scalar g = ln / (lc + ln);
 
                 eqn.add(cell, cell, g * flux);
                 eqn.add(cell, nb.cell(), (1. - g) * flux);

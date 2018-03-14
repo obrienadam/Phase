@@ -14,7 +14,7 @@ public:
 
     enum Type
     {
-        GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER, EULER_LAGRANGE
+        GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER, EULER_LAGRANGE, DIRECT_FORCING
     };
 
     enum BoundaryType

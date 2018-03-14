@@ -2,7 +2,6 @@
 #define FRACTIONAL_STEP_H
 
 #include "Solver.h"
-#include "FiniteVolumeEquation.h"
 #include "ScalarGradient.h"
 #include "JacobianField.h"
 

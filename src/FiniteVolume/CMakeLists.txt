@@ -6,7 +6,6 @@ set(HEADERS
         Discretization/Plic.h
         Equation/IndexMap.h
         Equation/Equation.h
-        Equation/FiniteVolumeEquation.h
         Equation/TimeDerivative.h
         Equation/Divergence.h
         Equation/Laplacian.h

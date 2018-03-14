@@ -1,5 +1,7 @@
 #include "FractionalStepIncremental.h"
-#include "ScalarGradient.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
 
 FractionalStepIncremental::FractionalStepIncremental(const Input &input)
@@ -61,6 +63,7 @@ void FractionalStepIncremental::restartSolution(const Input &input)
 Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
+
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
 
@@ -98,14 +101,15 @@ Scalar FractionalStepIncremental::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepIncremental::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_->bcs(p) == src::div(u) + src::laplacian(timeStep / rho_, p));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p, grid_->localActiveCells())
+             == src::div(u + timeStep / rho_ * gradP, grid_->localActiveCells()));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
     p.setBoundaryFaces();
 
     gradP.savePreviousTimeStep(timeStep, 1);
-    gradP.compute(fluid_);
+    gradP.compute(grid_->localActiveCells());
     grid_->sendMessages(gradP);
 
     return error;
@@ -115,7 +119,7 @@ void FractionalStepIncremental::correctVelocity(Scalar timeStep)
 {
     const VectorFiniteVolumeField &gradP0 = gradP.oldField(0);
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid_->localActiveCells())
         u(cell) -= timeStep / rho_ * (gradP(cell) - gradP0(cell));
 
     grid_->sendMessages(u);

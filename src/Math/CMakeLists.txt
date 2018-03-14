@@ -23,7 +23,7 @@ add_library(Math ${HEADERS} ${SOURCES})
 target_link_libraries(Math Communicator
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
-        lapacke
+        #lapacke
         ${Trilinos_LIBRARIES}
         ${Trilinos_TPL_LIBRARIES})
 

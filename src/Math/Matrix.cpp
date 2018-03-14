@@ -112,7 +112,7 @@ Matrix &Matrix::solve(Matrix &b)
         LAPACKE_dgesv(LAPACK_ROW_MAJOR, m_, b.n_, data(), n_, ipiv_.data(), b.data(), b.n_);
     else
     {
-        LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m_, n_, b.n_, data(), n_, b.data(), b.m_);
+        LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m_, n_, b.n_, data(), n_, b.data(), b.n_);
         b.m_ = n_; // A bit hackish, but resizes b apropriately. Only works so long as the data format is row major
     }
 

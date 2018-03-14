@@ -13,12 +13,13 @@ HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::stri
 
 void HighOrderImmersedBoundaryObject::updateCells()
 {
-    fluid_->add(ibCells_);
-    ibCells_.clear();
+    clear();
 
     auto items = fluid_->itemsWithin(*shape_);
+    cells_.add(items.begin(), items.end());
+    solidCells_.add(items.begin(), items.end());
 
-    for (const Cell &cell: items)
+    for (const Cell &cell: solidCells_)
         for (const InteriorLink &nb: cell.neighbours())
         {
             if (!isInIb(nb.cell().centroid()))

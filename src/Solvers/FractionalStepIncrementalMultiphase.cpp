@@ -2,6 +2,9 @@
 #include "FractionalStepIncrementalMultiphase.h"
 #include "Cicsam.h"
 #include "Hric.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
 
 FractionalStepIncrementalMultiphase::FractionalStepIncrementalMultiphase(const Input &input)

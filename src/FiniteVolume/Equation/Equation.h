@@ -26,16 +26,20 @@ public:
              FiniteVolumeField<T> &field,
              const std::string &name);
 
-    Equation(const Equation<T>& eqn) = default;
+    Equation(const Equation<T> &eqn) = default;
 
     Equation(Equation<T> &&eqn) = default;
 
     //- Add/set/get coefficients
-    template<typename T2>
-    void set(const Cell &cell, const Cell &nb, T2 val);
+    void set(const Cell &cell, const Cell &nb, Scalar val);
 
-    template<typename T2>
-    void add(const Cell &cell, const Cell &nb, T2 val);
+    void add(const Cell &cell, const Cell &nb, Scalar val);
+
+    template<class T2>
+    void set(const Cell &cell, const Cell &nb, const T2 &val);
+
+    template<class T2>
+    void add(const Cell &cell, const Cell &nb, const T2 &val);
 
     template<typename cell_iterator, typename coeff_iterator>
     void add(const Cell &cell, cell_iterator begin, cell_iterator end, coeff_iterator coeffs)
@@ -44,21 +48,17 @@ public:
             add(cell, *itr, *coeffs);
     };
 
-    template<typename T2>
-    void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::vector<T2> &vals)
+    void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::vector<Scalar> &vals)
     {
         add(cell, nbs.begin(), nbs.end(), vals.begin());
     }
 
-    template<typename T2>
-    void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::valarray<T2> &vals)
+    void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::valarray<Scalar> &vals)
     {
         add(cell, nbs.begin(), nbs.end(), std::begin(vals));
     }
 
-    template<typename T2>
-    void addCoupling(const Cell &cell, const Cell &nb, T2 val)
-    { throw Exception("Equation<T>", "addCoupling", "not implemented for specified equation type."); }
+    void addCoupling(const Cell &cell, const Cell &nb, const T &val);
 
     T get(const Cell &cell, const Cell &nb);
 
@@ -69,9 +69,15 @@ public:
     { return coeffs_; }
 
     //- Set/get source vectors
-    void addSource(const Cell &cell, T val);
+    void addSource(const Cell &cell, Scalar val);
 
-    void setSource(const Cell &cell, T val);
+    void setSource(const Cell &cell, Scalar val);
+
+    template<class T2>
+    void addSource(const Cell& cell, const T2 &val);
+
+    template<class T2>
+    void setSource(const Cell& cell, const T2 &val);
 
     const Vector &sources() const
     { return sources_; }

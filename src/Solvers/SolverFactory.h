@@ -10,15 +10,18 @@ public:
     {
         POISSON,
         FRACTIONAL_STEP,
+        FRACTIONAL_STEP_INCREMENTAL,
         FRACTIONAL_STEP_QUADRATIC_IBM,
         FRACTIONAL_STEP_EULER_LAGRANGE,
+        FRACTIONAL_STEP_DIRECT_FORCING,
         FRACTIONAL_STEP_MULTIPHASE,
+        FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE
     };
 
-    static std::shared_ptr<Solver> create(std::string type,
+    static std::shared_ptr<Solver> create(SolverType type,
                                           const Input &input);
 
-    static std::shared_ptr<Solver> create(SolverType type,
+    static std::shared_ptr<Solver> create(std::string type,
                                           const Input &input);
 
     static std::shared_ptr<Solver> create(const Input &input);

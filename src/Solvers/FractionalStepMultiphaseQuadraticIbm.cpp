@@ -1,9 +1,11 @@
-#include <Algorithm.h>
+#include "Algorithm.h"
 #include "FractionalStepMultiphaseQuadraticIbm.h"
 #include "Cicsam.h"
 #include "QuadraticIbm.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
-#include "TrilinosAmesosSparseMatrixSolver.h"
 
 FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input)
         :

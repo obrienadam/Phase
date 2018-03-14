@@ -1,6 +1,8 @@
 #include "FractionalStep.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
-#include "LeeYou.h"
 
 FractionalStep::FractionalStep(const Input &input)
         :
@@ -95,11 +97,11 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
     //grid_->sendMessages(gradU);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
+             == fv::laplacian(mu_ / rho_, u, fluid_, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid_->localActiveCells())
         u(cell) += timeStep / rho_ * gradP(cell);
 
     //for (const Cell &cell: fluid_)

@@ -11,6 +11,9 @@ target_link_libraries(phasePoisson Solvers)
 #add_executable(phaseCoupled phaseCoupled.cpp)
 #target_link_libraries(phaseCoupled Solvers)
 
+add_executable(phase phase.cpp)
+target_link_libraries(phase Solvers)
+
 add_executable(phaseFractionalStep phaseFractionalStep.cpp)
 target_link_libraries(phaseFractionalStep Solvers)
 

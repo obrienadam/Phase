@@ -26,7 +26,6 @@ public:
     Tensor2D &operator*=(Scalar a);
 
     Tensor2D &operator/=(Scalar a);
-
 };
 
 std::ostream &operator<<(std::ostream &os, const Tensor2D &tau);
@@ -40,6 +39,8 @@ Tensor2D outer(const Vector2D &u, const Vector2D &v);
 Tensor2D operator+(Tensor2D lhs, const Tensor2D &rhs);
 
 Tensor2D operator-(Tensor2D lhs, const Tensor2D &rhs);
+
+Tensor2D operator-(const Tensor2D &tau);
 
 Tensor2D operator*(Tensor2D lhs, Scalar a);
 

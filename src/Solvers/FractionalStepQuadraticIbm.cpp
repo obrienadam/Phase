@@ -1,5 +1,8 @@
 #include "FractionalStepQuadraticIbm.h"
 #include "QuadraticIbm.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
 
 FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input)
@@ -20,8 +23,8 @@ FractionalStepQuadraticIbm::FractionalStepQuadraticIbm(const Input &input)
 Scalar FractionalStepQuadraticIbm::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, *ib_, 1.) + ib_->velocityBcs(u)
-             == qibm::laplacian(mu_ / rho_, u, *ib_, 1.) - src::src(gradP / rho_, fluid_));
+    uEqn_ = (fv::ddt(u, timeStep) + qibm::div(u, u, *ib_, 0.5) + ib_->velocityBcs(u)
+             == qibm::laplacian(mu_ / rho_, u, *ib_, 0.5) - src::src(gradP / rho_, fluid_));
 
     Scalar error = uEqn_.solve();
 

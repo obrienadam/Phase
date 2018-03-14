@@ -65,6 +65,6 @@ Viewer
 
 System
 {
-  fileWriteFrequency 50
+  fileWriteFrequency 1
   consoleOutputFrequency 1
 }

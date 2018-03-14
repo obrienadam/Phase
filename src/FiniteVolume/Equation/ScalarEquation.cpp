@@ -8,19 +8,18 @@ Equation<Scalar>::Equation(ScalarFiniteVolumeField &field, const std::string &na
         coeffs_(field.grid()->localActiveCells().size()),
         sources_(field.grid()->localActiveCells().size(), 0.)
 {
-    std::for_each(coeffs_.begin(), coeffs_.end(), [](Row &row) {
+    std::for_each(coeffs_.begin(), coeffs_.end(), [](Row &row)
+    {
         row.reserve(5);
     });
 }
 
-template<>
 template<>
 void Equation<Scalar>::set(const Cell &cell, const Cell &nb, Scalar val)
 {
     setValue(field_.indexMap()->local(cell, 0), field_.indexMap()->global(nb, 0), val);
 }
 
-template<>
 template<>
 void Equation<Scalar>::add(const Cell &cell, const Cell &nb, Scalar val)
 {
@@ -40,7 +39,7 @@ Scalar Equation<Scalar>::get(const Cell &cell, const Cell &nb)
 }
 
 template<>
-void Equation<Scalar>::remove(const Cell& cell)
+void Equation<Scalar>::remove(const Cell &cell)
 {
     coeffs_[field_.indexMap()->local(cell, 0)].clear();
     sources_(field_.indexMap()->local(cell, 0)) = 0.;
@@ -90,7 +89,6 @@ Equation<Scalar> &Equation<Scalar>::operator-=(const ScalarFiniteVolumeField &rh
 }
 
 //- Private
-
 template<>
 Size Equation<Scalar>::getRank() const
 {

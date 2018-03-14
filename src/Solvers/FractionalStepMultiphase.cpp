@@ -1,9 +1,12 @@
+#include "Algorithm.h"
 #include "FractionalStepMultiphase.h"
+#include "TimeDerivative.h"
+#include "Divergence.h"
+#include "Laplacian.h"
 #include "Source.h"
 #include "Cicsam.h"
 #include "Hric.h"
 #include "SeoMittal.h"
-#include "Algorithm.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const Input &input)
         :

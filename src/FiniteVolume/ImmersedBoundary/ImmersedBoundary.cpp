@@ -6,6 +6,7 @@
 #include "GhostCellImmersedBoundaryObject.h"
 #include "HighOrderImmersedBoundaryObject.h"
 #include "EulerLagrangeImmersedBoundaryObject.h"
+#include "DirectForcingImmersedBoundaryObject.h"
 #include "TranslatingMotion.h"
 #include "OscillatingMotion.h"
 #include "SolidBodyMotion.h"
@@ -39,6 +40,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                 ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, *this, grid_);
             else if (method == "euler-lagrange")
                 ibObject = std::make_shared<EulerLagrangeImmersedBoundaryObject>(ibObjectInput.first, id++, *this,
+                                                                                 grid_);
+            else if (method == "direct-forcing")
+                ibObject = std::make_shared<DirectForcingImmersedBoundaryObject>(ibObjectInput.first, id++, *this,
                                                                                  grid_);
             else
                 throw Exception("ImmersedBoundary", "ImmersedBoundary",
