@@ -15,6 +15,7 @@ namespace fv
         Equation<T> eqn(phi);
 
         const VectorFiniteVolumeField &u0 = u.oldField(0);
+        const FiniteVolumeField<T> &phi0 = phi.oldField(0);
 
         for (const Cell &cell: cells)
         {
@@ -25,8 +26,8 @@ namespace fv
 
                 eqn.add(cell, cell, theta * std::max(flux, 0.));
                 eqn.add(cell, nb.cell(), theta * std::min(flux, 0.));
-                eqn.addSource(cell, (1. - theta) * std::max(flux0, 0.) * phi(cell));
-                eqn.addSource(cell, (1. - theta) * std::min(flux0, 0.) * phi(nb.cell()));
+                eqn.addSource(cell, (1. - theta) * std::max(flux0, 0.) * phi0(cell));
+                eqn.addSource(cell, (1. - theta) * std::min(flux0, 0.) * phi0(nb.cell()));
             }
 
             for (const BoundaryLink &bd: cell.boundaries())
@@ -38,17 +39,19 @@ namespace fv
                 {
                     case FiniteVolumeField<T>::FIXED:
                         eqn.addSource(cell, theta * flux * phi(bd.face()));
-                        eqn.addSource(cell, (1. - theta) * flux0 * phi(bd.face()));
+                        eqn.addSource(cell, (1. - theta) * flux0 * phi0(bd.face()));
                         break;
 
                     case FiniteVolumeField<T>::NORMAL_GRADIENT:
                         eqn.add(cell, cell, theta * flux);
-                        eqn.add(cell, cell, (1. - theta) * flux);
+                        eqn.addSource(cell, (1. - theta) * flux0 * phi0(cell));
                         break;
 
-                    case FiniteVolumeField<T>::SYMMETRY:break;
+                    case FiniteVolumeField<T>::SYMMETRY:
+                        break;
 
-                    default:throw Exception("fv", "div<T>", "unrecognized or unspecified boundary type.");
+                    default:
+                        throw Exception("fv", "div<T>", "unrecognized or unspecified boundary type.");
                 }
             }
         }
@@ -102,7 +105,8 @@ namespace fv
                     case FiniteVolumeField<T>::SYMMETRY:
                         break;
 
-                    default:throw Exception("fv", "divc<T>", "unrecognized or unspecified boundary type.");
+                    default:
+                        throw Exception("fv", "divc<T>", "unrecognized or unspecified boundary type.");
                 }
             }
         }

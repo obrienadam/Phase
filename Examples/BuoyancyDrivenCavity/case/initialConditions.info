@@ -1,0 +1,13 @@
+; Inital conditions for the 2D lid driven cavity
+
+InitialConditions
+{
+  T
+  {
+    T
+    {
+      type uniform
+      value 273
+    }
+  }
+}

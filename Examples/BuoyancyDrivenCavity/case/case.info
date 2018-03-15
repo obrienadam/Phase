@@ -1,0 +1,60 @@
+; Test case for the 2D lid driven cavity
+
+CaseName LidDrivenCavity2D
+
+Solver
+{
+	type "fractional step boussinesq"
+	timeStep 0.025
+	maxTime 30
+	maxCo 1
+}
+
+LinearAlgebra
+{
+  uEqn
+  {
+    lib eigen
+  }
+
+  pEqn
+  {
+    lib eigen
+  }
+
+  TEqn
+  {
+    lib eigen
+  }
+}
+
+Properties
+{
+	rho 1
+	mu 1e-1
+        g (0,-10)
+        alpha 0.00369
+        T0 273
+        kappa 0.02
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 100
+	nCellsY 100
+	width 1
+	height 1
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,T
+}
+
+System
+{
+	fileWriteFrequency 10
+}

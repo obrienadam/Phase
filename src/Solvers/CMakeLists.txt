@@ -15,6 +15,7 @@ set(HEADERS Solver.h
         FractionalStepEulerLagrange.h
         FractionalStepMultiphaseEulerLagrange.h
         FractionalStepDirectForcing.h
+        FractionalStepBoussinesq.h
         SolverFactory.h)
 
 set(SOURCES Solver.cpp
@@ -33,6 +34,7 @@ set(SOURCES Solver.cpp
         FractionalStepEulerLagrange.cpp
         FractionalStepMultiphaseEulerLagrange.cpp
         FractionalStepDirectForcing.cpp
+        FractionalStepBoussinesq.cpp
         SolverFactory.cpp)
 
 add_library(Solvers ${HEADERS} ${SOURCES})

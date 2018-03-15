@@ -7,6 +7,7 @@
 #include "FractionalStepDirectForcing.h"
 #include "FractionalStepMultiphase.h"
 #include "FractionalStepIncrementalMultiphase.h"
+#include "FractionalStepBoussinesq.h"
 
 std::shared_ptr<Solver> SolverFactory::create(SolverType type,
                                               const Input &input)
@@ -29,6 +30,8 @@ std::shared_ptr<Solver> SolverFactory::create(SolverType type,
             return std::make_shared<FractionalStepMultiphase>(input);
         case FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE:
             return std::make_shared<FractionalStepIncrementalMultiphase>(input);
+        case FRACTIONAL_STEP_BOUSSINESQ:
+            return std::make_shared<FractionalStepBoussinesq>(input);
     }
 
     return nullptr;
@@ -58,6 +61,8 @@ std::shared_ptr<Solver> SolverFactory::create(std::string type,
         return create(FRACTIONAL_STEP_MULTIPHASE, input);
     else if (type == "fractional step incremental multiphase")
         return create(FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE, input);
+    else if (type == "fractional step boussinesq")
+        return create(FRACTIONAL_STEP_BOUSSINESQ, input);
 
     throw Exception("SolverFactory", "create", "solver \"" + type + "\" is not a valid solver type.");
 }
