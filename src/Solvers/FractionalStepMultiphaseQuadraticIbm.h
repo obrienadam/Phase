@@ -11,9 +11,6 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &gammaCl;
-    ScalarGradient &gradGammaCl;
-
 protected:
 
     Scalar solveGammaEqn(Scalar timeStep);

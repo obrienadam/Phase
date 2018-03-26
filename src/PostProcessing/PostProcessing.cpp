@@ -1,7 +1,7 @@
 #include "PostProcessing.h"
-#include "VolumeIntegrator.h"
 #include "IbTracker.h"
 #include "ImmersedBoundaryObjectContactLineTracker.h"
+#include "ImmersedBoundaryObjectProbe.h"
 
 PostProcessing::PostProcessing(const Input &input, const Solver &solver)
 {
@@ -14,14 +14,7 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
         {
             std::shared_ptr<PostProcessingObject> postProcessingObj;
 
-            if (postProcessingObjectInput.first == "VolumeIntegrator")
-            {
-                postProcessingObj = std::make_shared<VolumeIntegrator>(
-                        solver,
-                        postProcessingObjectInput.second.get<std::string>("field")
-                );
-            }
-            else if (postProcessingObjectInput.first == "IbTracker")
+            if (postProcessingObjectInput.first == "IbTracker")
             {
                 postProcessingObj = std::make_shared<IbTracker>(
                         solver,
@@ -32,6 +25,15 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
             else if (postProcessingObjectInput.first == "ImmersedBoundaryObjectContactLineTracker")
             {
                 postProcessingObj = std::make_shared<ImmersedBoundaryObjectContactLineTracker>(solver);
+            }
+            else if (postProcessingObjectInput.first == "ImmersedBoundaryObjectProbe")
+            {
+                postProcessingObj = std::make_shared<ImmersedBoundaryObjectProbe>(
+                        solver,
+                        postProcessingObjectInput.second.get<std::string>("name"),
+                        postProcessingObjectInput.second.get<std::string>("field"),
+                        postProcessingObjectInput.second.get<std::string>("position")
+                );
             }
 
             if (postProcessingObj)

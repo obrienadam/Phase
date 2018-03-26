@@ -1,12 +1,10 @@
 #include "SolverFactory.h"
 #include "Poisson.h"
 #include "FractionalStep.h"
-#include "FractionalStepIncremental.h"
 #include "FractionalStepQuadraticIbm.h"
 #include "FractionalStepEulerLagrange.h"
 #include "FractionalStepDirectForcing.h"
 #include "FractionalStepMultiphase.h"
-#include "FractionalStepIncrementalMultiphase.h"
 #include "FractionalStepBoussinesq.h"
 
 std::shared_ptr<Solver> SolverFactory::create(SolverType type,
@@ -18,8 +16,6 @@ std::shared_ptr<Solver> SolverFactory::create(SolverType type,
             return std::make_shared<Poisson>(input);
         case FRACTIONAL_STEP:
             return std::make_shared<FractionalStep>(input);
-        case FRACTIONAL_STEP_INCREMENTAL:
-            return std::make_shared<FractionalStepIncremental>(input);
         case FRACTIONAL_STEP_QUADRATIC_IBM:
             return std::make_shared<FractionalStepQuadraticIbm>(input);
         case FRACTIONAL_STEP_EULER_LAGRANGE:
@@ -28,8 +24,6 @@ std::shared_ptr<Solver> SolverFactory::create(SolverType type,
             return std::make_shared<FractionalStepDirectForcing>(input);
         case FRACTIONAL_STEP_MULTIPHASE:
             return std::make_shared<FractionalStepMultiphase>(input);
-        case FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE:
-            return std::make_shared<FractionalStepIncrementalMultiphase>(input);
         case FRACTIONAL_STEP_BOUSSINESQ:
             return std::make_shared<FractionalStepBoussinesq>(input);
     }
@@ -49,8 +43,6 @@ std::shared_ptr<Solver> SolverFactory::create(std::string type,
         return create(POISSON, input);
     else if (type == "fractional step")
         return create(FRACTIONAL_STEP, input);
-    else if (type == "fractional step incremental")
-        return create(FRACTIONAL_STEP_INCREMENTAL, input);
     else if (type == "fractional step quadratic ibm")
         return create(FRACTIONAL_STEP_QUADRATIC_IBM, input);
     else if (type == "fractional step euler lagrange")
@@ -59,8 +51,6 @@ std::shared_ptr<Solver> SolverFactory::create(std::string type,
         return create(FRACTIONAL_STEP_DIRECT_FORCING, input);
     else if (type == "fractional step multiphase")
         return create(FRACTIONAL_STEP_MULTIPHASE, input);
-    else if (type == "fractional step incremental multiphase")
-        return create(FRACTIONAL_STEP_INCREMENTAL_MULTIPHASE, input);
     else if (type == "fractional step boussinesq")
         return create(FRACTIONAL_STEP_BOUSSINESQ, input);
 

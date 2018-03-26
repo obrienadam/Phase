@@ -8,11 +8,22 @@ class FractionalStepDirectForcing : public FractionalStep
 public:
     FractionalStepDirectForcing(const Input &input);
 
+    Scalar solve(Scalar timeStep);
+
+    ScalarFiniteVolumeField &divU;
+
     VectorFiniteVolumeField &fb;
 
 protected:
 
+    Equation<Scalar> pExtEqn_;
+
+    Equation<Vector2D> uExtEqn_;
+
+    void solveExtEqns();
+
     Scalar solveUEqn(Scalar timeStep);
+
 };
 
 

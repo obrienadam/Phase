@@ -7,7 +7,7 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
         lineThickness_(lineThickness),
         fillColor_(fillColor)
 {
-    outputDir_ = outputDir_ / "IbTracker";
+    path_ /= "IbTracker";
 
     if (solver.grid()->comm().isMainProc())
     {
@@ -15,12 +15,13 @@ IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::stri
 
         for (auto ibObj: solver.ib())
         {
-            std::cout << ibObj->name() << "\n";
-            std::ofstream fout((outputDir_ / (ibObj->name() + ".dat")).string());
+
+
+            std::ofstream fout((path_ / (ibObj->name() + ".dat")).string());
             fout << "Title = \"" << ibObj->name() << "\"\n";
             fout.close();
 
-            fout.open((outputDir_ / (ibObj->name() + "_time_series.csv")).string());
+            fout.open((path_ / (ibObj->name() + "_time_series.csv")).string());
             fout << "time,x,y,theta,vx,vy,omega,fx,fy,tau\n";
             fout.close();
         }
@@ -49,7 +50,7 @@ void IbTracker::compute(Scalar time)
             {
                 auto ibObj = ptr.lock();
 
-                std::ofstream fout((outputDir_ / (ibObj->name() + ".dat")).string(),
+                std::ofstream fout((path_ / (ibObj->name() + ".dat")).string(),
                                    std::ofstream::out | std::ofstream::app);
 
                 //- Add a geometry record for this zone
@@ -89,7 +90,7 @@ void IbTracker::compute(Scalar time)
 
                 fout.close();
 
-                fout.open((outputDir_ / (ibObj->name() + "_time_series.csv")).string(),
+                fout.open((path_ / (ibObj->name() + "_time_series.csv")).string(),
                           std::ofstream::out | std::ofstream::app);
 
                 fout << time << ","

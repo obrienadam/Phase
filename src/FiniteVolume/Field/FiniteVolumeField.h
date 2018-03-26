@@ -101,40 +101,10 @@ public:
 
     T boundaryRefValue(const Patch &patch) const;
 
-    std::pair<BoundaryType, T> boundaryInfo(const Face &face) const;
-
     template<class TFunc>
-    void interpolateFaces(const TFunc &alpha)
-    {
-        auto &self = *this;
+    void interpolateFaces(const TFunc &alpha);
 
-        for (const Face &face: grid_->interiorFaces())
-        {
-            Scalar g = alpha(face);
-            self(face) = g * self(face.lCell()) + (1. - g) * self(face.rCell());
-        }
-
-        setBoundaryFaces();
-    }
-
-    void interpolateFaces(InterpolationType type = VOLUME)
-    {
-        switch (type)
-        {
-            case VOLUME:
-                interpolateFaces([](const Face &face)
-                                 {
-                                     return face.volumeWeight();
-                                 });
-                break;
-            case DISTANCE:
-                interpolateFaces([](const Face &face)
-                                 {
-                                     return face.distanceWeight();
-                                 });
-                break;
-        }
-    }
+    void interpolateFaces(InterpolationType type = VOLUME);
 
     void setBoundaryFaces();
 

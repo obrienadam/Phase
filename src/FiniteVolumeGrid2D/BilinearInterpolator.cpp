@@ -29,10 +29,19 @@ void BilinearInterpolator::setPoint(const Point2D &pt)
     }
 }
 
-std::vector<Scalar> BilinearInterpolator::coeffs() const
+StaticMatrix<1, 4> BilinearInterpolator::coeffs() const
 {
-    auto c = StaticMatrix<1, 4>({pt_.x * pt_.y, pt_.x, pt_.y, 1.}) * A_;
-    return std::vector<Scalar>(c.begin(), c.end());
+    return StaticMatrix<1, 4>({pt_.x * pt_.y, pt_.x, pt_.y, 1.}) * A_;
+}
+
+StaticMatrix<2, 4> BilinearInterpolator::derivativeCoeffs() const
+{
+    return StaticMatrix<2, 4>({pt_.y, 1., 0., 0., pt_.x, 0., 1., 0.}) * A_;
+}
+
+StaticMatrix<1, 4> BilinearInterpolator::derivativeCoeffs(const Vector2D &n) const
+{
+    return StaticMatrix<1, 4>({pt_.y * n.x + pt_.x * n.y, n.x, n.y, 0.}) * A_;
 }
 
 Scalar BilinearInterpolator::operator()(const ScalarFiniteVolumeField &field) const
@@ -59,8 +68,7 @@ Vector2D BilinearInterpolator::operator()(const VectorFiniteVolumeField &field) 
                                         field(cells_[3]).x, field(cells_[3]).y
                                 });
 
-    StaticMatrix<1, 2> u = x * A_ * b;
-
+    auto u = x * A_ * b;
     return Vector2D(u(0, 0), u(0, 1));
 }
 

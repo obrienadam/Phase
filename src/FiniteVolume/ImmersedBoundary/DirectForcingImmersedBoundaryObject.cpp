@@ -1,4 +1,6 @@
 #include "DirectForcingImmersedBoundaryObject.h"
+#include "BilinearInterpolator.h"
+#include "Matrix.h"
 
 DirectForcingImmersedBoundaryObject::Stencil::Stencil(const VectorFiniteVolumeField &u,
                                                       const Cell &cell,
@@ -6,37 +8,10 @@ DirectForcingImmersedBoundaryObject::Stencil::Stencil(const VectorFiniteVolumeFi
 {
     bp_ = ibObj.nearestIntersect(cell.centroid());
     ip_ = 2. * cell.centroid() - bp_;
-    ipCells_ = ibObj.grid()->findNearestNode(ip_).cells();
+
     ub_ = ibObj.velocity(bp_);
-
-    Point2D x[] = {
-            ipCells_[0].get().centroid(),
-            ipCells_[1].get().centroid(),
-            ipCells_[2].get().centroid(),
-            ipCells_[3].get().centroid()
-    };
-
-    StaticMatrix<4, 4> A = {
-            x[0].x * x[0].y, x[0].x, x[0].y, 1.,
-            x[1].x * x[1].y, x[1].x, x[1].y, 1.,
-            x[2].x * x[2].y, x[2].x, x[2].y, 1.,
-            x[3].x * x[3].y, x[3].x, x[3].y, 1.
-    };
-
-    StaticMatrix<4, 2> b = {
-            u(ipCells_[0]).x, u(ipCells_[0]).y,
-            u(ipCells_[1]).x, u(ipCells_[1]).y,
-            u(ipCells_[2]).x, u(ipCells_[2]).y,
-            u(ipCells_[3]).x, u(ipCells_[3]).y,
-    };
-
-    StaticMatrix<1, 2> c = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * solve(A, b);
-
-    uip_ = Vector2D(c(0, 0), c(0, 1));
+    uip_ = BilinearInterpolator(ibObj.grid(), ip_)(u);
     uf_ = (ub_ + uip_) / 2.;
-
-    StaticMatrix<1, 4> a = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * inverse(A);
-    ipCoeffs_.assign(a.begin(), a.end());
 }
 
 DirectForcingImmersedBoundaryObject::FieldExtensionStencil::FieldExtensionStencil(const VectorFiniteVolumeField &u,
@@ -45,37 +20,55 @@ DirectForcingImmersedBoundaryObject::FieldExtensionStencil::FieldExtensionStenci
 {
     bp_ = ibObj.nearestIntersect(cell.centroid());
     ip_ = 2. * bp_ - cell.centroid();
-    ipCells_ = ibObj.grid()->findNearestNode(ip_).cells();
 
-    Point2D x[] = {
-            ipCells_[0].get().centroid(),
-            ipCells_[1].get().centroid(),
-            ipCells_[2].get().centroid(),
-            ipCells_[3].get().centroid()
-    };
+    BilinearInterpolator bi(ibObj.grid(), ip_);
 
-    StaticMatrix<4, 4> A = {
-            x[0].x * x[0].y, x[0].x, x[0].y, 1.,
-            x[1].x * x[1].y, x[1].x, x[1].y, 1.,
-            x[2].x * x[2].y, x[2].x, x[2].y, 1.,
-            x[3].x * x[3].y, x[3].x, x[3].y, 1.
-    };
-
-    StaticMatrix<4, 2> b = {
-            u(ipCells_[0]).x, u(ipCells_[0]).y,
-            u(ipCells_[1]).x, u(ipCells_[1]).y,
-            u(ipCells_[2]).x, u(ipCells_[2]).y,
-            u(ipCells_[3]).x, u(ipCells_[3]).y,
-    };
-
-    StaticMatrix<1, 2> c = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * solve(A, b);
-
-    uip_ = Vector2D(c(0, 0), c(0, 1));
+    uip_ = bi(u);
     ub_ = ibObj.velocity(bp_);
     uf_ = 2. * ub_ - uip_;
 
-    StaticMatrix<1, 4> a = StaticMatrix<1, 4>({ip_.x * ip_.y, ip_.x, ip_.y, 1.}) * inverse(A);
-    ipCoeffs_.assign(a.begin(), a.end());
+    cells_ = bi.cells();
+    cells_.push_back(std::cref(cell));
+
+    coeffs_ = bi.coeffs() / 2.;
+    coeffs_.push_back(0.5);
+}
+
+
+DirectForcingImmersedBoundaryObject::PressureFieldExtensionStencil::PressureFieldExtensionStencil(
+        const ScalarFiniteVolumeField &p,
+        const Cell &cell,
+        const ImmersedBoundaryObject &ibObj)
+{
+    bp_ = ibObj.nearestIntersect(cell.centroid());
+    ip_ = 2. * bp_ - cell.centroid();
+    n_ = ibObj.nearestEdgeNormal(bp_).unitVec();
+
+    BilinearInterpolator bi(ibObj.grid(), bp_);
+
+    bool validStencil = false;
+
+    for(const Cell& kCell: cells_)
+        if(kCell.id() == cell.id())
+        {
+            validStencil = true;
+            break;
+        }
+
+    if(validStencil)
+    {
+        cells_ = bi.cells();
+        coeffs_ = bi.derivativeCoeffs(n_);
+    }
+    else
+    {
+        bi.setPoint(ip_);
+        n_ = (cell.centroid() - ip_).unitVec();
+        cells_ = bi.cells();
+        cells_.push_back(std::cref(cell));
+        coeffs_ = -bi.coeffs() / (cell.centroid() - ip_).mag();
+        coeffs_.push_back(1. / (cell.centroid() - ip_).mag());
+    }
 }
 
 DirectForcingImmersedBoundaryObject::QuadraticStencil::QuadraticStencil(const VectorFiniteVolumeField &u,
@@ -85,7 +78,8 @@ DirectForcingImmersedBoundaryObject::QuadraticStencil::QuadraticStencil(const Ve
     std::vector<Ref<const Cell>> cells;
     std::vector<Point2D> bps;
 
-    auto isIbCell = [&ibObj](const Cell &cell) {
+    auto isIbCell = [&ibObj](const Cell &cell)
+    {
         for (const InteriorLink &nb: cell.neighbours())
             if (ibObj.isInIb(nb.cell()))
                 return true;
@@ -158,29 +152,39 @@ void DirectForcingImmersedBoundaryObject::updateCells()
 {
     ibCells_.clear();
     solidCells_.clear();
+    forcingCells_.clear();
+    pseudoFluidCells_.clear();
+
+    // auto items = fluid_->itemsWithin(*shape_);
 
     for (const Cell &cell: fluid_->itemsWithin(*shape_))
     {
+        solidCells_.add(cell);
+
         for (const CellLink &nb: cell.neighbours())
         {
             if (!shape_->isInside(nb.cell().centroid()))
             {
                 ibCells_.add(nb.cell());
-                solidCells_.add(cell);
+                forcingCells_.add(nb.cell());
+                pseudoFluidCells_.add(cell);
             }
         }
     }
 }
 
-void DirectForcingImmersedBoundaryObject::updateIbForce(const VectorFiniteVolumeField &u,
-                                                        Scalar timeStep,
-                                                        VectorFiniteVolumeField &fb)
+void DirectForcingImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField &u,
+                                                                 Scalar timeStep,
+                                                                 VectorFiniteVolumeField &fb) const
 {
-    fb.fill(Vector2D(0., 0.));
-
     for (const Cell &cell: ibCells_)
     {
         Stencil st = Stencil(u, cell, *this);
         fb(cell) = (st.uf() - u(cell)) / timeStep;
+    }
+
+    for (const Cell &cell: solidCells_)
+    {
+        fb(cell) = (velocity(cell.centroid()) - u(cell)) / timeStep;
     }
 }

@@ -4,10 +4,10 @@ PostProcessingObject::PostProcessingObject(const Solver &solver)
         :
         solver_(solver)
 {
-    outputDir_ = "./solution/PostProcessing";
+    path_ = "./solution/PostProcessing";
 }
 
 void PostProcessingObject::createOutputDirectory() const
 {
-    boost::filesystem::create_directories(outputDir_);
+    boost::filesystem::create_directories(path_);
 }

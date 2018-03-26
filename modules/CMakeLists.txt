@@ -32,12 +32,6 @@ target_link_libraries(phaseFractionalStepMultiphase Solvers)
 add_executable(phaseFractionalStepMultiphaseQuadraticIbm phaseFractionalStepMultiphaseQuadraticIbm.cpp)
 target_link_libraries(phaseFractionalStepMultiphaseQuadraticIbm Solvers)
 
-add_executable(phaseFractionalStepIncremental phaseFractionalStepIncremental.cpp)
-target_link_libraries(phaseFractionalStepIncremental Solvers)
-
-add_executable(phaseFractionalStepIncrementalMultiphase phaseFractionalStepIncrementalMultiphase.cpp)
-target_link_libraries(phaseFractionalStepIncrementalMultiphase Solvers)
-
 install(TARGETS
         phaseFractionalStep
         phaseFractionalStepMultiphase

@@ -16,6 +16,7 @@ LinearAlgebra
 	uEqn
 	{
 		lib eigen
+		solver BiCGSTAB
 		iluFill 0
 		tolerance 1e-14
 		schwarzIters 1
@@ -30,6 +31,16 @@ LinearAlgebra
 		schwarzIters 2
 		combineMode ADD
 		schwarzOverlap 0
+	}
+
+	uExtEqn
+	{
+		lib eigen
+	}
+
+ 	pExtEqn
+	{
+		lib eigen
 	}
 }
 
@@ -58,8 +69,8 @@ Grid
 
 Viewer
 {
-	vectorFields u,us
-	scalarFields p,phi
+	vectorFields u,us,fb
+	scalarFields p,divU
 	integerFields cellStatus
 }
 

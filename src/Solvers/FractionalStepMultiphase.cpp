@@ -5,21 +5,19 @@
 #include "Laplacian.h"
 #include "Source.h"
 #include "Cicsam.h"
-#include "Hric.h"
-#include "SeoMittal.h"
 
 FractionalStepMultiphase::FractionalStepMultiphase(const Input &input)
         :
         FractionalStep(input),
-        rho(addScalarField("rho")),
-        mu(addScalarField("mu")),
-        gamma(addScalarField(input, "gamma")),
-        beta(addScalarField("beta")),
-        rhoU(addVectorField("rhoU")),
-        ft(addVectorField(std::make_shared<Celeste>(input, grid_, ib_))),
-        sg(addVectorField("sg")),
-        gradGamma(addVectorField(std::make_shared<ScalarGradient>(gamma))),
-        gradRho(addVectorField(std::make_shared<ScalarGradient>(rho))),
+        rho(*addScalarField("rho")),
+        mu(*addScalarField("mu")),
+        gamma(*addScalarField(input, "gamma")),
+        beta(*addScalarField("beta")),
+        rhoU(*addVectorField("rhoU")),
+        ft(*std::static_pointer_cast<Celeste>(addVectorField(std::make_shared<Celeste>(input, grid_, ib_)))),
+        sg(*addVectorField("sg")),
+        gradGamma(*std::static_pointer_cast<ScalarGradient>(addVectorField(std::make_shared<ScalarGradient>(gamma)))),
+        gradRho(*std::static_pointer_cast<ScalarGradient>(addVectorField(std::make_shared<ScalarGradient>(rho)))),
         gammaEqn_(input, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1", rho_);

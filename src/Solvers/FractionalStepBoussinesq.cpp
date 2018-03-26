@@ -7,7 +7,7 @@
 FractionalStepBoussinesq::FractionalStepBoussinesq(const Input &input)
         :
         FractionalStep(input),
-        T(addScalarField(input, "T")),
+        T(*addScalarField(input, "T")),
         TEqn_(input, T, "TEqn")
 {
     alpha_ = input.caseInput().get<Scalar>("Properties.alpha", 0.00369);

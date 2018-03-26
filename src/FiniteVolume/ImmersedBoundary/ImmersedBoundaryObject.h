@@ -28,6 +28,13 @@ public:
                            const ImmersedBoundary &ib,
                            const std::shared_ptr<FiniteVolumeGrid2D> &grid);
 
+    //- Body info
+    const std::string &name() const
+    { return name_; }
+
+    Label id() const
+    { return id_; }
+
     virtual Type type() const = 0;
 
     //- Geometry related methods
@@ -37,9 +44,7 @@ public:
 
     template<class const_iterator>
     void initPolygon(const_iterator begin, const_iterator end)
-    {
-        shape_ = std::unique_ptr<Polygon>(new Polygon(begin, end));
-    }
+    { shape_ = std::unique_ptr<Polygon>(new Polygon(begin, end)); }
 
     Shape2D &shape()
     { return *shape_; }
@@ -47,37 +52,13 @@ public:
     const Shape2D &shape() const
     { return *shape_; }
 
+    //- Tests
     bool isInIb(const Point2D &pt) const
     { return shape_->isInside(pt); }
 
     template<class T>
     bool isInIb(const T &item) const
     { return shape_->isInside(item.centroid()); }
-
-    template<class const_iterator>
-    bool allInIb(const_iterator begin, const_iterator end) const
-    {
-        for (const_iterator it = begin; it != end; ++it)
-            if (!isInIb(*it))
-                return false;
-        return true;
-    }
-
-    template<class const_iterator>
-    bool noneInIb(const_iterator begin, const_iterator end) const
-    {
-        for (const_iterator it = begin; it != end; ++it)
-            if (isInIb(*it))
-                return false;
-        return true;
-    }
-
-    //- Motion
-    void setMotion(const std::shared_ptr<Motion> &motion)
-    { motion_ = motion; }
-
-    std::shared_ptr<Motion> motion()
-    { return motion_; }
 
     //- Set/get primary cell zone
     void setZone(CellZone &zone);
@@ -105,9 +86,6 @@ public:
     { return shape_->intersections(ray)[0]; }
 
     Vector2D nearestEdgeNormal(const Point2D &pt) const;
-
-    std::pair<Point2D, Vector2D> intersectionStencil(const Point2D &ptA,
-                                                     const Point2D &ptB) const; // returns a intersection point and the edge normal
 
     //- Boundary methods
     void addBoundary(const std::string &name, BoundaryType bType, Scalar ref);
@@ -138,9 +116,6 @@ public:
     const CellZone &freshCells() const
     { return freshCells_; }
 
-    const CellZone &deadCells() const
-    { return deadCells_; }
-
     //- Boundary info
     BoundaryType boundaryType(const std::string &name) const
     { return boundaryTypes_.find(name)->second; }
@@ -149,6 +124,13 @@ public:
     T getBoundaryRefValue(const std::string &name) const;
 
     //- Motion info if applicable
+
+    void setMotion(const std::shared_ptr<Motion> &motion)
+    { motion_ = motion; }
+
+    std::shared_ptr<Motion> motion()
+    { return motion_; }
+
     bool isMoving() const
     { return (bool) motion_; }
 
@@ -222,39 +204,53 @@ public:
 
     virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
+    virtual Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
+
+    virtual void computeBoundaryForcing(const VectorFiniteVolumeField& u,
+                                        Scalar timeStep,
+                                        VectorFiniteVolumeField &fb) const;
+
     void clearFreshCells();
-
-    const std::string &name() const
-    { return name_; }
-
-    Label id() const
-    { return id_; }
 
     //- Public properties
     Scalar rho = 0.;
 
 protected:
 
+    //- Identification
     std::string name_;
+
     Label id_;
 
+    //- Grid
     std::shared_ptr<FiniteVolumeGrid2D> grid_;
 
+    //- Cell zone info
     std::shared_ptr<CellZone::ZoneRegistry> zoneRegistry_; //- Registry for these IB cells only
-    CellZone cells_, ibCells_, solidCells_, freshCells_, deadCells_;
+
+    CellZone cells_, ibCells_, solidCells_, freshCells_;
+
     CellZone *fluid_ = nullptr;
 
+    //- Ib manager
     const ImmersedBoundary *ib_ = nullptr;
 
+    //- Geometry
     std::unique_ptr<Shape2D> shape_;
 
+    //- Boundary condition info
     std::unordered_map<std::string, BoundaryType> boundaryTypes_;
+
     std::unordered_map<std::string, Scalar> boundaryRefScalars_;
+
     std::unordered_map<std::string, Vector2D> boundaryRefVectors_;
 
+    //- Force info
     Vector2D force_;
+
     Scalar torque_;
 
+    //- Motion
     std::shared_ptr<Motion> motion_;
 };
 

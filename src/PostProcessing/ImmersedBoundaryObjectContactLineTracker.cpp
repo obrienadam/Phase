@@ -5,18 +5,18 @@ ImmersedBoundaryObjectContactLineTracker::ImmersedBoundaryObjectContactLineTrack
         :
         PostProcessingObject(solver)
 {
-    outputDir_ /= "ImmersedBoundaryObjectContactLineTracker";
+    path_ /= "ImmersedBoundaryObjectContactLineTracker";
 
     if (solver.grid()->comm().isMainProc())
         createOutputDirectory();
 
     for (const auto &ibObj: solver_.ib())
     {
-        if (solver_.scalarFieldPtr("gamma"))
+        if (solver_.scalarField("gamma"))
         {
             if (solver.grid()->comm().isMainProc())
             {
-                std::ofstream fout((outputDir_ / (ibObj->name() + "_contact_lines.csv")).string());
+                std::ofstream fout((path_ / (ibObj->name() + "_contact_lines.csv")).string());
                 fout << "time,x,y,rx,ry,beta,nx,ny,theta\n";
                 fout.close();
             }
@@ -34,7 +34,7 @@ void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
         {
             std::vector<std::tuple<Point2D, Scalar>> ibVals;
 
-            const auto &gamma = solver_.scalarField("gamma");
+            const auto &gamma = *solver_.scalarField("gamma");
             auto bi = BilinearInterpolator(gamma.grid());
             for (const Cell &cell: ibObj->ibCells())
             {
@@ -81,7 +81,7 @@ void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                     }
                 }
 
-                std::ofstream fout((outputDir_ / (ibObj->name() + "_contact_lines.csv")).string(),
+                std::ofstream fout((path_ / (ibObj->name() + "_contact_lines.csv")).string(),
                                    std::ofstream::out | std::ofstream::app);
 
                 for (const auto &cl: clPoints)

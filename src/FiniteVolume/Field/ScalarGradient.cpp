@@ -33,7 +33,7 @@ void ScalarGradient::compute(const CellGroup &group, Method method)
     computeFaces();
     VectorFiniteVolumeField &gradPhi = *this;
 
-    std::fill(gradPhi.begin(), gradPhi.end(), Vector2D(0., 0.));
+    //std::fill(gradPhi.begin(), gradPhi.end(), Vector2D(0., 0.));
 
     switch (method)
     {

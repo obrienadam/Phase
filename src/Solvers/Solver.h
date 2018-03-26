@@ -26,88 +26,45 @@ public:
     Scalar maxTimeStep() const
     { return maxTimeStep_; }
 
-    Scalar getStartTime(const Input& input) const;
+    Scalar getStartTime(const Input &input) const;
 
     //- Field management
 
-    FiniteVolumeField<int> &addIntegerField(const std::string &name);
+    std::shared_ptr<FiniteVolumeField<int>> addIntegerField(const std::string &name);
 
-    ScalarFiniteVolumeField &addScalarField(const Input &input,
-                                            const std::string &name);
+    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const Input &input, const std::string &name);
 
-    ScalarFiniteVolumeField &addScalarField(const std::string &name);
+    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const std::string &name);
 
-    VectorFiniteVolumeField &addVectorField(const Input &input, const std::string &name);
+    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const Input &input, const std::string &name);
 
-    VectorFiniteVolumeField &addVectorField(const std::string &name);
+    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const std::string &name);
 
-    template<class T>
-    T &addScalarField(const std::shared_ptr<T> &field)
-    {
-        auto insert = scalarFields_.insert(std::make_pair(field->name(), field));
+    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const std::shared_ptr<ScalarFiniteVolumeField>& field);
 
-        if (!insert.second)
-            throw Exception("Solver", "addScalarField", "field \"" + field->name() + "\" already exists.");
+    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const std::shared_ptr<VectorFiniteVolumeField>& field);
 
-        return *field;
-    }
-
-    template<class T>
-    T &addVectorField(const std::shared_ptr<T> &field)
-    {
-        auto insert = vectorFields_.insert(std::make_pair(field->name(), field));
-
-        if (!insert.second)
-            throw Exception("Solver", "addVectorField", "field \"" + field->name() + "\" already exists.");
-
-        return *field;
-    }
-
-    template<class T>
-    T &addTensorField(std::shared_ptr<T> field)
-    {
-        auto insert = tensorFields_.insert(std::make_pair(field->name(), field));
-
-        if (!insert.second)
-            throw Exception("Solver", "addTensorField", "field \"" + field->name() + "\" already exists.");
-
-        return *field;
-    }
+    std::shared_ptr<TensorFiniteVolumeField> addTensorField(const std::shared_ptr<TensorFiniteVolumeField>& field);
 
     //- Field data structures
-    const std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>> >& integerFields() const
+    const std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>>> &integerFields() const
     { return integerFields_; }
 
-    const std::unordered_map<std::string, std::shared_ptr<ScalarFiniteVolumeField>>& scalarFields() const
+    const std::unordered_map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> &scalarFields() const
     { return scalarFields_; }
 
-    const std::unordered_map<std::string, std::shared_ptr<VectorFiniteVolumeField>>& vectorFields() const
+    const std::unordered_map<std::string, std::shared_ptr<VectorFiniteVolumeField>> &vectorFields() const
     { return vectorFields_; }
 
     //- Field lookup
-    FiniteVolumeField<int>& integerField(const std::string& name)
-    { return *integerFields_.find(name)->second; }
+    const std::shared_ptr<FiniteVolumeField<int>> &integerField(const std::string &name) const
+    { return integerFields_.find(name)->second; }
 
-    const FiniteVolumeField<int>& integerField(const std::string& name) const
-    { return *integerFields_.find(name)->second; }
-
-    ScalarFiniteVolumeField& scalarField(const std::string& name)
-    { return *scalarFields_.find(name)->second; }
-
-    const ScalarFiniteVolumeField& scalarField(const std::string& name) const
-    { return *scalarFields_.find(name)->second; }
-
-    std::shared_ptr<ScalarFiniteVolumeField> scalarFieldPtr(const std::string& name)
+    const std::shared_ptr<ScalarFiniteVolumeField> &scalarField(const std::string &name) const
     { return scalarFields_.find(name)->second; }
 
-    std::shared_ptr<const ScalarFiniteVolumeField> scalarFieldPtr(const std::string& name) const
-    { return scalarFields_.find(name)->second; }
-
-    VectorFiniteVolumeField& vectorField(const std::string& name)
-    { return *vectorFields_.find(name)->second; }
-
-    const VectorFiniteVolumeField& vectorField(const std::string& name) const
-    { return *vectorFields_.find(name)->second; }
+    const std::shared_ptr<VectorFiniteVolumeField> &vectorField(const std::string &name) const
+    { return vectorFields_.find(name)->second; }
 
     //- Grid
     const std::shared_ptr<FiniteVolumeGrid2D> &grid()
@@ -116,7 +73,8 @@ public:
     std::shared_ptr<const FiniteVolumeGrid2D> grid() const
     { return grid_; }
 
-    const ImmersedBoundary& ib() const { return *ib_; }
+    const ImmersedBoundary &ib() const
+    { return *ib_; }
 
     //- ICs/IBs
     void setInitialConditions(const Input &input);
@@ -129,14 +87,20 @@ protected:
 
     void setCircle(const Circle &circle, const Vector2D &innerValue, VectorFiniteVolumeField &field);
 
-    void setCircleSector(const Circle &circle, Scalar thetaMin, Scalar thetaMax, Scalar innerValue,
+    void setCircleSector(const Circle &circle,
+                         Scalar thetaMin,
+                         Scalar thetaMax,
+                         Scalar innerValue,
                          ScalarFiniteVolumeField &field);
 
     void setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeField &field);
 
     void setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field);
 
-    void setRotating(const std::string &function, Scalar amplitude, const Vector2D &center, ScalarFiniteVolumeField &field);
+    void setRotating(const std::string &function,
+                     Scalar amplitude,
+                     const Vector2D &center,
+                     ScalarFiniteVolumeField &field);
 
     void setRotating(const std::string &xFunction, const std::string &yFunction, const Vector2D &amplitude,
                      const Vector2D &center, VectorFiniteVolumeField &field);
@@ -148,9 +112,12 @@ protected:
     std::shared_ptr<ImmersedBoundary> ib_;
 
     //- Fields and geometries
-    mutable std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>> > integerFields_;
+    mutable std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>>> integerFields_;
+
     mutable std::unordered_map<std::string, std::shared_ptr<ScalarFiniteVolumeField>> scalarFields_;
+
     mutable std::unordered_map<std::string, std::shared_ptr<VectorFiniteVolumeField>> vectorFields_;
+
     mutable std::unordered_map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
     //- Solver parameters

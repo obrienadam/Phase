@@ -352,11 +352,11 @@ ImmersedBoundary::nearestIntersect(const Point2D &pt) const
     return std::make_pair(nearestIbObj, minXc);
 }
 
-const ImmersedBoundaryObject &ImmersedBoundary::ibObj(const std::string &name) const
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const std::string &name) const
 {
     for (const auto &ibObj: ibObjs_)
         if (ibObj->name() == name)
-            return *ibObj;
+            return ibObj;
 
     throw Exception("ImmersedBoundary", "ibObj", "no immersed boundary object named \"" + name + "\".");
 }
@@ -381,6 +381,16 @@ Equation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) con
 
     for (const auto &ibObj: ibObjs_)
         eqn += ibObj->velocityBcs(u);
+
+    return eqn;
+}
+
+Equation<Scalar> ImmersedBoundary::pressureBcs(ScalarFiniteVolumeField &p) const
+{
+    Equation<Scalar> eqn(p);
+
+    for (const auto &ibObj: ibObjs_)
+        eqn += ibObj->pressureBcs(p);
 
     return eqn;
 }

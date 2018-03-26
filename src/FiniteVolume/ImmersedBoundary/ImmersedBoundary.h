@@ -44,7 +44,7 @@ public:
 
     std::pair<std::shared_ptr<const ImmersedBoundaryObject>, Point2D> nearestIntersect(const Point2D &pt) const;
 
-    const ImmersedBoundaryObject &ibObj(const std::string &name) const;
+    std::shared_ptr<const ImmersedBoundaryObject> ibObj(const std::string &name) const;
 
     const std::vector<std::shared_ptr<ImmersedBoundaryObject>> &ibObjs() const
     { return ibObjs_; }
@@ -78,6 +78,8 @@ public:
     }
 
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+
+    Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
 
     void clearFreshCells();
 

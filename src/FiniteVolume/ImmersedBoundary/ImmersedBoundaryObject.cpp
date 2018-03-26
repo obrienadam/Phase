@@ -17,7 +17,6 @@ ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
     ibCells_ = CellZone("IbCells", zoneRegistry_);
     solidCells_ = CellZone("SolidCells", zoneRegistry_);
     freshCells_ = CellZone("FreshCells", zoneRegistry_);
-    deadCells_ = CellZone("DeadCells", zoneRegistry_);
 
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
@@ -49,7 +48,6 @@ void ImmersedBoundaryObject::clear()
     ibCells_.clear();
     solidCells_.clear();
     freshCells_.clear();
-    deadCells_.clear();
 }
 
 LineSegment2D ImmersedBoundaryObject::intersectionLine(const LineSegment2D &ln) const
@@ -84,31 +82,6 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
         }
         default:throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
     }
-}
-
-std::pair<Point2D, Vector2D> ImmersedBoundaryObject::intersectionStencil(const Point2D &ptA, const Point2D &ptB) const
-{
-    auto intersections = shape().intersections(LineSegment2D(ptA, ptB));
-
-    Point2D xc;
-    if (intersections.empty()) //- fail safe, in case a point is on an ib
-    {
-        Point2D nPtA = shape().nearestIntersect(ptA);
-        Point2D nPtB = shape().nearestIntersect(ptB);
-
-        if ((nPtA - ptA).magSqr() < (nPtB - ptB).magSqr())
-            xc = ptA;
-        else
-            xc = ptB;
-    }
-    else
-        xc = intersections[0];
-
-    LineSegment2D edge = shape_->nearestEdge(xc);
-
-    return std::make_pair(
-            xc, -(edge.ptB() - edge.ptA()).normalVec()
-    );
 }
 
 void ImmersedBoundaryObject::addBoundary(const std::string &name, BoundaryType bType, Scalar ref)
@@ -279,6 +252,18 @@ Equation<Vector2D> ImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &
     }
 
     return eqn;
+}
+
+Equation<Scalar> ImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p) const
+{
+    throw NotImplementedException("ImmersedBoundaryObject", "pressureBcs");
+}
+
+void ImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField& u,
+                                                    Scalar timeStep,
+                                                    VectorFiniteVolumeField &fb) const
+{
+    throw NotImplementedException("ImmersedBoundaryObject", "computeBoundaryForcing");
 }
 
 void ImmersedBoundaryObject::clearFreshCells()

@@ -14,9 +14,13 @@ public:
     void compute(Scalar time);
 
 private:
+
     std::vector<std::weak_ptr<ImmersedBoundaryObject>> ibObjs_;
+
     int zoneNo_ = 1;
+
     double lineThickness_ = 0.4;
+
     std::string fillColor_ = "CUST2";
 };
 

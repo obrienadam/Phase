@@ -10,13 +10,18 @@ class BilinearInterpolator
 {
 public:
 
-    BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D>& grid) : grid_(grid) {}
+    BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D> &grid) : grid_(grid)
+    {}
 
-    BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D>& grid, const Point2D &pt);
+    BilinearInterpolator(const std::weak_ptr<const FiniteVolumeGrid2D> &grid, const Point2D &pt);
 
-    void setPoint(const Point2D& pt);
+    void setPoint(const Point2D &pt);
 
-    std::vector<Scalar> coeffs() const;
+    StaticMatrix<1, 4> coeffs() const;
+
+    StaticMatrix<2, 4> derivativeCoeffs() const;
+
+    StaticMatrix<1, 4> derivativeCoeffs(const Vector2D &n) const;
 
     Scalar operator()(const ScalarFiniteVolumeField &field) const;
 
@@ -26,13 +31,14 @@ public:
 
     Tensor2D grad(const VectorFiniteVolumeField &field) const;
 
-
-
     bool isValid() const
     { return isValid_; }
 
     const Point2D &point() const
     { return pt_; }
+
+    const std::vector<Ref<const Cell>> &cells() const
+    { return cells_; }
 
 private:
 

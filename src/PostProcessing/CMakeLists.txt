@@ -2,21 +2,17 @@ set(HEADERS Viewer.h
         CgnsViewer.h
         PostProcessing.h
         PostProcessingObject.h
-        VolumeIntegrator.h
-        ReynoldsNumber.h
         ImmersedBoundaryObjectContactLineTracker.h
-        ForceIntegrator.h
-        IbTracker.h)
+        IbTracker.h
+        ImmersedBoundaryObjectProbe.h)
 
 set(SOURCE Viewer.cpp
         CgnsViewer.cpp
         PostProcessing.cpp
         PostProcessingObject.cpp
-        VolumeIntegrator.cpp
-        ReynoldsNumber.cpp
         ImmersedBoundaryObjectContactLineTracker.cpp
-        ForceIntegrator.cpp
-        IbTracker.cpp)
+        IbTracker.cpp
+        ImmersedBoundaryObjectProbe.cpp)
 
 add_library(PostProcessing ${HEADERS} ${SOURCE})
 target_link_libraries(PostProcessing FiniteVolumeGrid2D ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})

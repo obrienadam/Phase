@@ -12,7 +12,7 @@ FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolume
                                         const T &val,
                                         bool faces,
                                         bool nodes,
-                                        const std::shared_ptr<const CellGroup>& cellGroup)
+                                        const std::shared_ptr<const CellGroup> &cellGroup)
         :
         Field<T>::Field(grid->cells().size(), val, name),
         grid_(grid)
@@ -33,7 +33,7 @@ FiniteVolumeField<T>::FiniteVolumeField(const Input &input,
                                         const T &val,
                                         bool faces,
                                         bool nodes,
-                                        const std::shared_ptr<const CellGroup>& cellGroup)
+                                        const std::shared_ptr<const CellGroup> &cellGroup)
         :
         FiniteVolumeField(grid, name, val, faces, nodes, cellGroup)
 {
@@ -54,7 +54,7 @@ void FiniteVolumeField<T>::fill(const T &val)
 template<class T>
 void FiniteVolumeField<T>::fill(const T &val, const CellGroup &group)
 {
-    for(const Cell& cell: group)
+    for (const Cell &cell: group)
         (*this)[cell.id()] = val;
 }
 
@@ -77,7 +77,7 @@ void FiniteVolumeField<T>::fillInterior(const T &val)
 }
 
 template<class T>
-void FiniteVolumeField<T>::assign(const FiniteVolumeField<T>& field)
+void FiniteVolumeField<T>::assign(const FiniteVolumeField<T> &field)
 {
     this->assign(field.begin(), field.end());
     faces_.assign(field.faces_.begin(), field.faces_.end());
@@ -113,6 +113,41 @@ T FiniteVolumeField<T>::boundaryRefValue(const Patch &patch) const
 }
 
 template<class T>
+template<class TFunc>
+void FiniteVolumeField<T>::interpolateFaces(const TFunc &alpha)
+{
+    auto &self = *this;
+
+    for (const Face &face: grid_->interiorFaces())
+    {
+        Scalar g = alpha(face);
+        self(face) = g * self(face.lCell()) + (1. - g) * self(face.rCell());
+    }
+
+    setBoundaryFaces();
+}
+
+template<class T>
+void FiniteVolumeField<T>::interpolateFaces(InterpolationType type)
+{
+    switch (type)
+    {
+        case VOLUME:
+            interpolateFaces([](const Face &face)
+                             {
+                                 return face.volumeWeight();
+                             });
+            break;
+        case DISTANCE:
+            interpolateFaces([](const Face &face)
+                             {
+                                 return face.distanceWeight();
+                             });
+            break;
+    }
+}
+
+template<class T>
 void FiniteVolumeField<T>::setBoundaryFaces()
 {
     auto &self = *this;
@@ -125,7 +160,7 @@ void FiniteVolumeField<T>::setBoundaryFaces()
                 break;
             case NORMAL_GRADIENT:
             case SYMMETRY:
-                for(const Face& face: patch)
+                for (const Face &face: patch)
                     faces_[face.id()] = self[face.lCell().id()];
                 break;
         }
@@ -147,7 +182,7 @@ void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::funct
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    if(previousTimeSteps_.size() == nPreviousFields)
+    if (previousTimeSteps_.size() == nPreviousFields)
     {
         auto prevTimeStep = previousTimeSteps_.back();
         prevTimeStep->second = *this;
@@ -304,10 +339,10 @@ void FiniteVolumeField<T>::setGrid(const std::shared_ptr<const FiniteVolumeGrid2
 
     Field<T>::resize(grid_->cells().size());
 
-    if(!faces_.empty())
+    if (!faces_.empty())
         faces_.resize(grid_->faces().size());
 
-    if(!nodes_.empty())
+    if (!nodes_.empty())
         nodes_.resize(grid_->nodes().size());
 
     cellGroup_ = nullptr;

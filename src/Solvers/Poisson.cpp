@@ -4,8 +4,8 @@
 Poisson::Poisson(const Input &input)
         :
         Solver(input),
-        phi(addScalarField(input, "phi")),
-        gamma(addScalarField("gamma")),
+        phi(*addScalarField(input, "phi")),
+        gamma(*addScalarField("gamma")),
         phiEqn_(input, phi, "phiEqn")
 {
     //- All active cells to fluid cells

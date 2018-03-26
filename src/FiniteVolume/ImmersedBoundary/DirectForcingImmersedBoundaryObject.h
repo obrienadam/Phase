@@ -2,8 +2,6 @@
 #define DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "ImmersedBoundaryObject.h"
-#include "StaticMatrix.h"
-#include "Matrix.h"
 
 class DirectForcingImmersedBoundaryObject : public ImmersedBoundaryObject
 {
@@ -13,13 +11,18 @@ public:
     {
     public:
 
-        Stencil(const VectorFiniteVolumeField &u, const Cell &cell, const ImmersedBoundaryObject &ibObj);
+        Stencil(const VectorFiniteVolumeField &u,
+                const Cell &cell,
+                const ImmersedBoundaryObject &ibObj);
+
+        const Point2D &bp() const
+        { return bp_; }
+
+        const Point2D &ip() const
+        { return ip_; }
 
         const Vector2D &uf() const
         { return uf_; }
-
-        const std::vector<Scalar>& ipCoeffs() const
-        { return ipCoeffs_; }
 
     protected:
 
@@ -29,16 +32,56 @@ public:
         Point2D bp_, ip_;
 
         Vector2D ub_, uip_, uf_;
-
-        std::vector<Ref<const Cell>> ipCells_;
-
-        std::vector<Scalar> ipCoeffs_;
     };
 
     class FieldExtensionStencil : public Stencil
     {
     public:
-        FieldExtensionStencil(const VectorFiniteVolumeField &u, const Cell &cell, const ImmersedBoundaryObject &ibObj);
+        FieldExtensionStencil(const VectorFiniteVolumeField &u,
+                              const Cell &cell,
+                              const ImmersedBoundaryObject &ibObj);
+
+        const std::vector<Ref<const Cell>> &cells() const
+        { return cells_; }
+
+        const std::vector<Scalar> &coeffs() const
+        { return coeffs_; }
+
+    private:
+
+        std::vector<Ref<const Cell>> cells_;
+
+        std::vector<Scalar> coeffs_;
+    };
+
+    class PressureFieldExtensionStencil
+    {
+    public:
+        PressureFieldExtensionStencil(const ScalarFiniteVolumeField &p,
+                                      const Cell &cell,
+                                      const ImmersedBoundaryObject &ibObj);
+
+        const Point2D &bp() const
+        { return bp_; }
+
+        const Vector2D &n() const
+        { return n_; }
+
+        const std::vector<Ref<const Cell>> &cells() const
+        { return cells_; }
+
+        const std::vector<Scalar> &coeffs() const
+        { return coeffs_; }
+
+    protected:
+
+        Point2D bp_, ip_;
+
+        Vector2D n_;
+
+        std::vector<Ref<const Cell>> cells_;
+
+        std::vector<Scalar> coeffs_;
     };
 
     class QuadraticStencil
@@ -67,13 +110,13 @@ public:
     void updateCells();
 
     virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const
-    {}
+    { return Equation<Scalar>(field); }
 
     virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const
-    {}
+    { return Equation<Vector2D>(field); }
 
     virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const
-    {}
+    { return Equation<Vector2D>(u); }
 
     virtual void computeForce(Scalar rho,
                               Scalar mu,
@@ -82,9 +125,19 @@ public:
                               const Vector2D &g = Vector2D(0., 0.))
     {}
 
-    void updateIbForce(const VectorFiniteVolumeField &u, Scalar timeStep, VectorFiniteVolumeField &fb);
+    void computeBoundaryForcing(const VectorFiniteVolumeField &u,
+                                Scalar timeStep,
+                                VectorFiniteVolumeField &fb) const;
+
+    const CellGroup &forcingCells() const
+    { return forcingCells_; }
+
+    const CellGroup &pseudoForcingCells() const
+    { return pseudoFluidCells_; }
 
 private:
+
+    CellGroup forcingCells_, pseudoFluidCells_;
 
 };
 

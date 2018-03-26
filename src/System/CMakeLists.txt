@@ -3,13 +3,15 @@ set(HEADERS Input.h
         Exception.h
         Time.h
         RunControl.h
-        NotImplementedException.h)
+        NotImplementedException.h
+        CgnsFile.h)
 
 set(SOURCES Input.cpp
         CommandLine.cpp
         Exception.cpp
         Time.cpp
-        RunControl.cpp)
+        RunControl.cpp
+        CgnsFile.cpp)
 
 add_library(System ${HEADERS} ${SOURCES})
 target_link_libraries(System PostProcessing ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})

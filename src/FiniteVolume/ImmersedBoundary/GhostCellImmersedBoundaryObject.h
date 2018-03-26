@@ -2,7 +2,7 @@
 #define GHOST_CELL_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "ImmersedBoundaryObject.h"
-#include "StaticMatrix.h"
+#include "BilinearInterpolator.h"
 
 class GhostCellImmersedBoundaryObject : public ImmersedBoundaryObject
 {
@@ -12,15 +12,14 @@ public:
     {
     public:
 
-        Stencil(const Cell &cell) : cell_(std::cref(cell))
-        {}
-
         Stencil(const Cell &cell,
                 const ImmersedBoundaryObject &ibObj);
 
         Stencil(const Cell &cell,
                 const ImmersedBoundaryObject &ibObj,
                 const Vector2D &r);
+
+        virtual Scalar bpValue(const ScalarFiniteVolumeField &phi) const = 0;
 
         virtual void init() = 0;
 
@@ -45,23 +44,11 @@ public:
         Scalar length() const
         { return (ip_ - cell_.get().centroid()).mag(); }
 
-        Scalar bpValue(const ScalarFiniteVolumeField &phi) const;
-
-        Vector2D bpValue(const VectorFiniteVolumeField &u) const;
-
-        Vector2D bpGrad(const ScalarFiniteVolumeField &phi) const;
-
-        Tensor2D bpGrad(const VectorFiniteVolumeField &u) const;
-
     protected:
-
-        void initMatrices();
-
-        StaticMatrix<4, 4> Aip_, Abp_;
 
         Ref<const Cell> cell_;
 
-        std::vector<Ref<const Cell>> ipCells_, bpCells_, cells_;
+        std::vector<Ref<const Cell>> cells_;
 
         std::vector<Scalar> coeffs_;
 
@@ -74,12 +61,23 @@ public:
 
         FixedStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj)
                 :
-                Stencil(cell, ibObj)
+                Stencil(cell, ibObj),
+                bi_(ibObj.grid())
         {
             init();
         }
 
         void init();
+
+        Scalar bpValue(const ScalarFiniteVolumeField &phi) const
+        { return (bi_(phi) + phi(cell_)) / 2.; }
+
+        Tensor2D bpGrad(const VectorFiniteVolumeField &u) const
+        { return bi_.grad(u); }
+
+    protected:
+
+        BilinearInterpolator bi_;
     };
 
     class ZeroGradientStencil : public Stencil
@@ -88,31 +86,35 @@ public:
 
         ZeroGradientStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj)
                 :
-                Stencil(cell, ibObj)
+                Stencil(cell, ibObj),
+                bi_(ibObj.grid())
         {
+            d_ = -nw_.unitVec();
             init();
         }
 
         ZeroGradientStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj, const Vector2D &r)
                 :
-                Stencil(cell, ibObj, r)
+                Stencil(cell, ibObj, r),
+                bi_(ibObj.grid())
         {
+            d_ = -r.unitVec();
             init();
         }
 
-        void init();
-    };
-
-    class ForcingStencil : public Stencil
-    {
-    public:
-
-        ForcingStencil(const Cell &cell,
-                       const ImmersedBoundaryObject &ibObj);
+        Scalar bpValue(const ScalarFiniteVolumeField &phi) const
+        { return bi_(phi); }
 
         void init();
 
-    private:
+        const Vector2D &d() const
+        { return d_; }
+
+    protected:
+
+        Vector2D d_;
+
+        BilinearInterpolator bi_;
     };
 
     GhostCellImmersedBoundaryObject(const std::string &name,
@@ -131,6 +133,8 @@ public:
 
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
+    Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
+
     void computeForce(Scalar rho,
                       Scalar mu,
                       const VectorFiniteVolumeField &u,
@@ -144,7 +148,7 @@ public:
                       const Vector2D &g = Vector2D(0., 0.));
 
 
-    const std::vector<std::shared_ptr<Stencil>> &fixedStencils() const
+    const std::vector<FixedStencil> &fixedStencils() const
     { return fixedStencils_; }
 
     const std::vector<ZeroGradientStencil> &zeroGradientStencils() const
@@ -154,7 +158,7 @@ protected:
 
     void constructStencils();
 
-    std::vector<std::shared_ptr<Stencil>> fixedStencils_;
+    std::vector<FixedStencil> fixedStencils_;
 
     std::vector<ZeroGradientStencil> zeroGradientStencils_;
 };

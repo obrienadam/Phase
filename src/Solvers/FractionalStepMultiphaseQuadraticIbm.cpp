@@ -9,9 +9,7 @@
 
 FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const Input &input)
         :
-        FractionalStepMultiphase(input),
-        gammaCl(addScalarField("gammaCl")),
-        gradGammaCl(addVectorField(std::make_shared<ScalarGradient>(gammaCl)))
+        FractionalStepMultiphase(input)
 {
     for (const auto &ibObj: *ib_)
     {
@@ -20,8 +18,6 @@ FractionalStepMultiphaseQuadraticIbm::FractionalStepMultiphaseQuadraticIbm(const
                             "FractionalStepMultiphaseQuadraticIbm",
                             "immersed boundary object \"" + ibObj->name() + "\" is not of type \"quadratic\".");
     }
-
-    gammaCl.copyBoundaryTypes(gamma);
 }
 
 Scalar FractionalStepMultiphaseQuadraticIbm::solve(Scalar timeStep)
