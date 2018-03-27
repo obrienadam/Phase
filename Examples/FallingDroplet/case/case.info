@@ -4,16 +4,10 @@ CaseName FallingDroplet2D
 
 Solver
 {
-	timeDependent On
-	maxIterations 100
-	timeStep 1e-3
+	type "fractional step multiphase"
+	timeStep 3e-5
 	maxCo 0.3
 	maxTime 0.2
-
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 1
-	numInnerIterations 1
-	numPressureCorrections 2
 
 	smoothingKernelRadius 0.0001
 	surfaceTensionModel CELESTE
@@ -66,19 +60,4 @@ Viewer
 	type tecplot
 	vectorFields u,n,ft,gradrho,sg,us
 	scalarFields p,m,gamma,rho,mu,kappa
-}
-
-Integrators
-{
-  VolumeIntegrators
-  {
-    fields gamma
-    cellGroups fluid
-  }
-}
-
-System
-{
-  fileWriteFrequency 20
-  consoleOutputFrequency 1
 }

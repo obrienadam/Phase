@@ -49,18 +49,7 @@ Scalar EigenSparseMatrixSolver::solve(const Vector &x0)
     return solve();
 }
 
-void EigenSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
+Scalar EigenSparseMatrixSolver::x(Index idx) const
 {
-    for (const Cell &cell: field.grid()->localActiveCells())
-        field(cell) = x_[field.indexMap()->local(cell, 0)];
-}
-
-void EigenSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
-{
-    for (const Cell &cell: field.grid()->localActiveCells())
-    {
-        Vector2D &vec = field(cell);
-        vec.x = x_[field.indexMap()->local(cell, 0)];
-        vec.y = x_[field.indexMap()->local(cell, 1)];
-    }
+    return x_(idx);
 }

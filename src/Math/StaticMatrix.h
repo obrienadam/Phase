@@ -2,9 +2,10 @@
 #define STATIC_MATRIX_H
 
 #include <algorithm>
+#include <vector>
 
-#include "Types.h"
-#include "Exception.h"
+#include "Types/Types.h"
+#include "System/Exception.h"
 
 #ifdef __INTEL_COMPILER
 #include <mkl.h>

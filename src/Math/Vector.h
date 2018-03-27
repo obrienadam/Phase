@@ -2,7 +2,8 @@
 #define VECTOR_H
 
 #include <vector>
-#include "Types.h"
+
+#include "Types/Types.h"
 
 class Vector
 {

@@ -30,9 +30,7 @@ public:
 
     Scalar solve(const Vector &x0);
 
-    void mapSolution(ScalarFiniteVolumeField &field);
-
-    void mapSolution(VectorFiniteVolumeField &field);
+    Scalar x(Index idx) const;
 
     int nIters() const
     { return 1; }
@@ -49,7 +47,9 @@ public:
 private:
 
     EigenSparseMatrix mat_;
+
     EigenVector x_, rhs_;
+
     SparseLUSolver solver_;
 };
 

@@ -2,92 +2,73 @@
 
 #include "CgnsFile.h"
 
-void CgnsFile::~CgnsFile()
+CgnsFile::CgnsFile(const std::string &filename, Mode mode)
+{
+    open(filename, mode);
+}
+
+CgnsFile::~CgnsFile()
 {
     close();
 }
 
-void CgnsFile::open(const std::string &filename, Mode mode)
+int CgnsFile::open(const std::string &filename, Mode mode)
 {
-    if (isOpen())
-        close();
-
     switch (mode)
     {
         case READ:
-            cg_open(filename.c_str(), CG_MODE_READ, &fid_);
+            cg_open(filename.c_str(), CG_MODE_READ, &_fid);
             break;
+
         case WRITE:
-            cg_open(filename.c_str(), CG_MODE_WRITE, &fid_);
+            cg_open(filename.c_str(), CG_MODE_WRITE, &_fid);
             break;
+
         case MODIFY:
-            cg_open(filename.c_str(), CG_MODE_MODIFY, &fid_);
+            cg_open(filename.c_str(), CG_MODE_MODIFY, &_fid);
             break;
     }
+
+    return _fid;
 }
 
 void CgnsFile::close()
 {
-    if (isOpen())
-    {
-        cg_close(fid_);
-        fid_ = -1;
-    }
-}
-
-bool CgnsFile::isOpen() const
-{
-    return fid_ > 0;
+    cg_close(_fid);
 }
 
 int CgnsFile::createBase(const std::string &basename, int cellDim, int physDim)
 {
     int bid;
-    cg_base_write(fid_, basename.c_str(), cellDim, physDim, &bid);
+    cg_base_write(_fid, basename.c_str(), cellDim, physDim, &bid);
     return bid;
 }
 
-int CgnsFile::nBases() const
+int CgnsFile::createStructuredZone(int bid, const std::string &zonename,
+                                   int nNodesI, int nNodesJ,
+                                   int nCellsI, int nCellsJ)
 {
-    int nbases;
-    cg_nbases(fid_, &nbases);
-    return nbases;
-}
-
-int CgnsFile::createZone(int bid, const std::string &zonename, size_t nNodes, size_t nCells, ZoneType type)
-{
-    CG_ZoneType_t zonetype;
-
-    switch (type)
-    {
-        case STRUCTURED:
-            zonetype = CGNS_ENUMT(Structured);
-            break;
-        case UNSTRUCTURED:
-            zonetype = CGNS_ENUMT(Unstructured);
-            break;
-    }
-
-    cgsize_t sizes[] = {
-            nNodes,
-            nCells,
-            0
+    int zid;
+    cgsize_t size[] = {
+            nNodesI, nNodesJ, nCellsI, nCellsJ, 0, 0
     };
 
-    int zid;
-    cg_zone_write(fid_, bid, zonename.c_str(), sizes, zonetype, &zid);
+    cg_zone_write(_fid, bid, zonename.c_str(), size, CGNS_ENUMT(Structured), &zid);
 
     return zid;
 }
 
-int CgnsFile::writeCoords(int bid, int zid, const std::vector<Point2D> &coords)
+int CgnsFile::createStructuredZone(int bid,
+                                   const std::string &zonename,
+                                   int nNodesI, int nNodesJ, int nNodesK,
+                                   int nCellsI, int nCellsJ, int nCellsK)
 {
-    std::vector<Scalar> xCoords(coords.size()), yCoords(coords.size());
+    int zid;
+    cgsize_t size[] = {
+            nNodesI, nNodesJ, nNodesK, nCellsI, nCellsJ, nCellsK, 0, 0, 0
+    };
 
-    std::transform(coords.begin(), coords.end(), xCoords.begin(), [](const Point2D &pt) { return pt.x; });
-    std::transform(coords.begin(), coords.end(), yCoords.begin(), [](const Point2D &pt) { return pt.y; });
+    cg_zone_write(_fid, bid, zonename.c_str(), size, CGNS_ENUMT(Structured), &zid);
 
-    int cid;
-    cg_coord_write(fid_, bid, zid, CGNS_ENUMT(RealDouble), "CoordinateX", xCoords.data(), &cid);
-    cg_coord_write(fid_, bid, zid, CGNS_ENUMT(RealDouble), "CoordinateY", yCoords.data(), &cid);
+    return zid;
 }

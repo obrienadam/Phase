@@ -4,7 +4,7 @@ CaseName SuddenExpansion2D
 
 Solver
 {
-	type "fractional step incremental"
+	type "fractional step"
 	timeStep 0.1
 	maxTime 10
 	maxCo 0.8
@@ -48,9 +48,4 @@ Viewer
   type tecplot
   vectorFields u,gradP,gradPhi
   scalarFields p
-}
-
-System
-{
-  fileWriteFrequency 10
 }

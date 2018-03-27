@@ -2,7 +2,7 @@
 #define EXCEPTION_H
 
 #include <string>
-#include <Exception.h>
+#include <exception>
 
 class Exception : public std::exception
 {

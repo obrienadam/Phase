@@ -3,6 +3,8 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
+#include "System/Communicator.h"
+
 #include "SparseMatrixSolver.h"
 
 class TrilinosSparseMatrixSolver : public SparseMatrixSolver
@@ -19,9 +21,7 @@ public:
 
     virtual void setRhs(const Vector &rhs);
 
-    virtual void mapSolution(ScalarFiniteVolumeField &field);
-
-    virtual void mapSolution(VectorFiniteVolumeField &field);
+    Scalar x(Index idx) const;
 
     virtual bool supportsMPI() const
     { return true; }

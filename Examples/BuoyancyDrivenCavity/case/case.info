@@ -53,8 +53,3 @@ Viewer
 	vectorFields u
 	scalarFields p,T
 }
-
-System
-{
-	fileWriteFrequency 10
-}

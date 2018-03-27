@@ -12,7 +12,7 @@ class TrilinosMueluSparseMatrixSolver : public TrilinosSparseMatrixSolver
 public:
 
     TrilinosMueluSparseMatrixSolver(const Communicator &comm,
-                                    const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
+                                    //const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
                                     const std::string &solverName = "BiCGSTAB");
 
     void setRank(int rank);
@@ -43,7 +43,7 @@ private:
 
     Teuchos::RCP<Preconditioner> precon_;
 
-    std::weak_ptr<const FiniteVolumeGrid2D> grid_;
+    //std::weak_ptr<const FiniteVolumeGrid2D> grid_;
 };
 
 #endif

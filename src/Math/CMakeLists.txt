@@ -19,8 +19,10 @@ set(SOURCES Matrix.cpp
         TrilinosMueluSparseMatrixSolver.cpp
         Vector.cpp)
 
-add_library(Math ${HEADERS} ${SOURCES})
-target_link_libraries(Math Communicator
+add_library(phase_math ${HEADERS} ${SOURCES})
+
+target_link_libraries(phase_math
+        phase_system
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
         #lapacke
@@ -28,7 +30,7 @@ target_link_libraries(Math Communicator
         ${Trilinos_TPL_LIBRARIES})
 
 install(TARGETS
-        Math
+        phase_math
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)

@@ -1,0 +1,4 @@
+PostProcessing
+{
+  fileWriteFrequency 10
+}

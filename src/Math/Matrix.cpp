@@ -14,7 +14,7 @@ extern "C"
 #endif
 
 #include "Matrix.h"
-#include "Exception.h"
+#include "System/Exception.h"
 
 Matrix::Matrix(Size m, Size n, const std::initializer_list<Scalar> &coeffs)
 {

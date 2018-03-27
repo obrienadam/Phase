@@ -1,8 +1,7 @@
+#ifndef PHASE_CGNS_FILE_H
+#define PHASE_CGNS_FILE_H
 
-#ifndef CGNS_FILE_H
-#define CGNS_FILE_H
-
-#include "Point2D.h"
+#include <string>
 
 class CgnsFile
 {
@@ -13,33 +12,32 @@ public:
         READ, WRITE, MODIFY
     };
 
-    enum ZoneType
-    {
-        STRUCTURED, UNSTRUCTURED
-    };
+    CgnsFile()
+    {}
+
+    CgnsFile(const std::string &filename, Mode mode = READ);
 
     ~CgnsFile();
 
-    void open(const std::string &filename, Mode mode);
+    int open(const std::string &filename, Mode mode);
 
     void close();
 
-    bool isOpen() const;
-
-    //- Bases
     int createBase(const std::string &basename, int cellDim, int physDim);
 
-    int nBases() const;
+    //- zones
+    int createStructuredZone(int bid, const std::string &zonename,
+                             int nNodesI, int nNodesJ,
+                             int nCellsI, int nCellsJ);
 
-    //- Zones
-    int createZone(int bid, const std::string &zonename, size_t nNodes, size_t nCells, ZoneType type);
-
-    //- Coordinates
-    int writeCoords(int bid, int zid, const std::vector<Point2D> &coords);
+    int createStructuredZone(int bid, const std::string &zonename,
+                             int nNodesI, int nNodesJ, int nNodesK,
+                             int nCellsI, int nCellsJ, int nCellsK);
 
 protected:
 
-    int fid_;
+    int _fid;
 };
+
 
 #endif

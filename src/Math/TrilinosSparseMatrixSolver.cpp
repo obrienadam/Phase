@@ -59,22 +59,9 @@ void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
     b_->getDataNonConst(0).assign(std::begin(rhs.data()), std::end(rhs.data()));
 }
 
-void TrilinosSparseMatrixSolver::mapSolution(ScalarFiniteVolumeField &field)
+Scalar TrilinosSparseMatrixSolver::x(Index idx) const
 {
-    Teuchos::ArrayRCP<const Scalar> soln = x_->getData(0);
-    for (const Cell &cell: field.grid()->localActiveCells())
-        field(cell) = soln[field.indexMap()->local(cell, 0)];
-}
-
-void TrilinosSparseMatrixSolver::mapSolution(VectorFiniteVolumeField &field)
-{
-    Teuchos::ArrayRCP<const Scalar> soln = x_->getData(0);
-    for (const Cell &cell: field.grid()->localActiveCells())
-    {
-        Vector2D &u = field(cell);
-        u.x = soln[field.indexMap()->local(cell, 0)];
-        u.y = soln[field.indexMap()->local(cell, 1)];
-    }
+    return x_->getData(idx)[idx];
 }
 
 void TrilinosSparseMatrixSolver::printStatus(const std::string &msg) const

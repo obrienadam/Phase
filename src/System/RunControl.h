@@ -2,20 +2,20 @@
 #define RUN_CONTROL_H
 
 #include "Input.h"
-#include "Solver.h"
-#include "CgnsViewer.h"
-#include "Time.h"
+#include "SolverInterface.h"
+#include "PostProcessingInterface.h"
+#include "Timer.h"
 
 class RunControl
 {
 public:
 
-    void run(const Input& input,
-             Solver & solver,
-             Viewer &viewer);
+    void run(const Input &input,
+             SolverInterface &solver,
+             PostProcessingInterface &postProcessing);
 
 private:
-    Time time_;
+    Timer time_;
 };
 
 #endif

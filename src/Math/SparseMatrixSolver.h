@@ -3,9 +3,9 @@
 
 #include <tuple>
 
+#include <boost/property_tree/ptree.hpp>
+
 #include "Vector.h"
-#include "ScalarFiniteVolumeField.h"
-#include "VectorFiniteVolumeField.h"
 
 class SparseMatrixSolver
 {
@@ -29,9 +29,7 @@ public:
 
     virtual Scalar solve(const Vector &x0);
 
-    virtual void mapSolution(ScalarFiniteVolumeField &field) = 0;
-
-    virtual void mapSolution(VectorFiniteVolumeField &field) = 0;
+    virtual Scalar x(Index idx) const = 0;
 
     virtual void setup(const boost::property_tree::ptree &parameters)
     {}

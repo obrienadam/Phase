@@ -5,11 +5,11 @@
 #include "TrilinosMueluSparseMatrixSolver.h"
 
 TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm,
-                                                                 const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                 //const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
                                                                  const std::string &solverName)
         :
-        TrilinosSparseMatrixSolver(comm),
-        grid_(grid)
+        TrilinosSparseMatrixSolver(comm)
+        //grid_(grid)
 {
     typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
@@ -29,28 +29,26 @@ void TrilinosMueluSparseMatrixSolver::setRank(int rank)
 
     linearProblem_->setOperator(mat_);
 
-    //h_->GetLevel(0)->Set("A", MueLu::TpetraCrs_To_XpetraMatrix(mat_));
-
-    auto grid = grid_.lock();
-
-    if (grid)
-    {
-        if (coords_.is_null() || !coords_->getMap()->isSameAs(*map_))
-            coords_ = rcp(new TpetraMultiVector(map_, 2));
-
-        std::transform(grid->localActiveCells().begin(),
-                       grid->localActiveCells().end(),
-                       coords_->getDataNonConst(0).begin(),
-                       [](const Cell &cell) { return cell.centroid().x; });
-
-
-        std::transform(grid->localActiveCells().begin(),
-                       grid->localActiveCells().end(),
-                       coords_->getDataNonConst(1).begin(),
-                       [](const Cell &cell) { return cell.centroid().y; });
-        //h_->GetLevel(0)->Set("Coordinates", MueLu::TpetraMultiVector_To_XpetraMultiVector(coords_));
-    }
-    else
+//    auto grid = grid_.lock();
+//
+//    if (grid)
+//    {
+//        if (coords_.is_null() || !coords_->getMap()->isSameAs(*map_))
+//            coords_ = rcp(new TpetraMultiVector(map_, 2));
+//
+//        std::transform(grid->localActiveCells().begin(),
+//                       grid->localActiveCells().end(),
+//                       coords_->getDataNonConst(0).begin(),
+//                       [](const Cell &cell) { return cell.centroid().x; });
+//
+//
+//        std::transform(grid->localActiveCells().begin(),
+//                       grid->localActiveCells().end(),
+//                       coords_->getDataNonConst(1).begin(),
+//                       [](const Cell &cell) { return cell.centroid().y; });
+//        //h_->GetLevel(0)->Set("Coordinates", MueLu::TpetraMultiVector_To_XpetraMultiVector(coords_));
+//    }
+//    else
         coords_ = Teuchos::null;
 }
 
