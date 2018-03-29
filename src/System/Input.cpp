@@ -17,7 +17,7 @@ void Input::parseInputFile()
     read_info(caseDirectory + "/case.info", caseInput_);
     read_info(caseDirectory + "/boundaries.info", boundaryInput_);
     read_info(caseDirectory + "/initialConditions.info", initialConditionInput_);
-    read_info(caseDirectory + "/postProcessing.info", postProcessingInput_, boost::property_tree::ptree());
+    read_info(caseDirectory + "/postProcessing.info", postProcessingInput_);
 }
 
 //- Private methods

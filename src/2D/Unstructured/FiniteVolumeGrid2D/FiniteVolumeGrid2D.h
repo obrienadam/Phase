@@ -39,6 +39,9 @@ public:
     Size nCells() const
     { return cells_.size(); }
 
+    Size nFaces() const
+    { return faces_.size(); }
+
     std::string gridInfo() const;
 
     //- Create grid entities
@@ -207,6 +210,8 @@ public:
     { return *comm_; }
 
     std::pair<std::vector<int>, std::vector<int>> nodeElementConnectivity() const;
+
+    std::vector<int> faceConnectivity() const;
 
     std::unordered_map<std::string, std::vector<int>> patchToNodeMap() const;
 

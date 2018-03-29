@@ -69,7 +69,6 @@ void Celeste::computeCurvature()
             kappa(cell) = kappaStencils_[cell.id()].kappa(n, *ib_.lock(), *this);
 
     grid_->sendMessages(kappa);
-    kappa.interpolateFaces();
 
     for (const Face &face: grid_->interiorFaces())
     {

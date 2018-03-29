@@ -364,6 +364,20 @@ std::pair<std::vector<int>, std::vector<int> > FiniteVolumeGrid2D::nodeElementCo
     return connectivity;
 }
 
+std::vector<int> FiniteVolumeGrid2D::faceConnectivity() const
+{
+    std::vector<int> connectivity;
+    connectivity.reserve(nFaces() * 2);
+
+    for(const Face& face: faces_)
+    {
+        connectivity.push_back(face.lNode().id());
+        connectivity.push_back(face.rNode().id());
+    }
+
+    return connectivity;
+}
+
 std::unordered_map<std::string, std::vector<int>> FiniteVolumeGrid2D::patchToNodeMap() const
 {
     using namespace std;

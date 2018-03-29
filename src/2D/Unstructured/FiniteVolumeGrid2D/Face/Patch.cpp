@@ -72,3 +72,17 @@ void Patch::setRegistry(std::shared_ptr<Patch::PatchRegistry> &registry)
 
     Patch::add(*this);
 }
+
+std::vector<Label> Patch::faceConnectivity() const
+{
+    std::vector<Label> connectivity;
+    connectivity.reserve(2 * size());
+
+    for(const Face& face: *this)
+    {
+        connectivity.push_back(face.lNode().id());
+        connectivity.push_back(face.rNode().id());
+    }
+
+    return connectivity;
+}

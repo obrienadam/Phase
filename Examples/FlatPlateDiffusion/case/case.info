@@ -4,8 +4,7 @@ CaseName FlatPlate2D
 
 Solver
 {
-	timeDependent Off
-	maxIterations 100
+	type "poisson"
 	timeStep 0.01
 	maxTime 30
 }
@@ -14,8 +13,7 @@ LinearAlgebra
 {
 	phiEqn
 	{
-		lib trilinos
-		preconditioner boomeramg
+		lib eigen
 	}
 }
 

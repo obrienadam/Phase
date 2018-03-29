@@ -26,6 +26,9 @@ void RunControl::run(const Input &input,
     solver.initialize();
     solver.printf("Starting simulation time: %.2lf s\n", time);
 
+    //- Initial output
+    postProcessing.compute(0.);
+
     time_.start();
     for (
             size_t iterNo = 0;

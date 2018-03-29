@@ -4,17 +4,10 @@ CaseName ImmersedBoundaryAirfoil2D
 
 Solver
 {
-	timeDependent On
-	maxIterations 100
+	type "fractional step"
 	timeStep 1e-4
 	maxCo 0.8
 	maxTime 10
-
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
-	numInnerIterations 1
-	numPressureCorrections 1
-	smoothingKernelRadius 0.0401
 }
 
 LinearAlgebra
@@ -22,23 +15,11 @@ LinearAlgebra
 	uEqn
 	{
 		lib eigen
-		solver BiCGSTAB
-		preconditioner RILUK
-		maxIteratons 10
-		tolerance 1e-8
-		iluFill 1
-		maxPreconditionerUses 1
 	}
 
 	pEqn
 	{
 		lib eigen
-		solver BiCGSTAB
-		preconditioner RILUK
-		maxIterations 500
-		tolerance 1e-8
-		iluFill 4
-		maxPreconditionerUses 5
 	}
 }
 
@@ -52,13 +33,12 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 450
-	nCellsY 300
+	nCellsX 225
+	nCellsY 150
 
 	; Rectilinear parameters
 	width 3
 	height 2
-	partitionBufferWidth 3
 }
 
 Viewer
@@ -66,10 +46,4 @@ Viewer
 	type tecplot
 	vectorFields u
 	scalarFields cellStatus,p,pCorr,m
-}
-
-System
-{
-  fileWriteFrequency 25
-  consoleOutputFrequency 1
 }

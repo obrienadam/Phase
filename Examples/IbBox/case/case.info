@@ -4,17 +4,11 @@ CaseName ImmersedBoundaryBox2D
 
 Solver
 {
-	timeDependent On
-	maxIterations 100
-	initialTimeStep 1e-5
+	type "fractional step"
+	initialTimeStep 5e-3
 	timeStep 5e-3
 	maxCo 0.8
 	maxTime 30
-
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
-	numInnerIterations 2
-	numPressureCorrections 1
 }
 
 LinearAlgebra
@@ -57,9 +51,4 @@ Viewer
 	integerFields cellStatus,proc
 	vectorFields u
 	scalarFields rho,mu,cellStatus,p,pCorr
-}
-
-System
-{
-  fileWriteFrequency 50
 }

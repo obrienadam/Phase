@@ -4,18 +4,10 @@ CaseName Channel2D
 
 Solver
 {
-	timeDependent Off
-	maxIterations 100
+	type "fractional step"
 	timeStep 2.5e-3
 	maxTime 20
 	maxCo 1
-
-	numInnerIterations 1
-	numPressureCorrections 2
-	momentumRelaxation 0.5
-	pressureCorrectionRelaxation 0.5
-	;symmetryAxis (0,1)
-	axisPoint (-0.1,0)
 }
 
 LinearAlgebra
@@ -23,15 +15,11 @@ LinearAlgebra
   uEqn
   {
     lib eigen
-    solver BiCGSTAB
-    iluFill 0
-    tolerance 1e-14
   }
 
   pEqn
   {
     lib eigen
-    solver klu2
   }
 }
 
@@ -60,9 +48,4 @@ Viewer
 	integerFields proc
 	vectorFields u,gradP
 	scalarFields p,pCorr,m
-}
-
-System
-{
-  fileWriteFrequency 10
 }

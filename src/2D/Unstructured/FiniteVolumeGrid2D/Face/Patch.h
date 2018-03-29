@@ -34,6 +34,8 @@ public:
     std::shared_ptr<PatchRegistry> registry()
     { return registry_; }
 
+    std::vector<Label> faceConnectivity() const;
+
 private:
 
     Label id_;

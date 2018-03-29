@@ -28,6 +28,18 @@ Solver::Solver(const Input &input)
     grid_->sendMessages(*proc);
 
     integerFields_[proc->name()] = proc;
+
+    auto globalId = std::make_shared<FiniteVolumeField<int>>(grid_, "globalId", grid_->comm().rank(), false, false);
+
+    std::vector<Size> nLocalActiveCells = grid_->comm().allGather(grid_->localActiveCells().size());
+
+    Label id = std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid_->comm().rank(), 0);
+
+    for(const Cell& cell: grid_->localActiveCells())
+        (*globalId)(cell) = id++;
+
+    integerFields_[globalId->name()] = globalId;
+
     integerFields_[ib_->cellStatus()->name()] = ib_->cellStatus();
 }
 

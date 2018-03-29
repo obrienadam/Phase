@@ -70,7 +70,7 @@ ImmersedBoundaries
 {
   Airfoil1
   {
-    method high-order
+    method ghost-cell
 
     geometry
     {
@@ -80,11 +80,6 @@ ImmersedBoundaries
 
       scale 1.2
       rotate -13
-    }
-
-    interpolation
-    {
-	type quadraticNormal
     }
 
     u

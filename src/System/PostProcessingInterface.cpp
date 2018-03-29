@@ -2,7 +2,7 @@
 
 PostProcessingInterface::Object::Object()
 {
-    path_ = "./solution/PostProcessing";
+    path_ = "solution/PostProcessing";
 }
 
 bool PostProcessingInterface::Object::do_update()

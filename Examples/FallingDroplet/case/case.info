@@ -42,7 +42,7 @@ Properties
 	rho2 998
  	mu1 1e-3
 	mu2 8.94e-4
-	sigma 0.01
+	sigma 0.07262
 	g (0,-9.8065)
 }
 

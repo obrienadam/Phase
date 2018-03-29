@@ -2,7 +2,11 @@
 
 PostProcessing
 {
-  IbTracker
+  fileWriteFrequency 25
+
+  Objects
   {
+    IbTracker
+    { }
   }
 }

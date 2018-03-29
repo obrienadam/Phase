@@ -10,6 +10,7 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
     iter_ = 0;
     fileWriteFrequency_ = input.postProcessingInput().get<int>("PostProcessing.fileWriteFrequency");
 
+
     auto objInputs = input.postProcessingInput().get_child_optional("PostProcessing.Objects");
 
     if(!objInputs)

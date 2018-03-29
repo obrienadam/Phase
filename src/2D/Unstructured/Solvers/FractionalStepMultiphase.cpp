@@ -189,9 +189,6 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = gamma(cell);
         return (1. - g) * rho1_ + g * rho2_;
     });
-
-    // grid_->sendMessages(rho); //- For correct gradient computation
-
     rho.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
         return (1. - g) * rho1_ + g * rho2_;
@@ -199,16 +196,13 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the gravitational source term
     gradRho.computeFaces();
-    sg.savePreviousTimeStep(timeStep, 1.);
     for (const Face &face: grid_->faces())
         sg(face) = dot(g_, -face.centroid()) * gradRho(face);
 
-    sg.oldField(0).faceToCell(rho, rho.oldField(0), fluid_);
     sg.faceToCell(rho, rho, fluid_);
 
     //- Must be communicated for proper momentum interpolation
     grid_->sendMessages(sg);
-    grid_->sendMessages(sg.oldField(0));
 
     //- Update viscosity from kinematic viscosity
     mu.savePreviousTimeStep(timeStep, 1);
@@ -216,30 +210,15 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
         Scalar g = gamma(cell);
         return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
     });
-
-    // grid_->sendMessages(mu);
-
     mu.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
         return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
     });
 
     //- Update the surface tension
-    ft.savePreviousTimeStep(timeStep, 1);
-    ft.computeInterfaceForces(gamma, gradGamma);
-
-    //- Predicate ensures cell-centred values aren't overwritten for cells neighbouring ib cells
-    auto p = [this](const Cell &cell) {
-        for (const CellLink &nb: cell.neighbours())
-            if (ib_->ibObj(nb.cell().centroid()))
-                return false;
-        return true;
-    };
-
-    ft.oldField(0).faceToCell(rho, rho.oldField(0), fluid_, p);
+    ft.computeFaceInterfaceForces(gamma, gradGamma);
     ft.faceToCell(rho, rho, fluid_, p);
 
     //- Must be communicated for proper momentum interpolation
     grid_->sendMessages(ft);
-    grid_->sendMessages(ft.oldField(0));
 }

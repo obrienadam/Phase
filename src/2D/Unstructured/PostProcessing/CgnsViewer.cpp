@@ -3,11 +3,12 @@
 #include <stdio.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <cgnslib.h>
 
-
 #include "System/Exception.h"
+#include "System/CgnsFile.h"
 
 #include "CgnsViewer.h"
 
@@ -15,89 +16,124 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
         :
         Viewer(input, solver)
 {
-    char filename[256];
-    sprintf(filename, "solution/Proc%d/", solver.grid()->comm().rank());
+    boost::filesystem::path path = "solution/Proc" + std::to_string(solver.grid()->comm().rank());
+    boost::filesystem::create_directories(path);
 
-    boost::filesystem::create_directories(filename);
+    casename_ = input.caseInput().get<std::string>("CaseName");
+    gridfile_ = (path / "Grid.cgns").string();
 
-    sprintf(filename, "solution/Proc%d/Grid.cgns", solver.grid()->comm().rank());
+    CgnsFile file(gridfile_, CgnsFile::WRITE);
 
-    gridfile_ = filename;
+    int bid = file.createBase("Grid", 2, 2);
 
-    int fid, bid, zid, sid;
-    cg_open(filename, CG_MODE_WRITE, &fid);
-    bid = createBase(fid, filename_);
-    zid = createZone(fid, bid, *solver_.grid(), "Cells");
-    writeCoords(fid, bid, zid, *solver_.grid());
-    writeConnectivity(fid, bid, zid, *solver_.grid());
-    writeBoundaryConnectivity(fid, bid, zid, *solver_.grid());
-    //writeImmersedBoundaries(fid, solver_);
+    int zid = file.createUnstructuredZone(bid, "Zone", solver.grid()->nNodes(), solver.grid()->nCells());
 
-    //- Write data necessary to reuse partitioned grid
-    cg_sol_write(fid, bid, zid, "Info", CGNS_ENUMV(CellCenter), &sid);
+    file.writeCoordinates(bid, zid, solver.grid()->coords());
 
-    std::vector<int> procNo(solver.grid()->cells().size(), solver.grid()->comm().rank());
-    if (!solver.grid()->bufferZones().empty())
-        for (int proc = 0; proc < solver.grid()->comm().nProcs(); ++proc)
-            for (const Cell &cell: solver.grid()->bufferZones()[proc])
-                procNo[cell.id()] = proc;
+    file.writeMixedElementSection(bid, zid, "Cells", 1, solver.grid()->nCells(),
+                                  solver.grid()->nodeElementConnectivity());
 
-    int fieldId;
-    cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "ProcNo", procNo.data(), &fieldId);
-
-    std::vector<int> globalId(solver.grid()->cells().size(), -1);
-    std::vector<int> globalIdStart(1, 0);
-    CellGroup localCells = solver.grid()->localActiveCells() + solver.grid()->localInactiveCells();
-    for (int size: solver.grid()->comm().allGather(localCells.size()))
-        globalIdStart.push_back(globalIdStart.back() + size);
-
-    int id = globalIdStart[solver.grid()->comm().rank()];
-    for (const Cell &cell: localCells)
-        globalId[cell.id()] = id++;
-
-    solver.grid()->sendMessages(globalId);
-    cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), "GlobalID", globalId.data(), &fieldId);
-    cg_close(fid);
-}
-
-void CgnsViewer::write(Scalar solutionTime)
-{
-    char filename[256];
-    sprintf(filename, "solution/%lf/Proc%d", solutionTime, solver_.grid()->comm().rank());
-
-    boost::filesystem::create_directories(filename);
-
-    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, solver_.grid()->comm().rank());
-
-    int fid, bid, zid, sid;
-
-    cg_open(filename, CG_MODE_WRITE, &fid);
-
-    bid = createBase(fid, filename_);
-    zid = createZone(fid, bid, *solver_.grid(), "Cells");
-    linkGrid(fid, bid, zid, solver_.grid()->comm());
-
-    cg_sol_write(fid, bid, zid, "Solution", CGNS_ENUMV(CellCenter), &sid);
-
-    int fieldId;
-
-    for (const FiniteVolumeField<int> &field: integerFields_)
-        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), field.name().c_str(), field.data(), &fieldId);
-
-    for (const ScalarFiniteVolumeField &field: scalarFields_)
-        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), field.name().c_str(), field.data(), &fieldId);
-
-    for (const VectorFiniteVolumeField &field: vectorFields_)
+    //- Now write the boundary mesh elements
+    cgsize_t start = solver.grid()->nCells() + 1;
+    for (const Patch &patch: solver.grid()->patches())
     {
-        std::vector<Scalar> x(field.grid()->nCells()), y(field.grid()->nCells());
-        std::transform(field.begin(), field.end(), x.begin(), [](const Vector2D &vec) { return vec.x; });
-        std::transform(field.begin(), field.end(), y.begin(), [](const Vector2D &vec) { return vec.y; });
+        cgsize_t end = start + patch.size() - 1;
 
-        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), (field.name() + "X").c_str(), x.data(), &fieldId);
-        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), (field.name() + "Y").c_str(), y.data(), &fieldId);
+        int sid = file.writeBarElementSection(bid, zid, (patch.name() + "Elements"), start, end,
+                                              patch.faceConnectivity());
+        int bcid = file.writeBC(bid, zid, patch.name().c_str(), start, end);
+
+        start = end + 1;
     }
 
-    cg_close(fid);
+    int sid = file.writeSolution(bid, zid, "Info");
+
+    file.writeField(bid, zid, sid, "ProcNo", *solver.integerField("proc"));
+
+    file.writeField(bid, zid, sid, "GlobalID", *solver.integerField("globalId"));
+
+    file.close();
+}
+
+void CgnsViewer::write(Scalar time)
+{
+    boost::filesystem::path path = "solution/" + std::to_string(time)
+                                   + "/Proc" + std::to_string(solver_.grid()->comm().rank());
+
+    boost::filesystem::create_directories(path);
+
+    CgnsFile file((path / "Solution.cgns").string(), CgnsFile::WRITE);
+
+    int bid = file.createBase("Solution", 2, 2);
+
+    int zid = file.createUnstructuredZone(bid, "Zone", solver_.grid()->nNodes(), solver_.grid()->nCells());
+
+    int sid = file.writeSolution(bid, zid, "Solution");
+
+    for (const FiniteVolumeField<int> &field: integerFields_)
+        file.writeField(bid, zid, sid, field.name(), field);
+
+    for (const ScalarFiniteVolumeField &field: scalarFields_)
+        file.writeField(bid, zid, sid, field.name(), field);
+
+    for (const VectorFiniteVolumeField &field: vectorFields_)
+        file.writeField(bid, zid, sid, field.name(), field);
+
+    path = boost::filesystem::path("../../../") / gridfile_;
+
+    file.linkNode(bid, zid, "GridCoordinates", path.c_str(), "/Grid/Zone/GridCoordinates");
+    file.linkNode(bid, zid, "Cells", path.c_str(), "/Grid/Zone/Cells");
+    file.linkNode(bid, zid, "ZoneBC", path.c_str(), "/Grid/Zone/ZoneBC");
+
+    for (const Patch &patch: solver_.grid()->patches())
+    {
+        file.linkNode(bid, zid, (patch.name() + "Elements").c_str(),
+                      path.c_str(),
+                      ("/Grid/Zone/" + patch.name() + "Elements").c_str());
+    }
+
+    file.linkNode(bid, zid, sid, "GlobalID", path.c_str(), "/Grid/Zone/Info/GlobalID");
+    file.linkNode(bid, zid, sid, "ProcNo", path.c_str(), "/Grid/Zone/Info/ProcNo");
+    file.close();
+
+//    char filename[256];
+//    sprintf(filename, "solution/%lf/Proc%d", solutionTime, solver_.grid()->comm().rank());
+//
+//    boost::filesystem::create_directories(filename);
+//
+//    sprintf(filename, "solution/%lf/Proc%d/Solution.cgns", solutionTime, solver_.grid()->comm().rank());
+//
+//    int fid, bid, zid, sid;
+//
+//    cg_open(filename, CG_MODE_WRITE, &fid);
+//
+//    bid = createBase(fid, filename_);
+//    zid = createZone(fid, bid, *solver_.grid(), "Cells");
+//    linkGrid(fid, bid, zid, solver_.grid()->comm());
+//
+//    cg_sol_write(fid, bid, zid, "Solution", CGNS_ENUMV(CellCenter), &sid);
+//
+//    int fieldId;
+//
+//    for (const FiniteVolumeField<int> &field: integerFields_)
+//        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(Integer), field.name().c_str(), field.data(), &fieldId);
+//
+//    for (const ScalarFiniteVolumeField &field: scalarFields_)
+//        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), field.name().c_str(), field.data(), &fieldId);
+//
+//    for (const VectorFiniteVolumeField &field: vectorFields_)
+//    {
+//        std::vector<Scalar> x(field.grid()->nCells()), y(field.grid()->nCells());
+//        std::transform(field.begin(), field.end(), x.begin(), [](const Vector2D &vec)
+//        { return vec.x; });
+//        std::transform(field.begin(), field.end(), y.begin(), [](const Vector2D &vec)
+//        { return vec.y; });
+//
+//        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), (field.name() + "X").c_str(), x.data(), &fieldId);
+//        cg_field_write(fid, bid, zid, sid, CGNS_ENUMV(RealDouble), (field.name() + "Y").c_str(), y.data(), &fieldId);
+//    }
+//
+//    cg_close(fid);
 }
 
 int CgnsViewer::createBase(int fid, const std::string &name)
@@ -190,25 +226,5 @@ void CgnsViewer::writeBoundaryConnectivity(int fid, int bid, int zid, const Fini
         cg_boco_gridlocation_write(fid, bid, zid, bcId, CGNS_ENUMV(EdgeCenter));
 
         start = end + 1;
-    }
-}
-
-void CgnsViewer::linkGrid(int fid, int bid, int zid, const Communicator &comm)
-{
-    char filename[256];
-
-    sprintf(filename, "../../Proc%d/Grid.cgns", comm.rank());
-
-    cg_goto(fid, bid, "Zone_t", zid, "end");
-    cg_link_write("GridCoordinates", filename, ("/" + filename_ + "/Cells/GridCoordinates").c_str());
-    cg_link_write("GridElements", filename, ("/" + filename_ + "/Cells/GridElements").c_str());
-
-    if (!solver_.grid()->patches().empty())
-        cg_link_write("ZoneBC", filename, ("/" + filename_ + "/Cells/ZoneBC").c_str());
-
-    for (const Patch &patch: solver_.grid()->patches())
-    {
-        std::string name(patch.name());
-        cg_link_write((name + "Elements").c_str(), filename, ("/" + filename_ + "/Cells/" + name + "Elements").c_str());
     }
 }
