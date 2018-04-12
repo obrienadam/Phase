@@ -90,7 +90,9 @@ void CgnsViewer::write(Scalar time)
 
     file.linkNode(bid, zid, "GridCoordinates", path.c_str(), "/Grid/Zone/GridCoordinates");
     file.linkNode(bid, zid, "Cells", path.c_str(), "/Grid/Zone/Cells");
-    file.linkNode(bid, zid, "ZoneBC", path.c_str(), "/Grid/Zone/ZoneBC");
+
+    if(!solver_.grid()->patches().empty())
+        file.linkNode(bid, zid, "ZoneBC", path.c_str(), "/Grid/Zone/ZoneBC");
 
     for (const FaceGroup &patch: solver_.grid()->patches())
     {

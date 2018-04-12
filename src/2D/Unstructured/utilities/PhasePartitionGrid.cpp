@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <metis.h>
 #include <boost/filesystem.hpp>
 
