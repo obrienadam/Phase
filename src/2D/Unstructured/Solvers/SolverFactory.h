@@ -1,5 +1,5 @@
-#ifndef SOLVER_FACTORY_H
-#define SOLVER_FACTORY_H
+#ifndef PHASE_SOLVER_FACTORY_H
+#define PHASE_SOLVER_FACTORY_H
 
 #include "Solver.h"
 
@@ -17,12 +17,15 @@ public:
     };
 
     static std::shared_ptr<Solver> create(SolverType type,
-                                          const Input &input);
+                                          const Input &input,
+                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
     static std::shared_ptr<Solver> create(std::string type,
-                                          const Input &input);
+                                          const Input &input,
+                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
-    static std::shared_ptr<Solver> create(const Input &input);
+    static std::shared_ptr<Solver> create(const Input &input,
+                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 };
 
 

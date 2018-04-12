@@ -21,7 +21,8 @@ public:
 
     virtual void setRhs(const Vector &rhs);
 
-    Scalar x(Index idx) const;
+    Scalar x(Index idx) const
+    { return xData_[idx]; }
 
     virtual bool supportsMPI() const
     { return true; }
@@ -45,6 +46,8 @@ protected:
     Teuchos::RCP<TpetraMultiVector> x_, b_;
 
     Teuchos::RCP<TpetraCrsMatrix> mat_;
+
+    Teuchos::ArrayRCP<const Scalar> xData_;
 };
 
 #endif

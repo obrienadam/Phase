@@ -3,7 +3,7 @@
 void QuadraticInterpolator::setPoint(const Point2D &pt)
 {
     pt_ = pt;
-    cells_ = grid_.lock()->globalActiveCells().nearestItems(pt, 6);
+    cells_ = grid_.lock()->globalCells().nearestItems(pt, 6);
     isValid_ = cells_.size() == 6;
 
     if (isValid_)

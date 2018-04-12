@@ -70,12 +70,6 @@ void FiniteVolumeField<T>::fillInterior(const T &val)
         for (const Face &face: grid_->interiorFaces())
             faces_[face.id()] = val;
     }
-
-    if (!nodes_.empty())
-    {
-        for (const Node &node: grid_->interiorNodes())
-            nodes_[node.id()] = val;
-    }
 }
 
 template<class T>
@@ -96,9 +90,9 @@ void FiniteVolumeField<T>::copyBoundaryTypes(const FiniteVolumeField &other)
 }
 
 template<class T>
-typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const Patch &patch) const
+typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(const FaceGroup &patch) const
 {
-    auto it = patchBoundaries_.find(patch.id());
+    auto it = patchBoundaries_.find(patch.name());
     return it == patchBoundaries_.end() ? NORMAL_GRADIENT : it->second.first;
 }
 
@@ -109,9 +103,9 @@ typename FiniteVolumeField<T>::BoundaryType FiniteVolumeField<T>::boundaryType(c
 }
 
 template<class T>
-T FiniteVolumeField<T>::boundaryRefValue(const Patch &patch) const
+T FiniteVolumeField<T>::boundaryRefValue(const FaceGroup &patch) const
 {
-    return patchBoundaries_.find(patch.id())->second.second;
+    return patchBoundaries_.find(patch.name())->second.second;
 }
 
 template<class T>
@@ -154,7 +148,7 @@ void FiniteVolumeField<T>::setBoundaryFaces()
 {
     auto &self = *this;
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
     {
         switch (boundaryType(patch))
         {
@@ -173,7 +167,7 @@ template<class T>
 void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::function<T(const Face &face)> &fcn)
 {
     auto &self = *this;
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
     {
         if (boundaryType(patch) == bType)
             for (const Face &face: patch)
@@ -388,13 +382,13 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        for (const Patch &patch: grid_->patches())
+        for (const FaceGroup &patch: grid_->patches())
         {
-            patchBoundaries_[patch.id()] = std::make_pair(boundaryType, T());
+            patchBoundaries_[patch.name()] = std::make_pair(boundaryType, T());
         }
     }
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
     {
         typeStr = input.boundaryInput().get<std::string>(
                 "Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
@@ -414,7 +408,7 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 
-        patchBoundaries_[patch.id()] = std::make_pair(boundaryType, T());
+        patchBoundaries_[patch.name()] = std::make_pair(boundaryType, T());
     }
 }
 

@@ -1,5 +1,5 @@
-#ifndef DIVERGENCE_H
-#define DIVERGENCE_H
+#ifndef PHASE_DIVERGENCE_H
+#define PHASE_DIVERGENCE_H
 
 #include "Equation.h"
 #include "FiniteVolume/Field/JacobianField.h"
@@ -9,7 +9,6 @@ namespace fv
     template<typename T>
     Equation<T> div(const VectorFiniteVolumeField &u,
                     FiniteVolumeField<T> &phi,
-                    const CellGroup &cells,
                     Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
@@ -17,7 +16,7 @@ namespace fv
         const VectorFiniteVolumeField &u0 = u.oldField(0);
         const FiniteVolumeField<T> &phi0 = phi.oldField(0);
 
-        for (const Cell &cell: cells)
+        for (const Cell &cell: phi.cells())
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -62,14 +61,13 @@ namespace fv
     template<class T>
     Equation<T> divc(const VectorFiniteVolumeField &u,
                      FiniteVolumeField<T> &phi,
-                     const CellGroup &cells,
                      Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
         const VectorFiniteVolumeField &u0 = u.oldField(0);
         const FiniteVolumeField<T> &phi0 = phi.oldField(0);
 
-        for (const Cell &cell: cells)
+        for (const Cell &cell: phi.cells())
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -112,22 +110,6 @@ namespace fv
         }
 
         return eqn;
-    }
-
-    template<class T>
-    Equation<T> div(const VectorFiniteVolumeField &u,
-                    FiniteVolumeField<T> &phi,
-                    Scalar theta = 1.)
-    {
-        return div(u, phi, u.grid()->cellZone("fluid"), theta);
-    }
-
-    template<class T>
-    Equation<T> divc(const VectorFiniteVolumeField &u,
-                     FiniteVolumeField<T> &phi,
-                     Scalar theta = 1.)
-    {
-        return divc(u, phi, u.grid()->cellZone("fluid"), theta);
     }
 
 

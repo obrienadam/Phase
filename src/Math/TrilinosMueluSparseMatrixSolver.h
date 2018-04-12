@@ -1,19 +1,23 @@
-#ifndef TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
-#define TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
+#ifndef PHASE_TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
+#define PHASE_TRILINOS_MUELU_SPARSE_MATRIX_SOLVER_H
 
 #include <MueLu_TpetraOperator.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosSolverManager.hpp>
 
-#include "TrilinosSparseMatrixSolver.h"
+#include "Math/TrilinosSparseMatrixSolver.h"
+
+#include "2D/Geometry/Point2D.h"
 
 class TrilinosMueluSparseMatrixSolver : public TrilinosSparseMatrixSolver
 {
 public:
 
     TrilinosMueluSparseMatrixSolver(const Communicator &comm,
-                                    //const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
-                                    const std::string &solverName = "BiCGSTAB");
+                                    const std::string &solverName = "TFQMR");
+
+    Type type() const
+    { return TRILINOS_MUELU; }
 
     void setRank(int rank);
 
@@ -26,6 +30,8 @@ public:
     Scalar error() const;
 
     void printStatus(const std::string &msg) const;
+
+    void setCoordinates(const std::vector<Point2D>& coordinates);
 
 private:
 
@@ -43,7 +49,7 @@ private:
 
     Teuchos::RCP<Preconditioner> precon_;
 
-    //std::weak_ptr<const FiniteVolumeGrid2D> grid_;
+
 };
 
 #endif

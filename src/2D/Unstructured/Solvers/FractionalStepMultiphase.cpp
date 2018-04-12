@@ -8,18 +8,18 @@
 
 #include "FractionalStepMultiphase.h"
 
-FractionalStepMultiphase::FractionalStepMultiphase(const Input &input)
+FractionalStepMultiphase::FractionalStepMultiphase(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input),
-        rho(*addScalarField("rho")),
-        mu(*addScalarField("mu")),
-        gamma(*addScalarField(input, "gamma")),
-        beta(*addScalarField("beta")),
-        rhoU(*addVectorField("rhoU")),
-        ft(*std::static_pointer_cast<Celeste>(addVectorField(std::make_shared<Celeste>(input, grid_, ib_)))),
-        sg(*addVectorField("sg")),
-        gradGamma(*std::static_pointer_cast<ScalarGradient>(addVectorField(std::make_shared<ScalarGradient>(gamma)))),
-        gradRho(*std::static_pointer_cast<ScalarGradient>(addVectorField(std::make_shared<ScalarGradient>(rho)))),
+        FractionalStep(input, grid),
+        rho(*addField<Scalar>("rho")),
+        mu(*addField<Scalar>("mu")),
+        gamma(*addField<Scalar>(input, "gamma")),
+        beta(*addField<Scalar>("beta")),
+        rhoU(*addField<Vector2D>("rhoU")),
+        ft(*std::static_pointer_cast<Celeste>(addField<Vector2D>(std::make_shared<Celeste>(input, grid_, ib_)))),
+        sg(*addField<Vector2D>("sg")),
+        gradGamma(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma)))),
+        gradRho(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(rho)))),
         gammaEqn_(input, gamma, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1", rho_);
@@ -37,10 +37,10 @@ FractionalStepMultiphase::FractionalStepMultiphase(const Input &input)
 
     capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
 
-    addScalarField(ft.gammaTilde());
-    addScalarField(ft.kappa());
-    addVectorField(ft.gradGammaTilde());
-    addVectorField(ft.n());
+    addField<Scalar>(ft.gammaTilde());
+    addField<Scalar>(ft.kappa());
+    addField<Vector2D>(ft.gradGammaTilde());
+    addField<Vector2D>(ft.n());
 }
 
 void FractionalStepMultiphase::initialize()
@@ -106,7 +106,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (fv::ddt(rho, u, timeStep) + fv::div(rhoU, u, 0.5) + ib_->velocityBcs(u)
-             == fv::laplacian(mu, u, 0.5) + src::src(ft + sg, fluid_));
+             == fv::laplacian(mu, u, 0.5) + src::src(ft + sg));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u);
@@ -119,7 +119,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
                   + timeStep / rho(face) * (ft(face) + sg(face));
     }
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:
@@ -143,7 +143,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho, p, fluid_) + ib_->bcs(p) == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho, p) + ib_->bcs(p) == src::div(u));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
@@ -165,7 +165,7 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho(face) * gradP(face);
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:

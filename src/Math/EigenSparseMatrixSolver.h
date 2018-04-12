@@ -1,5 +1,5 @@
-#ifndef EIGEN_SPARSE_MATRIX_SOLVER_H
-#define EIGEN_SPARSE_MATRIX_SOLVER_H
+#ifndef PHASE_EIGEN_SPARSE_MATRIX_SOLVER_H
+#define PHASE_EIGEN_SPARSE_MATRIX_SOLVER_H
 
 #include <vector>
 
@@ -18,6 +18,9 @@ public:
 
     EigenSparseMatrixSolver();
 
+    Type type() const
+    { return EIGEN; }
+
     void setRank(int rank);
 
     void set(const CoefficientList &coeffs);
@@ -30,7 +33,8 @@ public:
 
     Scalar solve(const Vector &x0);
 
-    Scalar x(Index idx) const;
+    Scalar x(Index idx) const
+    { return x_[idx]; }
 
     int nIters() const
     { return 1; }

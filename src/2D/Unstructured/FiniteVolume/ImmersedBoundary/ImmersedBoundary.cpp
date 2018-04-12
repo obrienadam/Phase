@@ -11,195 +11,202 @@
 #include "EulerLagrangeImmersedBoundaryObject.h"
 #include "DirectForcingImmersedBoundaryObject.h"
 
-ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+ImmersedBoundary::ImmersedBoundary(const Input &input,
+                                   const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                   const std::shared_ptr<CellGroup> &solverCells)
         :
-        grid_(grid)
+        grid_(grid),
+        solverCells_(solverCells),
+        cellStatus_(std::make_shared<FiniteVolumeField<int>>(grid, "cellStatus", FLUID_CELLS, false, false))
 {
-    Label id = 0;
-
     auto ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaries");
 
-    if (ibInput)
-        for (const auto &ibObjectInput: ibInput.get())
+    if (!ibInput)
+    {
+        grid_->comm().printf("No immersed boundaries present.\n");
+        return;
+    }
+
+    for (const auto &ibObjectInput: ibInput.get())
+    {
+        grid_->comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
+
+        std::string method = ibObjectInput.second.get<std::string>("method", "ghost-cell");
+        std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+        grid_->comm().printf("Immersed boundary method: %s\n", method.c_str());
+
+        std::shared_ptr<ImmersedBoundaryObject> ibObject;
+
+        if (method == "step")
+            ibObject = std::make_shared<StepImmersedBoundaryObject>(ibObjectInput.first, grid_, solverCells_);
+        else if (method == "ghost-cell")
+            ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, grid_, solverCells_);
+        else if (method == "high-order")
+            ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, grid_, solverCells_);
+        else if (method == "euler-lagrange")
+            ibObject = std::make_shared<EulerLagrangeImmersedBoundaryObject>(ibObjectInput.first, grid_, solverCells_);
+        else if (method == "direct-forcing")
+            ibObject = std::make_shared<DirectForcingImmersedBoundaryObject>(ibObjectInput.first, grid_, solverCells_);
+        else
+            throw Exception("ImmersedBoundary", "ImmersedBoundary",
+                            "invalid immersed boundary method \"" + method + "\".");
+
+        //- Initialize the geometry
+        std::string shape = ibObjectInput.second.get<std::string>("geometry.type");
+        Point2D center = Point2D(ibObjectInput.second.get<std::string>("geometry.center"));
+
+        if (shape == "circle")
         {
-            grid_->comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
+            ibObject->initCircle(center, ibObjectInput.second.get<Scalar>("geometry.radius"));
+        }
+        else if (shape == "box")
+        {
+            ibObject->initBox(center, ibObjectInput.second.get<Scalar>("geometry.width"),
+                              ibObjectInput.second.get<Scalar>("geometry.height"));
+        }
+        else if (shape == "polygon")
+        {
+            std::ifstream fin;
+            std::vector<Point2D> verts;
+            std::string filename = "case/";
+            filename += ibObjectInput.second.get<std::string>("geometry.file").c_str();
 
-            std::string method = ibObjectInput.second.get<std::string>("method", "ghost-cell");
-            std::transform(method.begin(), method.end(), method.begin(), ::tolower);
-            grid_->comm().printf("Immersed boundary method: %s\n", method.c_str());
+            fin.open(filename.c_str());
 
-            std::shared_ptr<ImmersedBoundaryObject> ibObject;
-
-            if (method == "step")
-                ibObject = std::make_shared<StepImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
-            else if (method == "ghost-cell")
-                ibObject = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
-            else if (method == "high-order")
-                ibObject = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
-            else if (method == "euler-lagrange")
-                ibObject = std::make_shared<EulerLagrangeImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
-            else if (method == "direct-forcing")
-                ibObject = std::make_shared<DirectForcingImmersedBoundaryObject>(ibObjectInput.first, id++, grid_);
-            else
+            if (!fin.is_open())
                 throw Exception("ImmersedBoundary", "ImmersedBoundary",
-                                "invalid immersed boundary method \"" + method + "\".");
+                                "failed to open file \"" + filename + "\".");
 
-            //- Initialize the geometry
-            std::string shape = ibObjectInput.second.get<std::string>("geometry.type");
-            Point2D center = Point2D(ibObjectInput.second.get<std::string>("geometry.center"));
+            grid_->comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(),
+                                 filename.c_str());
 
-            if (shape == "circle")
+            while (!fin.eof())
             {
-                ibObject->initCircle(center, ibObjectInput.second.get<Scalar>("geometry.radius"));
+                Scalar x, y;
+                fin >> x;
+                fin >> y;
+
+                verts.push_back(Point2D(x, y));
             }
-            else if (shape == "box")
+
+            fin.close();
+
+            Vector2D translation = center - Polygon(verts.begin(), verts.end()).centroid();
+
+            for (Point2D &vert: verts)
+                vert += translation;
+
+            ibObject->initPolygon(verts.begin(), verts.end());
+        }
+        else
+            throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject",
+                            "invalid geometry type \"" + shape + "\".");
+
+        //- Optional geometry parameters
+        boost::optional<Scalar> scaleFactor = ibObjectInput.second.get_optional<Scalar>("geometry.scale");
+
+        if (scaleFactor)
+        {
+            grid_->comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(),
+                                 scaleFactor.get());
+            ibObject->shape().scale(scaleFactor.get());
+        }
+
+        boost::optional<Scalar> rotationAngle = ibObjectInput.second.get_optional<Scalar>("geometry.rotate");
+
+        if (rotationAngle)
+        {
+            grid_->comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n",
+                                 ibObjectInput.first.c_str(),
+                                 rotationAngle.get());
+
+            if (ibObject->shape().type() == Shape2D::BOX)
             {
-                ibObject->initBox(center, ibObjectInput.second.get<Scalar>("geometry.width"),
-                                  ibObjectInput.second.get<Scalar>("geometry.height"));
-            }
-            else if (shape == "polygon")
-            {
-                std::ifstream fin;
-                std::vector<Point2D> verts;
-                std::string filename = "case/";
-                filename += ibObjectInput.second.get<std::string>("geometry.file").c_str();
-
-                fin.open(filename.c_str());
-
-                if (!fin.is_open())
-                    throw Exception("ImmersedBoundary", "ImmersedBoundary",
-                                    "failed to open file \"" + filename + "\".");
-
-                grid_->comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(),
-                                     filename.c_str());
-
-                while (!fin.eof())
-                {
-                    Scalar x, y;
-                    fin >> x;
-                    fin >> y;
-
-                    verts.push_back(Point2D(x, y));
-                }
-
-                fin.close();
-
-                Vector2D translation = center - Polygon(verts.begin(), verts.end()).centroid();
-
-                for (Point2D &vert: verts)
-                    vert += translation;
+                Box *box = (Box *) &ibObject->shape();
+                auto verts = box->vertices();
 
                 ibObject->initPolygon(verts.begin(), verts.end());
             }
-            else
-                throw Exception("ImmersedBoundaryObject", "ImmersedBoundaryObject",
-                                "invalid geometry type \"" + shape + "\".");
 
-            //- Optional geometry parameters
-            boost::optional<Scalar> scaleFactor = ibObjectInput.second.get_optional<Scalar>("geometry.scale");
-
-            if (scaleFactor)
-            {
-                grid_->comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(),
-                                     scaleFactor.get());
-                ibObject->shape().scale(scaleFactor.get());
-            }
-
-            boost::optional<Scalar> rotationAngle = ibObjectInput.second.get_optional<Scalar>("geometry.rotate");
-
-            if (rotationAngle)
-            {
-                grid_->comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n",
-                                     ibObjectInput.first.c_str(),
-                                     rotationAngle.get());
-
-                if (ibObject->shape().type() == Shape2D::BOX)
-                {
-                    Box *box = (Box *) &ibObject->shape();
-                    auto verts = box->vertices();
-
-                    ibObject->initPolygon(verts.begin(), verts.end());
-                }
-
-                ibObject->shape().rotate(rotationAngle.get() * M_PI / 180.);
-            }
-
-            //- Properties
-            ibObject->rho = ibObjectInput.second.get<Scalar>("properties.rho", 0.);
-
-            //- Boundary information
-            for (const auto &child: ibObjectInput.second)
-            {
-                if (child.first == "geometry" || child.first == "interpolation"
-                    || child.first == "motion" || child.first == "method" || child.first == "properties")
-                    continue;
-
-                std::string type = child.second.get<std::string>("type");
-                ImmersedBoundaryObject::BoundaryType boundaryType;
-
-                if (type == "fixed")
-                {
-                    boundaryType = ImmersedBoundaryObject::FIXED;
-                    ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
-                }
-                else if (type == "normal_gradient")
-                {
-                    boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
-                    ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
-                }
-                else if (type == "partial_slip")
-                {
-                    boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
-                    ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
-                }
-                else
-                    throw Exception("ImmersedBoundary", "ImmersedBoundary",
-                                    "unrecognized boundary type \"" + type + "\".");
-
-                grid_->comm().printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(),
-                                     child.first.c_str());
-                ibObject->addBoundaryType(child.first, boundaryType);
-            }
-
-            //- Set the motion type
-            std::shared_ptr<Motion> motion = nullptr;
-            std::string motionType = ibObjectInput.second.get<std::string>("motion.type", "none");
-
-            if (motionType == "translating")
-            {
-                motion = std::make_shared<TranslatingMotion>(
-                        ibObject->position(),
-                        ibObjectInput.second.get<std::string>("motion.velocity"),
-                        ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)")
-                );
-            }
-            else if (motionType == "oscillating")
-            {
-                motion = std::make_shared<OscillatingMotion>(
-                        ibObject->position(),
-                        ibObjectInput.second.get<std::string>("motion.frequency"),
-                        ibObjectInput.second.get<std::string>("motion.amplitude"),
-                        ibObjectInput.second.get<std::string>("motion.phase", "(0,0)"),
-                        0
-                );
-            }
-            else if (motionType == "solidBody")
-            {
-                motion = std::make_shared<SolidBodyMotion>(
-                        ibObject,
-                        ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
-                );
-            }
-            else if (motionType == "none")
-            {
-                motion = nullptr;
-            }
-            else
-                throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
-
-            ibObject->setMotion(motion);
-            ibObjs_.push_back(ibObject);
+            ibObject->shape().rotate(rotationAngle.get() * M_PI / 180.);
         }
+
+        //- Properties
+        ibObject->rho = ibObjectInput.second.get<Scalar>("properties.rho", 0.);
+
+        //- Boundary information
+        for (const auto &child: ibObjectInput.second)
+        {
+            if (child.first == "geometry" || child.first == "interpolation"
+                || child.first == "motion" || child.first == "method" || child.first == "properties")
+                continue;
+
+            std::string type = child.second.get<std::string>("type");
+            ImmersedBoundaryObject::BoundaryType boundaryType;
+
+            if (type == "fixed")
+            {
+                boundaryType = ImmersedBoundaryObject::FIXED;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
+            else if (type == "normal_gradient")
+            {
+                boundaryType = ImmersedBoundaryObject::NORMAL_GRADIENT;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
+            else if (type == "partial_slip")
+            {
+                boundaryType = ImmersedBoundaryObject::PARTIAL_SLIP;
+                ibObject->addBoundaryRefValue(child.first, child.second.get<std::string>("value"));
+            }
+            else
+                throw Exception("ImmersedBoundary", "ImmersedBoundary",
+                                "unrecognized boundary type \"" + type + "\".");
+
+            grid_->comm().printf("Setting boundary type \"%s\" for field \"%s\".\n", type.c_str(),
+                                 child.first.c_str());
+            ibObject->addBoundaryType(child.first, boundaryType);
+        }
+
+        //- Set the motion type
+        std::shared_ptr<Motion> motion = nullptr;
+        std::string motionType = ibObjectInput.second.get<std::string>("motion.type", "none");
+
+        if (motionType == "translating")
+        {
+            motion = std::make_shared<TranslatingMotion>(
+                    ibObject->position(),
+                    ibObjectInput.second.get<std::string>("motion.velocity"),
+                    ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)")
+            );
+        }
+        else if (motionType == "oscillating")
+        {
+            motion = std::make_shared<OscillatingMotion>(
+                    ibObject->position(),
+                    ibObjectInput.second.get<std::string>("motion.frequency"),
+                    ibObjectInput.second.get<std::string>("motion.amplitude"),
+                    ibObjectInput.second.get<std::string>("motion.phase", "(0,0)"),
+                    0
+            );
+        }
+        else if (motionType == "solidBody")
+        {
+            motion = std::make_shared<SolidBodyMotion>(
+                    ibObject,
+                    ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
+            );
+        }
+        else if (motionType == "none")
+        {
+            motion = nullptr;
+        }
+        else
+            throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
+
+        ibObject->setMotion(motion);
+        ibObjs_.push_back(ibObject);
+    }
 
     auto ibArrayInput = input.boundaryInput().get_child_optional("ImmersedBoundaryArray");
 
@@ -225,11 +232,11 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
                 std::string ibObjName = name + "_" + std::to_string(i) + "_" + std::to_string(j);
 
                 if (method == "step")
-                    ibObj = std::make_shared<StepImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<StepImmersedBoundaryObject>(ibObjName, grid_, solverCells_);
                 else if (method == "ghost-cell")
-                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<GhostCellImmersedBoundaryObject>(ibObjName, grid_, solverCells_);
                 else if (method == "high-order")
-                    ibObj = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjName, id++, grid_);
+                    ibObj = std::make_shared<HighOrderImmersedBoundaryObject>(ibObjName, grid_, solverCells_);
                 if (shape == "circle")
                 {
                     ibObj->initCircle(
@@ -264,25 +271,17 @@ ImmersedBoundary::ImmersedBoundary(const Input &input, const std::shared_ptr<Fin
             input.boundaryInput().get<Scalar>("ImmersedBoundaries.Collisions.range", 0.)
     );
 
-    if (ibObjs_.empty())
-        grid_->comm().printf("No immersed boundaries present.\n");
-
-    for (const Node &node: grid_->nodes())
-    {
-        if (!ibObj(node))
-            fluidNodes_.add(node);
-    }
-
-    cellStatus_ = std::make_shared<FiniteVolumeField<int>>(grid_, "cellStatus", FLUID_CELLS, false, false);
+    for(const auto& ibObj: ibObjs_)
+        ibObj->updateCells();
 }
 
-void ImmersedBoundary::initCellZones(CellZone &zone)
+void ImmersedBoundary::setSolverCells(const std::shared_ptr<CellGroup> &solverCells)
 {
-    zone_ = &zone;
+    solverCells_ = solverCells;
 
     for (auto &ibObj: ibObjs_)
     {
-        ibObj->setZone(zone);
+        ibObj->setSolverCells(solverCells_);
         ibObj->updateCells();
     }
 
@@ -361,12 +360,6 @@ void ImmersedBoundary::update(Scalar timeStep)
         ibObj->update(timeStep);
 
     setCellStatus();
-
-    for (const Node &node: grid_->nodes())
-    {
-        if (!ibObj(node))
-            fluidNodes_.add(node);
-    }
 }
 
 Equation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const
@@ -469,7 +462,7 @@ void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
 
 void ImmersedBoundary::setCellStatus()
 {
-    cellStatus_->fill(FLUID_CELLS, *zone_);
+    cellStatus_->fill(FLUID_CELLS, *solverCells_);
 
     for (const auto &ibObj: ibObjs_)
     {

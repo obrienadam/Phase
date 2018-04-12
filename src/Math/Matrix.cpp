@@ -13,12 +13,13 @@ extern "C"
 }
 #endif
 
-#include "Matrix.h"
 #include "System/Exception.h"
+
+#include "Matrix.h"
 
 Matrix::Matrix(Size m, Size n, const std::initializer_list<Scalar> &coeffs)
 {
-    assign(coeffs);
+    vals_.assign(coeffs);
     resize(m, n);
 }
 
@@ -26,41 +27,33 @@ void Matrix::resize(Size m, Size n)
 {
     m_ = m;
     n_ = n;
-    std::vector<Scalar>::resize(m_ * n_, 0.);
+    vals_.resize(m_ * n_, 0.);
     ipiv_.resize(m_);
 }
 
 void Matrix::zero()
 {
-    std::fill(begin(), end(), 0.);
+    std::fill(vals_.begin(), vals_.end(), 0.);
 }
 
 void Matrix::init(const Scalar *begin, const Scalar *end)
 {
-    std::copy(begin, end, this->begin());
+    std::copy(begin, end, vals_.begin());
 }
 
 void Matrix::setRow(int i, const std::initializer_list<Scalar> &coeffs)
 {
-    std::copy(coeffs.begin(), coeffs.end(), begin() + n_ * i);
-}
-
-void Matrix::scaleRow(Size i, Scalar factor)
-{
-    auto itr = begin() + i * n_;
-    std::transform(itr, itr + n_, itr, [factor](Scalar val) {
-        return factor * val;
-    });
+    std::copy(coeffs.begin(), coeffs.end(), vals_.begin() + n_ * i);
 }
 
 Scalar &Matrix::operator()(Size i, Size j)
 {
-    return std::vector<Scalar>::operator[](i * n_ + j);
+    return vals_[i * n_ + j];
 }
 
 Scalar Matrix::operator()(Size i, Size j) const
 {
-    return std::vector<Scalar>::operator[](i * n_ + j);
+    return vals_[i * n_ + j];
 }
 
 Matrix &Matrix::operator=(const std::initializer_list<Scalar> &coeffs)
@@ -68,7 +61,7 @@ Matrix &Matrix::operator=(const std::initializer_list<Scalar> &coeffs)
     if (m_ * n_ != coeffs.size())
         throw Exception("Matrix", "operator=", "dimension mismatch.");
 
-    assign(coeffs);
+    vals_.assign(coeffs);
 
     return *this;
 }
@@ -79,7 +72,7 @@ Matrix &Matrix::operator+=(const Matrix &rhs)
     if (m_ != rhs.m_ || n_ != rhs.n_)
         throw Exception("Matrix", "operator+=", "dimension mismatch.");
 
-    std::transform(begin(), end(), rhs.begin(), begin(), std::plus<Scalar>());
+    std::transform(vals_.begin(), vals_.end(), rhs.vals_.begin(), vals_.begin(), std::plus<Scalar>());
 
     return *this;
 }
@@ -89,20 +82,20 @@ Matrix &Matrix::operator-=(const Matrix &rhs)
     if (m_ != rhs.m_ || n_ != rhs.n_)
         throw Exception("Matrix", "operator-=", "dimension mismatch.");
 
-    std::transform(begin(), end(), rhs.begin(), begin(), std::minus<Scalar>());
+    std::transform(vals_.begin(), vals_.end(), rhs.vals_.begin(), vals_.begin(), std::minus<Scalar>());
 
     return *this;
 }
 
 Matrix &Matrix::operator*=(Scalar rhs)
 {
-    std::for_each(begin(), end(), [rhs](Scalar &val) { val *= rhs; });
+    std::for_each(vals_.begin(), vals_.end(), [rhs](Scalar &val) { val *= rhs; });
     return *this;
 }
 
 Matrix &Matrix::operator/=(Scalar rhs)
 {
-    std::for_each(begin(), end(), [rhs](Scalar &val) { val /= rhs; });
+    std::for_each(vals_.begin(), vals_.end(), [rhs](Scalar &val) { val /= rhs; });
     return *this;
 }
 
@@ -139,8 +132,8 @@ Matrix &Matrix::transpose()
     }
     else // General non-square matrices
     {
-        auto last = end();
-        auto first = begin();
+        auto last = vals_.end();
+        auto first = vals_.begin();
         int m = n_;
 
         const int mn1 = (last - first - 1);

@@ -1,5 +1,5 @@
-#ifndef FRACTIONAL_STEP_AXISYMMETRIC_H
-#define FRACTIONAL_STEP_AXISYMMETRIC_H
+#ifndef PHASE_FRACTIONAL_STEP_AXISYMMETRIC_H
+#define PHASE_FRACTIONAL_STEP_AXISYMMETRIC_H
 
 #include "FractionalStep.h"
 
@@ -7,7 +7,7 @@ class FractionalStepAxisymmetric : public FractionalStep
 {
 public:
 
-    FractionalStepAxisymmetric(const Input &input);
+    FractionalStepAxisymmetric(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
 protected:
 

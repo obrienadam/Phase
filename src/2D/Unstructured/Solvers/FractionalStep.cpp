@@ -5,14 +5,14 @@
 
 #include "FractionalStep.h"
 
-FractionalStep::FractionalStep(const Input &input)
+FractionalStep::FractionalStep(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        Solver(input),
-        fluid_(grid_->createCellZone("fluid")),
-        u(*addVectorField(input, "u")),
-        p(*addScalarField(input, "p")),
-        gradP(*std::static_pointer_cast<ScalarGradient>(addVectorField(std::make_shared<ScalarGradient>(p)))),
-        gradU(*std::static_pointer_cast<JacobianField>(addTensorField(std::make_shared<JacobianField>(u)))),
+        Solver(input, grid),
+        fluid_(*cells_),
+        u(*addField<Vector2D>(input, "u")),
+        p(*addField<Scalar>(input, "p")),
+        gradP(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(p)))),
+        gradU(*std::static_pointer_cast<JacobianField>(addField<Tensor2D>(std::make_shared<JacobianField>(u)))),
         uEqn_(input, u, "uEqn"),
         pEqn_(input, p, "pEqn")
 {
@@ -21,10 +21,7 @@ FractionalStep::FractionalStep(const Input &input)
     g_ = input.caseInput().get<std::string>("Properties.g", "(0,0)");
 
     //- All active cells to fluid cells
-    fluid_.add(grid_->localActiveCells());
-
-    //- Create ib zones if any. Will also update local/global indices
-    ib_->initCellZones(fluid_);
+    //fluid_.add(grid_->localCells());
 }
 
 void FractionalStep::initialize()
@@ -95,8 +92,8 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, fluid_, 0.) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, fluid_, 0.5) - src::src(gradP / rho_, fluid_));
+    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_->velocityBcs(u)
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_));
 
     Scalar error = uEqn_.solve();
 
@@ -111,7 +108,7 @@ Scalar FractionalStep::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) + ib_->bcs(p) == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_->bcs(p) == src::div(u));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);
@@ -133,7 +130,7 @@ void FractionalStep::correctVelocity(Scalar timeStep)
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho_ * gradP(face);
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:

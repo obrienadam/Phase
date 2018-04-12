@@ -22,11 +22,11 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     //- Determine which patches contact angles will be enforced on
     for (const auto &input: input.boundaryInput().get_child("Boundaries.gamma"))
     {
-        if (input.first == "*" || !grid_->hasPatch(input.first))
-            continue;
+        if (input.first == "*" || grid_->patches().empty())
+            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "FIX THIS CONSTRUCTOR");
 
         patchContactAngles_.insert(std::make_pair(
-                grid_->patch(input.first).id(),
+                grid_->patch(input.first).name(),
                 input.second.get<Scalar>("contactAngle", 90) * M_PI / 180.
         ));
     }
@@ -35,7 +35,9 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     if (ib_.lock())
         for (const auto &ibObj: *ib_.lock())
         {
-            ibContactAngles_[ibObj->id()] = input.boundaryInput().get<Scalar>(
+            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "FIX THIS CONSTRUCTOR");
+
+            ibContactAngles_[""] = input.boundaryInput().get<Scalar>(
                     "ImmersedBoundaries." + ibObj->name() + ".gamma.contactAngle", 90) * M_PI / 180.;
         }
 }
@@ -45,11 +47,11 @@ void SurfaceTensionForce::computeInterfaceNormals()
     const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
     VectorFiniteVolumeField &n = *n_;
 
-    for (const Cell &cell: grid_->cellZone("fluid"))
+    for (const Cell &cell: *cellGroup_)
         n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
     //- Boundary faces set from contact line orientation
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
     {
         for (const Face &face: patch)
         {
@@ -71,15 +73,15 @@ void SurfaceTensionForce::computeInterfaceNormals()
     grid_->sendMessages(n);
 }
 
-Scalar SurfaceTensionForce::theta(const Patch &patch) const
+Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const
 {
-    auto it = patchContactAngles_.find(patch.id());
+    auto it = patchContactAngles_.find(patch.name());
     return it != patchContactAngles_.end() ? it->second : M_PI_2;
 }
 
 Scalar SurfaceTensionForce::theta(const ImmersedBoundaryObject &ibObj) const
 {
-    auto it = ibContactAngles_.find(ibObj.id());
+    auto it = ibContactAngles_.find(ibObj.name());
     return it != ibContactAngles_.end() ? it->second : M_PI_2;
 }
 
@@ -131,7 +133,7 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
 
     if (ib_.lock())
     {
-        CellGroup cellsToSmooth = grid_->localActiveCells() - ib_.lock()->solidCells();
+        CellGroup cellsToSmooth = grid_->localCells() - ib_.lock()->solidCells();
 
         smooth(gamma,
                cellsToSmooth,
@@ -149,8 +151,8 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
     else
     {
         smooth(gamma,
-               grid_->localActiveCells(),
-               grid_->globalActiveCells(),
+               grid_->localCells(),
+               grid_->globalCells(),
                kernelWidth_,
                *gammaTilde_,
                [](const Cell &cell, const Cell &kCell, Scalar e)

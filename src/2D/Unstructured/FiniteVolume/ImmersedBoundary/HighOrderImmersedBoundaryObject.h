@@ -1,5 +1,5 @@
-#ifndef HIGH_ORDER_IMMERSED_BOUNDARY_OBJECT_H
-#define HIGH_ORDER_IMMERSED_BOUNDARY_OBJECT_H
+#ifndef PHASE_HIGH_ORDER_IMMERSED_BOUNDARY_OBJECT_H
+#define PHASE_HIGH_ORDER_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "Math/Matrix.h"
 #include "Math/StaticMatrix.h"
@@ -11,8 +11,8 @@ class HighOrderImmersedBoundaryObject : public ImmersedBoundaryObject
 public:
 
     HighOrderImmersedBoundaryObject(const std::string &name,
-                                    Label id,
-                                    const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+                                    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                    const std::shared_ptr<CellGroup> &solverCells);
 
     Type type() const
     { return HIGH_ORDER; }

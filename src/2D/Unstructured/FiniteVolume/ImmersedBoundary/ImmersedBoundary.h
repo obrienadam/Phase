@@ -19,24 +19,21 @@ public:
         FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4
     };
 
-    ImmersedBoundary(const Input &input, const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+    ImmersedBoundary(const Input &input,
+                     const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                     const std::shared_ptr<CellGroup> &solverCells);
 
-    //- Solver/grid info
-    const std::shared_ptr<FiniteVolumeGrid2D> &grid()
-    { return grid_; }
+    //- Solver cells
+    const std::shared_ptr<CellGroup> &solverCells() const
+    { return solverCells_; }
 
-    std::shared_ptr<const FiniteVolumeGrid2D> grid() const
+    void setSolverCells(const std::shared_ptr<CellGroup> &solverCells);
+
+    //- Grid
+    const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
     { return grid_; }
 
     //- Cell zones
-    void initCellZones(CellZone &zone);
-
-    const CellZone &zone() const
-    { return *zone_; }
-
-    const NodeGroup &fluidNodes() const
-    { return fluidNodes_; }
-
     CellGroup ibCells() const;
 
     CellGroup solidCells() const;
@@ -116,13 +113,11 @@ protected:
 
     void setCellStatus();
 
-    const CellZone *zone_ = nullptr;
+    std::shared_ptr<CellGroup> solverCells_;
 
     std::shared_ptr<FiniteVolumeField<int>> cellStatus_;
 
-    NodeGroup fluidNodes_;
-
-    std::shared_ptr<FiniteVolumeGrid2D> grid_;
+    std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
 

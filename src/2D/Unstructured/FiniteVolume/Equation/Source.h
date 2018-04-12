@@ -1,5 +1,5 @@
-#ifndef SOURCE_H
-#define SOURCE_H
+#ifndef PHASE_SOURCE_H
+#define PHASE_SOURCE_H
 
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
@@ -16,21 +16,12 @@ namespace src
     ScalarFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma,
                                       const ScalarFiniteVolumeField& phi);
 
-    VectorFiniteVolumeField ftc(const ScalarFiniteVolumeField& cellWeight,
-                                const ScalarFiniteVolumeField& faceWeight,
-                                const VectorFiniteVolumeField& field,
-                                const CellGroup& cells);
-
-    VectorFiniteVolumeField ftc(const ScalarFiniteVolumeField& weight,
-                                const VectorFiniteVolumeField& field,
-                                const CellGroup& cells);
-
     template <class T>
-    FiniteVolumeField<T> src(const FiniteVolumeField<T> &field, const CellGroup& group)
+    FiniteVolumeField<T> src(const FiniteVolumeField<T> &field)
     {
         VectorFiniteVolumeField srcField(field.grid(), field.name(), T(), false, false);
 
-        for(const Cell& cell: group)
+        for(const Cell& cell: field.cells())
             srcField(cell) = field(cell) * cell.volume();
 
         return srcField;

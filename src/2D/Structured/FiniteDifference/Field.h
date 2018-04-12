@@ -7,7 +7,7 @@
 #include "StructuredGrid2D/StructuredGrid2D.h"
 
 template<class T>
-class Field : protected std::vector<T>
+class Field
 {
 public:
 
@@ -27,6 +27,8 @@ public:
     std::string name;
 
 protected:
+
+    std::vector<T> nodevals_, ifacevals_, jfacevals_;
 
     std::shared_ptr<const StructuredGrid2D> grid_;
 };

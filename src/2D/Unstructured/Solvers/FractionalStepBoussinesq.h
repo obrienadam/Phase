@@ -1,5 +1,5 @@
-#ifndef FRACTIONAL_STEP_BOUSSINESQ_H
-#define FRACTIONAL_STEP_BOUSSINESQ_H
+#ifndef PHASE_FRACTIONAL_STEP_BOUSSINESQ_H
+#define PHASE_FRACTIONAL_STEP_BOUSSINESQ_H
 
 #include "FractionalStep.h"
 
@@ -7,7 +7,7 @@ class FractionalStepBoussinesq : public FractionalStep
 {
 public:
 
-    FractionalStepBoussinesq(const Input &input);
+    FractionalStepBoussinesq(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
     Scalar solve(Scalar timeStep);
 

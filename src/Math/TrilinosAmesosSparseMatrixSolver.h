@@ -11,6 +11,9 @@ public:
 
     TrilinosAmesosSparseMatrixSolver(const Communicator &comm, const std::string &solverName = "klu2");
 
+    Type type() const
+    { return TRILINOS_AMESOS2; }
+
     Scalar solve();
 
     void setup(const boost::property_tree::ptree& parameters);

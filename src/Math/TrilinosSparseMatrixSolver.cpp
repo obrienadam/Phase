@@ -18,6 +18,7 @@ void TrilinosSparseMatrixSolver::setRank(int rank)
         map_ = map;
         x_ = rcp(new TpetraMultiVector(map_, 1, true));
         b_ = rcp(new TpetraMultiVector(map_, 1, true));
+        xData_ = x_->getData(0);
     }
 
     mat_ = rcp(new TpetraCrsMatrix(map_, 9, Tpetra::StaticProfile));
@@ -32,10 +33,13 @@ void TrilinosSparseMatrixSolver::set(const CoefficientList &eqn)
     mat_->resumeFill();
     mat_->setAllToScalar(0.);
 
+    std::vector<Index> cols; //- profiling shows that these should be outside
+    std::vector<Scalar> vals;
+
     for (Index localRow = 0, nLocalRows = eqn.size(); localRow < nLocalRows; ++localRow)
     {
-        std::vector<Index> cols;
-        std::vector<Scalar> vals;
+        cols.clear();
+        vals.clear();
 
         for (const auto &entry: eqn[localRow])
         {
@@ -57,11 +61,6 @@ void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)
 void TrilinosSparseMatrixSolver::setRhs(const Vector &rhs)
 {
     b_->getDataNonConst(0).assign(std::begin(rhs.data()), std::end(rhs.data()));
-}
-
-Scalar TrilinosSparseMatrixSolver::x(Index idx) const
-{
-    return x_->getData(idx)[idx];
 }
 
 void TrilinosSparseMatrixSolver::printStatus(const std::string &msg) const

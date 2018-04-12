@@ -36,7 +36,7 @@ void Celeste::computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const
     auto &kappa = *kappa_;
 
     ft.fill(Vector2D(0., 0.));
-    for (const Cell &cell: grid_->cellZone("fluid"))
+    for (const Cell &cell: *cellGroup_)
         ft(cell) = sigma_ * kappa(cell) * gradGamma(cell);
 
     ft.interpolateFaces();
@@ -52,7 +52,7 @@ void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde.fill(Vector2D(0., 0.));
-    for (const Cell &cell: gradGammaTilde.grid()->cellZone("fluid"))
+    for (const Cell &cell: *cellGroup_)
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
@@ -64,7 +64,7 @@ void Celeste::computeCurvature()
     auto &kappa = *kappa_;
     const auto &gradGammaTilde = *gradGammaTilde_;
 
-    for (const Cell &cell: grid_->cellZone("fluid"))
+    for (const Cell &cell: *cellGroup_)
         if (gradGammaTilde(cell).magSqr() > 0.)
             kappa(cell) = kappaStencils_[cell.id()].kappa(n, *ib_.lock(), *this);
 

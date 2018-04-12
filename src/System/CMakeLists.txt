@@ -21,6 +21,7 @@ set(SOURCES Input.cpp
 add_library(phase_system ${HEADERS} ${SOURCES})
 
 target_link_libraries(phase_system
+        ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
         ${MPI_C_LIBRARIES}

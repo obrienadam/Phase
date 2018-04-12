@@ -35,7 +35,7 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
         const Vector2D &xp = c.centroid();
         Scalar r = c.radius();
 
-        for (const Patch &p: grid.patches())
+        for (const FaceGroup &p: grid.patches())
             for (const Face &f: p.itemsCoveredBy(Circle(c.centroid(), r + range_)))
             {
                 const Vector2D &xq = f.centroid();

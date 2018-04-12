@@ -1,11 +1,11 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef PHASE_MATRIX_H
+#define PHASE_MATRIX_H
 
 #include <vector>
 
 #include "Types/Types.h"
 
-class Matrix : public std::vector<Scalar>
+class Matrix
 {
 public:
 
@@ -59,17 +59,23 @@ public:
     Matrix subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t endCol) const;
 
     Scalar *data()
-    { return std::vector<Scalar>::data(); }
+    { return vals_.data(); }
 
     const Scalar *data() const
-    { return std::vector<Scalar>::data(); }
+    { return vals_.data(); }
 
-    std::vector<Scalar> containerCopy() const
-    { return std::vector<Scalar>(*this); }
+    std::vector<Scalar>::const_iterator begin() const
+    { return vals_.begin(); }
+
+    std::vector<Scalar>::const_iterator end() const
+    { return vals_.end(); }
 
 private:
 
     Size m_, n_;
+
+    std::vector<Scalar> vals_;
+
     mutable std::vector<int> ipiv_;
 
 };

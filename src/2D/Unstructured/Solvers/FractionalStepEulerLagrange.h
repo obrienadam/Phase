@@ -1,12 +1,12 @@
-#ifndef FRACTIONAL_STEP_EULER_LAGRANGE_H
-#define FRACTIONAL_STEP_EULER_LAGRANGE_H
+#ifndef PHASE_FRACTIONAL_STEP_EULER_LAGRANGE_H
+#define PHASE_FRACTIONAL_STEP_EULER_LAGRANGE_H
 
 #include "FractionalStep.h"
 
 class FractionalStepEulerLagrange : public FractionalStep
 {
 public:
-    FractionalStepEulerLagrange(const Input &input);
+    FractionalStepEulerLagrange(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
 protected:
 

@@ -48,8 +48,3 @@ Scalar EigenSparseMatrixSolver::solve(const Vector &x0)
 {
     return solve();
 }
-
-Scalar EigenSparseMatrixSolver::x(Index idx) const
-{
-    return x_(idx);
-}

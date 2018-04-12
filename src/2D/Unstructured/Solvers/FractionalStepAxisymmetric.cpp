@@ -5,9 +5,9 @@
 
 #include "FractionalStepAxisymmetric.h"
 
-FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input)
+FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input)
+        FractionalStep(input, grid)
 {
 
 }
@@ -37,7 +37,7 @@ Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
 
 void FractionalStepAxisymmetric::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: grid_->localActiveCells())
+    for (const Cell &cell: grid_->localCells())
         u(cell) -= timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);
@@ -45,7 +45,7 @@ void FractionalStepAxisymmetric::correctVelocity(Scalar timeStep)
     for (const Face &face: grid_->interiorFaces())
         u(face) -= timeStep / rho_ * gradP(face);
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
         switch (u.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:

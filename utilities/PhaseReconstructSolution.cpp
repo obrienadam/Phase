@@ -5,9 +5,9 @@
 #include <regex>
 #include <iostream>
 
-#include <cgnslib.h>
 #include <boost/geometry.hpp>
 #include <boost/filesystem.hpp>
+#include <cgnslib.h>
 
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Node;
 

@@ -1,5 +1,5 @@
-#ifndef CELL_H
-#define CELL_H
+#ifndef PHASE_CELL_H
+#define PHASE_CELL_H
 
 #include <vector>
 
@@ -83,6 +83,10 @@ public:
     const Cell &faceNeighbour(const Node &lNode, const Node &rNode) const;
 
     //- Nodes
+
+    const std::vector<Label> &nodeIds() const
+    { return nodeIds_; }
+
     const std::vector<Ref<const Node> > nodes() const;
 
     const Polygon &shape() const

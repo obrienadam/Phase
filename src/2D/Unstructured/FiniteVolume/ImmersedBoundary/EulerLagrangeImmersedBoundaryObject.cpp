@@ -4,12 +4,12 @@
 #include "EulerLagrangeImmersedBoundaryObject.h"
 
 EulerLagrangeImmersedBoundaryObject::EulerLagrangeImmersedBoundaryObject(const std::string &name,
-                                                                         Label id,
-                                                                         const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                                                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                         const std::shared_ptr<CellGroup> &solverCells)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, grid, solverCells)
 {
-    auto eqGrid = std::dynamic_pointer_cast<StructuredRectilinearGrid>(grid_);
+    auto eqGrid = std::dynamic_pointer_cast<const StructuredRectilinearGrid>(grid_);
 
     if (eqGrid && eqGrid->isEquidistant())
     {
@@ -152,10 +152,10 @@ void EulerLagrangeImmersedBoundaryObject::initLagrangePoints(int nLagrangePoints
                 Point2D pt = shape_->centroid() + radius * Vector2D(std::cos(i * dTheta), std::sin(i * dTheta));
                 lagrangePoints_.push_back(pt);
 
-                if (fluid_)
+                if (solverCells_)
                 {
                     lagrangeStencils_.push_back(
-                            fluid_->itemsCoveredBy(Box(
+                            solverCells_->itemsCoveredBy(Box(
                                     pt - 3. * Vector2D(h_, h_),
                                     pt + 3. * Vector2D(h_, h_)
                             ))
@@ -166,6 +166,7 @@ void EulerLagrangeImmersedBoundaryObject::initLagrangePoints(int nLagrangePoints
             }
         }
             break;
-        default:throw Exception("EulerLagrangeImmersedBoundaryObject", "initLagrangePoints", "shape is not supported.");
+        default:
+            throw Exception("EulerLagrangeImmersedBoundaryObject", "initLagrangePoints", "shape is not supported.");
     }
 }

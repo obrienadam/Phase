@@ -9,38 +9,19 @@
 
 #include "Solver.h"
 
-Solver::Solver(const Input &input)
+Solver::Solver(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
+        :
+        grid_(grid)
 {
-    restartedSolution_ = input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart";
+    cells_ = std::make_shared<CellGroup>("SolverCells");
+    cells_->add(grid_->localCells());
 
-    if (restartedSolution_)
-        grid_ = FiniteVolumeGrid2DFactory::create(FiniteVolumeGrid2DFactory::RELOAD, input);
-    else
-        grid_ = FiniteVolumeGrid2DFactory::create(input);
+    ib_ = std::make_shared<ImmersedBoundary>(input, grid_, cells_);
 
-    ib_ = std::make_shared<ImmersedBoundary>(input, grid_);
+    integerFields_[ib_->cellStatus()->name()] = ib_->cellStatus();
 
     //- Set simulation time options
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
-
-    auto proc = std::make_shared<FiniteVolumeField<int>>(grid_, "proc", grid_->comm().rank(), false, false);
-
-    grid_->sendMessages(*proc);
-
-    integerFields_[proc->name()] = proc;
-
-    auto globalId = std::make_shared<FiniteVolumeField<int>>(grid_, "globalId", grid_->comm().rank(), false, false);
-
-    std::vector<Size> nLocalActiveCells = grid_->comm().allGather(grid_->localActiveCells().size());
-
-    Label id = std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid_->comm().rank(), 0);
-
-    for(const Cell& cell: grid_->localActiveCells())
-        (*globalId)(cell) = id++;
-
-    integerFields_[globalId->name()] = globalId;
-
-    integerFields_[ib_->cellStatus()->name()] = ib_->cellStatus();
 }
 
 int Solver::printf(const char *format, ...) const
@@ -60,56 +41,28 @@ int Solver::printf(const char *format, ...) const
 
 Scalar Solver::getStartTime(const Input &input) const
 {
-    if (restartedSolution_)
-    {
-        using namespace std;
-        using namespace boost::filesystem;
-
-        std::regex re("[0-9]+\\.[0-9]+");
-        Scalar maxTime = 0.;
-
-        for (directory_iterator end, dir("./solution"); dir != end; ++dir)
-            if (regex_match(dir->path().filename().string(), re))
-            {
-                std::smatch match;
-                std::regex_search(dir->path().filename().string(), match, re);
-                Scalar time = std::stod(match.str());
-
-                maxTime = std::max(time, maxTime);
-            }
-
-        return maxTime;
-    }
-
     return 0.;
 }
 
-std::shared_ptr<FiniteVolumeField<int>> Solver::addIntegerField(const std::string &name)
+template<>
+std::shared_ptr<FiniteVolumeField<int>> Solver::addField(const std::string &name)
 {
-    auto insert = integerFields_.insert(std::make_pair(name, std::make_shared<FiniteVolumeField<int>>
-            (grid_, name)));
+    auto insert = integerFields_.insert(
+            std::make_pair(name, std::make_shared<FiniteVolumeField<int>>(grid_, name, 0, true, false, cells_))
+    );
 
     if (!insert.second)
-        throw Exception("Solver", "addIntegerField", "field \"" + name + "\" already exists.");
+        throw Exception("Solver", "addField", "field \"" + name + "\" already exists.");
 
     return insert.first->second;
 }
 
-std::shared_ptr<ScalarFiniteVolumeField> Solver::addScalarField(const Input &input, const std::string &name)
+template<>
+std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const std::string &name)
 {
     auto insert = scalarFields_.insert(
-            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name)));
-
-    if (!insert.second)
-        throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
-
-
-    return insert.first->second;
-}
-
-std::shared_ptr<ScalarFiniteVolumeField> Solver::addScalarField(const std::string &name)
-{
-    auto insert = scalarFields_.insert(std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(grid_, name)));
+            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(grid_, name, 0, true, false, cells_))
+    );
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + name + "\" already exists.");
@@ -117,10 +70,13 @@ std::shared_ptr<ScalarFiniteVolumeField> Solver::addScalarField(const std::strin
     return insert.first->second;
 }
 
-std::shared_ptr<VectorFiniteVolumeField> Solver::addVectorField(const Input &input, const std::string &name)
+template<>
+std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const std::string &name)
 {
     auto insert = vectorFields_.insert(
-            std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name)));
+            std::make_pair(name,
+                           std::make_shared<VectorFiniteVolumeField>(grid_, name, Vector2D(), true, false, cells_))
+    );
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
@@ -128,9 +84,28 @@ std::shared_ptr<VectorFiniteVolumeField> Solver::addVectorField(const Input &inp
     return insert.first->second;
 }
 
-std::shared_ptr<VectorFiniteVolumeField> Solver::addVectorField(const std::string &name)
+
+template<>
+std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const Input &input, const std::string &name)
 {
-    auto insert = vectorFields_.insert(std::make_pair(name, std::make_shared<VectorFiniteVolumeField>(grid_, name)));
+    auto insert = scalarFields_.insert(
+            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name, 0., true, false, cells_)
+            ));
+
+    if (!insert.second)
+        throw Exception("Solver", "addField", "field \"" + name + "\" already exists.");
+
+
+    return insert.first->second;
+}
+
+template<>
+std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const Input &input, const std::string &name)
+{
+    auto insert = vectorFields_.insert(
+            std::make_pair(
+                    name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name, Vector2D(), true, false, cells_)
+            ));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + name + "\" already exists.");
@@ -138,32 +113,43 @@ std::shared_ptr<VectorFiniteVolumeField> Solver::addVectorField(const std::strin
     return insert.first->second;
 }
 
-std::shared_ptr<ScalarFiniteVolumeField> Solver::addScalarField(const std::shared_ptr<ScalarFiniteVolumeField> &field)
+template<>
+std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const std::shared_ptr<FiniteVolumeField<Scalar>> &field)
 {
-    auto insert = scalarFields_.insert(std::make_pair(field->name(), field));
+    auto insert = scalarFields_.insert(
+            std::make_pair(field->name(), field)
+    );
 
     if (!insert.second)
         throw Exception("Solver", "addScalarField", "field \"" + field->name() + "\" already exists.");
 
+    insert.first->second->setCellGroup(cells_);
+
     return insert.first->second;
 }
 
-std::shared_ptr<VectorFiniteVolumeField> Solver::addVectorField(const std::shared_ptr<VectorFiniteVolumeField> &field)
+template<>
+std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const std::shared_ptr<FiniteVolumeField<Vector2D>> &field)
 {
     auto insert = vectorFields_.insert(std::make_pair(field->name(), field));
 
     if (!insert.second)
         throw Exception("Solver", "addVectorField", "field \"" + field->name() + "\" already exists.");
 
+    insert.first->second->setCellGroup(cells_);
+
     return insert.first->second;
 }
 
-std::shared_ptr<TensorFiniteVolumeField> Solver::addTensorField(const std::shared_ptr<TensorFiniteVolumeField> &field)
+template<>
+std::shared_ptr<FiniteVolumeField<Tensor2D>> Solver::addField(const std::shared_ptr<FiniteVolumeField<Tensor2D>> &field)
 {
     auto insert = tensorFields_.insert(std::make_pair(field->name(), field));
 
     if (!insert.second)
         throw Exception("Solver", "addTensorField", "field \"" + field->name() + "\" already exists.");
+
+    insert.first->second->setCellGroup(cells_);
 
     return insert.first->second;
 }
@@ -298,7 +284,7 @@ void Solver::setCircle(const Circle &circle, Scalar innerValue, ScalarFiniteVolu
 {
     const Polygon pgn = circle.polygonize(1000);
 
-    for (const Cell &cell: field.grid()->localActiveCells())
+    for (const Cell &cell: field.grid()->localCells())
     {
         Scalar area = 0.;
 
@@ -316,7 +302,7 @@ void Solver::setCircle(const Circle &circle, const Vector2D &innerValue, VectorF
 {
     const Polygon pgn = circle.polygonize(1000);
 
-    for (const Cell &cell: field.grid()->localActiveCells())
+    for (const Cell &cell: field.grid()->localCells())
     {
         Scalar area = 0.;
 
@@ -365,7 +351,7 @@ void Solver::setCircleSector(const Circle &circle,
 
     Polygon pgn(vtx.begin(), vtx.end());
 
-    for (const Cell &cell: field.grid()->localActiveCells())
+    for (const Cell &cell: field.grid()->localCells())
     {
         Scalar area = 0.;
 
@@ -381,7 +367,7 @@ void Solver::setCircleSector(const Circle &circle,
 
 void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid()->localActiveCells())
+    for (const Cell &cell: field.grid()->localCells())
     {
         Scalar area = 0.;
 
@@ -397,7 +383,7 @@ void Solver::setBox(const Polygon &box, Scalar innerValue, ScalarFiniteVolumeFie
 
 void Solver::setBox(const Polygon &box, const Vector2D &innerValue, VectorFiniteVolumeField &field)
 {
-    for (const Cell &cell: field.grid()->localActiveCells())
+    for (const Cell &cell: field.grid()->localCells())
     {
         Scalar area = 0.;
 

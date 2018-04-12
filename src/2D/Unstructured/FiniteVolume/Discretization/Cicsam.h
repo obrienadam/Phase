@@ -1,5 +1,5 @@
-#ifndef CICSAM_H
-#define CICSAM_H
+#ifndef PHASE_CICSAM_H
+#define PHASE_CICSAM_H
 
 #include "FiniteVolume/Equation/Equation.h"
 
@@ -19,12 +19,6 @@ namespace cicsam
                              const ScalarFiniteVolumeField &beta,
                              Scalar timeStep,
                              VectorFiniteVolumeField &rhoU);
-
-    Equation<Scalar> div(const VectorFiniteVolumeField &u,
-                         const ScalarFiniteVolumeField &beta,
-                         ScalarFiniteVolumeField &gamma,
-                         const CellGroup &cells,
-                         Scalar theta);
 
     Equation<Scalar> div(const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField &beta,

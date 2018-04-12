@@ -12,6 +12,9 @@ class TrilinosBelosSparseMatrixSolver : public TrilinosSparseMatrixSolver
 public:
     TrilinosBelosSparseMatrixSolver(const Communicator &comm);
 
+    Type type() const
+    { return TRILINOS_BELOS; }
+
     void setRank(int rank);
 
     Scalar solve();

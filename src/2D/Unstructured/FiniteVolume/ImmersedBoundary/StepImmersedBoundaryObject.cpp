@@ -6,8 +6,8 @@
 
 void StepImmersedBoundaryObject::updateCells()
 {
-    fluid_->add(cells_);
-    auto cells = fluid_->itemsWithin(*shape_);
+    solverCells_->add(cells_);
+    auto cells = solverCells_->itemsWithin(*shape_);
     cells_.add(cells.begin(), cells.end());
 
     solidCells_.clear();
@@ -89,7 +89,7 @@ void StepImmersedBoundaryObject::computeForce(Scalar rho,
         for (const InteriorLink &nb: cell.neighbours())
             if (isInIb(nb.cell()))
             {
-                const Cell &stCell = grid_->globalActiveCells().nearestItem(
+                const Cell &stCell = grid_->globalCells().nearestItem(
                         2. * cell.centroid() - nb.cell().centroid());
 
                 LineSegment2D ln = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
@@ -249,7 +249,7 @@ void StepImmersedBoundaryObject::computeForce(const ScalarFiniteVolumeField &rho
         for (const InteriorLink &nb: cell.neighbours())
             if (isInIb(nb.cell()))
             {
-                const Cell &stCell = fluid_->nearestItem(2 * cell.centroid() - nb.cell().centroid());
+                const Cell &stCell = solverCells_->nearestItem(2 * cell.centroid() - nb.cell().centroid());
                 LineSegment2D ln = intersectionLine(LineSegment2D(cell.centroid(), nb.cell().centroid()));
                 Vector2D eta = nb.rCellVec().unitVec();
 

@@ -10,7 +10,7 @@ class FractionalStep: public Solver
 {
 public:
 
-    FractionalStep(const Input& input);
+    FractionalStep(const Input& input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
     virtual void initialize();
 
@@ -48,7 +48,7 @@ protected:
 
     Vector2D g_;
 
-    CellZone &fluid_;
+    CellGroup &fluid_;
 };
 
 #endif

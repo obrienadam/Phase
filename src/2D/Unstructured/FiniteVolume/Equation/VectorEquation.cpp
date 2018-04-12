@@ -7,8 +7,8 @@ Equation<Vector2D>::Equation(VectorFiniteVolumeField &field, const std::string &
         :
         name(name),
         field_(field),
-        coeffs_(2 * field.grid()->localActiveCells().size()),
-        sources_(2 * field.grid()->localActiveCells().size(), 0.)
+        coeffs_(2 * field.grid()->localCells().size()),
+        sources_(2 * field.grid()->localCells().size(), 0.)
 {
     std::for_each(coeffs_.begin(), coeffs_.end(), [](Row &row)
     {
@@ -162,7 +162,7 @@ void Equation<Vector2D>::addSource(const Cell &cell, const Tensor2D &tau)
 template<>
 void Equation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    for (const Cell &cell: field_.grid()->localActiveCells())
+    for (const Cell &cell: field_.grid()->localCells())
     {
         Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
         Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
@@ -178,7 +178,7 @@ void Equation<Vector2D>::relax(Scalar relaxationFactor)
 template<>
 Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField &rhs)
 {
-    for (const Cell &cell: rhs.grid()->localActiveCells())
+    for (const Cell &cell: rhs.grid()->localCells())
     {
         sources_(field_.indexMap()->local(cell, 0)) += rhs(cell).x;
         sources_(field_.indexMap()->local(cell, 1)) += rhs(cell).y;
@@ -190,7 +190,7 @@ Equation<Vector2D> &Equation<Vector2D>::operator+=(const VectorFiniteVolumeField
 template<>
 Equation<Vector2D> &Equation<Vector2D>::operator-=(const VectorFiniteVolumeField &rhs)
 {
-    for (const Cell &cell: rhs.grid()->localActiveCells())
+    for (const Cell &cell: rhs.grid()->localCells())
     {
         sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell).x;
         sources_(field_.indexMap()->local(cell, 1)) -= rhs(cell).y;
@@ -205,7 +205,7 @@ void Equation<Vector2D>::mapFromSparseSolver()
 {
     const IndexMap &idxMap = *field_.indexMap();
 
-    for(const Cell& cell: field_.grid()->localActiveCells())
+    for(const Cell& cell: field_.grid()->localCells())
     {
         field_(cell).x = sparseSolver()->x(idxMap.local(cell, 0));
         field_(cell).y = sparseSolver()->x(idxMap.local(cell, 1));
@@ -215,5 +215,5 @@ void Equation<Vector2D>::mapFromSparseSolver()
 template<>
 Size Equation<Vector2D>::getRank() const
 {
-    return 2 * field_.grid()->localActiveCells().size();
+    return 2 * field_.grid()->localCells().size();
 }

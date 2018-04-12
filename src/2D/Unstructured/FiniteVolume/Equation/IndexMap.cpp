@@ -18,7 +18,7 @@ void IndexMap::update(const FiniteVolumeGrid2D &grid)
     std::fill(localIndices_.begin(), localIndices_.end(), INACTIVE);
     std::fill(globalIndices_.begin(), globalIndices_.end(), INACTIVE);
 
-    std::vector<Size> nLocalActiveCells = grid.comm().allGather(grid.localActiveCells().size());
+    std::vector<Size> nLocalActiveCells = grid.comm().allGather(grid.localCells().size());
 
     ownershipRange_.first =
             nIndices_ * std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid.comm().rank(), 0);
@@ -27,7 +27,7 @@ void IndexMap::update(const FiniteVolumeGrid2D &grid)
     Index localIndex = 0;
 
     for (Size indexNo = 0; indexNo < nIndices_; ++indexNo)
-        for (const Cell &cell: grid.localActiveCells())
+        for (const Cell &cell: grid.localCells())
         {
             localIndices_[indexNo * nCells_ + cell.id()] = localIndex;
             globalIndices_[indexNo * nCells_ + cell.id()] = ownershipRange_.first + localIndex++;

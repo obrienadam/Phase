@@ -1,5 +1,5 @@
-#ifndef ALGORITHM_H
-#define ALGORITHM_H
+#ifndef PHASE_ALGORITHM_H
+#define PHASE_ALGORITHM_H
 
 #include <algorithm>
 

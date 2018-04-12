@@ -1,5 +1,5 @@
-#ifndef EULER_LAGRANGE_IMMERSEDBOUNDARY_OBJECT_H
-#define EULER_LAGRANGE_IMMERSEDBOUNDARY_OBJECT_H
+#ifndef PHASE_EULER_LAGRANGE_IMMERSEDBOUNDARY_OBJECT_H
+#define PHASE_EULER_LAGRANGE_IMMERSEDBOUNDARY_OBJECT_H
 
 #include "System/NotImplementedException.h"
 
@@ -9,8 +9,8 @@ class EulerLagrangeImmersedBoundaryObject : public ImmersedBoundaryObject
 {
 public:
     EulerLagrangeImmersedBoundaryObject(const std::string &name,
-                                        Label id,
-                                        const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+                                        const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                        const std::shared_ptr<CellGroup> &solverCells);
 
     Type type() const
     { return EULER_LAGRANGE; }
@@ -29,10 +29,10 @@ public:
     Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     void computeForce(Scalar rho,
-                              Scalar mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.))
+                      Scalar mu,
+                      const VectorFiniteVolumeField &u,
+                      const ScalarFiniteVolumeField &p,
+                      const Vector2D &g = Vector2D(0., 0.))
     {}
 
     void correctVelocity(VectorFiniteVolumeField &u) const;

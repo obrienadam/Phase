@@ -1,5 +1,5 @@
-#ifndef GROUP_H
-#define GROUP_H
+#ifndef PHASE_GROUP_H
+#define PHASE_GROUP_H
 
 #include <string>
 #include <unordered_set>
@@ -23,36 +23,34 @@ public:
         typedef Point2D result_type;
 
         result_type operator()(const T &item) const
-        {
-            return item.centroid();
-        }
+        { return item.centroid(); }
     };
 
     struct EqualTo
     {
         bool operator()(const T &lhs, const T &rhs) const
-        {
-            return lhs.id() == rhs.id();
-        }
+        { return lhs.id() == rhs.id(); }
     };
 
     struct Hash
     {
         std::size_t operator()(const T &item) const
-        {
-            return std::hash<Label>()(item.id());
-        }
+        { return std::hash<Label>()(item.id()); }
     };
 
     Group(const std::string &name = "N/A") : name_(name)
     {}
+
+    template<class const_iterator>
+    Group(const_iterator first, const_iterator last, const std::string &name = "N/A") : Group(name)
+    { add(first, last); }
 
     //- Group name
     const std::string &name() const
     { return name_; }
 
     //- Sizing
-    virtual void clear();
+    void clear();
 
     size_t size() const
     { return items_.size(); }
@@ -69,8 +67,8 @@ public:
 
     virtual void add(const Group<T> &items);
 
-    template<class iterator>
-    void add(iterator first, iterator last)
+    template<class const_iterator>
+    void add(const_iterator first, const_iterator last)
     {
         for (; first != last; ++first)
             add(*first);
@@ -121,11 +119,7 @@ public:
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
-    std::vector<Ref<const T> > nearestItems(const Shape2D &shape, size_t k) const;
-
     const T &nearestItem(const Point2D &pt) const;
-
-    const T &nearestItem(const Shape2D &shape) const;
 
     //- Iterators
     iterator begin()
@@ -146,12 +140,19 @@ public:
 
     bool isInGroup(const T &item) const;
 
+    //- Misc
+
+    std::vector<Point2D> coordinates() const;
+
 protected:
 
     //- Data
     std::string name_;
+
     std::unordered_set<Ref<const T>, Hash, EqualTo> itemSet_; // Allows cell lookup via an id
+
     std::vector<Ref<const T> > items_; // Used for faster iteration over all cells
+
     boost::geometry::index::rtree<Ref<const T>, Parameters, IndexableGetter, EqualTo> rTree_; //- For searching
 };
 

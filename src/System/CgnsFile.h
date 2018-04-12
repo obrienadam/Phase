@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <tuple>
 
 #include "2D/Geometry/Point2D.h"
 
@@ -14,6 +13,47 @@ public:
     enum Mode
     {
         READ, WRITE, MODIFY
+    };
+
+    struct Base
+    {
+        std::string name;
+        int id, cellDim, physDim;
+    };
+
+    struct Zone
+    {
+        std::string name, type;
+        int id, size[9];
+    };
+
+    struct Section
+    {
+        std::string name, type;
+        int id, start, end, nbndry, parentFlag;
+        std::vector<int> cptr, cind;
+    };
+
+    struct BoCo
+    {
+        std::string name, type, pointListType;
+        int id;
+        std::vector<int> pnts;
+    };
+
+    struct Solution
+    {
+        std::string name, location;
+        int id, dataDim, dimVals[3];
+    };
+
+    template<class T>
+    struct Field
+    {
+        std::string name, type;
+        std::array<int, 3> rmin, rmax;
+        int dataDim, dimVals[3];
+        std::vector<T> data;
     };
 
     CgnsFile()
@@ -29,8 +69,19 @@ public:
 
     int createBase(const std::string &basename, int cellDim, int physDim);
 
+    int nBases() const;
+
+    Base readBase(int bid) const;
+
     //- zones
+    int nZones(int bid) const;
+
+    Zone readZone(int bid, int zid) const;
+
     std::tuple<int, int> writeCoordinates(int bid, int zid, const std::vector<Point2D> &coords);
+
+    template<class T>
+    std::vector<T> readCoords(int bid, int zid) const;
 
     int createStructuredZone(int bid, const std::string &zonename,
                              int nNodesI, int nNodesJ,
@@ -42,16 +93,23 @@ public:
 
     int createUnstructuredZone(int bid, const std::string &zonename, int nNodes, int nCells);
 
+    std::pair<std::vector<Label>, std::vector<Label>> readUnstructuredZone();
+
+    int nSections(int bid, int zid) const;
+
+    Section readSection(int bid, int zid, int sid) const;
+
     int writeMixedElementSection(int bid, int zid, const std::string &sectionname,
-                                 int start, int end, const std::pair<std::vector<int>, std::vector<int>> &conn);
+                                 int start, int end, const std::vector<int> &eptr, const std::vector<int> &eind);
 
     int writeBarElementSection(int bid, int zid, const std::string &sectionname,
-                               int start, int end, const std::vector<Label> &elements);
+                               int start, int end, const std::vector<int> &elements);
 
-    int writeQuadElementSection(int bid, int zid, const std::string &sectionname,
-                                int start, int end, std::vector<int> &elements);
+    int nBoCos(int bid, int zid) const;
 
-    int writeBC(int bid, int zid, const std::string& bcname, int start, int end);
+    BoCo readBoCo(int bid, int zid, int bcid) const;
+
+    int writeBoCo(int bid, int zid, const std::string &bcname, int start, int end);
 
     //- linking
 
@@ -59,17 +117,25 @@ public:
                   const std::string &nodename, const std::string &filename, const std::string &nameInFile);
 
     void linkNode(int bid, int zid, int sid,
-                  const std::string& nodename, const std::string& filename, const std::string& nameInFile);
+                  const std::string &nodename, const std::string &filename, const std::string &nameInFile);
 
     //- Solutions
+    int nSolutions(int bid, int zid) const;
+
+    Solution readSolution(int bid, int zid, int sid) const;
+
     int writeSolution(int bid, int zid, const std::string &solnname);
 
     //- Fields
-    int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<int> &field);
+    template<class T>
+    Field<T> readField(int bid, int zid, int sid, int rmin, int rmax, const std::string& fieldname);
 
-    int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<double> &field);
+    template<class T>
+    int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<T> &field);
 
-    int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<Vector2D> &field);
+    int nDescriptorNodes(int bid) const;
+
+    void writeDescriptorNode(int bid, const std::string &name, const std::string &text);
 
 protected:
 

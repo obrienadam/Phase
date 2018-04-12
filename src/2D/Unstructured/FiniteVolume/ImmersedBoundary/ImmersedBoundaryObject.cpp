@@ -4,18 +4,17 @@
 #include "ImmersedBoundary.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name,
-                                               Label id,
-                                               const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                               const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                               const std::shared_ptr<CellGroup> &solverCells)
         :
         name_(name),
         grid_(grid),
-        id_(id)
+        solverCells_(solverCells)
 {
-    cells_ = CellZone("Cells", grid->cellZoneRegistry());
-    zoneRegistry_ = std::make_shared<CellZone::ZoneRegistry>();
-    ibCells_ = CellZone("IbCells", zoneRegistry_);
-    solidCells_ = CellZone("SolidCells", zoneRegistry_);
-    freshCells_ = CellZone("FreshCells", zoneRegistry_);
+    cells_ = CellGroup("Cells");
+    ibCells_ = CellGroup("IbCells");
+    solidCells_ = CellGroup("SolidCells");
+    freshCells_ = CellGroup("FreshCells");
 
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
@@ -35,15 +34,9 @@ void ImmersedBoundaryObject::initBox(const Point2D &center, Scalar width, Scalar
     ));
 }
 
-void ImmersedBoundaryObject::setZone(CellZone &zone)
-{
-    fluid_ = &zone;
-    cells_ = CellZone("Cells", zone.registry());
-}
-
 void ImmersedBoundaryObject::clear()
 {
-    fluid_->add(cells_);
+    solverCells_->add(cells_);
     ibCells_.clear();
     solidCells_.clear();
     freshCells_.clear();
@@ -71,7 +64,8 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
 {
     switch (shape_->type())
     {
-        case Shape2D::CIRCLE:return (shape_->centroid() - pt).unitVec();
+        case Shape2D::CIRCLE:
+            return (shape_->centroid() - pt).unitVec();
         case Shape2D::BOX:
         case Shape2D::POLYGON:
         {
@@ -79,7 +73,8 @@ Vector2D ImmersedBoundaryObject::nearestEdgeNormal(const Point2D &pt) const
             return dot(edge.norm(), shape_->centroid() - edge.center()) > 0. ? edge.norm().unitVec()
                                                                              : -edge.norm().unitVec();
         }
-        default:throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
+        default:
+            throw Exception("ImmersedBoundaryObject", "nearestEdgeNormal", "not implemented for specified shape.");
     }
 }
 
@@ -235,7 +230,7 @@ void ImmersedBoundaryObject::update(Scalar timeStep)
 void ImmersedBoundaryObject::updateCells()
 {
     clear();
-    auto cells = fluid_->itemsWithin(*shape_);
+    auto cells = solverCells_->itemsWithin(*shape_);
     cells_.add(cells.begin(), cells.end());
     solidCells_.add(cells_); //- By default solid cells are not made inactive
 }
@@ -258,7 +253,7 @@ Equation<Scalar> ImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p)
     throw NotImplementedException("ImmersedBoundaryObject", "pressureBcs");
 }
 
-void ImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField& u,
+void ImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField &u,
                                                     Scalar timeStep,
                                                     VectorFiniteVolumeField &fb) const
 {
@@ -267,6 +262,6 @@ void ImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeFiel
 
 void ImmersedBoundaryObject::clearFreshCells()
 {
-    fluid_->add(freshCells_); //- Should also clear cells from cells_
+    solverCells_->add(freshCells_); //- Should also clear cells from cells_
     freshCells_.clear();
 }

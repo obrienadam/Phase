@@ -25,7 +25,7 @@ void cicsam::beta(const VectorFiniteVolumeField &u,
         Scalar flux = dot(u(face), sf);
         const Cell &donor = flux >= 0. ? face.lCell() : face.rCell();
         const Cell &acceptor = flux >= 0. ? face.rCell() : face.lCell();
-        const Cell &upwind = gamma.grid()->globalActiveCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
+        const Cell &upwind = gamma.grid()->globalCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
 
         Vector2D rc = acceptor.centroid() - donor.centroid();
 
@@ -93,12 +93,11 @@ void cicsam::computeMomentumFlux(Scalar rho1,
 Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                              const ScalarFiniteVolumeField &beta,
                              ScalarFiniteVolumeField &gamma,
-                             const CellGroup &cells,
                              Scalar theta)
 {
     Equation<Scalar> eqn(gamma);
 
-    for (const Cell &cell: cells)
+    for (const Cell &cell: gamma.cells())
     {
         for (const InteriorLink &nb: cell.neighbours())
         {
@@ -140,12 +139,4 @@ Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
     }
 
     return eqn;
-}
-
-Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
-                             const ScalarFiniteVolumeField &beta,
-                             ScalarFiniteVolumeField &gamma,
-                             Scalar theta)
-{
-    return div(u, beta, gamma, gamma.grid()->cellZone("fluid"), theta);
 }

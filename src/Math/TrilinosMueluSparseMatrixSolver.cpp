@@ -5,11 +5,9 @@
 #include "TrilinosMueluSparseMatrixSolver.h"
 
 TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm,
-                                                                 //const std::weak_ptr<const FiniteVolumeGrid2D> &grid,
                                                                  const std::string &solverName)
         :
         TrilinosSparseMatrixSolver(comm)
-        //grid_(grid)
 {
     typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
@@ -23,49 +21,14 @@ TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communica
 
 void TrilinosMueluSparseMatrixSolver::setRank(int rank)
 {
-    using namespace Teuchos;
-
     TrilinosSparseMatrixSolver::setRank(rank);
-
     linearProblem_->setOperator(mat_);
-
-//    auto grid = grid_.lock();
-//
-//    if (grid)
-//    {
-//        if (coords_.is_null() || !coords_->getMap()->isSameAs(*map_))
-//            coords_ = rcp(new TpetraMultiVector(map_, 2));
-//
-//        std::transform(grid->localActiveCells().begin(),
-//                       grid->localActiveCells().end(),
-//                       coords_->getDataNonConst(0).begin(),
-//                       [](const Cell &cell) { return cell.centroid().x; });
-//
-//
-//        std::transform(grid->localActiveCells().begin(),
-//                       grid->localActiveCells().end(),
-//                       coords_->getDataNonConst(1).begin(),
-//                       [](const Cell &cell) { return cell.centroid().y; });
-//        //h_->GetLevel(0)->Set("Coordinates", MueLu::TpetraMultiVector_To_XpetraMultiVector(coords_));
-//    }
-//    else
-        coords_ = Teuchos::null;
 }
 
 Scalar TrilinosMueluSparseMatrixSolver::solve()
 {
-//    comm_.printf("MueLu: Performing multigrid iterations...\n");
-//
-//    if (mueLuFactory_.is_null())
-//        h_->Setup();
-//    else
-//        mueLuFactory_->SetupHierarchy(*h_);
-//
-//
-//    h_->Iterate(*MueLu::TpetraMultiVector_To_XpetraMultiVector(b_),
-//                *MueLu::TpetraMultiVector_To_XpetraMultiVector(x_));
     precon_ = MueLu::CreateTpetraPreconditioner(
-            Teuchos::rcp_static_cast<Tpetra::Operator<Scalar, Index, Index>>(mat_),
+            Teuchos::rcp_static_cast<TpetraOperator>(mat_),
             *mueluParams_,
             coords_);
 
@@ -109,4 +72,15 @@ Scalar TrilinosMueluSparseMatrixSolver::error() const
 void TrilinosMueluSparseMatrixSolver::printStatus(const std::string &msg) const
 {
     comm_.printf("%s %s iterations = %d, error = %lf.\n", msg.c_str(), "Krylov", nIters(), error());
+}
+
+void TrilinosMueluSparseMatrixSolver::setCoordinates(const std::vector<Point2D> &coordinates)
+{
+    coords_ = rcp(new TpetraMultiVector(map_, 2));
+
+    std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(0).begin(), [](const Point2D &coord)
+    { return coord.x; });
+
+    std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(1).begin(), [](const Point2D &coord)
+    { return coord.y; });
 }

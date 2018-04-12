@@ -17,16 +17,6 @@ public:
 
 protected:
 
-    int  createBase(int fid, const std::string& name = "Case");
-
-    int  createZone(int fid, int bid, const FiniteVolumeGrid2D& grid, const std::string& name = "Cells");
-
-    void writeCoords(int fid, int bid, int zid, const FiniteVolumeGrid2D& grid);
-
-    int  writeConnectivity(int fid, int bid, int zid, const FiniteVolumeGrid2D& grid);
-
-    void writeBoundaryConnectivity(int fid, int bid, int zid, const FiniteVolumeGrid2D& grid);
-
     std::string path_, gridfile_, casename_;
 };
 

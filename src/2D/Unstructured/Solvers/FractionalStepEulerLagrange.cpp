@@ -6,9 +6,9 @@
 
 #include "FractionalStepEulerLagrange.h"
 
-FractionalStepEulerLagrange::FractionalStepEulerLagrange(const Input &input)
+FractionalStepEulerLagrange::FractionalStepEulerLagrange(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input)
+        FractionalStep(input, grid)
 {
 
 }
@@ -35,7 +35,7 @@ Scalar FractionalStepEulerLagrange::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepEulerLagrange::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p, fluid_) == src::div(u, fluid_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p) == src::div(u));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p);

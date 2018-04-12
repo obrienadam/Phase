@@ -26,6 +26,10 @@ GhostCellImmersedBoundaryObject::Stencil::Stencil(const Cell &cell,
 void GhostCellImmersedBoundaryObject::FixedStencil::init()
 {
     bi_.setPoint(ip_);
+
+    if (!bi_.isValid())
+        throw Exception("GhostCellImmersedBoundaryObject::FixedStencil", "init", "invalid interpolation stencil.");
+
     cells_ = bi_.cells();
     cells_.push_back(std::cref(cell_));
     coeffs_ = bi_.coeffs() / 2.;
@@ -42,8 +46,19 @@ void GhostCellImmersedBoundaryObject::ZeroGradientStencil::init()
             bi_.setPoint(bp_);
             cells_ = bi_.cells();
             coeffs_ = bi_.derivativeCoeffs(d_);
+
+            if (!bi_.isValid())
+                throw Exception("GhostCellImmersedBoundaryObject::ZeroGradientStencil",
+                                "init",
+                                "invalid interpolation stencil.");
+
             return;
         }
+
+    if (!bi_.isValid())
+        throw Exception("GhostCellImmersedBoundaryObject::ZeroGradientStencil",
+                        "init",
+                        "invalid interpolation stencil.");
 
     Scalar l = length();
 
@@ -55,10 +70,10 @@ void GhostCellImmersedBoundaryObject::ZeroGradientStencil::init()
 }
 
 GhostCellImmersedBoundaryObject::GhostCellImmersedBoundaryObject(const std::string &name,
-                                                                 Label id,
-                                                                 const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                                                 const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                 const std::shared_ptr<CellGroup> &solverCells)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, grid, solverCells)
 {
 
 }
@@ -81,10 +96,15 @@ void GhostCellImmersedBoundaryObject::updateCells()
         return false;
     };
 
-    clear();
+    solverCells_->add(cells_);
+    cells_.clear();
+    ibCells_.clear();
+    solidCells_.clear();
 
-    auto items = fluid_->itemsWithin(*shape_);
+    auto items = solverCells_->itemsWithin(*shape_);
+
     cells_.add(items.begin(), items.end());
+    solverCells_->remove(items.begin(), items.end());
 
     for (const Cell &cell: cells_)
         if (isIbCell(cell))

@@ -53,14 +53,14 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
     {
         Vector2D refVal = Vector2D(valStr);
 
-        for (const Patch &patch: grid()->patches())
+        for (const FaceGroup &patch: grid()->patches())
         {
-            BoundaryType type = patchBoundaries_[patch.id()].first;
-            patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
+            BoundaryType type = patchBoundaries_[patch.name()].first;
+            patchBoundaries_[patch.name()] = std::make_pair(type, refVal);
         }
     }
 
-    for (const Patch &patch: grid()->patches())
+    for (const FaceGroup &patch: grid()->patches())
     {
         valStr = input.boundaryInput().get<string>("Boundaries." + name_ + "." + patch.name() + ".value", "");
 
@@ -69,12 +69,12 @@ void VectorFiniteVolumeField::setBoundaryRefValues(const Input &input)
 
         Vector2D refVal(valStr);
 
-        BoundaryType type = patchBoundaries_[patch.id()].first;
-        patchBoundaries_[patch.id()] = std::make_pair(type, refVal);
+        BoundaryType type = patchBoundaries_[patch.name()].first;
+        patchBoundaries_[patch.name()] = std::make_pair(type, refVal);
     }
 
     auto &self = *this;
-    for (const Patch &patch: grid()->patches())
+    for (const FaceGroup &patch: grid()->patches())
     {
         Vector2D bRefVal = boundaryRefValue(patch);
 
@@ -88,7 +88,7 @@ void VectorFiniteVolumeField::setBoundaryFaces()
 {
     auto &self = *this;
 
-    for (const Patch &patch: grid_->patches())
+    for (const FaceGroup &patch: grid_->patches())
         switch (boundaryType(patch))
         {
             case FIXED:

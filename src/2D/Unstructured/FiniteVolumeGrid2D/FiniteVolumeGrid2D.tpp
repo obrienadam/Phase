@@ -11,10 +11,10 @@ void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data) const
     //- Post recvs first (non-blocking)
     for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        if(bufferCellZones_[proc].empty())
+        if(bufferCellGroups_[proc].empty())
             continue;
 
-        recvBuffers[proc].resize(bufferCellZones_[proc].size());
+        recvBuffers[proc].resize(bufferCellGroups_[proc].size());
         comm_->irecv(proc, recvBuffers[proc], proc);
     }
 
@@ -43,7 +43,7 @@ void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data) const
             continue;
 
         int i = 0;
-        for(const Cell& cell: bufferCellZones_[proc])
+        for(const Cell& cell: bufferCellGroups_[proc])
             data[cell.id()] = recvBuffers[proc][i++];
     }
 }
@@ -59,10 +59,10 @@ void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data, Size nSets) const
     //- Post recvs first (non-blocking)
     for(int proc = 0; proc < comm_->nProcs(); ++proc)
     {
-        if(bufferCellZones_[proc].empty())
+        if(bufferCellGroups_[proc].empty())
             continue;
 
-        recvBuffers[proc].resize(bufferCellZones_[proc].size() * nSets);
+        recvBuffers[proc].resize(bufferCellGroups_[proc].size() * nSets);
         comm_->irecv(proc, recvBuffers[proc], proc);
     }
 
@@ -92,7 +92,7 @@ void FiniteVolumeGrid2D::sendMessages(std::vector<T> &data, Size nSets) const
 
         int i = 0;
         for(Size set = 0; set < nSets; ++set)
-            for(const Cell& cell: bufferCellZones_[proc])
+            for(const Cell& cell: bufferCellGroups_[proc])
                 data[cell.id() + set * nCells()] = recvBuffers[proc][i++];
     }
 }

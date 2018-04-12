@@ -4,32 +4,22 @@ CaseName FlowAroundUnstructuredCylinder
 
 Solver
 {
-	timeDependent Off
-	maxIterations 100
+	type "fractional step"
 	timeStep 0.00025
 	maxTime 5
 	maxCo 0.8
-
-	numInnerIterations 1
-	numPressureCorrections 2
-	momentumRelaxation 1
-	pressureCorrectionRelaxation 0.5
 }
 
 LinearAlgebra
 {
 	uEqn
 	{
-	  lib trilinos
-	  iluFill 0
-	  tolerance 1e-14
+	  lib eigen
 	}
 
 	pEqn
 	{
-	  lib trilinos
-	  iluFill 2
-	  tolerance 1e-14
+	  lib eigen
 	}
 }
 
@@ -51,14 +41,6 @@ Viewer
 	type tecplot
 	vectorFields u
 	scalarFields p,m
-}
-
-Integrators
-{
-  ForceIntegrators
-  {
-    patches Cylinder
-  }
 }
 
 System

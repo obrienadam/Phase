@@ -8,21 +8,21 @@ std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(GridType t
 
     switch (type)
     {
-        case CGNS:
-            grid = std::make_shared<CgnsUnstructuredGrid>(input);
-            break;
         case RECTILINEAR:
             grid = std::make_shared<StructuredRectilinearGrid>(input);
             break;
-        case RELOAD:
-            grid = std::make_shared<CgnsUnstructuredGrid>();
-            std::static_pointer_cast<CgnsUnstructuredGrid>(grid)->loadPartitionedGrid(std::make_shared<Communicator>());
+        case CGNS:
+            grid = std::make_shared<CgnsUnstructuredGrid>(input);
+            break;
+        case LOAD:
+            auto grid = std::make_shared<CgnsUnstructuredGrid>();
+            grid->load("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns");
+            grid->readPartitionData("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns");
             return grid;
-        default:
-            return nullptr;
     }
 
-    grid->partition(input, std::make_shared<Communicator>());
+    grid->partition(input);
+
     return grid;
 }
 
@@ -33,17 +33,25 @@ std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(std::strin
         return std::tolower(c);
     });
 
-    if (type == "cgns")
-        return create(CGNS, input);
-    else if (type == "rectilinear")
+    if (type == "rectilinear")
         return create(RECTILINEAR, input);
-    else if (type == "reload")
-        return create(RELOAD, input);
+    else if (type == "cgns")
+        return create(CGNS, input);
+    else if (type == "load")
+        return create(LOAD, input);
 
-    return nullptr;
+    throw Exception("FiniteVolumeGrid2DFactory", "create", "grid \"" + type + "\" is not a valid grid type.");
 }
 
 std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(const Input &input)
 {
     return create(input.caseInput().get<std::string>("Grid.type"), input);
+}
+
+std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(const CommandLine &cl, const Input &input)
+{
+    if (cl.get<bool>("use-partitioned-grid") || cl.get<bool>("restart"))
+        return create(LOAD, input);
+    else
+        return create(input);
 }

@@ -1,5 +1,5 @@
-#ifndef DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
-#define DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
+#ifndef PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
+#define PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "ImmersedBoundaryObject.h"
 
@@ -100,8 +100,8 @@ public:
 
     //- Constructors, one for circles, another for polygons
     DirectForcingImmersedBoundaryObject(const std::string &name,
-                                        Label id,
-                                        const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+                                        const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                        const std::shared_ptr<CellGroup> &solverCells);
 
     Type type() const
     { return DIRECT_FORCING; }

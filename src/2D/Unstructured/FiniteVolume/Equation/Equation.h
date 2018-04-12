@@ -1,5 +1,5 @@
-#ifndef EQUATION_H
-#define EQUATION_H
+#ifndef PHASE_EQUATION_H
+#define PHASE_EQUATION_H
 
 #include <valarray>
 

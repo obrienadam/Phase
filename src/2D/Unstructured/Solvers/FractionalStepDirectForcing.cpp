@@ -6,11 +6,11 @@
 
 #include "FractionalStepDirectForcing.h"
 
-FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input)
+FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input),
-        divU(*addScalarField("divU")),
-        fb(*addVectorField("fb")),
+        FractionalStep(input, grid),
+        divU(*addField<Scalar>("divU")),
+        fb(*addField<Vector2D>("fb")),
         pExtEqn_(input, p, "pExtEqn"),
         uExtEqn_(input, u, "uExtEqn")
 {
@@ -87,7 +87,7 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
     u.savePreviousTimeStep(timeStep, 1);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_, fluid_));
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_));
 
     Scalar error = uEqn_.solve();
 
@@ -101,7 +101,7 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
         u(cell) = u.oldField(0)(cell);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ - fb, fluid_));
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ - fb));
 
     uEqn_.solve();
 

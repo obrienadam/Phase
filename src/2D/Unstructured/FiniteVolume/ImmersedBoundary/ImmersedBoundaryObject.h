@@ -1,5 +1,5 @@
-#ifndef IMMERSED_BOUNDARY_OBJECT_H
-#define IMMERSED_BOUNDARY_OBJECT_H
+#ifndef PHASE_IMMERSED_BOUNDARY_OBJECT_H
+#define PHASE_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "Geometry/Shape2D.h"
 #include "FiniteVolume/Equation/Equation.h"
@@ -23,17 +23,25 @@ public:
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name,
-                           Label id,
-                           const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+                           const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                            const std::shared_ptr<CellGroup> &solverCells);
 
     //- Body info
     const std::string &name() const
     { return name_; }
 
-    Label id() const
-    { return id_; }
-
     virtual Type type() const = 0;
+
+    //- grid
+    const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
+    { return grid_; }
+
+    //- Solver cells
+    const std::shared_ptr<CellGroup> &solverCells() const
+    { return solverCells_; }
+
+    void setSolverCells(const std::shared_ptr<CellGroup> &solverCells)
+    { solverCells_ = solverCells; }
 
     //- Geometry related methods
     virtual void initCircle(const Point2D &center, Scalar radius);
@@ -50,6 +58,8 @@ public:
     const Shape2D &shape() const
     { return *shape_; }
 
+    //-
+
     //- Tests
     bool isInIb(const Point2D &pt) const
     { return shape_->isInside(pt); }
@@ -59,18 +69,8 @@ public:
     { return shape_->isInside(item.centroid()); }
 
     //- Set/get primary cell zone
-    void setZone(CellZone &zone);
 
     virtual void clear();
-
-    CellZone &cellZone()
-    { return *fluid_; }
-
-    const CellZone &cellZone() const
-    { return *fluid_; }
-
-    const std::shared_ptr<FiniteVolumeGrid2D> &grid() const
-    { return grid_; }
 
     //- Operations
     LineSegment2D intersectionLine(const LineSegment2D &ln) const;
@@ -102,16 +102,16 @@ public:
 
     //- Reference to cell zone for iterating
 
-    const CellZone &cells() const
+    const CellGroup &cells() const
     { return cells_; }
 
-    const CellZone &ibCells() const
+    const CellGroup &ibCells() const
     { return ibCells_; }
 
-    const CellZone &solidCells() const
+    const CellGroup &solidCells() const
     { return solidCells_; }
 
-    const CellZone &freshCells() const
+    const CellGroup &freshCells() const
     { return freshCells_; }
 
     //- Boundary info
@@ -218,17 +218,12 @@ protected:
     //- Identification
     std::string name_;
 
-    Label id_;
-
     //- Grid
-    std::shared_ptr<FiniteVolumeGrid2D> grid_;
+    std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
-    //- Cell zone info
-    std::shared_ptr<CellZone::ZoneRegistry> zoneRegistry_; //- Registry for these IB cells only
+    std::shared_ptr<CellGroup> solverCells_;
 
-    CellZone cells_, ibCells_, solidCells_, freshCells_;
-
-    CellZone *fluid_ = nullptr;
+    CellGroup cells_, ibCells_, solidCells_, freshCells_;
 
     //- Geometry
     std::unique_ptr<Shape2D> shape_;

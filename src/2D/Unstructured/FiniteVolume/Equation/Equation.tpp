@@ -6,8 +6,8 @@
 
 #include "Math/EigenSparseMatrixSolver.h"
 #include "Math/TrilinosBelosSparseMatrixSolver.h"
-#include "Math/TrilinosMueluSparseMatrixSolver.h"
 #include "Math/TrilinosAmesosSparseMatrixSolver.h"
+#include "Math/TrilinosMueluSparseMatrixSolver.h"
 
 template<class T>
 Equation<T>::Equation(const Input &input,
@@ -162,7 +162,7 @@ Equation<T> &Equation<T>::operator==(const Equation<T> &rhs)
 template<class T>
 Equation<T> &Equation<T>::operator==(const FiniteVolumeField<T> &rhs)
 {
-    for (const Cell &cell: rhs.grid()->localActiveCells())
+    for (const Cell &cell: rhs.grid()->localCells())
         sources_(field_.indexMap()->local(cell, 0)) -= rhs(cell);
 
     return *this;
@@ -197,6 +197,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
                                                                 "\" does not support multiple processes in its current configuration.");
 
     field_.computeOrdering();
+
     spSolver_->setup(input.caseInput().get_child("LinearAlgebra." + name));
 
     comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());
@@ -213,6 +214,10 @@ Scalar Equation<T>::solve()
     spSolver_->setRank(getRank());
     spSolver_->set(coeffs_);
     spSolver_->setRhs(-sources_);
+
+    if(spSolver_->type() == SparseMatrixSolver::TRILINOS_MUELU)
+        std::static_pointer_cast<TrilinosMueluSparseMatrixSolver>(spSolver_)->setCoordinates(field_.grid()->localCells().coordinates());
+
     spSolver_->solve();
 
     mapFromSparseSolver();

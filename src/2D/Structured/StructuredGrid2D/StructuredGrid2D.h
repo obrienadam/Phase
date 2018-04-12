@@ -23,9 +23,11 @@ public:
     size_t nNodes() const
     { return nNodesI_ * nNodesJ_; }
 
-    const Point2D &node(size_t i, size_t j) const;
+    const Point2D &node(size_t i, size_t j) const
+    { return nodes_[j * nNodesI_ + i]; }
 
-    const Point2D &node(size_t id) const;
+    const Point2D &node(const Index& idx) const
+    { return nodes_[idx.id]; }
 
     Scalar dxe(size_t i, size_t j) const;
 
@@ -39,9 +41,13 @@ protected:
 
     size_t nNodesI_, nNodesJ_;
 
+    size_t nIFacesI_, nIFacesJ_;
+
+    size_t nJFacesI_, nJFacesJ_;
+
     Scalar lx_, ly_;
 
-    std::vector<Point2D> nodes_;
+    std::vector<Point2D> nodes_, ifaces_, jfaces_;
 };
 
 

@@ -5,10 +5,10 @@
 
 #include "FractionalStepBoussinesq.h"
 
-FractionalStepBoussinesq::FractionalStepBoussinesq(const Input &input)
+FractionalStepBoussinesq::FractionalStepBoussinesq(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
-        FractionalStep(input),
-        T(*addScalarField(input, "T")),
+        FractionalStep(input, grid),
+        T(*addField<Scalar>(input, "T")),
         TEqn_(input, T, "TEqn")
 {
     alpha_ = input.caseInput().get<Scalar>("Properties.alpha", 0.00369);
@@ -40,11 +40,11 @@ Scalar FractionalStepBoussinesq::solveUEqn(Scalar timeStep)
     u.savePreviousTimeStep(timeStep, 1);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, fluid_, 0.5) - src::src(gradP / rho_ + alpha_ * (T - T0_) * g_, fluid_));
+             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ + alpha_ * (T - T0_) * g_));
 
     Scalar error = uEqn_.solve();
 
-    for (const Cell &cell: grid_->localActiveCells())
+    for (const Cell &cell: grid_->localCells())
         u(cell) += timeStep / rho_ * gradP(cell);
 
     grid_->sendMessages(u);

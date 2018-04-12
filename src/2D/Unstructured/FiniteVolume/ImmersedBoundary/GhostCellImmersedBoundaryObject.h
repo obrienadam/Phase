@@ -1,5 +1,5 @@
-#ifndef GHOST_CELL_IMMERSED_BOUNDARY_OBJECT_H
-#define GHOST_CELL_IMMERSED_BOUNDARY_OBJECT_H
+#ifndef PHASE_GHOST_CELL_IMMERSED_BOUNDARY_OBJECT_H
+#define PHASE_GHOST_CELL_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "FiniteVolumeGrid2D/BilinearInterpolator.h"
 
@@ -61,12 +61,8 @@ public:
     public:
 
         FixedStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj)
-                :
-                Stencil(cell, ibObj),
-                bi_(ibObj.grid())
-        {
-            init();
-        }
+                : Stencil(cell, ibObj), bi_(ibObj.grid())
+        { init(); }
 
         void init();
 
@@ -119,8 +115,8 @@ public:
     };
 
     GhostCellImmersedBoundaryObject(const std::string &name,
-                                    Label id,
-                                    const std::shared_ptr<FiniteVolumeGrid2D> &grid);
+                                    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                    const std::shared_ptr<CellGroup> &solverCells);
 
     Type type() const
     { return GHOST_CELL; }

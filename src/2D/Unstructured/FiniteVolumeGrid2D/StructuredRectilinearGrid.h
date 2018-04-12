@@ -42,6 +42,7 @@ protected:
     void refineDims(Scalar start, Scalar end, std::vector<Scalar> &dims);
 
     Size nCellsX_, nCellsY_;
+
     Scalar width_, height_;
 
 };

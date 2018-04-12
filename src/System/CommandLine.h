@@ -1,36 +1,47 @@
-#ifndef COMMAND_LINE_H
-#define COMMAND_LINE_H
+#ifndef PHASE_COMMAND_LINE_H
+#define PHASE_COMMAND_LINE_H
 
-#include <vector>
-#include <map>
+#include <unordered_map>
 
-#include "Input.h"
+#include <boost/program_options.hpp>
 
 class CommandLine
 {
 public:
 
     CommandLine();
+
     CommandLine(int argc, char* argv[]);
 
-    void setOptions(const std::map<std::string, std::string>& options);
+    void addSwitch(const std::string& opt, const std::string& desc);
+
+    template<class T>
+    void add(const std::string& opt, const std::string& desc, bool optional = true)
+    {
+        if(optional)
+            desc_.add_options()(opt.c_str(), boost::program_options::value<T>(), desc.c_str());
+        else
+            desc_.add_options()(opt.c_str(), boost::program_options::value<T>()->required(), desc.c_str());
+    }
+
+    template<class T>
+    const T& get(const std::string& opt) const
+    {
+        return vm_[opt].as<T>();
+    }
+
+    boost::program_options::options_description_easy_init addOptions();
+
     void parseArguments(int argc, char *argv[]);
 
     std::string getOption(const std::string& option);
 
-    int argc() const { return argc_; }
-    char** argv() const { return argv_; }
 
 private:
 
-    void printHelpMessage(const char programName[]);
-    void printVersrionInfo(const char programName[]);
+    boost::program_options::options_description desc_;
 
-    int argc_;
-    char **argv_;
-
-    std::map<std::string, std::string> options_;
-    std::map<std::string, std::string> parsedArgs_;
+    boost::program_options::variables_map vm_;
 
 };
 

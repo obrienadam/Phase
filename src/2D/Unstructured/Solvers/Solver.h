@@ -12,14 +12,15 @@ class Solver : public SolverInterface
 {
 public:
     //- Constructors
-    Solver(const Input &input);
+    Solver(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
     //- Info
     virtual std::string info() const
-    { return ""; }
+    { return "Unknown solver type"; }
 
     //- Initialize
-    virtual void initialize() {}
+    virtual void initialize()
+    {}
 
     //- Solve
     virtual Scalar solve(Scalar timeStep) = 0;
@@ -32,28 +33,21 @@ public:
 
     int printf(const char *format, ...) const;
 
-    const Communicator& comm() const
+    const Communicator &comm() const
     { return grid_->comm(); }
 
     Scalar getStartTime(const Input &input) const;
 
     //- Field management
 
-    std::shared_ptr<FiniteVolumeField<int>> addIntegerField(const std::string &name);
+    template<class T>
+    std::shared_ptr<FiniteVolumeField<T>> addField(const std::string &name);
 
-    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const Input &input, const std::string &name);
+    template<class T>
+    std::shared_ptr<FiniteVolumeField<T>> addField(const Input &input, const std::string& name);
 
-    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const std::string &name);
-
-    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const Input &input, const std::string &name);
-
-    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const std::string &name);
-
-    std::shared_ptr<ScalarFiniteVolumeField> addScalarField(const std::shared_ptr<ScalarFiniteVolumeField>& field);
-
-    std::shared_ptr<VectorFiniteVolumeField> addVectorField(const std::shared_ptr<VectorFiniteVolumeField>& field);
-
-    std::shared_ptr<TensorFiniteVolumeField> addTensorField(const std::shared_ptr<TensorFiniteVolumeField>& field);
+    template<class T>
+    std::shared_ptr<FiniteVolumeField<T>> addField(const std::shared_ptr<FiniteVolumeField<T>> &field);
 
     //- Field data structures
     const std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>>> &integerFields() const
@@ -76,10 +70,7 @@ public:
     { return vectorFields_.find(name)->second; }
 
     //- Grid
-    std::shared_ptr<FiniteVolumeGrid2D> grid()
-    { return grid_; }
-
-    std::shared_ptr<const FiniteVolumeGrid2D> grid() const
+    const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
     { return grid_; }
 
     //- Immersed boundary
@@ -118,7 +109,9 @@ protected:
 
     virtual void restartSolution(const Input &input);
 
-    std::shared_ptr<FiniteVolumeGrid2D> grid_;
+    std::shared_ptr<const FiniteVolumeGrid2D> grid_;
+
+    std::shared_ptr<CellGroup> cells_;
 
     std::shared_ptr<ImmersedBoundary> ib_;
 
@@ -132,9 +125,7 @@ protected:
     mutable std::unordered_map<std::string, std::shared_ptr<TensorFiniteVolumeField>> tensorFields_;
 
     //- Solver parameters
-    bool restartedSolution_;
-
-    Scalar maxTimeStep_;
+    Scalar startTime_, maxTimeStep_;
 };
 
 #endif

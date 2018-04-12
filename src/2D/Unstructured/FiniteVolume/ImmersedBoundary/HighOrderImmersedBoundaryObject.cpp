@@ -1,10 +1,10 @@
 #include "HighOrderImmersedBoundaryObject.h"
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
-                                                                 Label id,
-                                                                 const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                                                 const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                 const std::shared_ptr<CellGroup> &solverCells)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, grid, solverCells)
 {
 
 }
@@ -13,7 +13,7 @@ void HighOrderImmersedBoundaryObject::updateCells()
 {
     clear();
 
-    auto items = fluid_->itemsWithin(*shape_);
+    auto items = solverCells_->itemsWithin(*shape_);
     cells_.add(items.begin(), items.end());
     solidCells_.add(items.begin(), items.end());
 
@@ -184,7 +184,7 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
                 cells.push_back(std::cref(nb.cell()));
                 bps.push_back(nearestIntersect(nb.cell().centroid()));
             }
-            else if (fluid_->isInGroup(nb.cell()))
+            else if (solverCells_->isInGroup(nb.cell()))
                 cells.push_back(std::cref(nb.cell()));
         }
 
@@ -195,7 +195,7 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
                 cells.push_back(std::cref(dg.cell()));
                 bps.push_back(nearestIntersect(dg.cell().centroid()));
             }
-            else if (fluid_->isInGroup(dg.cell()))
+            else if (solverCells_->isInGroup(dg.cell()))
                 cells.push_back(std::cref(dg.cell()));
         }
 

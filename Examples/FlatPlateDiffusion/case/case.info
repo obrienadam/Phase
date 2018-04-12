@@ -5,8 +5,9 @@ CaseName FlatPlate2D
 Solver
 {
 	type "poisson"
-	timeStep 0.01
-	maxTime 30
+	timeStep 1
+	maxTime 1
+	maxCo 1
 }
 
 LinearAlgebra

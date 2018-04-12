@@ -34,7 +34,7 @@ public:
     Scalar sigma() const
     { return sigma_; }
 
-    Scalar theta(const Patch &patch) const;
+    Scalar theta(const FaceGroup &patch) const;
 
     Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
@@ -73,13 +73,15 @@ protected:
 
     Scalar sigma_, kernelWidth_, eps_ = 1e-8;
 
-    std::unordered_map<Label, Scalar> ibContactAngles_, patchContactAngles_;
+    std::unordered_map<std::string, Scalar> ibContactAngles_, patchContactAngles_;
 
     std::weak_ptr<ImmersedBoundary> ib_;
 
     //- Fields, can share ownership
     std::shared_ptr<ScalarFiniteVolumeField> kappa_, gammaTilde_;
+
     std::shared_ptr<VectorFiniteVolumeField> n_;
+
     std::shared_ptr<ScalarGradient> gradGammaTilde_;
 };
 

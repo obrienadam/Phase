@@ -1,5 +1,5 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef PHASE_NODE_H
+#define PHASE_NODE_H
 
 #include "Geometry/Point2D.h"
 
@@ -13,7 +13,7 @@ class Node : public Point2D
 {
 public:
 
-    Node(Scalar x, Scalar y, const FiniteVolumeGrid2D &grid);
+    explicit Node(Scalar x, Scalar y, const FiniteVolumeGrid2D &grid);
 
     explicit Node(const Point2D &point, const FiniteVolumeGrid2D &grid);
 

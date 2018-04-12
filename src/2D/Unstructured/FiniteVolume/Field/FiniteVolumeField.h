@@ -96,11 +96,11 @@ public:
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
 
-    BoundaryType boundaryType(const Patch &patch) const;
+    BoundaryType boundaryType(const FaceGroup &patch) const;
 
     BoundaryType boundaryType(const Face &face) const;
 
-    T boundaryRefValue(const Patch &patch) const;
+    T boundaryRefValue(const FaceGroup &patch) const;
 
     template<class TFunc>
     void interpolateFaces(const TFunc &alpha);
@@ -159,7 +159,7 @@ public:
 
     //- Cell group access (by default returns local active cells)
     const CellGroup &cells() const
-    { return cellGroup_ ? *cellGroup_ : grid_->localActiveCells(); }
+    { return cellGroup_ ? *cellGroup_ : grid_->localCells(); }
 
     void setCellGroup(const CellGroup &cellGroup)
     { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
@@ -220,8 +220,7 @@ protected:
     void setBoundaryRefValues(const Input &input);
 
     //- Data members
-
-    std::unordered_map<Label, std::pair<BoundaryType, T> > patchBoundaries_;
+    std::unordered_map<std::string, std::pair<BoundaryType, T> > patchBoundaries_;
 
     //- Grid
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;

@@ -49,14 +49,14 @@ DirectForcingImmersedBoundaryObject::PressureFieldExtensionStencil::PressureFiel
 
     bool validStencil = false;
 
-    for(const Cell& kCell: cells_)
-        if(kCell.id() == cell.id())
+    for (const Cell &kCell: cells_)
+        if (kCell.id() == cell.id())
         {
             validStencil = true;
             break;
         }
 
-    if(validStencil)
+    if (validStencil)
     {
         cells_ = bi.cells();
         coeffs_ = bi.derivativeCoeffs(n_);
@@ -141,10 +141,10 @@ DirectForcingImmersedBoundaryObject::QuadraticStencil::QuadraticStencil(const Ve
 }
 
 DirectForcingImmersedBoundaryObject::DirectForcingImmersedBoundaryObject(const std::string &name,
-                                                                         Label id,
-                                                                         const std::shared_ptr<FiniteVolumeGrid2D> &grid)
+                                                                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                                                                         const std::shared_ptr<CellGroup> &solverCells)
         :
-        ImmersedBoundaryObject(name, id, grid)
+        ImmersedBoundaryObject(name, grid, solverCells)
 {
 
 }
@@ -158,7 +158,7 @@ void DirectForcingImmersedBoundaryObject::updateCells()
 
     // auto items = fluid_->itemsWithin(*shape_);
 
-    for (const Cell &cell: fluid_->itemsWithin(*shape_))
+    for (const Cell &cell: solverCells_->itemsWithin(*shape_))
     {
         solidCells_.add(cell);
 

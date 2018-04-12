@@ -1,16 +1,16 @@
-#ifndef LAPLACIAN_H
-#define LAPLACIAN_H
+#ifndef PHASE_LAPLACIAN_H
+#define PHASE_LAPLACIAN_H
 
 #include "Equation.h"
 
 namespace fv
 {
     template<class T>
-    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, const CellGroup &cells, Scalar theta = 1.)
+    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
 
-        for (const Cell &cell: cells)
+        for (const Cell &cell: phi.cells())
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -48,13 +48,12 @@ namespace fv
     template<class T>
     Equation<T> laplacian(const ScalarFiniteVolumeField &gamma,
                           FiniteVolumeField<T> &phi,
-                          const CellGroup &cells,
                           Scalar theta = 1.)
     {
         Equation<T> eqn(phi);
         const ScalarFiniteVolumeField &gamma0 = gamma.oldField(0);
 
-        for (const Cell &cell: cells)
+        for (const Cell &cell: phi.cells())
         {
             for (const InteriorLink &nb: cell.neighbours())
             {
@@ -90,22 +89,6 @@ namespace fv
 
         return eqn;
     }
-
-    template<class T>
-    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
-    {
-        return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
-    }
-
-    template<class T>
-    Equation<T> laplacian(const ScalarFiniteVolumeField &gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
-    {
-        return laplacian(gamma, phi, phi.grid()->cellZone("fluid"), theta);
-    }
-
-    //- Specialization prototypes
-//    template<>
-//    Equation<Vector2D> laplacian(Scalar gamma, FiniteVolumeField<Vector2D> &phi, const CellGroup &cells, Scalar theta);
 }
 
 #endif

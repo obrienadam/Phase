@@ -1,10 +1,5 @@
-#ifndef CGNS_UNSTRUCTURED_GRID_H
-#define CGNS_UNSTRUCTURED_GRID_H
-
-#include<cgnslib.h>
-
-
-#include "System/Input.h"
+#ifndef PHASE_CGNS_UNSTRUCTURED_GRID_H
+#define PHASE_CGNS_UNSTRUCTURED_GRID_H
 
 #include "FiniteVolumeGrid2D.h"
 
@@ -16,7 +11,9 @@ public:
 
     CgnsUnstructuredGrid(const Input &input);
 
-    void loadPartitionedGrid(std::shared_ptr<Communicator> comm);
+    void load(const std::string& filename);
+
+    void readPartitionData(const std::string& filename);
 
 private:
 

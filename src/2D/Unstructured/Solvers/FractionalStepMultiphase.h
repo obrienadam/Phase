@@ -8,7 +8,7 @@
 class FractionalStepMultiphase : public FractionalStep
 {
 public:
-    FractionalStepMultiphase(const Input &input);
+    FractionalStepMultiphase(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
     void initialize();
 

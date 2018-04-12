@@ -21,11 +21,14 @@ void Group<T>::add(const T &item)
 template<class T>
 void Group<T>::add(const Group<T> &items)
 {
-    items_.reserve(items_.size() + items.size());
-    itemSet_.reserve(itemSet_.size() + items.size());
+    items_.reserve(size() + items.size());
+    itemSet_.reserve(size() + items.size());
 
     for (const T &item: items)
-        add(item);
+        if(itemSet_.insert(std::cref(item)).second)
+            items_.push_back(std::cref(item));
+
+    rTree_.insert(items.items_.begin(), items.items_.end());
 }
 
 template<class T>
@@ -34,8 +37,10 @@ void Group<T>::remove(const T &item)
     if (itemSet_.erase(std::cref(item)))
     {
         items_.erase(
-                std::find_if(items_.begin(), items_.end(), [&item](const T &arg) { return item.id() == arg.id(); })
+                std::find_if(items_.begin(), items_.end(), [&item](const T &arg)
+                { return item.id() == arg.id(); })
         );
+
         rTree_.remove(std::cref(item));
     }
 }
@@ -45,10 +50,9 @@ void Group<T>::remove(const Group<T> &other)
 {
     auto itr = std::remove_if(items_.begin(), items_.end(), [&other, this](const T &item) -> bool
     {
-        if(other.isInGroup(item))
+        if (other.isInGroup(item))
         {
             itemSet_.erase(std::cref(item));
-            rTree_.remove(std::cref(item));
             return true;
         }
 
@@ -56,6 +60,7 @@ void Group<T>::remove(const Group<T> &other)
     });
 
     items_.erase(itr, items_.end());
+    rTree_.remove(other.begin(), other.end());
 }
 
 template<class T>
@@ -122,91 +127,49 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
 {
     namespace bgi = boost::geometry::index;
 
-    std::vector<Ref<const T>> result;
-
     switch (shape.type())
     {
         case Shape2D::CIRCLE:
-        {
-            const Circle &c = static_cast<const Circle &>(shape);
-            auto covered = [&c](const T &item) { return c.isInside(item.centroid()); };
-            rTree_.query(bgi::within(c.boundingBox()) && bgi::satisfies(covered), std::back_inserter(result));
-        }
-            break;
-
+            return std::vector<Ref<const T>>(
+                    rTree_.qbegin(bgi::within(shape.boundingBox())
+                                  && bgi::satisfies([&shape](const T &item)
+                                                    { return shape.isInside(item.centroid()); })),
+                    rTree_.qend());
         case Shape2D::BOX:
-            rTree_.query(bgi::within(shape.boundingBox()), std::back_inserter(result));
-            break;
+            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())), rTree_.qend());
         case Shape2D::POLYGON:
-            rTree_.query(bgi::within(static_cast<const Polygon &>(shape).boostRing()), std::back_inserter(result));
-            break;
+            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(static_cast<const Polygon &>(shape).boostRing())),
+                                      rTree_.qend());
     }
-
-
-    return result;
 }
 
 template<class T>
 std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Shape2D &shape) const
 {
-    std::vector<Ref<const T>> result;
-    result.reserve(items_.size());
-
     namespace bgi = boost::geometry::index;
 
     switch (shape.type())
     {
         case Shape2D::CIRCLE:
-        {
-            const Circle &c = static_cast<const Circle &>(shape);
-            auto covered = [&c](const T &item) { return c.isCovered(item.centroid()); };
-            rTree_.query(bgi::covered_by(c.boundingBox()) && bgi::satisfies(covered), std::back_inserter(result));
-        }
-            break;
+            return std::vector<Ref<const T>>(
+                    rTree_.qbegin(bgi::covered_by(shape.boundingBox())
+                                  && bgi::satisfies([&shape](const T &item)
+                                                    { return shape.isCovered(item.centroid()); })),
+                    rTree_.qend());
 
         case Shape2D::BOX:
-            rTree_.query(bgi::covered_by(shape.boundingBox()), std::back_inserter(result));
-            break;
+            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())), rTree_.qend());
         case Shape2D::POLYGON:
-            rTree_.query(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing()), std::back_inserter(result));
-            break;
+            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing())),
+                                      rTree_.qend());
     }
-
-    return result;
 }
 
 template<class T>
 std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) const
 {
-    std::vector<Ref<const T>> result;
-    result.reserve(k);
-
-    rTree_.query(boost::geometry::index::nearest(pt, k),
-                 std::back_inserter(result));
-
-    return result;
-}
-
-template<class T>
-std::vector<Ref<const T>> Group<T>::nearestItems(const Shape2D &shape, size_t k) const
-{
-    std::vector<Ref<const T>> result;
-    result.reserve(k);
-
-    switch (shape.type())
-    {
-        case Shape2D::CIRCLE:
-
-            rTree_.query(boost::geometry::index::nearest(shape.centroid(), k),
-                         std::back_inserter(result));
-
-            break;
-
-        default:
-            throw Exception("Group<T>", "nearestItems", "shape type not supported.");
-    }
-
-    return result;
+    namespace bgi = boost::geometry::index;
+    return std::vector<Ref<const T>>(rTree_.qbegin(bgi::nearest(pt, k)), rTree_.qend());
 }
 
 template<class T>
@@ -216,15 +179,18 @@ const T &Group<T>::nearestItem(const Point2D &pt) const
 }
 
 template<class T>
-const T &Group<T>::nearestItem(const Shape2D &shape) const
-{
-    return nearestItems(shape, 1)[0];
-}
-
-template<class T>
 bool Group<T>::isInGroup(const T &item) const
 {
     return itemSet_.find(std::cref(item)) != itemSet_.end();
+}
+
+template<class T>
+std::vector<Point2D> Group<T>::coordinates() const
+{
+    std::vector<Point2D> coords(items_.size());
+    std::transform(items_.begin(), items_.end(), coords.begin(), [](const T &item)
+    { return item.centroid(); });
+    return coords;
 }
 
 //- Private helper methods
