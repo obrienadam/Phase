@@ -1,6 +1,7 @@
 #ifndef RUN_CONTROL_H
 #define RUN_CONTROL_H
 
+#include "CommandLine.h"
 #include "Input.h"
 #include "SolverInterface.h"
 #include "PostProcessingInterface.h"
@@ -10,7 +11,8 @@ class RunControl
 {
 public:
 
-    void run(const Input &input,
+    void run(const CommandLine &cl,
+             const Input &input,
              SolverInterface &solver,
              PostProcessingInterface &postProcessing);
 

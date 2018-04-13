@@ -5,7 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <cgnslib.h>
 
-#include "FiniteVolumeGrid2D/FiniteVolumeGrid2DFactory.h"
+#include "System/CgnsFile.h"
 
 #include "Solver.h"
 
@@ -22,6 +22,7 @@ Solver::Solver(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2
 
     //- Set simulation time options
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
+    startTime_ = 0.;
 }
 
 int Solver::printf(const char *format, ...) const
@@ -39,9 +40,9 @@ int Solver::printf(const char *format, ...) const
     return n;
 }
 
-Scalar Solver::getStartTime(const Input &input) const
+Scalar Solver::getStartTime() const
 {
-    return 0.;
+    return startTime_;
 }
 
 template<>
@@ -159,12 +160,6 @@ void Solver::setInitialConditions(const Input &input)
     using namespace std;
     using namespace boost::property_tree;
 
-    if (input.initialConditionInput().get<std::string>("InitialConditions.type", "") == "restart")
-    {
-        restartSolution(input);
-        return;
-    }
-
     for (const auto &child: input.initialConditionInput().get_child("InitialConditions"))
     {
         auto scalarFieldIt = scalarFields_.find(child.first);
@@ -276,6 +271,14 @@ void Solver::setInitialConditions(const Input &input)
             }
         }
     }
+}
+
+void Solver::setInitialConditions(const CommandLine &cl, const Input &input)
+{
+    if (cl.get<bool>("restart"))
+        restartSolution(input);
+    else
+        setInitialConditions(input);
 }
 
 //- Protected methods
@@ -478,7 +481,6 @@ void Solver::restartSolution(const Input &input)
     using namespace boost::filesystem;
 
     std::regex re("[0-9]+\\.[0-9]+");
-    Scalar maxTime = 0.;
     path path;
 
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
@@ -488,10 +490,10 @@ void Solver::restartSolution(const Input &input)
             std::regex_search(dir->path().filename().string(), match, re);
             Scalar time = std::stod(match.str());
 
-            if (time >= maxTime)
+            if (time >= startTime_)
             {
                 path = dir->path();
-                maxTime = time;
+                startTime_ = time;
             }
         }
 
@@ -501,29 +503,39 @@ void Solver::restartSolution(const Input &input)
     if (!exists(path))
         throw Exception("Solver", "restartSolution", "no file \"" + path.string() + "\" needed for restart.");
 
-    int fn;
-    cg_open(path.c_str(), CG_MODE_READ, &fn);
+    grid_->comm().printf("Restarting solution at t = %lf...\n", startTime_);
 
-    std::vector<Scalar> buffer(grid_->cells().size());
-    cgsize_t rmin = 1, rmax = buffer.size();
+    CgnsFile file(path.string(), CgnsFile::READ);
 
-    for (const auto &field: scalarFields_)
+    for (const auto &entry: scalarFields_)
     {
-        cg_field_read(fn, 1, 1, 1, field.first.c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, field.second->data());
+        auto field = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first);
+
+        if (field.data.size() == entry.second->size())
+            std::copy(field.data.begin(), field.data.end(), entry.second->begin());
+
+        grid_->sendMessages(*entry.second);
+        entry.second->interpolateFaces();
     }
 
-    for (const auto &field: vectorFields_)
+    for (const auto &entry: vectorFields_)
     {
-        cg_field_read(fn, 1, 1, 1, (field.first + "X").c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
+        auto fieldX = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first + "X");
+        auto fieldY = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first + "Y");
 
-        for (int i = 0; i < buffer.size(); ++i)
-            (*field.second)[i].x = buffer[i];
+        if (fieldX.data.size() == entry.second->size()
+            && fieldY.data.size() == entry.second->size())
+        {
+            std::transform(fieldX.data.begin(), fieldX.data.end(),
+                           fieldY.data.begin(),
+                           entry.second->begin(),
+                           [](Scalar x, Scalar y)
+                           { return Vector2D(x, y); });
+        }
 
-        cg_field_read(fn, 1, 1, 1, (field.first + "Y").c_str(), CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
-
-        for (int i = 0; i < buffer.size(); ++i)
-            (*field.second)[i].y = buffer[i];
+        grid_->sendMessages(*entry.second);
+        entry.second->interpolateFaces();
     }
 
-    cg_close(fn);
+    file.close();
 }

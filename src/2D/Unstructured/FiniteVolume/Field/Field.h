@@ -1,5 +1,5 @@
-#ifndef FIELD_H
-#define FIELD_H
+#ifndef PHASE_FIELD_H
+#define PHASE_FIELD_H
 
 #include <vector>
 #include <string>

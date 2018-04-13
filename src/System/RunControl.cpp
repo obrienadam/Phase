@@ -1,6 +1,7 @@
 #include "RunControl.h"
 
-void RunControl::run(const Input &input,
+void RunControl::run(const CommandLine &cl,
+                     const Input &input,
                      SolverInterface &solver,
                      PostProcessingInterface &postProcessing)
 {
@@ -12,19 +13,18 @@ void RunControl::run(const Input &input,
     Scalar maxTime = input.caseInput().get<Scalar>("Solver.maxTime");
     Scalar maxCo = input.caseInput().get<Scalar>("Solver.maxCo");
 
-    //- Time
-    Scalar time = solver.getStartTime(input);
-    Scalar timeStep = input.caseInput().get<Scalar>("Solver.initialTimeStep", solver.maxTimeStep());
-
     //- Print the solver info
     solver.printf("%s\n", (std::string(96, '-')).c_str());
     solver.printf("%s", solver.info().c_str());
     solver.printf("%s\n", (std::string(96, '-')).c_str());
 
     //- Initial conditions
-    solver.setInitialConditions(input);
+    solver.setInitialConditions(cl, input);
     solver.initialize();
-    solver.printf("Starting simulation time: %.2lf s\n", time);
+
+    //- Time
+    Scalar time = solver.getStartTime();
+    Scalar timeStep = input.caseInput().get<Scalar>("Solver.initialTimeStep", solver.maxTimeStep());
 
     //- Initial output
     postProcessing.compute(0.);

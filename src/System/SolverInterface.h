@@ -1,16 +1,17 @@
 #ifndef PHASE_SOLVER_INTERFACE_H
 #define PHASE_SOLVER_INTERFACE_H
 
-#include "System/Communicator.h"
-#include "System/Input.h"
 #include "Types/Types.h"
+
+#include "Communicator.h"
+#include "CommandLine.h"
+#include "Input.h"
 
 class SolverInterface
 {
 public:
 
-    virtual Scalar getStartTime(const Input &input)
-    { return 0.; }
+    virtual Scalar getStartTime() const = 0;
 
     virtual std::string info() const
     {}
@@ -18,6 +19,8 @@ public:
     virtual void initialize() = 0;
 
     virtual void setInitialConditions(const Input &input) = 0;
+
+    virtual void setInitialConditions(const CommandLine &cl, const Input &input) = 0;
 
     virtual Scalar maxTimeStep() const = 0;
 

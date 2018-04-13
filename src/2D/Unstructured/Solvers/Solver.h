@@ -2,6 +2,7 @@
 #define PHASE_SOLVER_H
 
 #include "System/SolverInterface.h"
+#include "System/CommandLine.h"
 
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
@@ -36,7 +37,7 @@ public:
     const Communicator &comm() const
     { return grid_->comm(); }
 
-    Scalar getStartTime(const Input &input) const;
+    Scalar getStartTime() const;
 
     //- Field management
 
@@ -82,6 +83,8 @@ public:
 
     //- ICs/IBs
     void setInitialConditions(const Input &input);
+
+    void setInitialConditions(const CommandLine &cl, const Input &input);
 
 protected:
 

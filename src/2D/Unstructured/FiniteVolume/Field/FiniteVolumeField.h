@@ -1,5 +1,5 @@
-#ifndef FINITE_VOLUME_FIELD
-#define FINITE_VOLUME_FIELD
+#ifndef PHASE_FINITE_VOLUME_FIELD
+#define PHASE_FINITE_VOLUME_FIELD
 
 #include "System/Input.h"
 
