@@ -161,13 +161,7 @@ public:
     const CellGroup &cells() const
     { return cellGroup_ ? *cellGroup_ : grid_->localCells(); }
 
-    void setCellGroup(const CellGroup &cellGroup)
-    { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
-
-    void setCellGroup(CellGroup &&cellGroup)
-    { cellGroup_ = std::make_shared<CellGroup>(cellGroup); }
-
-    void setCellGroup(const std::shared_ptr<const CellGroup> &cellGroup)
+    virtual void setCellGroup(const std::shared_ptr<const CellGroup> &cellGroup)
     { cellGroup_ = cellGroup; }
 
     //- Field history

@@ -19,9 +19,6 @@ FractionalStep::FractionalStep(const Input &input, const std::shared_ptr<const F
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);
     g_ = input.caseInput().get<std::string>("Properties.g", "(0,0)");
-
-    //- All active cells to fluid cells
-    //fluid_.add(grid_->localCells());
 }
 
 void FractionalStep::initialize()

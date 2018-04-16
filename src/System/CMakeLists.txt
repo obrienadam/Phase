@@ -25,7 +25,8 @@ target_link_libraries(phase_system
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
         ${MPI_C_LIBRARIES}
-        ${MPI_CXX_LIBRARIES})
+        ${MPI_CXX_LIBRARIES}
+        cgns)
 
 install(TARGETS
         phase_system

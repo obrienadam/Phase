@@ -20,26 +20,21 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
 
     //- Determine which patches contact angles will be enforced on
-    for (const auto &input: input.boundaryInput().get_child("Boundaries.gamma"))
-    {
-        if (input.first == "*" || grid_->patches().empty())
-            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "FIX THIS CONSTRUCTOR");
+    for (const FaceGroup &patch: grid_->patches())
+        patchContactAngles_[patch.name()] = input.boundaryInput().get<Scalar>(
+                "Boundaries.gamma." + patch.name() + ".contactAngle", 90.) * M_PI / 180.;
 
-        patchContactAngles_.insert(std::make_pair(
-                grid_->patch(input.first).name(),
-                input.second.get<Scalar>("contactAngle", 90) * M_PI / 180.
-        ));
-    }
+    for (const auto &ibObj: *ib_.lock())
+        ibContactAngles_[ibObj->name()] = input.boundaryInput().get<Scalar>(
+                "ImmersedBoundaries." + ibObj->name() + ".gamma.contactAngle", 90.) * M_PI / 180.;
+}
 
-    //- Determine which IBs contact angles will be enforced on
-    if (ib_.lock())
-        for (const auto &ibObj: *ib_.lock())
-        {
-            throw Exception("SurfaceTensionForce", "SurfaceTensionForce", "FIX THIS CONSTRUCTOR");
-
-            ibContactAngles_[""] = input.boundaryInput().get<Scalar>(
-                    "ImmersedBoundaries." + ibObj->name() + ".gamma.contactAngle", 90) * M_PI / 180.;
-        }
+void SurfaceTensionForce::setCellGroup(const std::shared_ptr<CellGroup> &cellGroup)
+{
+    kappa_->setCellGroup(cellGroup);
+    gammaTilde_->setCellGroup(cellGroup);
+    n_->setCellGroup(cellGroup);
+    gradGammaTilde_->setCellGroup(cellGroup);
 }
 
 void SurfaceTensionForce::computeInterfaceNormals()
@@ -271,7 +266,8 @@ Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &ga
 
             case ImmersedBoundaryObject::HIGH_ORDER:
             default:
-                throw Exception("SurfaceTensionForce", "contactLineBcs", "no contact line bcs for immersed boundary type.");
+                throw Exception("SurfaceTensionForce", "contactLineBcs",
+                                "no contact line bcs for immersed boundary type.");
         }
     }
 

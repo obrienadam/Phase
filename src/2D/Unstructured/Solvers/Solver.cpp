@@ -3,7 +3,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <cgnslib.h>
 
 #include "System/CgnsFile.h"
 

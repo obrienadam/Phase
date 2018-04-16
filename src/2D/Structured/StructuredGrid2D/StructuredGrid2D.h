@@ -9,10 +9,10 @@ class StructuredGrid2D
 {
 public:
 
-    class Index
+    class IndexSet
     {
     public:
-        size_t i, j, id;
+        size_t ibegin, iend, jbegin, jend;
     };
 
     StructuredGrid2D(size_t nNodesI, size_t nNodesJ, Scalar lx, Scalar ly);
@@ -25,9 +25,6 @@ public:
 
     const Point2D &node(size_t i, size_t j) const
     { return nodes_[j * nNodesI_ + i]; }
-
-    const Point2D &node(const Index& idx) const
-    { return nodes_[idx.id]; }
 
     Scalar dxe(size_t i, size_t j) const;
 
@@ -48,6 +45,10 @@ protected:
     Scalar lx_, ly_;
 
     std::vector<Point2D> nodes_, ifaces_, jfaces_;
+
+    std::vector<int> ownership_, globalIds_;
+
+    IndexSet localCells_;
 };
 
 

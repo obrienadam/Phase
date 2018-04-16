@@ -1,5 +1,5 @@
-#ifndef SURFACE_TENSION_FORCE_H
-#define SURFACE_TENSION_FORCE_H
+#ifndef PHASE_SURFACE_TENSION_FORCE_H
+#define PHASE_SURFACE_TENSION_FORCE_H
 
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 #include "FiniteVolume/Field/ScalarGradient.h"
@@ -16,6 +16,8 @@ public:
     SurfaceTensionForce(const Input &input,
                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                         const std::weak_ptr<ImmersedBoundary> &ib);
+
+    virtual void setCellGroup(const std::shared_ptr<CellGroup> &cellGroup);
 
     //- Internal field pointers
     const std::shared_ptr<ScalarFiniteVolumeField> &kappa() const

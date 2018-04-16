@@ -96,7 +96,6 @@ void Celeste::updateStencils()
     {
         kappaStencils_.resize(grid_->cells().size());
         gradGammaTildeStencils_.resize(grid_->cells().size());
-        updateStencil_.assign(grid_->cells().size(), true);
     }
 
     if (ib)

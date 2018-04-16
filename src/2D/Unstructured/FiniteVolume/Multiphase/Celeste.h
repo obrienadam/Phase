@@ -1,5 +1,5 @@
-#ifndef CELESTE_H
-#define CELESTE_H
+#ifndef PHASE_CELESTE_H
+#define PHASE_CELESTE_H
 
 #include "System/Input.h"
 #include "Math/Matrix.h"
@@ -24,7 +24,8 @@ protected:
     {
     public:
 
-        CelesteStencil() {}
+        CelesteStencil()
+        {}
 
         CelesteStencil(const Cell& cell, bool weighted = false);
 
@@ -62,8 +63,11 @@ protected:
         bool truncated_, weighted_;
 
         Matrix pInv_;
+
         std::vector<Ref<const Cell>> cells_;
+
         std::vector<Ref<const Face>> faces_;
+
         std::vector<std::pair<Ref<const Cell>, std::weak_ptr<const ImmersedBoundaryObject>>> compatPts_;
     };
 
@@ -73,7 +77,6 @@ protected:
 
     void updateStencils();
 
-    std::vector<bool> updateStencil_;
     std::vector<CelesteStencil> kappaStencils_, gradGammaTildeStencils_;
 };
 

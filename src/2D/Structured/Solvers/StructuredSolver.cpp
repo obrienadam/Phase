@@ -1,5 +1,8 @@
-//
-// Created by aobrien on 29/03/18.
-//
-
 #include "StructuredSolver.h"
+
+StructuredSolver::StructuredSolver(const Input &input, const std::shared_ptr<StructuredGrid2D> &grid)
+        :
+        grid_(grid)
+{
+
+}
