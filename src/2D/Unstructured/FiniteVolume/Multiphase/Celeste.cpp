@@ -19,6 +19,7 @@ void Celeste::computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, c
 
     auto &ft = *this;
     auto &kappa = *kappa_;
+    auto &n = *n_;
 
     for (const Face &face: grid_->faces())
         ft(face) = sigma_ * kappa(face) * gradGamma(face);
@@ -38,8 +39,6 @@ void Celeste::computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const
     ft.fill(Vector2D(0., 0.));
     for (const Cell &cell: *cellGroup_)
         ft(cell) = sigma_ * kappa(cell) * gradGamma(cell);
-
-    ft.interpolateFaces();
 }
 
 //- Protected methods
@@ -86,6 +85,10 @@ void Celeste::computeCurvature()
         else
             kappa(face) = 0.;
     }
+
+    for(const Face &face: grid_->boundaryFaces())
+        if(n(face.lCell()).magSqr() != 0.)
+            kappa(face) = kappa(face.lCell());
 }
 
 void Celeste::updateStencils()

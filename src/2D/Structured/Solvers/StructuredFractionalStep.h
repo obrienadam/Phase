@@ -3,6 +3,8 @@
 
 #include "StructuredSolver.h"
 
+#include "FiniteDifference/FiniteDifferenceField.h"
+
 class StructuredFractionalStep: public StructuredSolver
 {
 public:
@@ -11,6 +13,19 @@ public:
 
     Scalar solve(Scalar timeStep);
 
+    FiniteDifferenceField<Vector2D> u;
+
+    FiniteDifferenceField<Scalar> p;
+
+protected:
+
+    void solveUEqn(Scalar timeStep);
+
+    void solvePEqn(Scalar timeStep);
+
+    void correct(Scalar timeStep);
+
+    Scalar _mu, _rho;
 };
 
 

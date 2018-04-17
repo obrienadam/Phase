@@ -7,10 +7,12 @@ file(GLOB HEADERS
 
 file(GLOB SOURCES
         StructuredGrid2D/*.cpp
-        Solvers/*.cpp)
+        Solvers/*.cpp
+        FiniteDifference/*.cpp
+        FiniteDifference/*.tpp)
 
 add_library(phase_2d_structured ${HEADERS} ${SOURCES} utilities/Phase2DStructuredPartitionGrid.cpp Solvers/StructuredFractionalStep.cpp Solvers/StructuredFractionalStep.h)
 target_link_libraries(phase_2d_structured phase_2d_geometry)
 
-add_executable(phase-2d-structured-partition-grid utilities/Phase2DStructuredPartitionGrid.cpp)
+add_executable(phase-2d-structured-partition-grid utilities/Phase2DStructuredPartitionGrid.cpp FiniteDifference/FiniteDifferenceEquation.cpp FiniteDifference/FiniteDifferenceEquation.h)
 target_link_libraries(phase-2d-structured-partition-grid phase_system)

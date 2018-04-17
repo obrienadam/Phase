@@ -5,7 +5,7 @@ CaseName FallingDroplet2D
 Solver
 {
 	type "fractional step multiphase"
-	timeStep 2.5e-4
+	timeStep 5e-4
 	maxCo 0.3
 	maxTime 0.2
 
@@ -40,7 +40,7 @@ Properties
 {
 	rho1 1
 	rho2 998
- 	mu1 1e-3
+ 	mu1 1.81e-5
 	mu2 8.94e-4
 	sigma 0.07262
 	g (0,-9.8065)

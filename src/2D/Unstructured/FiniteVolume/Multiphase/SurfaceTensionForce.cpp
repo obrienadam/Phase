@@ -48,6 +48,8 @@ void SurfaceTensionForce::computeInterfaceNormals()
     //- Boundary faces set from contact line orientation
     for (const FaceGroup &patch: grid_->patches())
     {
+        Scalar theta = this->theta(patch);
+
         for (const Face &face: patch)
         {
             if (n(face.lCell()).magSqr() == 0.)
@@ -56,10 +58,8 @@ void SurfaceTensionForce::computeInterfaceNormals()
                 continue;
             }
 
-            Vector2D ns = -face.outwardNorm(face.lCell().centroid());
+            Vector2D ns = -face.outwardNorm(face.lCell().centroid()).unitVec();
             Vector2D ts = (n(face.lCell()) - dot(n(face.lCell()), ns) * ns).unitVec();
-
-            Scalar theta = this->theta(patch);
 
             n(face) = ns * std::cos(theta) + ts * std::sin(theta);
         }

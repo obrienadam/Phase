@@ -46,7 +46,7 @@ private:
     void updateLagrangePoints()
     { initLagrangePoints(lagrangePoints_.size()); }
 
-    std::shared_ptr<TrilinosAmesosSparseMatrixSolver> solver_;
+    //std::shared_ptr<TrilinosAmesosSparseMatrixSolver> solver_;
 
     Scalar h_;
 

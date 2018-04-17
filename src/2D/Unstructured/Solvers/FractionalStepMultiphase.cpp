@@ -224,8 +224,7 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     //- Update the surface tension
     ft.computeFaceInterfaceForces(gamma, gradGamma);
-
-    ft.faceToCell(rho, rho, fluid_, p);
+    ft.faceToCell(rho, rho, fluid_);
 
     //- Must be communicated for proper momentum interpolation
     grid_->sendMessages(ft);

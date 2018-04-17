@@ -4,9 +4,7 @@
 
 #include "Equation.h"
 
-#include "Math/EigenSparseMatrixSolver.h"
-#include "Math/TrilinosBelosSparseMatrixSolver.h"
-#include "Math/TrilinosAmesosSparseMatrixSolver.h"
+#include "Math/SparseMatrixSolverFactory.h"
 #include "Math/TrilinosMueluSparseMatrixSolver.h"
 
 template<class T>
@@ -181,16 +179,7 @@ void Equation<T>::configureSparseSolver(const Input &input, const Communicator &
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib", "Eigen3");
     boost::algorithm::to_lower(lib);
 
-    if (lib == "eigen" || lib == "eigen3")
-        spSolver_ = std::make_shared<EigenSparseMatrixSolver>();
-    else if (lib == "trilinos" || lib == "belos")
-        spSolver_ = std::make_shared<TrilinosBelosSparseMatrixSolver>(comm);
-    else if (lib == "amesos" || lib == "amesos2")
-        spSolver_ = std::make_shared<TrilinosAmesosSparseMatrixSolver>(comm);
-    else if (lib == "muelu")
-        spSolver_ = std::make_shared<TrilinosMueluSparseMatrixSolver>(comm);
-    else
-        throw Exception("Equation<T>", "configureSparseSolver", "unrecognized sparse solver lib \"" + lib + "\".");
+    spSolver_ = SparseMatrixSolverFactory().create(lib, comm);
 
     if (comm.nProcs() > 1 && !spSolver_->supportsMPI())
         throw Exception("Equation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +

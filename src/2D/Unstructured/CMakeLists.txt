@@ -9,6 +9,7 @@ file(GLOB HEADERS
 
 file(GLOB SOURCES
         FiniteVolume/*/*.cpp
+        FiniteVolume/*/*.tpp
         FiniteVolumeGrid2D/*/*.cpp
         FiniteVolumeGrid2D/*.cpp
         FiniteVolumeGrid2D/*.tpp

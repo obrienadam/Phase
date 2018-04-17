@@ -1,3 +1,5 @@
+#include "Math/EigenSparseMatrixSolver.h"
+
 #include "HighOrderImmersedBoundaryObject.h"
 
 HighOrderImmersedBoundaryObject::HighOrderImmersedBoundaryObject(const std::string &name,
