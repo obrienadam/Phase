@@ -1,7 +1,7 @@
 #ifndef PHASE_POISSON_H
 #define PHASE_POISSON_H
 
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 #include "Solver.h"
 
@@ -22,7 +22,7 @@ public:
 
 protected:
 
-    Equation<Scalar> phiEqn_;
+    FiniteVolumeEquation<Scalar> phiEqn_;
 
     CellGroup &solid_;
 

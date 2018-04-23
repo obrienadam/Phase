@@ -1,17 +1,17 @@
 #ifndef PHASE_DIVERGENCE_H
 #define PHASE_DIVERGENCE_H
 
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 #include "FiniteVolume/Field/JacobianField.h"
 
 namespace fv
 {
     template<typename T>
-    Equation<T> div(const VectorFiniteVolumeField &u,
+    FiniteVolumeEquation<T> div(const VectorFiniteVolumeField &u,
                     FiniteVolumeField<T> &phi,
                     Scalar theta = 1.)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
 
         const VectorFiniteVolumeField &u0 = u.oldField(0);
         const FiniteVolumeField<T> &phi0 = phi.oldField(0);
@@ -59,11 +59,11 @@ namespace fv
     }
 
     template<class T>
-    Equation<T> divc(const VectorFiniteVolumeField &u,
+    FiniteVolumeEquation<T> divc(const VectorFiniteVolumeField &u,
                      FiniteVolumeField<T> &phi,
                      Scalar theta = 1.)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
         const VectorFiniteVolumeField &u0 = u.oldField(0);
         const FiniteVolumeField<T> &phi0 = phi.oldField(0);
 
@@ -113,7 +113,7 @@ namespace fv
     }
 
 
-    Equation<Vector2D> div(const VectorFiniteVolumeField &phiU,
+    FiniteVolumeEquation<Vector2D> div(const VectorFiniteVolumeField &phiU,
                            const JacobianField &gradU,
                            VectorFiniteVolumeField &u);
 }

@@ -1,15 +1,15 @@
 #ifndef AXISYMMETRIC_TIME_DERIVATIVE_H
 #define AXISYMMETRIC_TIME_DERIVATIVE_H
 
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 
 namespace axi
 {
     template<class T>
-    Equation<T> ddt(FiniteVolumeField<T> &phi,
+    FiniteVolumeEquation<T> ddt(FiniteVolumeField<T> &phi,
                     Scalar timeStep)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
 
         auto polarVolume = [](const Cell &cell) {
             Scalar volume = 0.;

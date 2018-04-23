@@ -27,7 +27,7 @@ std::shared_ptr<SparseMatrixSolver> SparseMatrixSolverFactory::create(Type type,
 std::shared_ptr<SparseMatrixSolver> SparseMatrixSolverFactory::create(const std::string &type,
                                                                       const Communicator &comm) const
 {
-    if (type == "eigen")
+    if (type == "eigen" || type == "eigen3")
         return create(EIGEN, comm);
     else if (type == "belos")
         return create(TRILINOS_BELOS, comm);

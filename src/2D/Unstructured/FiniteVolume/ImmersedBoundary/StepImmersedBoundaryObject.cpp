@@ -20,9 +20,9 @@ void StepImmersedBoundaryObject::updateCells()
                 ibCells_.add(nb.cell()); //- Note: these should still be fluid cells
 }
 
-Equation<Scalar> StepImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
+FiniteVolumeEquation<Scalar> StepImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
 {
-    Equation<Scalar> eqn(field);
+    FiniteVolumeEquation<Scalar> eqn(field);
 
     auto bType = boundaryType(field.name());
     auto bRefValue = getBoundaryRefValue<Scalar>(field.name());
@@ -47,9 +47,9 @@ Equation<Scalar> StepImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field)
     return eqn;
 }
 
-Equation<Vector2D> StepImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
+FiniteVolumeEquation<Vector2D> StepImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
 {
-    Equation<Vector2D> eqn(field);
+    FiniteVolumeEquation<Vector2D> eqn(field);
 
     auto bType = boundaryType(field.name());
 

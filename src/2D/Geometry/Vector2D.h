@@ -1,5 +1,5 @@
-#ifndef VECTOR_2D_H
-#define VECTOR_2D_H
+#ifndef PHASE_VECTOR_2D_H
+#define PHASE_VECTOR_2D_H
 
 #include <ostream>
 #include <math.h>

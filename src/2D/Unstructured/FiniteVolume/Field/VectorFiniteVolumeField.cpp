@@ -3,15 +3,6 @@
 #include "VectorFiniteVolumeField.h"
 
 template<>
-void VectorFiniteVolumeField::computeOrdering()
-{
-    if(indexMap_)
-        indexMap_->update(*grid_);
-    else
-        indexMap_ = std::make_shared<IndexMap>(*grid_, 2);
-}
-
-template<>
 void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                                          const FiniteVolumeField<Scalar> &faceWeight,
                                          const CellGroup &cells)

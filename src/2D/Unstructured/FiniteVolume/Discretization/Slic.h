@@ -1,11 +1,11 @@
 #ifndef SLIC_H
 #define SLIC_H
 
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace slic {
 
-    Equation<Scalar> div(const VectorFiniteVolumeField& u,
+    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField& u,
                          const VectorFiniteVolumeField& gradGamma,
                          ScalarFiniteVolumeField& gamma,
                          Scalar timeStep);

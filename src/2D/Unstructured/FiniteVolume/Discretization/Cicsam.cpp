@@ -31,8 +31,8 @@ void cicsam::beta(const VectorFiniteVolumeField &u,
 
         Scalar gammaD = clamp(gamma(donor), 0., 1.);
         Scalar gammaA = clamp(gamma(acceptor), 0., 1.);
-        //Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
-        Scalar gammaU = clamp(gamma(upwind), 0., 1.);
+        Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
+        // Scalar gammaU = clamp(gamma(upwind), 0., 1.);
 
         Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
@@ -90,12 +90,12 @@ void cicsam::computeMomentumFlux(Scalar rho1,
     });
 }
 
-Equation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
+FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                              const ScalarFiniteVolumeField &beta,
                              ScalarFiniteVolumeField &gamma,
                              Scalar theta)
 {
-    Equation<Scalar> eqn(gamma);
+    FiniteVolumeEquation<Scalar> eqn(gamma);
 
     for (const Cell &cell: gamma.cells())
     {

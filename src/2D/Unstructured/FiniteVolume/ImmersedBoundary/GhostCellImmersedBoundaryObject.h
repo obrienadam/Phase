@@ -123,13 +123,13 @@ public:
 
     void updateCells();
 
-    Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
+    FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
 
-    Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
+    FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+    FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
+    FiniteVolumeEquation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
 
     void computeForce(Scalar rho,
                       Scalar mu,

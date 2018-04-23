@@ -34,9 +34,9 @@ void EulerLagrangeImmersedBoundaryObject::updateCells()
     updateLagrangePoints();
 }
 
-Equation<Vector2D> EulerLagrangeImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+FiniteVolumeEquation<Vector2D> EulerLagrangeImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     Matrix D(lagrangePoints_.size(), ibCells_.size());
 

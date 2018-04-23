@@ -1,14 +1,14 @@
 #ifndef PHASE_LAPLACIAN_H
 #define PHASE_LAPLACIAN_H
 
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 
 namespace fv
 {
     template<class T>
-    Equation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
+    FiniteVolumeEquation<T> laplacian(Scalar gamma, FiniteVolumeField<T> &phi, Scalar theta = 1.)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
 
         for (const Cell &cell: phi.cells())
         {
@@ -46,11 +46,11 @@ namespace fv
     }
 
     template<class T>
-    Equation<T> laplacian(const ScalarFiniteVolumeField &gamma,
+    FiniteVolumeEquation<T> laplacian(const ScalarFiniteVolumeField &gamma,
                           FiniteVolumeField<T> &phi,
                           Scalar theta = 1.)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
         const ScalarFiniteVolumeField &gamma0 = gamma.oldField(0);
 
         for (const Cell &cell: phi.cells())

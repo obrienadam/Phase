@@ -1,17 +1,17 @@
 #ifndef PLIC_H
 #define PLIC_H
 
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace plic {
 
-    Equation<Scalar> div(const VectorFiniteVolumeField& u,
+    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField& u,
                          const VectorFiniteVolumeField& gradGamma,
                          ScalarFiniteVolumeField& gamma,
                          Scalar timeStep);
 
 /*
-Equation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradGamma, ScalarFiniteVolumeField &field, Scalar timeStep,
+FiniteVolumeEquation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradGamma, ScalarFiniteVolumeField &field, Scalar timeStep,
                                       std::vector<Polygon>& plicPolygons);
 
 Polygon computeInterfacePolygon(const Cell& cell, Scalar &gamma, const Vector2D& normal);

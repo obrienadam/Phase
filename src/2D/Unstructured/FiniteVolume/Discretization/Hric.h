@@ -1,7 +1,7 @@
 #ifndef HRIC_H
 #define HRIC_H
 
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace hric
 {
@@ -10,7 +10,7 @@ namespace hric
                                  const ScalarFiniteVolumeField &gamma,
                                  Scalar timeStep);
 
-    Equation<Scalar> div(const VectorFiniteVolumeField &u,
+    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField& beta,
                          ScalarFiniteVolumeField &gamma,
                          Scalar theta = 0.5);

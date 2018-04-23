@@ -1,11 +1,11 @@
 #include "Slic.h"
 
-Equation<Scalar> slic::div(const VectorFiniteVolumeField &u,
+FiniteVolumeEquation<Scalar> slic::div(const VectorFiniteVolumeField &u,
                            const VectorFiniteVolumeField &gradGamma,
                            ScalarFiniteVolumeField &gamma,
                            Scalar timeStep)
 {
-    Equation<Scalar> eqn(gamma);
+    FiniteVolumeEquation<Scalar> eqn(gamma);
 
     for (const Cell &cell: gamma.cells())
     {

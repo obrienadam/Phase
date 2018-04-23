@@ -27,7 +27,8 @@ public:
                                const T &val = T(),
                                bool faces = true,
                                bool nodes = false,
-                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr);
+                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr,
+                               const std::shared_ptr<IndexMap> &indexMap = nullptr);
 
     explicit FiniteVolumeField(const Input &input,
                                const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
@@ -35,7 +36,8 @@ public:
                                const T &val = T(),
                                bool faces = true,
                                bool nodes = false,
-                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr);
+                               const std::shared_ptr<const CellGroup> &cellGroup = nullptr,
+                               const std::shared_ptr<IndexMap> &indexMap = nullptr);
 
     //- Initialization
     void fill(const T &val);
@@ -46,13 +48,10 @@ public:
 
     void assign(const FiniteVolumeField<T> &field);
 
-    //- Index map
-    void computeOrdering();
-
     std::shared_ptr<IndexMap> &indexMap()
     { return indexMap_; }
 
-    const std::shared_ptr<const IndexMap> &indexMap() const
+    const std::shared_ptr<IndexMap> &indexMap() const
     { return indexMap_; }
 
     template<class TFunc>
@@ -163,6 +162,9 @@ public:
 
     virtual void setCellGroup(const std::shared_ptr<const CellGroup> &cellGroup)
     { cellGroup_ = cellGroup; }
+
+    virtual void setIndexMap(const std::shared_ptr<IndexMap> &indexMap)
+    { indexMap_ = indexMap; }
 
     //- Field history
     FiniteVolumeField &savePreviousTimeStep(Scalar timeStep, int nPreviousFields);

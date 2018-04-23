@@ -14,9 +14,9 @@ public:
 
     virtual void updateCells();
 
-    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
+    virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const;
 
-    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
+    virtual FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const;
 
     void computeForce(Scalar rho,
                       Scalar mu,

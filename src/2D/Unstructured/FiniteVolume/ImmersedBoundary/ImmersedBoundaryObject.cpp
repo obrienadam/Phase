@@ -235,9 +235,9 @@ void ImmersedBoundaryObject::updateCells()
     solidCells_.add(cells_); //- By default solid cells are not made inactive
 }
 
-Equation<Vector2D> ImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+FiniteVolumeEquation<Vector2D> ImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     for (const Cell &cell: solidCells_)
     {
@@ -248,7 +248,7 @@ Equation<Vector2D> ImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &
     return eqn;
 }
 
-Equation<Scalar> ImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p) const
+FiniteVolumeEquation<Scalar> ImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p) const
 {
     throw NotImplementedException("ImmersedBoundaryObject", "pressureBcs");
 }

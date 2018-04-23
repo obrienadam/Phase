@@ -1,14 +1,15 @@
-#ifndef AXISYMMETRIC_SOURCE_H
-#define AXISYMMETRIC_SOURCE_H
+#ifndef PHASE_AXISYMMETRIC_SOURCE_H
+#define PHASE_AXISYMMETRIC_SOURCE_H
 
-#include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
+#include "Math/Vector.h"
+
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 
 namespace axi
 {
     namespace src
     {
-        ScalarFiniteVolumeField div(const VectorFiniteVolumeField &u);
+        Vector div(const VectorFiniteVolumeField &u);
     }
 }
 

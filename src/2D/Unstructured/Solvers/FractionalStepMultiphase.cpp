@@ -85,7 +85,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     //- Advect volume fractions
     gamma.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma, timeStep) + cicsam::div(u, beta, gamma, 0.5)
-                 == ft.contactLineBcs(gamma));
+                 == 0.);
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma);
@@ -214,12 +214,14 @@ void FractionalStepMultiphase::updateProperties(Scalar timeStep)
 
     mu.computeCells([this](const Cell &cell) {
         Scalar g = gamma(cell);
-        return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+        return (1. - g) * mu1_ + g * mu2_;
+        //return rho(cell) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
     });
 
     mu.computeFaces([this](const Face &face) {
         Scalar g = gamma(face);
-        return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
+        return (1. - g) * mu1_ + g * mu2_;
+        //return rho(face) / ((1. - g) * rho1_ / mu1_ + g * rho2_ / mu2_);
     });
 
     //- Update the surface tension

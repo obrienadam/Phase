@@ -16,7 +16,7 @@ file(GLOB SOURCES
         Solvers/*.cpp
         PostProcessing/*.cpp)
 
-add_library(phase_2d_unstructured ${HEADERS} ${SOURCES})
+add_library(phase_2d_unstructured ${HEADERS} ${SOURCES} FiniteVolume/Equation/VectorFiniteVolumeEquation.h)
 target_link_libraries(phase_2d_unstructured phase_2d_geometry phase_math cgns metis)
 
 add_executable(phase-2d-unstructured modules/Phase2DUnstructured.cpp)

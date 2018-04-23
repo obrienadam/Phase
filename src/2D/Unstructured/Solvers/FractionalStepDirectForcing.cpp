@@ -9,7 +9,6 @@
 FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
         FractionalStep(input, grid),
-        divU(*addField<Scalar>("divU")),
         fb(*addField<Vector2D>("fb")),
         pExtEqn_(input, p, "pExtEqn"),
         uExtEqn_(input, u, "uExtEqn")
@@ -23,9 +22,6 @@ FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, con
 
 Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 {
-    //grid_->comm().printf("Performing field extension...\n");
-    //solveExtEqns();
-
     grid_->comm().printf("Updating IB positions...\n");
     ib_->update(timeStep);
 
@@ -44,57 +40,30 @@ Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 
 void FractionalStepDirectForcing::solveExtEqns()
 {
-    pExtEqn_.clear();
-    CellGroup gr;
 
-    for (const Cell &cell: fluid_)
-    {
-        auto ibObj = ib_->ibObj(cell.centroid());
-        bool extend = false;
-
-        if (ibObj)
-            for (const auto &nb: cell.neighbours())
-                if (!ibObj->isInIb(nb.cell()))
-                    extend = true;
-
-        if (!extend)
-        {
-            pExtEqn_.set(cell, cell, 1.);
-            pExtEqn_.setSource(cell, -p(cell));
-        }
-        else
-        {
-            auto st = DirectForcingImmersedBoundaryObject::PressureFieldExtensionStencil(p, cell, *ibObj);
-            pExtEqn_.add(cell, st.cells(), st.coeffs());
-            pExtEqn_.setSource(cell, rho_ * dot(ibObj->acceleration(st.bp()), st.n()));
-
-            for(const auto &nb: cell.neighbours())
-            {
-                if(!ibObj->isInIb(nb.cell()))
-                    gr.add(nb.cell());
-            }
-        }
-    }
-
-    pExtEqn_.solve();
-    grid_->sendMessages(p);
-    gradP.compute(gr);
 }
 
 Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
 {
-    u.interpolateFaces();
     u.savePreviousTimeStep(timeStep, 1);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_));
+             == fv::laplacian(mu_ / rho_, u, 0.) - src::src(gradP / rho_));
 
     Scalar error = uEqn_.solve();
 
     fb.fill(Vector2D(0., 0.));
+
     for (const auto &ibObj: *ib_)
     {
-        ibObj->computeBoundaryForcing(u, timeStep, fb);
+        for(const Cell& cell: ibObj->ibCells())
+        {
+            DirectForcingImmersedBoundaryObject::Stencil st(u, cell, *ibObj);
+            fb(cell) = (st.uf() - u(cell)) / timeStep;
+        }
+
+        for(const Cell& cell: ibObj->solidCells())
+            fb(cell) = (ibObj->velocity(cell.centroid()) - u(cell)) / timeStep;
     }
 
     for (const Cell &cell: fluid_)
@@ -103,7 +72,11 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ - fb));
 
-    uEqn_.solve();
+//    u.savePreviousTimeStep(timeStep, 1);
+
+//    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_) + ib_->velocityBcs(u));
+
+    error = uEqn_.solve();
 
     for (const Cell &cell: fluid_)
         u(cell) += timeStep / rho_ * gradP(cell);

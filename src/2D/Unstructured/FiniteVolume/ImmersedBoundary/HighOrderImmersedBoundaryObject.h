@@ -19,14 +19,14 @@ public:
 
     void updateCells();
 
-    Equation<Scalar> bcs(ScalarFiniteVolumeField &phi) const;
+    FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &phi) const;
 
-    Equation<Vector2D> bcs(VectorFiniteVolumeField &u) const
+    FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &u) const
     {}
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+    FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const;
+    FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const;
 
     void computeForce(Scalar rho,
                       Scalar mu,

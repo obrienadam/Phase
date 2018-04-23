@@ -1,10 +1,10 @@
 #include "Divergence.h"
 
-Equation<Vector2D> fv::div(const VectorFiniteVolumeField &phiU,
+FiniteVolumeEquation<Vector2D> fv::div(const VectorFiniteVolumeField &phiU,
                            const JacobianField &gradU,
                            VectorFiniteVolumeField &u)
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     for (const Cell &cell: u.cells())
     {

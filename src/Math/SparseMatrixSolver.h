@@ -11,7 +11,10 @@ class SparseMatrixSolver
 {
 public:
 
-    enum Type{EIGEN, TRILINOS_BELOS, TRILINOS_AMESOS2, TRILINOS_MUELU};
+    enum Type
+    {
+        EIGEN, TRILINOS_BELOS, TRILINOS_AMESOS2, TRILINOS_MUELU
+    };
 
     typedef std::pair<Index, Scalar> Entry;
     typedef std::vector<Entry> Row;

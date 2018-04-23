@@ -2,68 +2,105 @@
 
 #include "Source.h"
 
-ScalarFiniteVolumeField src::div(const VectorFiniteVolumeField& field)
+Vector src::div(const VectorFiniteVolumeField &field, const CellGroup &cells)
 {
-    ScalarFiniteVolumeField divF(field.grid(), "", 0., false, false);
+    Vector divU(field.grid()->localCells().size());
 
-    for (const Cell &cell: field.cells())
+    for (const Cell &cell: cells)
     {
-        Scalar div = 0.;
+        Scalar divUc = 0.;
 
         for (const InteriorLink &nb: cell.neighbours())
-            div += dot(field(nb.face()), nb.outwardNorm());
+            divUc += dot(field(nb.face()), nb.outwardNorm());
 
         for (const BoundaryLink &bd: cell.boundaries())
-            div += dot(field(bd.face()), bd.outwardNorm());
+            divUc += dot(field(bd.face()), bd.outwardNorm());
 
-        divF(cell) = div;
+        divU(field.indexMap()->local(cell, 0)) = divUc;
     }
 
-    return divF;
+    return divU;
 }
 
-ScalarFiniteVolumeField src::laplacian(Scalar gamma,
-                                       const ScalarFiniteVolumeField &phi)
+Vector src::div(const VectorFiniteVolumeField &field)
 {
-    ScalarFiniteVolumeField lapPhi(phi.grid(), "", 0., false, false);
+    return div(field, field.cells());
+}
+
+Vector src::laplacian(Scalar gamma,
+                      const ScalarFiniteVolumeField &phi)
+{
+    Vector lapPhi(phi.grid()->localCells().size());
 
     for (const Cell &cell: phi.cells())
     {
+        Scalar tmp = 0.;
+
         for (const InteriorLink &nb: cell.neighbours())
         {
-            Scalar coeff = gamma*dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
-            lapPhi(cell) += (phi(nb.cell()) - phi(cell)) * coeff;
+            Scalar coeff = gamma * dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
+            tmp += (phi(nb.cell()) - phi(cell)) * coeff;
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
         {
-            Scalar coeff = gamma*dot(bd.rFaceVec(), bd.outwardNorm()) / bd.rFaceVec().magSqr();
-            lapPhi(cell) += (phi(bd.face()) - phi(cell)) * coeff;
+            Scalar coeff = gamma * dot(bd.rFaceVec(), bd.outwardNorm()) / bd.rFaceVec().magSqr();
+            tmp += (phi(bd.face()) - phi(cell)) * coeff;
         }
+
+        lapPhi(phi.indexMap()->local(cell, 0)) = tmp;
     }
 
     return lapPhi;
 }
 
-ScalarFiniteVolumeField src::laplacian(const ScalarFiniteVolumeField& gamma,
-                                       const ScalarFiniteVolumeField& phi)
+Vector src::laplacian(const ScalarFiniteVolumeField &gamma,
+                      const ScalarFiniteVolumeField &phi)
 {
-    ScalarFiniteVolumeField lapPhi(phi.grid(), "" + phi.name(), 0., false, false);
+    Vector lapPhi(2 * phi.grid()->localCells().size());
 
-    for(const Cell& cell: phi.cells())
+    for (const Cell &cell: phi.cells())
     {
-        for (const InteriorLink& nb: cell.neighbours())
+        Vector2D tmp = Vector2D(0., 0.);
+
+        for (const InteriorLink &nb: cell.neighbours())
         {
-            Scalar coeff = gamma(nb.face())*dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
-            lapPhi(cell) += (phi(nb.cell()) - phi(cell)) * coeff;
+            Scalar coeff = gamma(nb.face()) * dot(nb.rCellVec(), nb.outwardNorm()) / nb.rCellVec().magSqr();
+            tmp += (phi(nb.cell()) - phi(cell)) * coeff;
         }
 
-        for (const BoundaryLink& bd: cell.boundaries())
+        for (const BoundaryLink &bd: cell.boundaries())
         {
             Scalar coeff = gamma(bd.face()) * dot(bd.rFaceVec(), bd.outwardNorm()) / bd.rFaceVec().magSqr();
-            lapPhi(cell) += (phi(bd.face()) - phi(cell)) * coeff;
+            tmp += (phi(bd.face()) - phi(cell)) * coeff;
         }
+
+        lapPhi(phi.indexMap()->local(cell, 0)) = tmp.x;
+        lapPhi(phi.indexMap()->local(cell, 1)) = tmp.y;
     }
 
     return lapPhi;
+}
+
+Vector src::src(const ScalarFiniteVolumeField &field)
+{
+    Vector vec(field.grid()->localCells().size());
+
+    for(const Cell& cell: field.cells())
+        vec(field.indexMap()->local(cell, 0)) = field(cell) * cell.volume();
+
+    return vec;
+}
+
+Vector src::src(const VectorFiniteVolumeField &field)
+{
+    Vector vec(2 * field.grid()->localCells().size());
+
+    for(const Cell& cell: field.cells())
+    {
+        vec(field.indexMap()->local(cell, 0)) = field(cell).x * cell.volume();
+        vec(field.indexMap()->local(cell, 1)) = field(cell).y * cell.volume();
+    }
+
+    return vec;
 }

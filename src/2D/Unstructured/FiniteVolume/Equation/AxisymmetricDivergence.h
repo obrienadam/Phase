@@ -1,16 +1,16 @@
 #ifndef AXISYMMETRIC_DIVERGENCE_H
 #define AXISYMMETRIC_DIVERGENCE_H
 
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 
 namespace axi
 {
     template<class T>
-    Equation<T> div(const VectorFiniteVolumeField &u,
+    FiniteVolumeEquation<T> div(const VectorFiniteVolumeField &u,
                     FiniteVolumeField<T> &phi,
                     Scalar theta = 1.)
     {
-        Equation<T> eqn(phi);
+        FiniteVolumeEquation<T> eqn(phi);
         const VectorFiniteVolumeField &u0 = u.oldField(0);
 
         for (const Cell &cell: phi.grid()->cells())

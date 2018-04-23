@@ -14,10 +14,12 @@ FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolume
                                         const T &val,
                                         bool faces,
                                         bool nodes,
-                                        const std::shared_ptr<const CellGroup> &cellGroup)
+                                        const std::shared_ptr<const CellGroup> &cellGroup,
+                                        const std::shared_ptr<IndexMap> &indexMap)
         :
         Field<T>::Field(grid->cells().size(), val, name),
-        grid_(grid)
+        grid_(grid),
+        indexMap_(indexMap)
 {
     cellGroup_ = cellGroup;
 
@@ -35,9 +37,10 @@ FiniteVolumeField<T>::FiniteVolumeField(const Input &input,
                                         const T &val,
                                         bool faces,
                                         bool nodes,
-                                        const std::shared_ptr<const CellGroup> &cellGroup)
+                                        const std::shared_ptr<const CellGroup> &cellGroup,
+                                        const std::shared_ptr<IndexMap> &indexMap)
         :
-        FiniteVolumeField(grid, name, val, faces, nodes, cellGroup)
+        FiniteVolumeField(grid, name, val, faces, nodes, cellGroup, indexMap)
 {
     setBoundaryTypes(input);
     setBoundaryRefValues(input);

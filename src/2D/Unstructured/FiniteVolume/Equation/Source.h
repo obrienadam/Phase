@@ -1,31 +1,26 @@
 #ifndef PHASE_SOURCE_H
 #define PHASE_SOURCE_H
 
+#include "Math/Vector.h"
+
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 
 namespace src
 {
-    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field);
+    Vector div(const VectorFiniteVolumeField &field, const CellGroup &cells);
 
-    ScalarFiniteVolumeField div(const VectorFiniteVolumeField &field, const CellGroup &cells);
+    Vector div(const VectorFiniteVolumeField &field);
 
-    ScalarFiniteVolumeField laplacian(Scalar gamma,
-                                      const ScalarFiniteVolumeField &phi);
+    Vector laplacian(Scalar gamma,
+                     const ScalarFiniteVolumeField &phi);
 
-    ScalarFiniteVolumeField laplacian(const ScalarFiniteVolumeField& gamma,
-                                      const ScalarFiniteVolumeField& phi);
+    Vector laplacian(const ScalarFiniteVolumeField &gamma,
+                     const ScalarFiniteVolumeField &phi);
 
-    template <class T>
-    FiniteVolumeField<T> src(const FiniteVolumeField<T> &field)
-    {
-        VectorFiniteVolumeField srcField(field.grid(), field.name(), T(), false, false);
+    Vector src(const ScalarFiniteVolumeField &field);
 
-        for(const Cell& cell: field.cells())
-            srcField(cell) = field(cell) * cell.volume();
-
-        return srcField;
-    }
+    Vector src(const VectorFiniteVolumeField &field);
 }
 
 #endif

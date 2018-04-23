@@ -1,5 +1,5 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef PHASE_VECTOR_H
+#define PHASE_VECTOR_H
 
 #include <vector>
 

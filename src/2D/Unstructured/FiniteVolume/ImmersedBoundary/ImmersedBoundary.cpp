@@ -362,22 +362,12 @@ void ImmersedBoundary::update(Scalar timeStep)
     setCellStatus();
 }
 
-Equation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const
+FiniteVolumeEquation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     for (const auto &ibObj: ibObjs_)
         eqn += ibObj->velocityBcs(u);
-
-    return eqn;
-}
-
-Equation<Scalar> ImmersedBoundary::pressureBcs(ScalarFiniteVolumeField &p) const
-{
-    Equation<Scalar> eqn(p);
-
-    for (const auto &ibObj: ibObjs_)
-        eqn += ibObj->pressureBcs(p);
 
     return eqn;
 }

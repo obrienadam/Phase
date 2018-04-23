@@ -2,7 +2,7 @@
 #define PHASE_IMMERSED_BOUNDARY_OBJECT_H
 
 #include "Geometry/Shape2D.h"
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 #include "FiniteVolume/Motion/Motion.h"
 
 class SurfaceTensionForce;
@@ -196,13 +196,13 @@ public:
     virtual void updateCells();
 
     //- Boundary conditions
-    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const = 0;
+    virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const = 0;
 
-    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const = 0;
+    virtual FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const = 0;
 
-    virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+    virtual FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    virtual Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
+    virtual FiniteVolumeEquation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
 
     virtual void computeBoundaryForcing(const VectorFiniteVolumeField& u,
                                         Scalar timeStep,

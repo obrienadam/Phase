@@ -1,7 +1,7 @@
 #ifndef PHASE_CICSAM_H
 #define PHASE_CICSAM_H
 
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace cicsam
 {
@@ -20,7 +20,7 @@ namespace cicsam
                              Scalar timeStep,
                              VectorFiniteVolumeField &rhoU);
 
-    Equation<Scalar> div(const VectorFiniteVolumeField &u,
+    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField &beta,
                          ScalarFiniteVolumeField &gamma,
                          Scalar theta);

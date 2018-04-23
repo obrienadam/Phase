@@ -10,15 +10,13 @@ public:
 
     Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &divU;
-
     VectorFiniteVolumeField &fb;
 
 protected:
 
-    Equation<Scalar> pExtEqn_;
+    FiniteVolumeEquation<Scalar> pExtEqn_;
 
-    Equation<Vector2D> uExtEqn_;
+    FiniteVolumeEquation<Vector2D> uExtEqn_;
 
     void solveExtEqns();
 

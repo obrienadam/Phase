@@ -68,9 +68,9 @@ public:
     }
 
     template<class T>
-    Equation<T> bcs(FiniteVolumeField<T> &field) const
+    FiniteVolumeEquation<T> bcs(FiniteVolumeField<T> &field) const
     {
-        Equation<T> eqn(field);
+        FiniteVolumeEquation<T> eqn(field);
 
         for (const auto &ibObj: ibObjs_)
             eqn += ibObj->bcs(field);
@@ -78,9 +78,7 @@ public:
         return eqn;
     }
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
-
-    Equation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
+    FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     void clearFreshCells();
 

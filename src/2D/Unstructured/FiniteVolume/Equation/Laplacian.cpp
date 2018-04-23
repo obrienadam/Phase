@@ -3,9 +3,9 @@
 //namespace fv
 //{
 //    template<>
-//    Equation<Vector2D> laplacian(Scalar gamma, FiniteVolumeField<Vector2D> &phi, const CellGroup &cells, Scalar theta)
+//    FiniteVolumeEquation<Vector2D> laplacian(Scalar gamma, FiniteVolumeField<Vector2D> &phi, const CellGroup &cells, Scalar theta)
 //    {
-//        Equation<Vector2D> eqn(phi);
+//        FiniteVolumeEquation<Vector2D> eqn(phi);
 //        const VectorFiniteVolumeField& phi0 = phi.oldField(0);
 //
 //        for (const Cell &cell: cells)

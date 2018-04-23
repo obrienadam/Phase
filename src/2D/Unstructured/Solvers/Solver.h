@@ -114,6 +114,8 @@ protected:
 
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
+    std::shared_ptr<IndexMap> scalarIndexMap_, vectorIndexMap_;
+
     std::shared_ptr<CellGroup> cells_;
 
     std::shared_ptr<ImmersedBoundary> ib_;

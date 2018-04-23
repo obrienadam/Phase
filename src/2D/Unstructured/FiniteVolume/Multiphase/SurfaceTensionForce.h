@@ -3,7 +3,7 @@
 
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 #include "FiniteVolume/Field/ScalarGradient.h"
-#include "FiniteVolume/Equation/Equation.h"
+#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 class ImmersedBoundary;
 class ImmersedBoundaryObject;
@@ -69,7 +69,7 @@ public:
                                            const ImmersedBoundaryObject &ibObj) const;
 
     //- Misc special gamma boundary equations
-    virtual Equation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma);
+    virtual FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma);
 
 protected:
 

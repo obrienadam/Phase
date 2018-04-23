@@ -8,170 +8,116 @@ DirectForcingImmersedBoundaryObject::Stencil::Stencil(const VectorFiniteVolumeFi
                                                       const ImmersedBoundaryObject &ibObj)
 {
     bp_ = ibObj.nearestIntersect(cell.centroid());
-    ip_ = 2. * cell.centroid() - bp_;
-
     ub_ = ibObj.velocity(bp_);
-    uip_ = BilinearInterpolator(ibObj.grid(), ip_)(u);
-    uf_ = (ub_ + uip_) / 2.;
-}
 
-DirectForcingImmersedBoundaryObject::FieldExtensionStencil::FieldExtensionStencil(const VectorFiniteVolumeField &u,
-                                                                                  const Cell &cell,
-                                                                                  const ImmersedBoundaryObject &ibObj)
-{
-    bp_ = ibObj.nearestIntersect(cell.centroid());
-    ip_ = 2. * bp_ - cell.centroid();
-
-    BilinearInterpolator bi(ibObj.grid(), ip_);
-
-    uip_ = bi(u);
-    ub_ = ibObj.velocity(bp_);
-    uf_ = 2. * ub_ - uip_;
-
-    cells_ = bi.cells();
-    cells_.push_back(std::cref(cell));
-
-    coeffs_ = bi.coeffs() / 2.;
-    coeffs_.push_back(0.5);
-}
-
-
-DirectForcingImmersedBoundaryObject::PressureFieldExtensionStencil::PressureFieldExtensionStencil(
-        const ScalarFiniteVolumeField &p,
-        const Cell &cell,
-        const ImmersedBoundaryObject &ibObj)
-{
-    bp_ = ibObj.nearestIntersect(cell.centroid());
-    ip_ = 2. * bp_ - cell.centroid();
-    n_ = ibObj.nearestEdgeNormal(bp_).unitVec();
-
-    BilinearInterpolator bi(ibObj.grid(), bp_);
-
-    bool validStencil = false;
-
-    for (const Cell &kCell: cells_)
-        if (kCell.id() == cell.id())
-        {
-            validStencil = true;
-            break;
-        }
-
-    if (validStencil)
+    auto isIbCell = [&ibObj](const Cell& cell)
     {
-        cells_ = bi.cells();
-        coeffs_ = bi.derivativeCoeffs(n_);
-    }
-    else
-    {
-        bi.setPoint(ip_);
-        n_ = (cell.centroid() - ip_).unitVec();
-        cells_ = bi.cells();
-        cells_.push_back(std::cref(cell));
-        coeffs_ = -bi.coeffs() / (cell.centroid() - ip_).mag();
-        coeffs_.push_back(1. / (cell.centroid() - ip_).mag());
-    }
-}
-
-DirectForcingImmersedBoundaryObject::QuadraticStencil::QuadraticStencil(const VectorFiniteVolumeField &u,
-                                                                        const Cell &cell,
-                                                                        const ImmersedBoundaryObject &ibObj)
-{
-    std::vector<Ref<const Cell>> cells;
-    std::vector<Point2D> bps;
-
-    auto isIbCell = [&ibObj](const Cell &cell)
-    {
-        for (const InteriorLink &nb: cell.neighbours())
-            if (ibObj.isInIb(nb.cell()))
+        for(const CellLink &nb: cell.neighbours())
+            if(ibObj.isInIb(nb.cell()))
                 return true;
-
         return false;
     };
 
-    for (const CellLink &nb: cell.cellLinks())
-    {
-        if (ibObj.isInIb(nb.cell()))
-            continue;
+    std::vector<Ref<const Cell>> iCells;
 
-        if (isIbCell(nb.cell()))
+    for(const CellLink &nb: cell.cellLinks())
+        if(!ibObj.isInIb(nb.cell()) && !isIbCell(nb.cell()))
         {
-            cells.push_back(std::cref(nb.cell()));
-            bps.push_back(ibObj.nearestIntersect(nb.cell().centroid()));
+            iCells.push_back(std::cref(nb.cell()));
         }
-        else
-            cells.push_back(std::cref(nb.cell()));
-    }
 
-    bps.push_back(ibObj.nearestIntersect(cell.centroid()));
-
-    Matrix A(cells.size() + bps.size(), 6);
-    Matrix b(cells.size() + bps.size(), 2);
-
-    int i = 0;
-    for (const Cell &cell: cells)
+    if(iCells.size() < 2)
     {
-        Point2D x = cell.centroid();
-        A(i, 0) = x.x * x.x;
-        A(i, 1) = x.y * x.y;
-        A(i, 2) = x.x * x.y;
-        A(i, 3) = x.x;
-        A(i, 4) = x.y;
-        A(i, 5) = 1.;
-        b(i, 0) = u(cell).x;
-        b(i++, 1) = u(cell).y;
+        throw Exception("DirectForcingImmersedBoundaryObject::Stencil", "Stencil",
+                        "not enough cells to form stencil. N cells = " + std::to_string(cell.cellLinks().size())
+                        + ", proc = " + std::to_string(u.grid()->comm().rank())
+                        + ", cell id = " + std::to_string(u.grid()->globalIds()[cell.id()]) + ".");
     }
 
-    for (const Point2D &x: bps)
+    Point2D x[] = {iCells[0].get().centroid(), iCells[1].get().centroid()};
+    Vector2D iu[] = {u(iCells[0]), u(iCells[1])};
+
+    auto c = solve<3, 2>({
+                             x[0].x, x[0].y, 1.,
+                             x[1].x, x[1].y, 1.,
+                             bp_.x, bp_.y, 1.
+                         }, {
+                             iu[0].x, iu[0].y,
+                             iu[1].x, iu[1].y,
+                             ub_.x, ub_.y
+                         });
+
+    Point2D xc = cell.centroid();
+
+    uf_ = Vector2D(c(0, 0) * xc.x + c(1, 0) * xc.y + c(2, 0),
+                   c(0, 1) * xc.x + c(1, 1) * xc.y + c(2, 1));
+}
+
+DirectForcingImmersedBoundaryObject::QuadraticLsStencil::QuadraticLsStencil(const VectorFiniteVolumeField &u, const Cell &cell, const ImmersedBoundaryObject &ibObj)
+{
+    bp_ = ibObj.nearestIntersect(cell.centroid());
+    ub_ = ibObj.velocity(cell.centroid());
+
+    std::vector<Point2D> x;
+    std::vector<Vector2D> src;
+
+    for(const CellLink &nb: cell.cellLinks())
+        if(!ibObj.isInIb(nb.cell()))
+        {
+            x.push_back(nb.cell().centroid());
+            src.push_back(u(nb.cell()));
+
+            for(const CellLink &nb2: nb.cell().neighbours())
+            {
+                if(ibObj.isInIb(nb2.cell().centroid()))
+                {
+                    Point2D compat = ibObj.nearestIntersect(nb.cell().centroid());
+                    x.push_back(compat);
+                    src.push_back(ibObj.velocity(compat));
+                    break;
+                }
+            }
+        }
+
+    x.push_back(bp_);
+    src.push_back(ub_);
+
+    Matrix A(x.size(), 6), b(x.size(), 2);
+
+    for(int i = 0; i < x.size(); ++i)
     {
-        A(i, 0) = x.x * x.x;
-        A(i, 1) = x.y * x.y;
-        A(i, 2) = x.x * x.y;
-        A(i, 3) = x.x;
-        A(i, 4) = x.y;
-        A(i, 5) = 1.;
-
-        Vector2D ub = ibObj.velocity(x);
-        b(i, 0) = ub.x;
-        b(i++, 1) = ub.y;
+        A.setRow(i, {x[i].x * x[i].x, x[i].y * x[i].y, x[i].x * x[i].y, x[i].x, x[i].y, 1.});
+        b.setRow(i, {src[i].x, src[i].y});
     }
 
-    Point2D x = cell.centroid();
-    Matrix tmp = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * solve(A, b);
-    uf_ = Vector2D(tmp(0, 0), tmp(0, 1));
+    Point2D xc = cell.centroid();
+
+    Matrix sln = Matrix(1, 6, {xc.x * xc.x, xc.y * xc.y, xc.x * xc.y, xc.x, xc.y, 1.}) * solve(A, b);
+    uf_ = Vector2D(sln(0, 0), sln(0, 1));
 }
 
 DirectForcingImmersedBoundaryObject::DirectForcingImmersedBoundaryObject(const std::string &name,
                                                                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                                                          const std::shared_ptr<CellGroup> &solverCells)
-        :
-        ImmersedBoundaryObject(name, grid, solverCells)
+    :
+      ImmersedBoundaryObject(name, grid, solverCells)
 {
 
 }
 
 void DirectForcingImmersedBoundaryObject::updateCells()
 {
-    ibCells_.clear();
     solidCells_.clear();
-    forcingCells_.clear();
-    pseudoFluidCells_.clear();
+    ibCells_.clear();
 
-    // auto items = fluid_->itemsWithin(*shape_);
+    auto items = solverCells_->itemsWithin(*shape_);
 
-    for (const Cell &cell: solverCells_->itemsWithin(*shape_))
-    {
-        solidCells_.add(cell);
+    solidCells_.add(items.begin(), items.end());
 
-        for (const CellLink &nb: cell.neighbours())
-        {
-            if (!shape_->isInside(nb.cell().centroid()))
-            {
+    for(const Cell& cell: solidCells_)
+        for(const CellLink& nb: cell.neighbours())
+            if(!isInIb(nb.cell()) && grid_->localCells().isInGroup(nb.cell()))
                 ibCells_.add(nb.cell());
-                forcingCells_.add(nb.cell());
-                pseudoFluidCells_.add(cell);
-            }
-        }
-    }
 }
 
 void DirectForcingImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField &u,
@@ -188,4 +134,75 @@ void DirectForcingImmersedBoundaryObject::computeBoundaryForcing(const VectorFin
     {
         fb(cell) = (velocity(cell.centroid()) - u(cell)) / timeStep;
     }
+}
+
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(u);
+
+    Scalar timeStep = 5e-3;
+
+    for(const Cell& cell: ibCells_)
+    {
+
+        std::vector<Ref<const Cell>> iCells;
+        std::vector<Point2D> bPts;
+        std::vector<Vector2D> bVel;
+
+        for(const CellLink &nb: cell.cellLinks())
+            if(!isInIb(nb.cell()))
+            {
+                iCells.push_back(std::cref(nb.cell()));
+
+                for(const CellLink &nb2: nb.cell().neighbours())
+                {
+                    if(isInIb(nb2.cell().centroid()))
+                    {
+                        bPts.push_back(nearestIntersect(nb.cell().centroid()));
+                        bVel.push_back(velocity(bPts.back()));
+                        break;
+                    }
+                }
+            }
+
+        bPts.push_back(nearestIntersect(cell.centroid()));
+        bVel.push_back(velocity(bPts.back()));
+
+        Matrix A(iCells.size() + bPts.size(), 6);
+
+        for(int i = 0; i < iCells.size(); ++i)
+        {
+            Point2D x = iCells[i].get().centroid();
+            A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+        }
+
+        for(int i = 0; i < bPts.size(); ++i)
+        {
+            Point2D x = bPts[i];
+            A.setRow(i + iCells.size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+        }
+
+        Point2D xc = cell.centroid();
+        Matrix x = Matrix(1, 6, {xc.x * xc.x, xc.y * xc.y, xc.x * xc.y, xc.x, xc.y, 1.}) * pseudoInverse(A) * cell.volume() / timeStep;
+
+        eqn.add(cell, cell, -cell.volume() / timeStep);
+
+        for(int i = 0; i < iCells.size(); ++i)
+        {
+            eqn.add(cell, iCells[i], x(0, i));
+        }
+
+        for(int i = 0; i < bPts.size(); ++i)
+        {
+            eqn.addSource(cell, x(0, i + iCells.size()) * bVel[i]);
+        }
+    }
+
+    for(const Cell& cell: solidCells_)
+    {
+        eqn.add(cell, cell, -cell.volume() / timeStep);
+        eqn.addSource(cell, cell.volume() * velocity(cell.centroid()) / timeStep);
+    }
+
+    return eqn;
 }

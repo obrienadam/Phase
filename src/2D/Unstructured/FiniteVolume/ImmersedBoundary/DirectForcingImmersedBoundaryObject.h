@@ -34,68 +34,26 @@ public:
         Vector2D ub_, uip_, uf_;
     };
 
-    class FieldExtensionStencil : public Stencil
+    class QuadraticLsStencil
     {
     public:
-        FieldExtensionStencil(const VectorFiniteVolumeField &u,
-                              const Cell &cell,
-                              const ImmersedBoundaryObject &ibObj);
 
-        const std::vector<Ref<const Cell>> &cells() const
-        { return cells_; }
-
-        const std::vector<Scalar> &coeffs() const
-        { return coeffs_; }
-
-    private:
-
-        std::vector<Ref<const Cell>> cells_;
-
-        std::vector<Scalar> coeffs_;
-    };
-
-    class PressureFieldExtensionStencil
-    {
-    public:
-        PressureFieldExtensionStencil(const ScalarFiniteVolumeField &p,
-                                      const Cell &cell,
-                                      const ImmersedBoundaryObject &ibObj);
+        QuadraticLsStencil(const VectorFiniteVolumeField &u,
+                           const Cell &cell,
+                           const ImmersedBoundaryObject &ibObj);
 
         const Point2D &bp() const
-        { return bp_; }
-
-        const Vector2D &n() const
-        { return n_; }
-
-        const std::vector<Ref<const Cell>> &cells() const
-        { return cells_; }
-
-        const std::vector<Scalar> &coeffs() const
-        { return coeffs_; }
-
-    protected:
-
-        Point2D bp_, ip_;
-
-        Vector2D n_;
-
-        std::vector<Ref<const Cell>> cells_;
-
-        std::vector<Scalar> coeffs_;
-    };
-
-    class QuadraticStencil
-    {
-    public:
-
-        QuadraticStencil(const VectorFiniteVolumeField &u, const Cell &cell, const ImmersedBoundaryObject &ibObj);
+        {return bp_; }
 
         const Vector2D &uf() const
         { return uf_; }
 
-    private:
+    protected:
 
-        Vector2D uf_;
+        Point2D bp_;
+
+        Vector2D ub_, uf_;
+
     };
 
     //- Constructors, one for circles, another for polygons
@@ -108,14 +66,13 @@ public:
 
     void updateCells();
 
-    virtual Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const
-    { return Equation<Scalar>(field); }
+    virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const
+    { return FiniteVolumeEquation<Scalar>(field); }
 
-    virtual Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const
-    { return Equation<Vector2D>(field); }
+    virtual FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const
+    { return FiniteVolumeEquation<Vector2D>(field); }
 
-    virtual Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const
-    { return Equation<Vector2D>(u); }
+    virtual FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     virtual void computeForce(Scalar rho,
                               Scalar mu,

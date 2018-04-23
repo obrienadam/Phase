@@ -22,6 +22,10 @@ Solver::Solver(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2
     //- Set simulation time options
     maxTimeStep_ = input.caseInput().get<Scalar>("Solver.timeStep");
     startTime_ = 0.;
+
+    //- Index map
+    scalarIndexMap_ = std::make_shared<IndexMap>(*grid_, 1);
+    vectorIndexMap_ = std::make_shared<IndexMap>(*grid_, 2);
 }
 
 int Solver::printf(const char *format, ...) const
@@ -48,7 +52,7 @@ template<>
 std::shared_ptr<FiniteVolumeField<int>> Solver::addField(const std::string &name)
 {
     auto insert = integerFields_.insert(
-            std::make_pair(name, std::make_shared<FiniteVolumeField<int>>(grid_, name, 0, true, false, cells_))
+            std::make_pair(name, std::make_shared<FiniteVolumeField<int>>(grid_, name, 0, true, false, cells_, scalarIndexMap_))
     );
 
     if (!insert.second)
@@ -61,7 +65,7 @@ template<>
 std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const std::string &name)
 {
     auto insert = scalarFields_.insert(
-            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(grid_, name, 0, true, false, cells_))
+            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(grid_, name, 0, true, false, cells_, scalarIndexMap_))
     );
 
     if (!insert.second)
@@ -75,7 +79,7 @@ std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const std::string 
 {
     auto insert = vectorFields_.insert(
             std::make_pair(name,
-                           std::make_shared<VectorFiniteVolumeField>(grid_, name, Vector2D(), true, false, cells_))
+                           std::make_shared<VectorFiniteVolumeField>(grid_, name, Vector2D(), true, false, cells_, vectorIndexMap_))
     );
 
     if (!insert.second)
@@ -89,7 +93,7 @@ template<>
 std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const Input &input, const std::string &name)
 {
     auto insert = scalarFields_.insert(
-            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name, 0., true, false, cells_)
+            std::make_pair(name, std::make_shared<ScalarFiniteVolumeField>(input, grid_, name, 0., true, false, cells_, scalarIndexMap_)
             ));
 
     if (!insert.second)
@@ -104,7 +108,7 @@ std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const Input &input
 {
     auto insert = vectorFields_.insert(
             std::make_pair(
-                    name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name, Vector2D(), true, false, cells_)
+                    name, std::make_shared<VectorFiniteVolumeField>(input, grid_, name, Vector2D(), true, false, cells_, vectorIndexMap_)
             ));
 
     if (!insert.second)
@@ -124,6 +128,7 @@ std::shared_ptr<FiniteVolumeField<Scalar>> Solver::addField(const std::shared_pt
         throw Exception("Solver", "addScalarField", "field \"" + field->name() + "\" already exists.");
 
     insert.first->second->setCellGroup(cells_);
+    insert.first->second->setIndexMap(scalarIndexMap_);
 
     return insert.first->second;
 }
@@ -137,6 +142,7 @@ std::shared_ptr<FiniteVolumeField<Vector2D>> Solver::addField(const std::shared_
         throw Exception("Solver", "addVectorField", "field \"" + field->name() + "\" already exists.");
 
     insert.first->second->setCellGroup(cells_);
+    insert.first->second->setIndexMap(vectorIndexMap_);
 
     return insert.first->second;
 }
@@ -150,6 +156,7 @@ std::shared_ptr<FiniteVolumeField<Tensor2D>> Solver::addField(const std::shared_
         throw Exception("Solver", "addTensorField", "field \"" + field->name() + "\" already exists.");
 
     insert.first->second->setCellGroup(cells_);
+   // insert.first->second->setIndexMap(indexMap_);
 
     return insert.first->second;
 }

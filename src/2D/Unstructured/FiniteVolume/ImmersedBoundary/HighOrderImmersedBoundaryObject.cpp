@@ -33,13 +33,13 @@ void HighOrderImmersedBoundaryObject::updateCells()
     //constructNeumannCoeffs();
 }
 
-Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &phi) const
+FiniteVolumeEquation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &phi) const
 {
     typedef Eigen::Triplet<Scalar> Triplet;
     typedef Eigen::SparseMatrix<Scalar> SparseMatrix;
     typedef Eigen::SparseLU<SparseMatrix> Solver;
 
-    Equation<Scalar> eqn(phi);
+    FiniteVolumeEquation<Scalar> eqn(phi);
 
     for (const Cell &cell: solidCells_)
         eqn.add(cell, cell, 1.);
@@ -164,9 +164,9 @@ Equation<Scalar> HighOrderImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &p
     return eqn;
 }
 
-Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+FiniteVolumeEquation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     for (const Cell &cell: solidCells_)
     {
@@ -238,13 +238,13 @@ Equation<Vector2D> HighOrderImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
     return eqn;
 }
 
-Equation<Scalar> HighOrderImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
+FiniteVolumeEquation<Scalar> HighOrderImmersedBoundaryObject::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar theta) const
 {
     typedef Eigen::Triplet<Scalar> Triplet;
     typedef Eigen::SparseMatrix<Scalar> SparseMatrix;
     typedef Eigen::SparseLU<SparseMatrix> Solver;
 
-    Equation<Scalar> eqn(gamma);
+    FiniteVolumeEquation<Scalar> eqn(gamma);
 
     for (const Cell &cell: solidCells_)
     {

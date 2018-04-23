@@ -20,13 +20,13 @@ public:
     void updateCells();
 
     //- These methods aren't used, this is strictly a corrective method
-    Equation<Scalar> bcs(ScalarFiniteVolumeField &field) const
+    FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const
     { throw NotImplementedException("EulerLagrangeImmersedBoundaryObject", "bcs"); }
 
-    Equation<Vector2D> bcs(VectorFiniteVolumeField &field) const
+    FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const
     { throw NotImplementedException("EulerLagrangeImmersedBoundaryObject", "bcs"); }
 
-    Equation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+    FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
     void computeForce(Scalar rho,
                       Scalar mu,

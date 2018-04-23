@@ -15,7 +15,7 @@ public:
 
 protected:
 
-    Equation<Scalar> TEqn_;
+    FiniteVolumeEquation<Scalar> TEqn_;
 
     Scalar solveUEqn(Scalar timeStep);
 

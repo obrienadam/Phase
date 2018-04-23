@@ -1,8 +1,8 @@
 #include "AxisymmetricSource.h"
 
-ScalarFiniteVolumeField axi::src::div(const VectorFiniteVolumeField &u)
+Vector axi::src::div(const VectorFiniteVolumeField &u)
 {
-    ScalarFiniteVolumeField divU(u.grid(), "", 0.);
+    Vector divU(u.grid()->localCells().size());
 
     for (const Cell &cell: u.cells())
     {
@@ -13,7 +13,7 @@ ScalarFiniteVolumeField axi::src::div(const VectorFiniteVolumeField &u)
         for (const BoundaryLink &bd: cell.boundaries())
             tmp += dot(u(bd.face()), bd.face().polarOutwardNorm(cell.centroid()));
 
-        divU(cell) = tmp;
+        divU(u.indexMap()->local(cell, 0)) = tmp;
     }
 
     return divU;

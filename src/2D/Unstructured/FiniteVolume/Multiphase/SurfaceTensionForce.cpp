@@ -211,9 +211,9 @@ Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeFiel
     return grid_->comm().broadcast(grid_->comm().mainProcNo(), force);
 }
 
-Equation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &gamma)
+FiniteVolumeEquation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &gamma)
 {
-    Equation<Scalar> eqn(gamma);
+    FiniteVolumeEquation<Scalar> eqn(gamma);
 
     for (auto ibObj: *ib_.lock())
     {

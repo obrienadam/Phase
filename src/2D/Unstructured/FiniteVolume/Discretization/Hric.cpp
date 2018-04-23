@@ -48,7 +48,7 @@ ScalarFiniteVolumeField hric::beta(const VectorFiniteVolumeField &u,
     return beta;
 }
 
-Equation<Scalar> hric::div(const VectorFiniteVolumeField &u,
+FiniteVolumeEquation<Scalar> hric::div(const VectorFiniteVolumeField &u,
                            const ScalarFiniteVolumeField& beta,
                            ScalarFiniteVolumeField &gamma,
                            Scalar theta)

@@ -20,8 +20,7 @@ void IndexMap::update(const FiniteVolumeGrid2D &grid)
 
     std::vector<Size> nLocalActiveCells = grid.comm().allGather(grid.localCells().size());
 
-    ownershipRange_.first =
-            nIndices_ * std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid.comm().rank(), 0);
+    ownershipRange_.first = nIndices_ * std::accumulate(nLocalActiveCells.begin(), nLocalActiveCells.begin() + grid.comm().rank(), 0);
     ownershipRange_.second = ownershipRange_.first + nIndices_ * nLocalActiveCells[grid.comm().rank()];
 
     Index localIndex = 0;

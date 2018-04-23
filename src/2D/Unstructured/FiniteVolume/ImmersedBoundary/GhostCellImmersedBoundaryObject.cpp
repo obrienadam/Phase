@@ -115,9 +115,9 @@ void GhostCellImmersedBoundaryObject::updateCells()
     constructStencils();
 }
 
-Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
+FiniteVolumeEquation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &field) const
 {
-    Equation<Scalar> eqn(field);
+    FiniteVolumeEquation<Scalar> eqn(field);
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
@@ -152,9 +152,9 @@ Equation<Scalar> GhostCellImmersedBoundaryObject::bcs(ScalarFiniteVolumeField &f
     return eqn;
 }
 
-Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
+FiniteVolumeEquation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField &field) const
 {
-    Equation<Vector2D> eqn(field);
+    FiniteVolumeEquation<Vector2D> eqn(field);
     BoundaryType bType = boundaryType(field.name());
     Scalar bRefValue = getBoundaryRefValue<Scalar>(field.name());
 
@@ -190,9 +190,9 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::bcs(VectorFiniteVolumeField 
     return eqn;
 }
 
-Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
+FiniteVolumeEquation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolumeField &u) const
 {
-    Equation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u);
 
     switch (boundaryType(u.name()))
     {
@@ -216,9 +216,9 @@ Equation<Vector2D> GhostCellImmersedBoundaryObject::velocityBcs(VectorFiniteVolu
     return eqn;
 }
 
-Equation<Scalar> GhostCellImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p) const
+FiniteVolumeEquation<Scalar> GhostCellImmersedBoundaryObject::pressureBcs(ScalarFiniteVolumeField &p) const
 {
-    Equation<Scalar> eqn(p);
+    FiniteVolumeEquation<Scalar> eqn(p);
 
     for (const auto &st: zeroGradientStencils_)
     {

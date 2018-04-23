@@ -1,14 +1,5 @@
 #include "ScalarFiniteVolumeField.h"
 
-template<>
-void ScalarFiniteVolumeField::computeOrdering()
-{
-    if (indexMap_)
-        indexMap_->update(*grid_);
-    else
-        indexMap_ = std::make_shared<IndexMap>(*grid_, 1);
-}
-
 //- Protected methods
 
 template<>

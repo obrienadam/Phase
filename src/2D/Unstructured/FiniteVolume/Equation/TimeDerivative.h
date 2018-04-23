@@ -1,14 +1,14 @@
 #ifndef PHASE_TIME_DERIVATIVE_H
 #define PHASE_TIME_DERIVATIVE_H
 
-#include "Equation.h"
+#include "FiniteVolumeEquation.h"
 
 namespace fv
 {
     template<typename T>
-    Equation<T> ddt(Scalar rho, FiniteVolumeField<T>& field, Scalar timeStep)
+    FiniteVolumeEquation<T> ddt(Scalar rho, FiniteVolumeField<T>& field, Scalar timeStep)
     {
-        Equation<T> eqn(field);
+        FiniteVolumeEquation<T> eqn(field);
 
         for (const Cell &cell: field.cells())
         {
@@ -20,11 +20,11 @@ namespace fv
     }
 
     template<typename T>
-    Equation<T> ddt(const ScalarFiniteVolumeField &rho, FiniteVolumeField<T> &field, Scalar timeStep)
+    FiniteVolumeEquation<T> ddt(const ScalarFiniteVolumeField &rho, FiniteVolumeField<T> &field, Scalar timeStep)
     {
         const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
 
-        Equation<T> eqn(field);
+        FiniteVolumeEquation<T> eqn(field);
 
         for (const Cell &cell: field.cells())
         {
@@ -36,9 +36,9 @@ namespace fv
     }
 
     template<typename T>
-    Equation<T> ddt(FiniteVolumeField<T> &field, Scalar timeStep)
+    FiniteVolumeEquation<T> ddt(FiniteVolumeField<T> &field, Scalar timeStep)
     {
-        Equation<T> eqn(field);
+        FiniteVolumeEquation<T> eqn(field);
 
         for (const Cell &cell: field.cells())
         {

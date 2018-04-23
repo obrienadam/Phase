@@ -1,5 +1,5 @@
-#ifndef POINT_2D_H
-#define POINT_2D_H
+#ifndef PHASE_POINT_2D_H
+#define PHASE_POINT_2D_H
 
 #include <boost/geometry/geometries/register/point.hpp>
 #include <boost/geometry.hpp>

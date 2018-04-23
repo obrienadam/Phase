@@ -1,8 +1,8 @@
 #include "AxisymmetricLaplacian.h"
 
-Equation<Scalar> axi::laplacian(Scalar gamma, ScalarFiniteVolumeField &phi, Scalar theta)
+FiniteVolumeEquation<Scalar> axi::laplacian(Scalar gamma, ScalarFiniteVolumeField &phi, Scalar theta)
 {
-    Equation<Scalar> eqn(phi);
+    FiniteVolumeEquation<Scalar> eqn(phi);
 
     for (const Cell &cell: phi.cells())
     {
@@ -39,9 +39,9 @@ Equation<Scalar> axi::laplacian(Scalar gamma, ScalarFiniteVolumeField &phi, Scal
     return eqn;
 }
 
-Equation<Vector2D> axi::vectorLaplacian(Scalar gamma, VectorFiniteVolumeField &phi, Scalar theta)
+FiniteVolumeEquation<Vector2D> axi::vectorLaplacian(Scalar gamma, VectorFiniteVolumeField &phi, Scalar theta)
 {
-    Equation<Vector2D> eqn(phi);
+    FiniteVolumeEquation<Vector2D> eqn(phi);
 
     for (const Cell &cell: phi.cells())
     {

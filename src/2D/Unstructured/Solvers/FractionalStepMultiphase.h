@@ -40,7 +40,7 @@ protected:
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
 
     //- Equations
-    Equation<Scalar> gammaEqn_;
+    FiniteVolumeEquation<Scalar> gammaEqn_;
 };
 
 #endif

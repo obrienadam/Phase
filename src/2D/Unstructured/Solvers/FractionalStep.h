@@ -40,9 +40,9 @@ protected:
 
     virtual Scalar maxDivergenceError();
 
-    Equation<Vector2D> uEqn_;
+    FiniteVolumeEquation<Vector2D> uEqn_;
 
-    Equation<Scalar> pEqn_;
+    FiniteVolumeEquation<Scalar> pEqn_;
 
     Scalar rho_, mu_;
 
