@@ -1,6 +1,8 @@
 #ifndef PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
 #define PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_OBJECT_H
 
+#include "Math/StaticMatrix.h"
+
 #include "ImmersedBoundaryObject.h"
 
 class DirectForcingImmersedBoundaryObject : public ImmersedBoundaryObject
@@ -18,9 +20,6 @@ public:
         const Point2D &bp() const
         { return bp_; }
 
-        const Point2D &ip() const
-        { return ip_; }
-
         const Vector2D &uf() const
         { return uf_; }
 
@@ -29,30 +28,30 @@ public:
         Stencil()
         {}
 
-        Point2D bp_, ip_;
-
-        Vector2D ub_, uip_, uf_;
-    };
-
-    class QuadraticLsStencil
-    {
-    public:
-
-        QuadraticLsStencil(const VectorFiniteVolumeField &u,
-                           const Cell &cell,
-                           const ImmersedBoundaryObject &ibObj);
-
-        const Point2D &bp() const
-        {return bp_; }
-
-        const Vector2D &uf() const
-        { return uf_; }
-
-    protected:
-
         Point2D bp_;
 
         Vector2D ub_, uf_;
+    };
+
+    class FieldExtensionStencil: public Stencil
+    {
+    public:
+
+        FieldExtensionStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj);
+
+        Vector2D uExtend(const VectorFiniteVolumeField &u) const;
+
+        Scalar pExtend(const ScalarFiniteVolumeField &p) const;
+
+    protected:
+
+        const Cell *cell_ = nullptr;
+
+        std::vector<const Cell*> iCells_;
+
+        Vector2D ab_, nb_;
+
+        StaticMatrix<3, 3> Au_, Ap_;
 
     };
 

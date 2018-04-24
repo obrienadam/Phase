@@ -22,6 +22,9 @@ FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, con
 
 Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 {
+    //grid_->comm().printf("Performing field extensions...\n");
+    //solveExtEqns();
+
     grid_->comm().printf("Updating IB positions...\n");
     ib_->update(timeStep);
 
@@ -40,7 +43,25 @@ Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 
 void FractionalStepDirectForcing::solveExtEqns()
 {
+    for(const auto &ibObj: *ib_)
+    {
+        for(const Cell &cell: ibObj->ibCells())
+        {
+            for(const CellLink &nb: cell.neighbours())
+                if(ibObj->isInIb(nb.cell()))
+                {
+                    auto st = DirectForcingImmersedBoundaryObject::FieldExtensionStencil(nb.cell(), *ibObj);
 
+                    u(nb.cell()) = st.uExtend(u);
+                    p(nb.cell()) = rho_ * st.pExtend(p);
+                }
+        }
+    }
+
+    grid_->sendMessages(u);
+    grid_->sendMessages(p);
+
+    gradP.compute(fluid_);
 }
 
 Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
@@ -71,10 +92,6 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
              == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ - fb));
-
-//    u.savePreviousTimeStep(timeStep, 1);
-
-//    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_) + ib_->velocityBcs(u));
 
     error = uEqn_.solve();
 
