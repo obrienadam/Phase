@@ -1,5 +1,5 @@
-#ifndef MOTION_H
-#define MOTION_H
+#ifndef PHASE_MOTION_H
+#define PHASE_MOTION_H
 
 #include "Geometry/Point2D.h"
 

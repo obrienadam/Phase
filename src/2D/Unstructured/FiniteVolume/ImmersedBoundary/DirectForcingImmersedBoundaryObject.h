@@ -41,7 +41,9 @@ public:
 
         Vector2D uExtend(const VectorFiniteVolumeField &u) const;
 
-        Scalar pExtend(const ScalarFiniteVolumeField &p) const;
+        Scalar pExtend(Scalar rho, const ScalarFiniteVolumeField &p) const;
+
+        Vector2D gradPExtend(Scalar rho, const VectorFiniteVolumeField &gradP) const;
 
     protected:
 

@@ -100,15 +100,29 @@ Vector2D DirectForcingImmersedBoundaryObject::FieldExtensionStencil::uExtend(con
                 );
 }
 
-Scalar DirectForcingImmersedBoundaryObject::FieldExtensionStencil::pExtend(const ScalarFiniteVolumeField &p) const
+Scalar DirectForcingImmersedBoundaryObject::FieldExtensionStencil::pExtend(Scalar rho, const ScalarFiniteVolumeField &p) const
 {
     auto c = Ap_ * StaticMatrix<3, 1>({
                                           p(*iCells_[0]),
                                           p(*iCells_[1]),
-                                          -dot(ab_, nb_)
+                                          0
                                       });
 
     return c(0, 0) * cell_->centroid().x + c(1, 0) * cell_->centroid().y + c(2, 0);
+}
+
+Vector2D DirectForcingImmersedBoundaryObject::FieldExtensionStencil::gradPExtend(Scalar rho, const VectorFiniteVolumeField &gradP) const
+{
+    auto c = Au_ * StaticMatrix<3, 2>({
+                                          gradP(*iCells_[0]).x, gradP(*iCells_[0]).y,
+                                          gradP(*iCells_[1]).x, gradP(*iCells_[1]).y,
+                                          -rho * ab_.x, -rho * ab_.y
+                                      });
+
+    return Vector2D(
+                c(0, 0) * cell_->centroid().x + c(1, 0) * cell_->centroid().y + c(2, 0),
+                c(0, 1) * cell_->centroid().x + c(1, 1) * cell_->centroid().y + c(2, 1)
+                );
 }
 
 DirectForcingImmersedBoundaryObject::DirectForcingImmersedBoundaryObject(const std::string &name,

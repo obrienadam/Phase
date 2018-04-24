@@ -22,9 +22,6 @@ FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, con
 
 Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 {
-    //grid_->comm().printf("Performing field extensions...\n");
-    //solveExtEqns();
-
     grid_->comm().printf("Updating IB positions...\n");
     ib_->update(timeStep);
 
@@ -37,6 +34,9 @@ Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 
     grid_->comm().printf("Computing IB forces...\n");
     ib_->computeForce(rho_, mu_, u, p, g_);
+
+    grid_->comm().printf("Performing field extensions...\n");
+    solveExtEqns();
 
     return 0;
 }
@@ -53,15 +53,12 @@ void FractionalStepDirectForcing::solveExtEqns()
                     auto st = DirectForcingImmersedBoundaryObject::FieldExtensionStencil(nb.cell(), *ibObj);
 
                     u(nb.cell()) = st.uExtend(u);
-                    p(nb.cell()) = rho_ * st.pExtend(p);
+                    gradP(nb.cell()) = st.gradPExtend(rho_, gradP);
                 }
         }
     }
 
     grid_->sendMessages(u);
-    grid_->sendMessages(p);
-
-    gradP.compute(fluid_);
 }
 
 Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
