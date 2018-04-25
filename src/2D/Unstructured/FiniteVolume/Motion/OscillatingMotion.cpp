@@ -23,8 +23,8 @@ void OscillatingMotion::update(Scalar timeStep)
 
     Vector2D omega(2 * M_PI * freq_.x, 2 * M_PI * freq_.y);
 
-    pos_ = pos0_ + Vector2D(amp_.x * std::sin(omega.x * time_), amp_.y * sin(omega.y * time_));
-    vel_ = Vector2D(amp_.x * omega.x * cos(omega.x * time_), amp_.y * omega.y * cos(omega.y * time_));
-    acc_ = Vector2D(-amp_.x * pow(omega.x, 2) * sin(omega.x * time_), -amp_.y * pow(omega.y, 2) * sin(omega.y * time_));
+    pos_ = pos0_ + Vector2D(amp_.x * std::sin(omega.x * time_), amp_.y * std::sin(omega.y * time_));
+    vel_ = Vector2D(amp_.x * omega.x * std::cos(omega.x * time_), amp_.y * omega.y * std::cos(omega.y * time_));
+    acc_ = Vector2D(-amp_.x * std::pow(omega.x, 2) * std::sin(omega.x * time_), -amp_.y * std::pow(omega.y, 2) * std::sin(omega.y * time_));
     //ibObj_.lock()->shape().move(x);
 }

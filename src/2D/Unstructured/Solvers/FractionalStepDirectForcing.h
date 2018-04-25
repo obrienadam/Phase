@@ -14,11 +14,13 @@ public:
 
 protected:
 
+    void solveExtEqns();
+
+    void reconstructVelocity(Scalar timeStep);
+
     FiniteVolumeEquation<Scalar> pExtEqn_;
 
     FiniteVolumeEquation<Vector2D> uExtEqn_;
-
-    void solveExtEqns();
 
     Scalar solveUEqn(Scalar timeStep);
 
