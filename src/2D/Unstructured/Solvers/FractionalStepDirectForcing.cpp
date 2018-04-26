@@ -50,12 +50,11 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
              == fv::laplacian(mu_ / rho_, u, 0.) - src::src(gradP / rho_));
 
     Scalar error = uEqn_.solve();
-
-    fb.fill(Vector2D(0., 0.));
+    grid_->sendMessages(u); //- velocities on non-local procs may be needed for fb
 
     reconstructVelocity(timeStep);
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: grid_->cells())
         u(cell) = u.oldField(0)(cell);
 
     uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.)
@@ -178,6 +177,9 @@ void FractionalStepDirectForcing::reconstructVelocity(Scalar timeStep)
                         compatPts.push_back(std::make_pair(bp, bu));
                     }
                 }
+
+                if(!(ibCells.isInGroup(nb.cell()) || solidCells.isInGroup(nb.cell()) || grid_->localCells().isInGroup(nb.cell())))
+                    std::cout << "Possible problem!\n";
             }
 
             auto ibObj = ib_->nearestIbObj(cell.centroid());
@@ -187,7 +189,10 @@ void FractionalStepDirectForcing::reconstructVelocity(Scalar timeStep)
             compatPts.push_back(std::make_pair(bp, bu));
 
             if(stCells.size() + compatPts.size() < 6)
-                throw Exception("FractionalStepDirectForcing", "reconstructVelocity", "not enough cells to perform velocity interpolation.");
+                throw Exception("FractionalStepDirectForcing",
+                                "reconstructVelocity",
+                                "not enough cells to perform velocity interpolation. Cell id = "
+                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
 
             Matrix A(stCells.size() + compatPts.size(), 6);
 
