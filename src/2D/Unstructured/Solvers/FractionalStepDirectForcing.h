@@ -18,9 +18,7 @@ protected:
 
     void reconstructVelocity(Scalar timeStep);
 
-    FiniteVolumeEquation<Scalar> pExtEqn_;
-
-    FiniteVolumeEquation<Vector2D> uExtEqn_;
+    FiniteVolumeEquation<Vector2D> extEqn_;
 
     Scalar solveUEqn(Scalar timeStep);
 

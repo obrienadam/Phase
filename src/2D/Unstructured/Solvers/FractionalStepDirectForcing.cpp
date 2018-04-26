@@ -12,8 +12,7 @@ FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, con
     :
       FractionalStep(input, grid),
       fb(*addField<Vector2D>("fb")),
-      pExtEqn_(input, p, "pExtEqn"),
-      uExtEqn_(input, u, "uExtEqn")
+      extEqn_(input, gradP, "extEqn")
 {
     for(const auto& ibObj: *ib_)
         if(ibObj->type() != ImmersedBoundaryObject::DIRECT_FORCING)
@@ -24,8 +23,8 @@ FractionalStepDirectForcing::FractionalStepDirectForcing(const Input &input, con
 
 Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
 {
-    //grid_->comm().printf("Performing field extensions...\n");
-    //solveExtEqns();
+    grid_->comm().printf("Performing field extensions...\n");
+    solveExtEqns();
 
     grid_->comm().printf("Updating IB positions...\n");
     ib_->update(timeStep);
@@ -43,26 +42,6 @@ Scalar FractionalStepDirectForcing::solve(Scalar timeStep)
     return 0;
 }
 
-void FractionalStepDirectForcing::solveExtEqns()
-{
-    for(const auto &ibObj: *ib_)
-    {
-        for(const Cell &cell: ibObj->ibCells())
-        {
-            for(const CellLink &nb: cell.neighbours())
-                if(ibObj->isInIb(nb.cell()))
-                {
-                    auto st = DirectForcingImmersedBoundaryObject::FieldExtensionStencil(nb.cell(), *ibObj);
-
-                    u(nb.cell()) = st.uExtend(u);
-                    //gradP(nb.cell()) = st.gradPExtend(rho_, gradP);
-                }
-        }
-    }
-
-    grid_->sendMessages(u);
-}
-
 Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
 {
     u.savePreviousTimeStep(timeStep, 1);
@@ -75,18 +54,6 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
     fb.fill(Vector2D(0., 0.));
 
     reconstructVelocity(timeStep);
-
-    //    for (const auto &ibObj: *ib_)
-    //    {
-    //        for(const Cell& cell: ibObj->ibCells())
-    //        {
-    //            DirectForcingImmersedBoundaryObject::Stencil st(u, cell, *ibObj);
-    //            fb(cell) = (st.uf() - u(cell)) / timeStep;
-    //        }
-
-    //        for(const Cell& cell: ibObj->solidCells())
-    //            fb(cell) = (ibObj->velocity(cell.centroid()) - u(cell)) / timeStep;
-    //    }
 
     for (const Cell &cell: fluid_)
         u(cell) = u.oldField(0)(cell);
@@ -105,12 +72,87 @@ Scalar FractionalStepDirectForcing::solveUEqn(Scalar timeStep)
     return error;
 }
 
+void FractionalStepDirectForcing::solveExtEqns()
+{
+    auto ibCells = grid_->globalCellGroup(ib_->ibCells());
+    auto solidCells = grid_->globalCellGroup(ib_->solidCells());
+
+    extEqn_.clear();
+
+    for(const Cell& cell: grid_->localCells())
+    {
+        if(ibCells.isInGroup(cell))
+        {
+            std::vector<const Cell*> stCells;
+            std::vector<std::pair<Point2D, Vector2D>> compatPts;
+
+            for(const CellLink &nb: cell.cellLinks())
+            {
+                if(!solidCells.isInGroup(nb.cell()))
+                {
+                    stCells.push_back(&nb.cell());
+
+                    if(ibCells.isInGroup(nb.cell()))
+                    {
+                        auto ibObj = ib_->nearestIbObj(nb.cell().centroid());
+                        auto bp = ibObj->nearestIntersect(nb.cell().centroid());
+                        auto ba = ibObj->acceleration(bp);
+                        compatPts.push_back(std::make_pair(bp, -rho_ * ba));
+                    }
+                }
+            }
+
+            auto ibObj = ib_->nearestIbObj(cell.centroid());
+            auto bp = ibObj->nearestIntersect(cell.centroid());
+            auto ba = ibObj->acceleration(bp);
+
+            compatPts.push_back(std::make_pair(bp, -rho_ * ba));
+
+            Matrix A(stCells.size() + compatPts.size(), 6);
+
+            for(int i = 0; i < stCells.size(); ++i)
+            {
+                Point2D x = stCells[i]->centroid();
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+            }
+
+            for(int i = 0; i < compatPts.size(); ++i)
+            {
+                Point2D x = compatPts[i].first;
+                A.setRow(i + stCells.size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+            }
+
+            Point2D x = cell.centroid();
+
+            Matrix beta = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
+
+            extEqn_.add(cell, cell, -1.);
+
+            for(int i = 0; i < stCells.size(); ++i)
+                extEqn_.add(cell, *stCells[i], beta(0, i));
+
+            for(int i = 0; i < compatPts.size(); ++i)
+                extEqn_.addSource(cell, beta(0, i + stCells.size()) * compatPts[i].second);
+        }
+        else if (solidCells.isInGroup(cell))
+        {
+            extEqn_.set(cell, cell, -1.);
+            extEqn_.setSource(cell, -rho_ * ib_->ibObj(cell.centroid())->acceleration(cell.centroid()));
+        }
+        else
+        {
+            extEqn_.set(cell, cell, -1.);
+            extEqn_.setSource(cell, gradP(cell));
+        }
+    }
+
+    extEqn_.solve();
+}
+
 void FractionalStepDirectForcing::reconstructVelocity(Scalar timeStep)
 {
-    auto spSolve = std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm());
-
     FiniteVolumeEquation<Vector2D> eqn(fb);
-    eqn.setSparseSolver(spSolve);
+    eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm()));
 
     auto ibCells = grid_->globalCellGroup(ib_->ibCells());
     auto solidCells = grid_->globalCellGroup(ib_->solidCells());
@@ -144,7 +186,10 @@ void FractionalStepDirectForcing::reconstructVelocity(Scalar timeStep)
 
             compatPts.push_back(std::make_pair(bp, bu));
 
-            Matrix A(stCells.size() + compatPts.size(), 6), b(stCells.size() + compatPts.size(), 2);
+            if(stCells.size() + compatPts.size() < 6)
+                throw Exception("FractionalStepDirectForcing", "reconstructVelocity", "not enough cells to perform velocity interpolation.");
+
+            Matrix A(stCells.size() + compatPts.size(), 6);
 
             for(int i = 0; i < stCells.size(); ++i)
             {
