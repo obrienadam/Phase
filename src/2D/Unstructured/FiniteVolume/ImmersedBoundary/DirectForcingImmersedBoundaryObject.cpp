@@ -143,10 +143,13 @@ void DirectForcingImmersedBoundaryObject::updateCells()
 
     solidCells_.add(items.begin(), items.end());
 
-    for(const Cell& cell: solidCells_)
-        for(const CellLink& nb: cell.neighbours())
-            if(!isInIb(nb.cell()) && grid_->localCells().isInGroup(nb.cell()))
-                ibCells_.add(nb.cell());
+    for(const Cell& cell: *solverCells_)
+        for(const CellLink &nb: cell.neighbours())
+            if(isInIb(nb.cell()))
+            {
+                ibCells_.add(cell);
+                break;
+            }
 }
 
 void DirectForcingImmersedBoundaryObject::computeBoundaryForcing(const VectorFiniteVolumeField &u,
