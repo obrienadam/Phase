@@ -189,10 +189,10 @@ void FractionalStepDirectForcing::reconstructVelocity(Scalar timeStep)
             {
 
 
-//                throw Exception("FractionalStepDirectForcing",
-//                                "reconstructVelocity",
-//                                "not enough cells to perform velocity interpolation. Cell id = "
-//                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
+                throw Exception("FractionalStepDirectForcing",
+                                "reconstructVelocity",
+                                "not enough cells to perform velocity interpolation. Cell id = "
+                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
             }
 
             Matrix A(stCells.size() + compatPts.size(), 6);

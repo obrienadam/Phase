@@ -145,7 +145,7 @@ void DirectForcingImmersedBoundaryObject::updateCells()
 
     for(const Cell& cell: *solverCells_)
         for(const CellLink &nb: cell.neighbours())
-            if(isInIb(nb.cell()))
+            if(isInIb(nb.cell()) && !solidCells_.isInGroup(cell))
             {
                 ibCells_.add(cell);
                 break;
