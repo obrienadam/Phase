@@ -24,7 +24,7 @@ protected:
 
     FiniteVolumeEquation<Scalar> phiEqn_;
 
-    CellGroup &solid_;
+    std::shared_ptr<CellGroup> solid_;
 
     Scalar gamma_;
 };

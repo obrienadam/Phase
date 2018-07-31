@@ -23,6 +23,8 @@ public:
 
     void setRank(int rank);
 
+    void setRank(int rowRank, int colRank);
+
     void set(const CoefficientList &coeffs);
 
     void setGuess(const Vector &x0);

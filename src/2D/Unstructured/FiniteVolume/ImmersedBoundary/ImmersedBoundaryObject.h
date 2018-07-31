@@ -1,47 +1,60 @@
 #ifndef PHASE_IMMERSED_BOUNDARY_OBJECT_H
 #define PHASE_IMMERSED_BOUNDARY_OBJECT_H
 
-#include "Geometry/Shape2D.h"
-#include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
-#include "FiniteVolume/Motion/Motion.h"
+#include <unordered_map>
 
-class SurfaceTensionForce;
+#include "Geometry/Shape2D.h"
+#include "FiniteVolume/Motion/Motion.h"
+#include "FiniteVolumeGrid2D/Cell/CellGroup.h"
 
 class ImmersedBoundaryObject
 {
 public:
 
-    enum Type
+    enum BoundaryConditionType
     {
-        GHOST_CELL, STEP, QUADRATIC, HIGH_ORDER, EULER_LAGRANGE, DIRECT_FORCING
-    };
-
-    enum BoundaryType
-    {
-        FIXED, NORMAL_GRADIENT, PARTIAL_SLIP
+        FIXED, NORMAL_GRADIENT, VELOCITY
     };
 
     //- Constructors, one for circles, another for polygons
-    ImmersedBoundaryObject(const std::string &name,
-                           const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                            const std::shared_ptr<CellGroup> &solverCells);
+    ImmersedBoundaryObject(const std::string &name);
 
     //- Body info
     const std::string &name() const
-    { return name_; }
+    { return _name; }
 
-    virtual Type type() const = 0;
+    //- Cell methods
+    std::vector<Ref<const Cell>> cellsWithin(const CellGroup &domainCells) const
+    { return domainCells.itemsWithin(*_shape); }
 
-    //- grid
-    const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
-    { return grid_; }
+    template<class const_iterator>
+    std::vector<Ref<const Cell>> internalPerimeterCells(const_iterator first, const_iterator last, bool includeDiagonals = false) const;
 
-    //- Solver cells
-    const std::shared_ptr<CellGroup> &solverCells() const
-    { return solverCells_; }
+    template<class const_iterator>
+    std::vector<Ref<const Cell>> outerPerimeterCells(const_iterator first, const_iterator last, bool includeDiagonals = false) const;
 
-    void setSolverCells(const std::shared_ptr<CellGroup> &solverCells)
-    { solverCells_ = solverCells; }
+    //- Cell groups
+    const CellGroup &ibCells() const
+    { return _ibCells; }
+
+    const CellGroup &solidCells() const
+    { return _solidCells; }
+
+    template<class const_iterator>
+    void addIbCells(const_iterator first, const_iterator last);
+
+    template<class const_iterator>
+    void addSolidCells(const_iterator first, const_iterator last);
+
+    void setIbCells(const CellGroup &ibCells);
+
+    void setSolidCells(const CellGroup &solidCells);
+
+    void setIbCells(CellGroup &&ibCells);
+
+    void setSolidCells(CellGroup &&solidCells);
+
+    void clear();
 
     //- Geometry related methods
     virtual void initCircle(const Point2D &center, Scalar radius);
@@ -50,27 +63,20 @@ public:
 
     template<class const_iterator>
     void initPolygon(const_iterator begin, const_iterator end)
-    { shape_ = std::unique_ptr<Polygon>(new Polygon(begin, end)); }
+    { _shape = std::unique_ptr<Polygon>(new Polygon(begin, end)); }
 
     Shape2D &shape()
-    { return *shape_; }
+    { return *_shape; }
 
     const Shape2D &shape() const
-    { return *shape_; }
-
-    //-
+    { return *_shape; }
 
     //- Tests
     bool isInIb(const Point2D &pt) const
-    { return shape_->isInside(pt); }
+    { return _shape->isInside(pt); }
 
-    template<class T>
-    bool isInIb(const T &item) const
-    { return shape_->isInside(item.centroid()); }
-
-    //- Set/get primary cell zone
-
-    virtual void clear();
+    bool isInIb(const Cell &cell) const
+    { return isInIb(cell.centroid()); }
 
     //- Operations
     LineSegment2D intersectionLine(const LineSegment2D &ln) const;
@@ -78,59 +84,43 @@ public:
     LineSegment2D intersectionLine(const Point2D &ptA, const Point2D &ptB) const;
 
     Point2D nearestIntersect(const Point2D &pt) const
-    { return shape_->nearestIntersect(pt); }
+    { return _shape->nearestIntersect(pt); }
 
     Point2D nearestIntersect(const Ray2D& ray) const
-    { return shape_->intersections(ray)[0]; }
+    { return _shape->intersections(ray)[0]; }
 
-    Vector2D nearestEdgeNormal(const Point2D &pt) const;
+    Vector2D nearestEdgeUnitNormal(const Point2D &pt) const;
 
     //- Boundary methods
-    void addBoundary(const std::string &name, BoundaryType bType, Scalar ref);
+    template<class T>
+    void addBoundaryCondition(const std::string &name, BoundaryConditionType bcType, T bcRefValue);
 
-    void addBoundary(const std::string &name, BoundaryType bType, const Vector2D &ref);
+    template<class T>
+    void addBoundaryCondition(const std::string &name, const std::string &bcType, T bcRefValue);
 
-    void addBoundaryType(const std::string &name, BoundaryType boundaryType);
+    template<class T>
+    void addBoundaryCondition(const std::string &name, const std::string &bcType, const std::string &bcRefValue);
 
-    void addBoundaryType(const std::string &name, const std::string &boundaryType);
+    BoundaryConditionType bcType(const std::string &name) const;
 
-    void addBoundaryRefValue(const std::string &name, Scalar boundaryRefValue);
-
-    void addBoundaryRefValue(const std::string &name, const Vector2D &boundaryRefValue);
-
-    void addBoundaryRefValue(const std::string &name, const std::string &value);
+    template<class T>
+    T bcRefValue(const std::string &name) const;
 
     //- Reference to cell zone for iterating
 
     const CellGroup &cells() const
-    { return cells_; }
-
-    const CellGroup &ibCells() const
-    { return ibCells_; }
-
-    const CellGroup &solidCells() const
-    { return solidCells_; }
-
-    const CellGroup &freshCells() const
-    { return freshCells_; }
-
-    //- Boundary info
-    BoundaryType boundaryType(const std::string &name) const
-    { return boundaryTypes_.find(name)->second; }
-
-    template<typename T>
-    T getBoundaryRefValue(const std::string &name) const;
+    { return _cells; }
 
     //- Motion info if applicable
 
     void setMotion(const std::shared_ptr<Motion> &motion)
-    { motion_ = motion; }
+    { _motion = motion; }
 
     std::shared_ptr<Motion> motion()
-    { return motion_; }
+    { return _motion; }
 
     bool isMoving() const
-    { return (bool) motion_; }
+    { return (bool) _motion; }
 
     const Vector2D &position() const
     { return shape().centroid(); }
@@ -151,64 +141,23 @@ public:
 
     Scalar alpha() const;
 
-    virtual std::vector<Point2D> forcingPoints() const;
-
-    virtual void computeForce(Scalar rho,
-                              Scalar mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.));
-
-    virtual void computeForce(const ScalarFiniteVolumeField &rho,
-                              const ScalarFiniteVolumeField &mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.));
-
-    virtual void computeForce(const ScalarFiniteVolumeField &rho,
-                              const ScalarFiniteVolumeField &mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const ScalarFiniteVolumeField &gamma,
-                              const SurfaceTensionForce &ft,
-                              const Vector2D &g = Vector2D(0., 0.));
-
-    void addForce(const Vector2D &force)
-    {
-        force_ += force;
-    }
-
     Scalar mass() const
-    { return rho * shape_->area(); }
+    { return rho * _shape->area(); }
 
     Scalar momentOfInertia() const
-    { return rho * shape_->momentOfInertia(); }
+    { return rho * _shape->momentOfInertia(); }
+
+    void applyForce(const Vector2D &force)
+    { _force = force; }
 
     const Vector2D &force() const
-    { return force_; }
+    { return _force; }
 
     Scalar torque() const
-    { return torque_; }
+    { return _torque; }
 
     //- Update
-    void update(Scalar timeStep);
-
-    virtual void updateCells();
-
-    //- Boundary conditions
-    virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &field) const = 0;
-
-    virtual FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &field) const = 0;
-
-    virtual FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
-
-    virtual FiniteVolumeEquation<Scalar> pressureBcs(ScalarFiniteVolumeField &p) const;
-
-    virtual void computeBoundaryForcing(const VectorFiniteVolumeField& u,
-                                        Scalar timeStep,
-                                        VectorFiniteVolumeField &fb) const;
-
-    void clearFreshCells();
+    void updatePosition(Scalar timeStep);
 
     //- Public properties
     Scalar rho = 0.;
@@ -216,32 +165,30 @@ public:
 protected:
 
     //- Identification
-    std::string name_;
+    std::string _name;
 
-    //- Grid
-    std::shared_ptr<const FiniteVolumeGrid2D> grid_;
+    CellGroup _cells, _ibCells, _solidCells;
 
-    std::shared_ptr<CellGroup> solverCells_;
+    //- Boundary type info
+    std::unordered_map<std::string, BoundaryConditionType> _bcTypes;
 
-    CellGroup cells_, ibCells_, solidCells_, freshCells_;
+    //- Boundary ref values
+    std::unordered_map<std::string, Scalar> _bcScalarRefValues;
+
+    std::unordered_map<std::string, Vector2D> _bcVectorRefValues;
 
     //- Geometry
-    std::unique_ptr<Shape2D> shape_;
-
-    //- Boundary condition info
-    std::unordered_map<std::string, BoundaryType> boundaryTypes_;
-
-    std::unordered_map<std::string, Scalar> boundaryRefScalars_;
-
-    std::unordered_map<std::string, Vector2D> boundaryRefVectors_;
+    std::unique_ptr<Shape2D> _shape;
 
     //- Force info
-    Vector2D force_;
+    Vector2D _force;
 
-    Scalar torque_;
+    Scalar _torque;
 
     //- Motion
-    std::shared_ptr<Motion> motion_;
+    std::shared_ptr<Motion> _motion;
 };
+
+#include "ImmersedBoundaryObject.tpp"
 
 #endif

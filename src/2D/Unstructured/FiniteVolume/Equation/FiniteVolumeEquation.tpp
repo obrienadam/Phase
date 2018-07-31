@@ -18,12 +18,6 @@ FiniteVolumeEquation<T>::FiniteVolumeEquation(const Input &input,
 }
 
 template<class T>
-void FiniteVolumeEquation<T>::setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &spSolver)
-{
-    _spSolver = spSolver;
-}
-
-template<class T>
 void FiniteVolumeEquation<T>::configureSparseSolver(const Input &input, const Communicator &comm)
 {
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib");

@@ -50,7 +50,7 @@ Boundaries
     {
       type normal_gradient
       value 0
-      contactAngle 150
+      contactAngle 90
     }
   }
 }

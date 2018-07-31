@@ -1,5 +1,5 @@
-#ifndef FACE_H
-#define FACE_H
+#ifndef PHASE_FACE_H
+#define PHASE_FACE_H
 
 #include "../Node/Node.h"
 #include "../Cell/Cell.h"
@@ -50,17 +50,13 @@ public:
     bool isBoundary() const
     { return type_ == BOUNDARY; }
 
-    const Node &lNode() const
-    { return nodes_[nodeIds_.first]; }
+    const Node &lNode() const;
 
-    const Node &rNode() const
-    { return nodes_[nodeIds_.second]; }
+    const Node &rNode() const;
 
-    const Cell &lCell() const
-    { return cells_[cellIds_[0]]; }
+    const Cell &lCell() const;
 
-    const Cell &rCell() const
-    { return cells_[cellIds_[1]]; }
+    const Cell &rCell() const;
 
     Scalar volumeWeight() const;
 
@@ -72,19 +68,24 @@ public:
 
     std::string info() const;
 
+    //- Grid
+    const FiniteVolumeGrid2D &grid() const
+    { return grid_; }
+
 private:
     Type type_;
 
     Point2D centroid_;
+
     Vector2D normal_, tangent_;
 
     Label id_;
 
     std::pair<Label, Label> nodeIds_;
+
     std::vector<Label> cellIds_;
 
-    const std::vector<Node> &nodes_;
-    const std::vector<Cell> &cells_;
+    const FiniteVolumeGrid2D &grid_;
 };
 
 #endif

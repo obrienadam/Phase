@@ -3,31 +3,28 @@
 
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
-
-#include "FiniteVolume/Multiphase/SurfaceTensionForce.h"
-
+#include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 #include "ImmersedBoundaryObject.h"
-
 #include "CollisionModel.h"
 
 class ImmersedBoundary
 {
 public:
 
-    enum
+    enum Type
     {
         FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4
     };
 
     ImmersedBoundary(const Input &input,
                      const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                     const std::shared_ptr<CellGroup> &solverCells);
+                     const std::shared_ptr<CellGroup> &domainCells);
 
-    //- Solver cells
-    const std::shared_ptr<CellGroup> &solverCells() const
-    { return solverCells_; }
+    //- Domain cells
+    void setDomainCells(const std::shared_ptr<CellGroup> &domainCells);
 
-    void setSolverCells(const std::shared_ptr<CellGroup> &solverCells);
+    const std::shared_ptr<CellGroup> &domainCells() const
+    { return domainCells_; }
 
     //- Grid
     const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
@@ -57,25 +54,16 @@ public:
     { return ibObjs_.end(); }
 
     //- Updates
-    void update(Scalar timeStep);
+    virtual void updateIbPositions(Scalar timeStep);
+
+    virtual void updateCells() = 0;
 
     //- Boundary conditions
     template<class T>
-    void copyBoundaryTypes(const FiniteVolumeField<T> &srcField, const FiniteVolumeField<T> &destField)
+    void copyBoundaryConditions(const FiniteVolumeField<T> &srcField, const FiniteVolumeField<T> &destField)
     {
         for (auto &ibObj: ibObjs_)
-            ibObj->addBoundaryType(destField.name(), ibObj->boundaryType(srcField.name()));
-    }
-
-    template<class T>
-    FiniteVolumeEquation<T> bcs(FiniteVolumeField<T> &field) const
-    {
-        FiniteVolumeEquation<T> eqn(field);
-
-        for (const auto &ibObj: ibObjs_)
-            eqn += ibObj->bcs(field);
-
-        return eqn;
+            ibObj->addBoundaryCondition(destField.name(), ibObj->bcType(srcField.name()), ibObj->bcRefValue<T>(srcField.name()));
     }
 
     FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
@@ -84,25 +72,17 @@ public:
 
     bool isIbCell(const Cell &cell) const;
 
-    void computeForce(Scalar rho,
-                      Scalar mu,
-                      const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p,
-                      const Vector2D &g = Vector2D(0., 0.));
+    virtual void computeForce(Scalar rho,
+                              Scalar mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.));
 
-    void computeForce(const ScalarFiniteVolumeField &rho,
-                      const ScalarFiniteVolumeField &mu,
-                      const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p,
-                      const Vector2D &g = Vector2D(0., 0.));
-
-    void computeForce(const ScalarFiniteVolumeField &rho,
-                      const ScalarFiniteVolumeField &mu,
-                      const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p,
-                      const ScalarFiniteVolumeField &gamma,
-                      const SurfaceTensionForce &ft,
-                      const Vector2D &g = Vector2D(0., 0.));
+    virtual void computeForce(const ScalarFiniteVolumeField &rho,
+                              const ScalarFiniteVolumeField &mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.));
 
     const std::shared_ptr<FiniteVolumeField<int>> &cellStatus()
     { return cellStatus_; }
@@ -111,7 +91,7 @@ protected:
 
     void setCellStatus();
 
-    std::shared_ptr<CellGroup> solverCells_;
+    std::shared_ptr<CellGroup> domainCells_;
 
     std::shared_ptr<FiniteVolumeField<int>> cellStatus_;
 

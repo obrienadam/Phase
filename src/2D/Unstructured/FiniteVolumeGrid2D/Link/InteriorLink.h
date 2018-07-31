@@ -1,5 +1,5 @@
-#ifndef INTERIOR_LINK_H
-#define INTERIOR_LINK_H
+#ifndef PHASE_INTERIOR_LINK_H
+#define PHASE_INTERIOR_LINK_H
 
 #include "CellLink.h"
 
@@ -33,6 +33,7 @@ public:
 protected:
 
     const Face &face_;
+
     Vector2D outwardNorm_, rFaceVec_;
 };
 

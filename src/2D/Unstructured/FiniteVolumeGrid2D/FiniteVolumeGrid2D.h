@@ -1,6 +1,8 @@
 #ifndef PHASE_FINITE_VOLUME_GRID_2D_H
 #define PHASE_FINITE_VOLUME_GRID_2D_H
 
+#include <unordered_map>
+
 #include "System/Input.h"
 #include "System/Communicator.h"
 
@@ -23,6 +25,11 @@ public:
                        const std::vector<Label> &cptr,
                        const std::vector<Label> &cind,
                        const Point2D &origin);
+
+    //- Make non-copyable
+    FiniteVolumeGrid2D(const FiniteVolumeGrid2D& grid) = delete;
+
+    FiniteVolumeGrid2D & operator=(const FiniteVolumeGrid2D& grid) = delete;
 
     //- Initialization
     virtual void init(const std::vector<Point2D> &nodes,

@@ -1,5 +1,5 @@
-#ifndef BOX_H
-#define BOX_H
+#ifndef PHASE_BOX_H
+#define PHASE_BOX_H
 
 #include "Shape2D.h"
 
@@ -74,7 +74,9 @@ public:
     { return upper_; }
 
 private:
+
     Point2D centroid_, lower_, upper_;
+
     Scalar area_, momentOfInertia_;
 };
 

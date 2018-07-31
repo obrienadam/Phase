@@ -105,6 +105,26 @@ std::tuple<int, int> CgnsFile::writeCoordinates(int bid, int zid, const std::vec
     return cid;
 }
 
+std::tuple<int, int, int> CgnsFile::writeCoordinates(int bid, int zid, const std::vector<Point3D> &coords)
+{
+    std::vector<double> x(coords.size()), y(coords.size()), z(coords.size());
+
+    std::transform(coords.begin(), coords.end(), x.begin(), [](const Point3D &pt)
+    { return pt.x; });
+
+    std::transform(coords.begin(), coords.end(), y.begin(), [](const Point3D &pt)
+    { return pt.y; });
+
+    std::transform(coords.begin(), coords.end(), z.begin(), [](const Point3D &pt)
+    { return pt.z; });
+
+    std::tuple<int, int, int> cid;
+    cg_coord_write(_fid, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateX", x.data(), &std::get<0>(cid));
+    cg_coord_write(_fid, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateY", y.data(), &std::get<1>(cid));
+    cg_coord_write(_fid, bid, zid, CGNS_ENUMV(RealDouble), "CoordinateZ", z.data(), &std::get<2>(cid));
+    return cid;
+}
+
 template<>
 std::vector<Point2D> CgnsFile::readCoords(int bid, int zid) const
 {

@@ -1,3 +1,5 @@
+#include "System/Exception.h"
+
 #include "SparseMatrixSolver.h"
 
 void SparseMatrixSolver::set(const std::vector<std::tuple<Index, Index, Scalar>> &entries)
@@ -34,6 +36,11 @@ Scalar SparseMatrixSolver::solve(const Vector &x0)
 {
     setGuess(x0);
     return solve();
+}
+
+Scalar SparseMatrixSolver::solveLeastSquares()
+{
+    throw Exception("SparseMatrixSolver", "solveLeastSquares", "least squares solver is not available for this sparse matrix solver type.");
 }
 
 void SparseMatrixSolver::printStatus(const std::string &msg) const

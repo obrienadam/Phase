@@ -12,6 +12,13 @@ void EigenSparseMatrixSolver::setRank(int rank)
     rhs_.resize(rank);
 }
 
+void EigenSparseMatrixSolver::setRank(int rowRank, int colRank)
+{
+    mat_.resize(rowRank, colRank);
+    x_.resize(rowRank);
+    rhs_.resize(colRank);
+}
+
 void EigenSparseMatrixSolver::set(const CoefficientList &coeffs)
 {
     std::vector<Triplet> triplets;

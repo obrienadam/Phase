@@ -1,5 +1,5 @@
-#ifndef SPARSE_MATRIX_SOLVER
-#define SPARSE_MATRIX_SOLVER
+#ifndef PHASE_SPARSE_MATRIX_SOLVER
+#define PHASE_SPARSE_MATRIX_SOLVER
 
 #include <tuple>
 
@@ -24,6 +24,8 @@ public:
 
     virtual void setRank(int rank) = 0;
 
+    virtual void setRank(int rowRank, int colRank) = 0;
+
     virtual void set(const std::vector<std::tuple<Index, Index, Scalar>> &entries);
 
     virtual void set(const CoefficientList &eqn) = 0;
@@ -35,6 +37,8 @@ public:
     virtual Scalar solve() = 0;
 
     virtual Scalar solve(const Vector &x0);
+
+    virtual Scalar solveLeastSquares();
 
     virtual Scalar x(Index idx) const = 0;
 

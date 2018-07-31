@@ -8,8 +8,7 @@
 Face::Face(Label lNodeId, Label rNodeId, const FiniteVolumeGrid2D &grid, Type type)
         :
         type_(type),
-        nodes_(grid.nodes()),
-        cells_(grid.cells()),
+        grid_(grid),
         nodeIds_(lNodeId, rNodeId)
 {
     centroid_ = 0.5 * (lNode() + rNode());
@@ -35,6 +34,26 @@ Vector2D Face::outwardNorm(const Point2D &point) const
 Vector2D Face::outwardNorm() const
 {
     return outwardNorm(lCell().centroid());
+}
+
+const Node &Face::lNode() const
+{
+    return grid_.nodes()[nodeIds_.first];
+}
+
+const Node &Face::rNode() const
+{
+    return grid_.nodes()[nodeIds_.second];
+}
+
+const Cell &Face::lCell() const
+{
+    return grid_.cells()[cellIds_[0]];
+}
+
+const Cell &Face::rCell() const
+{
+    return grid_.cells()[cellIds_[1]];
 }
 
 Scalar Face::volumeWeight() const
@@ -63,7 +82,7 @@ std::vector<Ref<const Cell> > Face::cells() const
     std::vector<Ref<const Cell>> cells;
 
     for (Label id: ids)
-        cells.push_back(std::cref(cells_[id]));
+        cells.push_back(std::cref(grid_.cells()[id]));
 
     return cells;
 }

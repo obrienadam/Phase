@@ -5,16 +5,12 @@
 Poisson::Poisson(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
-        solid_(*cells_),
-        phi(*addField<Scalar>(input, "phi")),
+        solid_(solid_),
+        phi(*addField<Scalar>(input, "phi", solid_)),
         phiEqn_(input, phi, "phiEqn")
 {
     //- All active cells to solid group
-    solid_.add(grid_->localCells());
-
-    //- Create ib zones if any
-    //ib_->initCellZones(solid_);
-
+    solid_->add(grid_->localCells());
     gamma_ = input.caseInput().get<Scalar>("Properties.gamma", 1.);
 }
 
@@ -25,7 +21,7 @@ void Poisson::initialize()
 
 Scalar Poisson::solve(Scalar timeStep)
 {
-    phiEqn_ = (fv::laplacian(gamma_, phi, 1) + ib_->bcs(phi) == 0.);
+    phiEqn_ = (fv::laplacian(gamma_, phi, 1) == 0.);
     Scalar error = phiEqn_.solve();
 
     grid_->sendMessages(phi);

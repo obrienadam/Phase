@@ -2,43 +2,39 @@
 
 Celeste::Celeste(const Input &input,
                  const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                 const std::weak_ptr<ImmersedBoundary> &ib)
-        :
-        SurfaceTensionForce(input, grid, ib)
+                 const std::shared_ptr<CellGroup> &fluidCells)
+    :
+      SurfaceTensionForce(input, grid, fluidCells)
 {
-    updateStencils();
+    computeStencils();
 }
 
 void Celeste::computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
-    updateStencils();
-
     computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
 
-    auto &ft = *this;
+    auto &fst = *fst_;
     auto &kappa = *kappa_;
-    auto &n = *n_;
 
-    for (const Face &face: grid_->faces())
-        ft(face) = sigma_ * kappa(face) * gradGamma(face);
+    for (const Face &face: fst.grid()->faces())
+        fst(face) = sigma_ * kappa(face) * gradGamma(face);
 }
 
 void Celeste::computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
 {
-    updateStencils();
-
     computeGradGammaTilde(gamma);
     computeInterfaceNormals();
     computeCurvature();
 
-    auto &ft = *this;
+    auto &fst = *fst_;
     auto &kappa = *kappa_;
 
-    ft.fill(Vector2D(0., 0.));
-    for (const Cell &cell: *cellGroup_)
-        ft(cell) = sigma_ * kappa(cell) * gradGamma(cell);
+    fst.fill(Vector2D(0., 0.));
+
+    for (const Cell &cell: fst.cells())
+        fst(cell) = sigma_ * kappa(cell) * gradGamma(cell);
 }
 
 //- Protected methods
@@ -51,7 +47,7 @@ void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde.fill(Vector2D(0., 0.));
-    for (const Cell &cell: *cellGroup_)
+    for (const Cell &cell: gradGammaTilde.cells())
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 
@@ -63,13 +59,13 @@ void Celeste::computeCurvature()
     auto &kappa = *kappa_;
     const auto &gradGammaTilde = *gradGammaTilde_;
 
-    for (const Cell &cell: *cellGroup_)
+    for (const Cell &cell: kappa.cells())
         if (gradGammaTilde(cell).magSqr() > 0.)
-            kappa(cell) = kappaStencils_[cell.id()].kappa(n, *ib_.lock(), *this);
+            kappa(cell) = kappaStencils_[cell.id()].kappa(n);
 
-    grid_->sendMessages(kappa);
+    kappa.grid()->sendMessages(kappa);
 
-    for (const Face &face: grid_->interiorFaces())
+    for (const Face &face: kappa.grid()->interiorFaces())
     {
         //- According to Afkhami 2007
 
@@ -86,28 +82,20 @@ void Celeste::computeCurvature()
             kappa(face) = 0.;
     }
 
-    for(const Face &face: grid_->boundaryFaces())
+    for(const Face &face: kappa.grid()->boundaryFaces())
         if(n(face.lCell()).magSqr() != 0.)
             kappa(face) = kappa(face.lCell());
 }
 
-void Celeste::updateStencils()
+void Celeste::computeStencils()
 {
-    auto ib = ib_.lock();
+    kappaStencils_.resize(kappa_->grid()->cells().size());
 
-    if (kappaStencils_.empty() || gradGammaTildeStencils_.empty())
-    {
-        kappaStencils_.resize(grid_->cells().size());
-        gradGammaTildeStencils_.resize(grid_->cells().size());
-    }
+    for (const Cell &cell: kappa_->grid()->cells())
+        kappaStencils_[cell.id()] = Stencil(cell, false);
 
-    if (ib)
-        for (const Cell &cell: grid_->cells())
-            kappaStencils_[cell.id()] = CelesteStencil(cell, *ib, false);
-    else
-        for (const Cell &cell: grid_->cells())
-            kappaStencils_[cell.id()] = CelesteStencil(cell, false);
+    gradGammaTildeStencils_.resize(gradGammaTilde_->grid()->cells().size());
 
-    for (const Cell &cell: grid_->cells())
-        gradGammaTildeStencils_[cell.id()] = CelesteStencil(cell, true);
+    for (const Cell &cell: gradGammaTilde_->grid()->cells())
+        gradGammaTildeStencils_[cell.id()] = Stencil(cell, true);
 }

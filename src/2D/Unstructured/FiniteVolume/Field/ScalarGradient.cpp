@@ -1,11 +1,13 @@
 #include "ScalarGradient.h"
 
-ScalarGradient::ScalarGradient(const ScalarFiniteVolumeField &phi)
+ScalarGradient::ScalarGradient(const ScalarFiniteVolumeField &phi, const std::shared_ptr<const CellGroup> &cells)
         :
         VectorFiniteVolumeField(phi.grid(),
                                 "grad" + phi.name(),
                                 Vector2D(0., 0.),
-                                true, false),
+                                true,
+                                false,
+                                cells),
         phi_(phi)
 {
 
@@ -120,7 +122,7 @@ void ScalarGradient::compute(const CellGroup &group, Method method)
 
 void ScalarGradient::compute(Method method)
 {
-    compute(phi_.cells(), method);
+    compute(*cellGroup_, method);
 }
 
 void ScalarGradient::computeAxisymmetric(const CellGroup &cells,

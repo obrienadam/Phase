@@ -6,14 +6,14 @@
 
 Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
         :
-        nodes_(grid.nodes()),
+        grid_(grid),
         nodeIds_(nodeIds)
 {
     std::vector<Point2D> vertices;
     vertices.reserve(nodeIds.size());
 
     for (Label id: nodeIds_)
-        vertices.push_back(nodes_[id]);
+        vertices.push_back(grid.nodes()[id]);
 
     cellShape_ = Polygon(vertices.begin(), vertices.end());
 
@@ -55,6 +55,7 @@ Scalar Cell::polarVolume() const
 void Cell::addDiagonalLink(const Cell &cell)
 {
     diagonalLinks_.push_back(CellLink(*this, cell));
+    cellLinks_.push_back(CellLink(*this, cell));
 }
 
 void Cell::addBoundaryLink(const Face &face)
@@ -71,17 +72,7 @@ void Cell::addInteriorLink(const Face &face, const Cell &cell)
         throw Exception("Cell", "addInteriorLink", "cannot add an interior link to a non-interior face.");
 
     interiorLinks_.push_back(InteriorLink(*this, face, cell));
-}
-
-std::vector<Ref<const CellLink>> Cell::cellLinks() const
-{
-    std::vector<Ref<const CellLink>> cellLinks;
-    cellLinks.reserve(8);
-
-    cellLinks.insert(cellLinks.end(), interiorLinks_.begin(), interiorLinks_.end());
-    cellLinks.insert(cellLinks.end(), diagonalLinks_.begin(), diagonalLinks_.end());
-
-    return cellLinks;
+    cellLinks_.push_back(CellLink(*this, cell));
 }
 
 const Cell &Cell::faceNeighbour(const Node &lNode, const Node &rNode) const
@@ -102,11 +93,12 @@ const Cell &Cell::faceNeighbour(const Node &lNode, const Node &rNode) const
 
 const std::vector<Ref<const Node> > Cell::nodes() const
 {
-    using namespace std;
+    std:: vector<Ref<const Node>> nodes;
+    nodes.reserve(nodeIds_.size());
 
-    vector<Ref<const Node> > nodes;
-    for (Label id: nodeIds_)
-        nodes.push_back(cref(nodes_[id]));
+    std::transform(nodeIds_.begin(), nodeIds_.end(), std::back_inserter(nodes), [this](Label id) {
+        return std::cref(grid_.nodes()[id]);
+    });
 
     return nodes;
 }

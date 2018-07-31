@@ -72,8 +72,6 @@ public:
     template<class T2>
     void setSource(const Cell &cell, const T2 &val);
 
-    void setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &spSolver);
-
     void configureSparseSolver(const Input &input, const Communicator &comm);
 
     //- Solve the system
@@ -81,6 +79,9 @@ public:
 
     //- Relax the central coefficients (will fail if a central coefficient is not specified)
     void relax(Scalar relaxationFactor);
+
+    const FiniteVolumeField<T> &field() const
+    { return field_; }
 
     //- name
     std::string name;

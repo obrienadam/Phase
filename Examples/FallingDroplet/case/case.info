@@ -17,7 +17,8 @@ LinearAlgebra
 {
   uEqn
   {
-    lib eigen
+    lib belos
+    solver bicgstab
   }
 
   pCorrEqn
@@ -27,7 +28,8 @@ LinearAlgebra
   
   pEqn
   {
-    lib eigen
+    lib amesos
+    ;solver bicgstab
   }
 
   gammaEqn
@@ -58,6 +60,6 @@ Grid
 Viewer
 {
 	type tecplot
-	vectorFields u,n,ft,gradrho,sg,us
+	vectorFields u,n,fst,gradrho,sg,us
 	scalarFields p,m,gamma,rho,mu,kappa
 }

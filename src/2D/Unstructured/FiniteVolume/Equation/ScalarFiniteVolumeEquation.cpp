@@ -35,6 +35,13 @@ void FiniteVolumeEquation<Scalar>::setSource(const Cell &cell, Scalar val)
 }
 
 template<>
+void FiniteVolumeEquation<Scalar>::remove(const Cell &cell)
+{
+    _coeffs[field_.indexMap()->local(cell, 0)].clear();
+    _rhs(field_.indexMap()->local(cell, 0)) = 0.;
+}
+
+template<>
 void FiniteVolumeEquation<Scalar>::relax(Scalar relaxationFactor)
 {
     for (const Cell &cell: field_.grid()->localCells())

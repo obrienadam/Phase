@@ -16,14 +16,6 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
-    ScalarFiniteVolumeField &rho, &mu, &gamma, &beta;
-
-    ScalarGradient &gradGamma, &gradRho;
-
-    VectorFiniteVolumeField &rhoU, &sg;
-
-    Celeste &ft;
-
 protected:
 
     virtual Scalar solveGammaEqn(Scalar timeStep);
@@ -38,6 +30,15 @@ protected:
 
     //- Properties
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
+
+    //- Fields
+    ScalarFiniteVolumeField &rho_, &mu_, &gamma_, &beta_;
+
+    ScalarGradient &gradGamma_, &gradRho_;
+
+    VectorFiniteVolumeField &rhoU_, &sg_;
+
+    Celeste fst_;
 
     //- Equations
     FiniteVolumeEquation<Scalar> gammaEqn_;

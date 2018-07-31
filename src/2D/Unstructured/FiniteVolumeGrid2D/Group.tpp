@@ -1,125 +1,76 @@
 #include "Group.h"
 
 template<class T>
+Group<T> &Group<T>::operator=(const std::vector<Ref<const T> > &rhs)
+{
+    Set<T>::operator =(rhs);
+    return *this;
+}
+
+template<class T>
 void Group<T>::clear()
 {
-    items_.clear();
-    itemSet_.clear();
+    Set<T>::clear();
     rTree_.clear();
 }
 
 template<class T>
-void Group<T>::add(const T &item)
+bool Group<T>::add(const T &item)
 {
-    if (itemSet_.insert(std::cref(item)).second)
+    if (Set<T>::add(item))
     {
-        items_.push_back(std::cref(item));
         rTree_.insert(std::cref(item));
+        return true;
     }
+
+    return false;
 }
 
 template<class T>
-void Group<T>::add(const Group<T> &items)
+void Group<T>::add(typename Set<T>::const_iterator begin, typename Set<T>::const_iterator end)
 {
-    items_.reserve(size() + items.size());
-    itemSet_.reserve(size() + items.size());
-
-    for (const T &item: items)
-        if(itemSet_.insert(std::cref(item)).second)
-            items_.push_back(std::cref(item));
-
-    rTree_.insert(items.items_.begin(), items.items_.end());
+    Set<T>::add(begin, end);
+    rTree_.insert(begin, end);
 }
 
 template<class T>
-void Group<T>::remove(const T &item)
+void Group<T>::add(typename std::vector<T>::const_iterator begin, typename std::vector<T>::const_iterator end)
 {
-    if (itemSet_.erase(std::cref(item)))
+    Set<T>::add(begin, end);
+    rTree_.insert(begin, end);
+}
+
+template<class T>
+void Group<T>::add(const Set<T> &set)
+{
+    Set<T>::add(set);
+    rTree_.insert(set.begin(), set.end());
+}
+
+template<class T>
+bool Group<T>::remove(const T &item)
+{
+    if (Set<T>::remove(item))
     {
-        items_.erase(
-                std::find_if(items_.begin(), items_.end(), [&item](const T &arg)
-                { return item.id() == arg.id(); })
-        );
-
         rTree_.remove(std::cref(item));
+        return true;
     }
+
+    return false;
 }
 
 template<class T>
-void Group<T>::remove(const Group<T> &other)
+void Group<T>::remove(typename Set<T>::const_iterator begin, typename Set<T>::const_iterator end)
 {
-    auto itr = std::remove_if(items_.begin(), items_.end(), [&other, this](const T &item) -> bool
-    {
-        if (other.isInGroup(item))
-        {
-            itemSet_.erase(std::cref(item));
-            return true;
-        }
-
-        return false;
-    });
-
-    items_.erase(itr, items_.end());
-    rTree_.remove(other.begin(), other.end());
+    Set<T>::remove(begin, end);
+    rTree_.remove(begin, end);
 }
 
 template<class T>
-Group<T> &Group<T>::operator+=(const Group<T> &rhs)
+void Group<T>::remove(const Set<T> &set)
 {
-    if (this != &rhs)
-        add(rhs.begin(), rhs.end());
-    return *this;
-}
-
-template<class T>
-Group<T> &Group<T>::operator-=(const Group<T> &rhs)
-{
-    if (this != &rhs)
-        remove(rhs);
-    else
-        clear();
-
-    return *this;
-}
-
-template<class T>
-Group<T> Group<T>::intersection(const Group<T> &other) const
-{
-    Group<T> result;
-
-    for (const T &item: items_)
-        if (other.isInGroup(item))
-            result.add(item);
-
-    return result;
-}
-
-template<class T>
-Group<T> Group<T>::difference(const Group<T> &other) const
-{
-    Group<T> result;
-
-    for (const T &item: items_)
-        if (!other.isInGroup(item))
-            result.add(item);
-
-    return result;
-}
-
-template<class T>
-Group<T> Group<T>::symmetricDifference(const Group<T> &other) const
-{
-    Group<T> result;
-
-    for (const T &item: items_)
-        if (!other.isInGroup(item))
-            result.add(item);
-
-    for (const T &item: other.items_)
-        if (!isInGroup(item))
-            result.add(item);
-
-    return result;
+    Set<T>::remove(set);
+    rTree_.remove(set.begin(), set.end());
 }
 
 template<class T>
@@ -129,17 +80,17 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
 
     switch (shape.type())
     {
-        case Shape2D::CIRCLE:
-            return std::vector<Ref<const T>>(
-                    rTree_.qbegin(bgi::within(shape.boundingBox())
-                                  && bgi::satisfies([&shape](const T &item)
-                                                    { return shape.isInside(item.centroid()); })),
-                    rTree_.qend());
-        case Shape2D::BOX:
-            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())), rTree_.qend());
-        case Shape2D::POLYGON:
-            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(static_cast<const Polygon &>(shape).boostRing())),
-                                      rTree_.qend());
+    case Shape2D::CIRCLE:
+        return std::vector<Ref<const T>>(
+                                            rTree_.qbegin(bgi::within(shape.boundingBox())
+                                                          && bgi::satisfies([&shape](const T &item)
+        { return shape.isInside(item.centroid()); })),
+                                            rTree_.qend());
+    case Shape2D::BOX:
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())), rTree_.qend());
+    case Shape2D::POLYGON:
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(static_cast<const Polygon &>(shape).boostRing())),
+                                         rTree_.qend());
     }
 }
 
@@ -150,18 +101,18 @@ std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Shape2D &shape) const
 
     switch (shape.type())
     {
-        case Shape2D::CIRCLE:
-            return std::vector<Ref<const T>>(
-                    rTree_.qbegin(bgi::covered_by(shape.boundingBox())
-                                  && bgi::satisfies([&shape](const T &item)
-                                                    { return shape.isCovered(item.centroid()); })),
-                    rTree_.qend());
+    case Shape2D::CIRCLE:
+        return std::vector<Ref<const T>>(
+                                            rTree_.qbegin(bgi::covered_by(shape.boundingBox())
+                                                          && bgi::satisfies([&shape](const T &item)
+        { return shape.isCovered(item.centroid()); })),
+                                            rTree_.qend());
 
-        case Shape2D::BOX:
-            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())), rTree_.qend());
-        case Shape2D::POLYGON:
-            return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing())),
-                                      rTree_.qend());
+    case Shape2D::BOX:
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())), rTree_.qend());
+    case Shape2D::POLYGON:
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing())),
+                                         rTree_.qend());
     }
 }
 
@@ -179,33 +130,10 @@ const T &Group<T>::nearestItem(const Point2D &pt) const
 }
 
 template<class T>
-bool Group<T>::isInGroup(const T &item) const
-{
-    return itemSet_.find(std::cref(item)) != itemSet_.end();
-}
-
-template<class T>
 std::vector<Point2D> Group<T>::coordinates() const
 {
-    std::vector<Point2D> coords(items_.size());
-    std::transform(items_.begin(), items_.end(), coords.begin(), [](const T &item)
+    std::vector<Point2D> coords(Set<T>::size());
+    std::transform(Set<T>::begin(), Set<T>::end(), coords.begin(), [](const T &item)
     { return item.centroid(); });
     return coords;
-}
-
-//- Private helper methods
-
-//- Some useful operators
-template<class T>
-Group<T> operator+(Group<T> lhs, const Group<T> &rhs)
-{
-    lhs += rhs;
-    return lhs;
-}
-
-template<class T>
-Group<T> operator-(Group<T> lhs, const Group<T> &rhs)
-{
-    lhs -= rhs;
-    return lhs;
 }

@@ -30,6 +30,24 @@ Equation &Equation::operator=(Equation &&eqn)
     return *this;
 }
 
+void Equation::setRank(Size rank)
+{
+    _coeffs.resize(rank);
+    _rhs.resize(rank, 0.);
+
+    if(_spSolver)
+        _spSolver->setRank(rank);
+}
+
+void Equation::setRank(Size nRows, Size nCols)
+{
+    _coeffs.resize(nRows);
+    _rhs.resize(nRows);
+
+    if(_spSolver)
+        _spSolver->setRank(nRows, nCols);
+}
+
 Scalar Equation::coeff(Index localRow, Index globalCol) const
 {
     for (const SparseMatrixSolver::Entry &entry: _coeffs[localRow])
@@ -44,6 +62,47 @@ Scalar &Equation::coeffRef(Index localRow, Index globalCol)
     for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
         if (entry.first == globalCol)
             return entry.second;
+}
+
+void Equation::setCoeff(Index localRow, Index globalCol, Scalar val)
+{
+    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+        if (entry.first == globalCol)
+        {
+            entry.second = val;
+            return;
+        }
+
+    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
+}
+
+void Equation::addCoeff(Index localRow, Index globalCol, Scalar val)
+{
+    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+        if (entry.first == globalCol)
+        {
+            entry.second += val;
+            return;
+        }
+
+    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
+}
+
+Scalar Equation::solve()
+{
+    _spSolver->setRank(_coeffs.size());
+    _spSolver->set(_coeffs);
+    _spSolver->setRhs(-_rhs);
+    _spSolver->solve();
+    return _spSolver->error();
+}
+
+Scalar Equation::solveLeastSquares()
+{
+    _spSolver->set(_coeffs);
+    _spSolver->setRhs(-_rhs);
+    _spSolver->solveLeastSquares();
+    return _spSolver->error();
 }
 
 void Equation::clear()
@@ -125,30 +184,6 @@ Equation &Equation::operator==(const Vector &rhs)
 }
 
 //- Protected methods
-
-void Equation::setCoeff(Index localRow, Index globalCol, Scalar val)
-{
-    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
-        if (entry.first == globalCol)
-        {
-            entry.second = val;
-            return;
-        }
-
-    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
-}
-
-void Equation::addCoeff(Index localRow, Index globalCol, Scalar val)
-{
-    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
-        if (entry.first == globalCol)
-        {
-            entry.second += val;
-            return;
-        }
-
-    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
-}
 
 //- External functions
 

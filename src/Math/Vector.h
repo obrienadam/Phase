@@ -19,6 +19,12 @@ public:
     size_t size() const
     { return data_.size(); }
 
+    void resize(Size size)
+    { data_.resize(size); }
+
+    void resize(Size size, Scalar val)
+    { data_.resize(size, val); }
+
     const std::vector<Scalar>& data() const
     { return data_; }
 

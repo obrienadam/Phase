@@ -1,5 +1,5 @@
-#ifndef RAY_2D_H
-#define RAY_2D_H
+#ifndef PHASE_RAY_2D_H
+#define PHASE_RAY_2D_H
 
 #include "Point2D.h"
 
@@ -26,6 +26,7 @@ public:
 private:
 
     Point2D x0_;
+
     Vector2D r_;
 };
 

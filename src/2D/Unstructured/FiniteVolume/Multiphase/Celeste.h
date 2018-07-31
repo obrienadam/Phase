@@ -12,7 +12,7 @@ public:
 
     Celeste(const Input &input,
             const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-            const std::weak_ptr<ImmersedBoundary> &ib);
+            const std::shared_ptr<CellGroup> &fluidCells);
 
     void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
@@ -20,20 +20,16 @@ public:
 
 protected:
 
-    class CelesteStencil
+    class Stencil
     {
     public:
 
-        CelesteStencil()
+        Stencil()
         {}
 
-        CelesteStencil(const Cell& cell, bool weighted = false);
-
-        CelesteStencil(const Cell& cell, const ImmersedBoundary& ib, bool weighted = false);
+        Stencil(const Cell& cell, bool weighted = false);
 
         void init(bool weighted = false);
-
-        void init(const ImmersedBoundary& ib, bool weighted = false);
 
         void reset();
 
@@ -43,41 +39,34 @@ protected:
         bool weighted() const
         { return weighted_; }
 
-        bool truncated() const
-        { return truncated_; }
+        virtual Vector2D grad(const ScalarFiniteVolumeField& phi) const;
 
-        Vector2D grad(const ScalarFiniteVolumeField& phi) const;
+        virtual Scalar div(const VectorFiniteVolumeField& u) const;
 
-        Scalar div(const VectorFiniteVolumeField& u) const;
+        virtual Scalar kappa(const VectorFiniteVolumeField& n) const;
 
-        Scalar kappa(const VectorFiniteVolumeField& n, const Celeste& fst) const;
+    protected:
 
-        Scalar kappa(const VectorFiniteVolumeField& n, const ImmersedBoundary& ib, const Celeste& fst) const;
-
-    private:
-
-        void initMatrix();
+        virtual void initMatrix();
 
         const Cell* cellPtr_ = nullptr;
 
-        bool truncated_, weighted_;
+        bool weighted_;
 
         Matrix pInv_;
 
         std::vector<Ref<const Cell>> cells_;
 
         std::vector<Ref<const Face>> faces_;
-
-        std::vector<std::pair<Ref<const Cell>, std::weak_ptr<const ImmersedBoundaryObject>>> compatPts_;
     };
 
     void computeGradGammaTilde(const ScalarFiniteVolumeField &gamma);
 
-    void computeCurvature();
+    virtual void computeCurvature();
 
-    void updateStencils();
+    virtual void computeStencils();
 
-    std::vector<CelesteStencil> kappaStencils_, gradGammaTildeStencils_;
+    std::vector<Stencil> kappaStencils_, gradGammaTildeStencils_;
 };
 
 #endif

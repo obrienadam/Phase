@@ -4,7 +4,7 @@ CaseName ImmersedBoundaryCylinder2D
 
 Solver
 {
-        type "fractional step"
+        type "fractional step direct-forcing"
 	timeStep 5e-3
 	maxCo 1
 	maxTime 200
@@ -15,10 +15,16 @@ LinearAlgebra
 {
 	uEqn
 	{
-		lib eigen
+		lib belos
+		solver bicgstab
 	}
 
 	pEqn
+	{
+		lib eigen
+	}
+
+	extEqn
 	{
 		lib eigen
 	}

@@ -8,14 +8,15 @@
 FractionalStep::FractionalStep(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
         :
         Solver(input, grid),
-        fluid_(*cells_),
-        u(*addField<Vector2D>(input, "u")),
-        p(*addField<Scalar>(input, "p")),
-        gradP(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(p)))),
-        gradU(*std::static_pointer_cast<JacobianField>(addField<Tensor2D>(std::make_shared<JacobianField>(u)))),
-        uEqn_(input, u, "uEqn"),
-        pEqn_(input, p, "pEqn")
+        fluid_(std::make_shared<CellGroup>("fluid")),
+        u_(*addField<Vector2D>(input, "u", fluid_)),
+        p_(*addField<Scalar>(input, "p", fluid_)),
+        gradP_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(p_, fluid_)))),
+        gradU_(*std::static_pointer_cast<JacobianField>(addField<Tensor2D>(std::make_shared<JacobianField>(u_, fluid_)))),
+        uEqn_(input, u_, "uEqn"),
+        pEqn_(input, p_, "pEqn")
 {
+    fluid_->add(grid_->localCells());
     rho_ = input.caseInput().get<Scalar>("Properties.rho", 1);
     mu_ = input.caseInput().get<Scalar>("Properties.mu", 1);
     g_ = input.caseInput().get<std::string>("Properties.g", "(0,0)");
@@ -23,8 +24,8 @@ FractionalStep::FractionalStep(const Input &input, const std::shared_ptr<const F
 
 void FractionalStep::initialize()
 {
-    u.interpolateFaces();
-    p.setBoundaryFaces();
+    u_.interpolateFaces();
+    p_.setBoundaryFaces();
 }
 
 std::string FractionalStep::info() const
@@ -36,18 +37,12 @@ std::string FractionalStep::info() const
 
 Scalar FractionalStep::solve(Scalar timeStep)
 {
-    grid_->comm().printf("Updating IB positions...\n");
-    ib_->update(timeStep);
-
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
-
-    grid_->comm().printf("Computing IB forces...\n");
-    ib_->computeForce(rho_, mu_, u, p, g_);
 
     return 0;
 }
@@ -56,15 +51,15 @@ Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
 {
     Scalar maxCo = 0;
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: *fluid_)
     {
         Scalar co = 0.;
 
         for (const InteriorLink &nb: cell.neighbours())
-            co += std::max(dot(u(nb.face()), nb.outwardNorm()), 0.);
+            co += std::max(dot(u_(nb.face()), nb.outwardNorm()), 0.);
 
         for (const BoundaryLink &bd: cell.boundaries())
-            co += std::max(dot(u(bd.face()), bd.outwardNorm()), 0.);
+            co += std::max(dot(u_(bd.face()), bd.outwardNorm()), 0.);
 
         co *= timeStep / cell.volume();
         maxCo = std::max(co, maxCo);
@@ -87,58 +82,57 @@ Scalar FractionalStep::computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) con
 
 Scalar FractionalStep::solveUEqn(Scalar timeStep)
 {
-    u.savePreviousTimeStep(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_));
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.) == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_));
 
     Scalar error = uEqn_.solve();
 
-    for (const Cell &cell: fluid_)
-        u(cell) += timeStep / rho_ * gradP(cell);
+    for (const Cell &cell: *fluid_)
+        u_(cell) += timeStep / rho_ * gradP_(cell);
 
-    grid_->sendMessages(u);
-    u.interpolateFaces();
+    grid_->sendMessages(u_);
+    u_.interpolateFaces();
 
     return error;
 }
 
 Scalar FractionalStep::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p) + ib_->bcs(p) == src::div(u));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p_) == src::div(u_));
 
     Scalar error = pEqn_.solve();
-    grid_->sendMessages(p);
+    grid_->sendMessages(p_);
 
     //- Gradient
-    p.setBoundaryFaces();
-    gradP.compute(fluid_);
+    p_.setBoundaryFaces();
+    gradP_.compute(*fluid_);
 
     return error;
 }
 
 void FractionalStep::correctVelocity(Scalar timeStep)
 {
-    for (const Cell &cell: fluid_)
-        u(cell) -= timeStep / rho_ * gradP(cell);
+    for (const Cell &cell: *fluid_)
+        u_(cell) -= timeStep / rho_ * gradP_(cell);
 
-    grid_->sendMessages(u); //- Necessary
+    grid_->sendMessages(u_); //- Necessary
 
     for (const Face &face: grid_->interiorFaces())
-        u(face) -= timeStep / rho_ * gradP(face);
+        u_(face) -= timeStep / rho_ * gradP_(face);
 
     for (const FaceGroup &patch: grid_->patches())
-        switch (u.boundaryType(patch))
+        switch (u_.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:
                 break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &face: patch)
-                    u(face) -= timeStep / rho_ * gradP(face);
+                    u_(face) -= timeStep / rho_ * gradP_(face);
                 break;
             case VectorFiniteVolumeField::SYMMETRY:
                 for (const Face &face: patch)
-                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
+                    u_(face) = u_(face.lCell()) - dot(u_(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
                 break;
         }
 }
@@ -147,15 +141,15 @@ Scalar FractionalStep::maxDivergenceError()
 {
     Scalar maxError = 0.;
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: *fluid_)
     {
         Scalar div = 0.;
 
         for (const InteriorLink &nb: cell.neighbours())
-            div += dot(u(nb.face()), nb.outwardNorm());
+            div += dot(u_(nb.face()), nb.outwardNorm());
 
         for (const BoundaryLink &bd: cell.boundaries())
-            div += dot(u(bd.face()), bd.outwardNorm());
+            div += dot(u_(bd.face()), bd.outwardNorm());
 
         maxError = fabs(div) > maxError ? div : maxError;
     }

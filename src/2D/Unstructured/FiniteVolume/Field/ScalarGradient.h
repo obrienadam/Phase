@@ -1,5 +1,5 @@
-#ifndef SCALAR_GRADIENT_H
-#define SCALAR_GRADIENT_H
+#ifndef PHASE_SCALAR_GRADIENT_H
+#define PHASE_SCALAR_GRADIENT_H
 
 #include "VectorFiniteVolumeField.h"
 
@@ -12,7 +12,7 @@ public:
         FACE_TO_CELL, GREEN_GAUSS_CELL, GREEN_GAUSS_NODE
     };
 
-    explicit ScalarGradient(const ScalarFiniteVolumeField &phi);
+    explicit ScalarGradient(const ScalarFiniteVolumeField &phi, const std::shared_ptr<const CellGroup> &cells);
 
     void computeFaces();
 
@@ -24,7 +24,9 @@ public:
                              Method method = FACE_TO_CELL);
 
 private:
+
     const ScalarFiniteVolumeField &phi_;
+
 };
 
 #endif

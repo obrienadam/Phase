@@ -2,26 +2,26 @@
 
 #include "ImmersedBoundaryObjectProbe.h"
 
-ImmersedBoundaryObjectProbe::ImmersedBoundaryObjectProbe(const Solver &solver,
-                                                         const std::string &ibObjName,
-                                                         const std::string &fieldName,
+ImmersedBoundaryObjectProbe::ImmersedBoundaryObjectProbe(int fileWriteFreq,
+                                                         const std::weak_ptr<const ImmersedBoundaryObject> &ibObj,
+                                                         const std::weak_ptr<const ScalarFiniteVolumeField> &field,
                                                          const Vector2D &probePos)
         :
-        Object()
+        Object(fileWriteFreq),
+        ibObj_(ibObj),
+        field_(field)
 {
 
-    path_ /= "ImmersedBoundaryObjectProbes/" + ibObjName + "/" + fieldName;
+    path_ /= "ImmersedBoundaryObjectProbes/" + ibObj_.lock()->name() + "/" + field_.lock()->name();
 
-    if (solver.grid()->comm().isMainProc())
+    if (field_.lock()->grid()->comm().isMainProc())
         createOutputDirectory();
 
-    ibObj_ = solver.ib()->ibObj(ibObjName);
-    field_ = solver.scalarField(fieldName);
     probePos_ = probePos;
 
     if (field_.lock())
     {
-        if (solver.grid()->comm().isMainProc())
+        if (field_.lock()->grid()->comm().isMainProc())
         {
             std::ofstream fout(getFilename());
             fout << "time,value\n";

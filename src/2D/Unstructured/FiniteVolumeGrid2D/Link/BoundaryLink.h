@@ -1,5 +1,5 @@
-#ifndef BOUNDARY_FACE_LINK_H
-#define BOUNDARY_FACE_LINK_H
+#ifndef PHASE_BOUNDARY_FACE_LINK_H
+#define PHASE_BOUNDARY_FACE_LINK_H
 
 #include "Link.h"
 
@@ -24,6 +24,7 @@ public:
 protected:
 
     const Face &face_;
+
     Vector2D rFaceVec_, outwardNorm_;
 };
 

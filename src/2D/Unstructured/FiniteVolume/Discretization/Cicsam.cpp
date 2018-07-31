@@ -2,12 +2,11 @@
 
 #include "Math/Algorithm.h"
 
-void cicsam::beta(const VectorFiniteVolumeField &u,
-                  const VectorFiniteVolumeField &gradGamma,
-                  const ScalarFiniteVolumeField &gamma,
-                  Scalar timeStep,
-                  ScalarFiniteVolumeField &beta,
-                  Scalar k)
+std::vector<Scalar> cicsam::beta(const VectorFiniteVolumeField &u,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 const ScalarFiniteVolumeField &gamma,
+                                 Scalar timeStep,
+                                 Scalar k)
 {
     auto hc = [](Scalar gammaDTilde, Scalar coD) {
         return gammaDTilde >= 0 && gammaDTilde <= 1 ? std::min(1., gammaDTilde / coD) : gammaDTilde;
@@ -15,9 +14,11 @@ void cicsam::beta(const VectorFiniteVolumeField &u,
 
     auto uq = [&hc](Scalar gammaDTilde, Scalar coD) {
         return gammaDTilde >= 0 && gammaDTilde <= 1 ?
-               std::min((8. * coD * gammaDTilde + (1. - coD) * (6. * gammaDTilde + 3.)) / 8., hc(gammaDTilde, coD)) :
-               gammaDTilde;
+                    std::min((8. * coD * gammaDTilde + (1. - coD) * (6. * gammaDTilde + 3.)) / 8., hc(gammaDTilde, coD)) :
+                    gammaDTilde;
     };
+
+    std::vector<Scalar> beta(gamma.grid()->faces().size(), 0.);
 
     for (const Face &face: gamma.grid()->interiorFaces())
     {
@@ -25,7 +26,7 @@ void cicsam::beta(const VectorFiniteVolumeField &u,
         Scalar flux = dot(u(face), sf);
         const Cell &donor = flux >= 0. ? face.lCell() : face.rCell();
         const Cell &acceptor = flux >= 0. ? face.rCell() : face.lCell();
-        const Cell &upwind = gamma.grid()->globalCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
+        //const Cell &upwind = gamma.grid()->globalCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
 
         Vector2D rc = acceptor.centroid() - donor.centroid();
 
@@ -49,15 +50,17 @@ void cicsam::beta(const VectorFiniteVolumeField &u,
         Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
 
         //- If stencil cannot be computed, default to upwind
-        beta(face) = std::isnan(betaFace) ? 0. : clamp(betaFace, 0., 1.);
+        beta[face.id()] = std::isnan(betaFace) ? 0. : clamp(betaFace, 0., 1.);
     }
+
+    return beta;
 }
 
 void cicsam::computeMomentumFlux(Scalar rho1,
                                  Scalar rho2,
                                  const VectorFiniteVolumeField &u,
                                  const ScalarFiniteVolumeField &gamma,
-                                 const ScalarFiniteVolumeField &beta,
+                                 const std::vector<Scalar> &beta,
                                  Scalar timeStep,
                                  VectorFiniteVolumeField &rhoU)
 {
@@ -67,7 +70,7 @@ void cicsam::computeMomentumFlux(Scalar rho1,
         Scalar flux = dot(u(f), f.outwardNorm());
         const Cell &d = flux > 0. ? f.lCell() : f.rCell();
         const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma.oldField(0)(d) + beta(f) * gamma.oldField(0)(a);
+        Scalar g = (1. - beta[f.id()]) * gamma.oldField(0)(d) + beta[f.id()] * gamma.oldField(0)(a);
         return ((1. - g) * rho1 + g * rho2) * u(f);
     });
 
@@ -80,7 +83,7 @@ void cicsam::computeMomentumFlux(Scalar rho1,
         Scalar flux = dot(u(f), f.outwardNorm());
         const Cell &d = flux > 0. ? f.lCell() : f.rCell();
         const Cell &a = flux > 0. ? f.rCell() : f.lCell();
-        Scalar g = (1. - beta(f)) * gamma(d) + beta(f) * gamma(a);
+        Scalar g = (1. - beta[f.id()]) * gamma(d) + beta[f.id()] * gamma(a);
         return ((1. - g) * rho1 + g * rho2) * u(f);
     });
 
@@ -91,13 +94,14 @@ void cicsam::computeMomentumFlux(Scalar rho1,
 }
 
 FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
-                             const ScalarFiniteVolumeField &beta,
-                             ScalarFiniteVolumeField &gamma,
-                             Scalar theta)
+                                         const std::vector<Scalar> &beta,
+                                         ScalarFiniteVolumeField &gamma,
+                                         Scalar theta,
+                                         const CellGroup &cells)
 {
     FiniteVolumeEquation<Scalar> eqn(gamma);
 
-    for (const Cell &cell: gamma.cells())
+    for (const Cell &cell: cells)
     {
         for (const InteriorLink &nb: cell.neighbours())
         {
@@ -106,7 +110,7 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
             const Cell &donor = flux > 0. ? cell : nb.cell();
             const Cell &acceptor = flux > 0. ? nb.cell() : cell;
 
-            Scalar b = beta(nb.face());
+            Scalar b = beta[nb.face().id()];
 
             eqn.add(cell, donor, theta * (1. - b) * flux);
             eqn.add(cell, acceptor, theta * b * flux);
@@ -120,23 +124,31 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
             Scalar flux = dot(u(bd.face()), bd.outwardNorm());
             switch (gamma.boundaryType(bd.face()))
             {
-                case ScalarFiniteVolumeField::FIXED:
-                    eqn.addSource(cell, flux * gamma(bd.face()));
-                    break;
+            case ScalarFiniteVolumeField::FIXED:
+                eqn.addSource(cell, flux * gamma(bd.face()));
+                break;
 
-                case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                    eqn.add(cell, cell, theta * flux);
-                    eqn.addSource(cell, (1. - theta) * flux * gamma(bd.face()));
-                    break;
+            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
+                eqn.add(cell, cell, theta * flux);
+                eqn.addSource(cell, (1. - theta) * flux * gamma(bd.face()));
+                break;
 
-                case ScalarFiniteVolumeField::SYMMETRY:
-                    break;
+            case ScalarFiniteVolumeField::SYMMETRY:
+                break;
 
-                default:
-                    throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
+            default:
+                throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
             }
         }
     }
 
     return eqn;
+}
+
+FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
+                                         const std::vector<Scalar> &beta,
+                                         ScalarFiniteVolumeField &gamma,
+                                         Scalar theta)
+{
+    return div(u, beta, gamma, theta, gamma.cells());
 }

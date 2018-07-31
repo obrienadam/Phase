@@ -16,7 +16,7 @@ public:
     {
     public:
 
-        Object();
+        Object(int fileWriteFreq);
 
         virtual void compute(Scalar timeStep) = 0;
 

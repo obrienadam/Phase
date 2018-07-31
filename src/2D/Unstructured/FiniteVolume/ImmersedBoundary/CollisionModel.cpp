@@ -1,6 +1,8 @@
 #include <algorithm>
 
 #include "CollisionModel.h"
+#include "FiniteVolumeGrid2D/FiniteVolumeGrid2D.h"
+#include "FiniteVolumeGrid2D/Face/FaceGroup.h"
 
 CollisionModel::CollisionModel(Scalar eps, Scalar range)
 {

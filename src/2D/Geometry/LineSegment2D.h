@@ -1,5 +1,5 @@
-#ifndef LINE_SEGMENT_2D_H
-#define LINE_SEGMENT_2D_H
+#ifndef PHASE_LINE_SEGMENT_2D_H
+#define PHASE_LINE_SEGMENT_2D_H
 
 #include "Point2D.h"
 
@@ -40,8 +40,6 @@ public:
     { return (ptB_ - ptA_).normalVec(); }
 
     bool isBounded(const Point2D &pt) const;
-
-    std::pair<Point2D, bool> intersection(const LineSegment2D& other);
 
 private:
 

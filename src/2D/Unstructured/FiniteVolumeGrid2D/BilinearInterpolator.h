@@ -1,5 +1,5 @@
-#ifndef BILINEAR_INTERPOLATOR_H
-#define BILINEAR_INTERPOLATOR_H
+#ifndef PHASE_BILINEAR_INTERPOLATOR_H
+#define PHASE_BILINEAR_INTERPOLATOR_H
 
 #include "Math/StaticMatrix.h"
 #include "Geometry/Tensor2D.h"

@@ -1,6 +1,9 @@
-set(HEADERS StaticMatrix.h
+set(HEADERS Factorial.h
+        StaticMatrix.h
         Matrix.h
         StaticMatrix.h
+        Poly1D.h
+        TaylorSeries.h
         SparseMatrixSolver.h
         EigenSparseMatrixSolver.h
         TrilinosSparseMatrixSolver.h
@@ -13,6 +16,8 @@ set(HEADERS StaticMatrix.h
         Algorithm.h)
 
 set(SOURCES Matrix.cpp
+        Poly1D.tpp
+        TaylorSeries.cpp
         SparseMatrixSolver.cpp
         EigenSparseMatrixSolver.cpp
         TrilinosSparseMatrixSolver.cpp

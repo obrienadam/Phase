@@ -1,12 +1,13 @@
 #include "JacobianField.h"
 
-JacobianField::JacobianField(const VectorFiniteVolumeField& u)
+JacobianField::JacobianField(const VectorFiniteVolumeField& u, const std::shared_ptr<CellGroup> &cells)
         :
         TensorFiniteVolumeField(u.grid(),
                                 u.name() + "Jacobian",
                                 Tensor2D(),
                                 true,
-                                false),
+                                false,
+                                cells),
         u_(u)
 {
 
@@ -67,4 +68,9 @@ void JacobianField::compute(const CellGroup& cells)
                 tmp.yx/sumA.x, tmp.yy/sumA.y
         );
     }
+}
+
+void JacobianField::compute()
+{
+    compute(*cellGroup_);
 }

@@ -2,27 +2,26 @@
 
 #include "ImmersedBoundaryObjectContactLineTracker.h"
 
-ImmersedBoundaryObjectContactLineTracker::ImmersedBoundaryObjectContactLineTracker(const Solver &solver)
-        :
-        Object(),
-        ib_(solver.ib()),
-        gamma_(solver.scalarField("gamma"))
+ImmersedBoundaryObjectContactLineTracker::ImmersedBoundaryObjectContactLineTracker(int fileWriteFreq,
+                                                                                   const std::weak_ptr<const ScalarFiniteVolumeField> &gamma,
+                                                                                   const std::weak_ptr<const ImmersedBoundary> &ib)
+    :
+      Object(fileWriteFreq),
+      gamma_(gamma),
+      ib_(ib)
 {
     path_ /= "ImmersedBoundaryObjectContactLineTracker";
 
-    if (solver.grid()->comm().isMainProc())
+    if (gamma_.lock()->grid()->comm().isMainProc())
         createOutputDirectory();
 
     for (const auto &ibObj: *ib_.lock())
     {
-        if (gamma_.lock())
+        if (gamma_.lock()->grid()->comm().isMainProc())
         {
-            if (solver.grid()->comm().isMainProc())
-            {
-                std::ofstream fout((path_ / (ibObj->name() + "_contact_lines.csv")).string());
-                fout << "time,x,y,rx,ry,beta,nx,ny,theta\n";
-                fout.close();
-            }
+            std::ofstream fout((path_ / (ibObj->name() + "_contact_lines.csv")).string());
+            fout << "time,x,y,rx,ry,beta,nx,ny,theta\n";
+            fout.close();
         }
     }
 }
@@ -46,9 +45,9 @@ void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                 if (bi.isValid())
                 {
                     ibVals.push_back(std::make_tuple(
-                            bi.point(),
-                            bi(gamma)
-                    ));
+                                         bi.point(),
+                                         bi(gamma)
+                                         ));
                 }
             }
 
@@ -59,10 +58,10 @@ void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
             {
                 //- Sort ccw
                 std::sort(ibVals.begin(), ibVals.end(), [&ibObj](const IbVal &lhs,
-                                                                 const IbVal &rhs)
+                          const IbVal &rhs)
                 {
                     return (std::get<0>(lhs) - ibObj->shape().centroid()).angle() <
-                           (std::get<0>(rhs) - ibObj->shape().centroid()).angle();
+                            (std::get<0>(rhs) - ibObj->shape().centroid()).angle();
                 });
 
                 std::vector<Vector2D> clPoints;
@@ -77,8 +76,8 @@ void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
                         Scalar alpha = (0.5 - std::get<1>(b)) / (std::get<1>(a) - std::get<1>(b));
 
                         Point2D xc = ibObj->shape().nearestIntersect(
-                                alpha * std::get<0>(a) + (1. - alpha) * std::get<0>(b)
-                        );
+                                    alpha * std::get<0>(a) + (1. - alpha) * std::get<0>(b)
+                                    );
 
                         clPoints.push_back(xc);
                     }

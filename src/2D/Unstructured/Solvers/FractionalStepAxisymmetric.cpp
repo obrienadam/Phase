@@ -14,22 +14,22 @@ FractionalStepAxisymmetric::FractionalStepAxisymmetric(const Input &input, const
 
 Scalar FractionalStepAxisymmetric::solveUEqn(Scalar timeStep)
 {
-    u.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (axi::ddt(u, timeStep) + axi::div(u, u, 1)== axi::vectorLaplacian(mu_ / rho_, u, 1));
+    u_.savePreviousTimeStep(timeStep, 1);
+    uEqn_ = (axi::ddt(u_, timeStep) + axi::div(u_, u_, 1)== axi::vectorLaplacian(mu_ / rho_, u_, 1));
     Scalar error = uEqn_.solve();
 
-    u.interpolateFaces();
+    u_.interpolateFaces();
 
     return error;
 }
 
 Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (axi::laplacian(timeStep / rho_, p, 1.) == axi::src::div(u));
+    pEqn_ = (axi::laplacian(timeStep / rho_, p_, 1.) == axi::src::div(u_));
     Scalar error = pEqn_.solve();
 
-    p.interpolateFaces();
-    gradP.computeAxisymmetric(fluid_);
+    p_.interpolateFaces();
+    gradP_.computeAxisymmetric(*fluid_);
 
     return error;
 }
@@ -37,25 +37,25 @@ Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
 void FractionalStepAxisymmetric::correctVelocity(Scalar timeStep)
 {
     for (const Cell &cell: grid_->localCells())
-        u(cell) -= timeStep / rho_ * gradP(cell);
+        u_(cell) -= timeStep / rho_ * gradP_(cell);
 
-    grid_->sendMessages(u);
+    grid_->sendMessages(u_);
 
     for (const Face &face: grid_->interiorFaces())
-        u(face) -= timeStep / rho_ * gradP(face);
+        u_(face) -= timeStep / rho_ * gradP_(face);
 
     for (const FaceGroup &patch: grid_->patches())
-        switch (u.boundaryType(patch))
+        switch (u_.boundaryType(patch))
         {
             case VectorFiniteVolumeField::FIXED:
                 break;
             case VectorFiniteVolumeField::NORMAL_GRADIENT:
                 for (const Face &face: patch)
-                    u(face) -= timeStep / rho_ * gradP(face);
+                    u_(face) -= timeStep / rho_ * gradP_(face);
                 break;
             case VectorFiniteVolumeField::SYMMETRY:
                 for (const Face &face: patch)
-                    u(face) = u(face.lCell()) - dot(u(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
+                    u_(face) = u_(face.lCell()) - dot(u_(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
                 break;
         }
 }
@@ -64,14 +64,14 @@ Scalar FractionalStepAxisymmetric::maxDivergenceError()
 {
     Scalar maxError = 0.;
 
-    for (const Cell &cell: fluid_)
+    for (const Cell &cell: *fluid_)
     {
         Scalar divU = 0.;
         for (const InteriorLink &nb: cell.neighbours())
-            divU += dot(u(nb.face()), nb.face().polarOutwardNorm(cell.centroid()));
+            divU += dot(u_(nb.face()), nb.face().polarOutwardNorm(cell.centroid()));
 
         for (const BoundaryLink &bd: cell.boundaries())
-            divU += dot(u(bd.face()), bd.face().polarOutwardNorm(cell.centroid()));
+            divU += dot(u_(bd.face()), bd.face().polarOutwardNorm(cell.centroid()));
 
         maxError = std::abs(divU) > maxError ? std::abs(divU) : maxError;
     }

@@ -1,8 +1,10 @@
 #include "SolverFactory.h"
 #include "Poisson.h"
 #include "FractionalStep.h"
-#include "FractionalStepEulerLagrange.h"
-#include "FractionalStepDirectForcing.h"
+#include "FractionalStepGCIB.h"
+#include "FractionalStepELIB.h"
+#include "FractionalStepDFIB.h"
+#include "FractionalStepDFIBMultiphase.h"
 #include "FractionalStepMultiphase.h"
 #include "FractionalStepBoussinesq.h"
 
@@ -12,21 +14,25 @@ std::shared_ptr<Solver> SolverFactory::create(SolverType type,
 {
     switch (type)
     {
-        case POISSON:
-            return std::make_shared<Poisson>(input, grid);
-        case FRACTIONAL_STEP:
-            return std::make_shared<FractionalStep>(input, grid);
-        case FRACTIONAL_STEP_EULER_LAGRANGE:
-            return std::make_shared<FractionalStepEulerLagrange>(input, grid);
-        case FRACTIONAL_STEP_DIRECT_FORCING:
-            return std::make_shared<FractionalStepDirectForcing>(input, grid);
-        case FRACTIONAL_STEP_MULTIPHASE:
-            return std::make_shared<FractionalStepMultiphase>(input, grid);
-        case FRACTIONAL_STEP_BOUSSINESQ:
-            return std::make_shared<FractionalStepBoussinesq>(input, grid);
+    case POISSON:
+        return std::make_shared<Poisson>(input, grid);
+    case FRACTIONAL_STEP:
+        return std::make_shared<FractionalStep>(input, grid);
+    case FRACTIONAL_STEP_GHOST_CELL_IB:
+        return std::make_shared<FractionalStepGCIB>(input, grid);
+    case FRACTIONAL_STEP_MULTIPHASE:
+        return std::make_shared<FractionalStepMultiphase>(input, grid);
+    case FRACTIONAL_STEP_EULER_LAGRANGE_IB:
+        return std::make_shared<FractionalStepELIB>(input, grid);
+    case FRACTIONAL_STEP_DIRECT_FORCING_IB:
+        return std::make_shared<FractionalStepDFIB>(input, grid);
+    case FRACTIONAL_STEP_DIRECT_FORCING_IB_MULTIPHASE:
+        return std::make_shared<FractionalStepDirectForcingMultiphase>(input, grid);
+    case FRACTIONAL_STEP_BOUSSINESQ:
+        return std::make_shared<FractionalStepBoussinesq>(input, grid);
+    default:
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 std::shared_ptr<Solver> SolverFactory::create(std::string type,
@@ -42,10 +48,16 @@ std::shared_ptr<Solver> SolverFactory::create(std::string type,
         return create(POISSON, input, grid);
     else if (type == "fractional step")
         return create(FRACTIONAL_STEP, input, grid);
-    else if (type == "fractional step euler lagrange")
-        return create(FRACTIONAL_STEP_EULER_LAGRANGE, input, grid);
-    else if (type == "fractional step direct forcing")
-        return create(FRACTIONAL_STEP_DIRECT_FORCING, input, grid);
+    else if (type == "fractional step multiphase")
+        return create(FRACTIONAL_STEP_MULTIPHASE, input, grid);
+    else if (type == "fractional step ghost-cell")
+        return create(FRACTIONAL_STEP_GHOST_CELL_IB, input, grid);
+    else if (type == "fractional step euler-lagrange")
+        return create(FRACTIONAL_STEP_EULER_LAGRANGE_IB, input, grid);
+    else if (type == "fractional step direct-forcing")
+        return create(FRACTIONAL_STEP_DIRECT_FORCING_IB, input, grid);
+    else if (type == "fractional step direct-forcing multiphase")
+        return create(FRACTIONAL_STEP_DIRECT_FORCING_IB_MULTIPHASE, input, grid);
     else if (type == "fractional step multiphase")
         return create(FRACTIONAL_STEP_MULTIPHASE, input, grid);
     else if (type == "fractional step boussinesq")

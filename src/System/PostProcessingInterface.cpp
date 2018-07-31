@@ -1,6 +1,8 @@
 #include "PostProcessingInterface.h"
 
-PostProcessingInterface::Object::Object()
+PostProcessingInterface::Object::Object(int fileWriteFreq)
+    :
+      fileWriteFreq_(fileWriteFreq)
 {
     path_ = "solution/PostProcessing";
 }

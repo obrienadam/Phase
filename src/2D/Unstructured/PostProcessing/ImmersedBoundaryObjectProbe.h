@@ -2,14 +2,15 @@
 #define PHASE_IMMERSED_BOUNDARY_OBJECT_PROBE_H
 
 #include "PostProcessing.h"
+#include "FiniteVolume/ImmersedBoundary/ImmersedBoundaryObject.h"
 
 class ImmersedBoundaryObjectProbe : public PostProcessing::Object
 {
 public:
 
-    ImmersedBoundaryObjectProbe(const Solver &solver,
-                                const std::string& ibObjName,
-                                const std::string& fieldName,
+    ImmersedBoundaryObjectProbe(int fileWriteFreq,
+                                const std::weak_ptr<const ImmersedBoundaryObject> &ibObj,
+                                const std::weak_ptr<const ScalarFiniteVolumeField> &field,
                                 const Vector2D& probePos);
 
     void compute(Scalar time);

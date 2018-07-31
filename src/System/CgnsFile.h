@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "2D/Geometry/Point2D.h"
+#include "3D/Geometry/Point3D.h"
 
 class CgnsFile
 {
@@ -79,6 +80,8 @@ public:
     Zone readZone(int bid, int zid) const;
 
     std::tuple<int, int> writeCoordinates(int bid, int zid, const std::vector<Point2D> &coords);
+
+    std::tuple<int, int, int> writeCoordinates(int bid, int zid, const std::vector<Point3D> &coords);
 
     template<class T>
     std::vector<T> readCoords(int bid, int zid) const;

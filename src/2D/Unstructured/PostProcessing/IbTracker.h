@@ -1,14 +1,15 @@
 #ifndef PHASE_IB_TRACKER_H
 #define PHASE_IB_TRACKER_H
 
-#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
-
 #include "PostProcessing.h"
+#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
 class IbTracker : public PostProcessing::Object
 {
 public:
-    IbTracker(const Solver &solver,
+
+    IbTracker(int fileWriteFreq,
+              const std::weak_ptr<const ImmersedBoundary> &ib,
               double lineThickness = 0.4,
               const std::string &fillColor = "CUST2");
 

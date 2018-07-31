@@ -1,5 +1,5 @@
-#ifndef COLLISION_MODEL_H
-#define COLLISION_MODEL_H
+#ifndef PHASE_COLLISION_MODEL_H
+#define PHASE_COLLISION_MODEL_H
 
 #include "ImmersedBoundaryObject.h"
 

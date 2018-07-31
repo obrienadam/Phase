@@ -7,7 +7,6 @@
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 #include "FiniteVolume/Field/TensorFiniteVolumeField.h"
-#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
 class Solver : public SolverInterface
 {
@@ -20,8 +19,7 @@ public:
     { return "Unknown solver type"; }
 
     //- Initialize
-    virtual void initialize()
-    {}
+    virtual void initialize() {}
 
     //- Solve
     virtual Scalar solve(Scalar timeStep) = 0;
@@ -42,10 +40,10 @@ public:
     //- Field management
 
     template<class T>
-    std::shared_ptr<FiniteVolumeField<T>> addField(const std::string &name);
+    std::shared_ptr<FiniteVolumeField<T>> addField(const std::string &name, const std::shared_ptr<CellGroup> &cells = nullptr);
 
     template<class T>
-    std::shared_ptr<FiniteVolumeField<T>> addField(const Input &input, const std::string& name);
+    std::shared_ptr<FiniteVolumeField<T>> addField(const Input &input, const std::string& name, const std::shared_ptr<CellGroup> &cells = nullptr);
 
     template<class T>
     std::shared_ptr<FiniteVolumeField<T>> addField(const std::shared_ptr<FiniteVolumeField<T>> &field);
@@ -74,14 +72,7 @@ public:
     const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const
     { return grid_; }
 
-    //- Immersed boundary
-    std::shared_ptr<ImmersedBoundary> ib()
-    { return ib_; }
-
-    std::shared_ptr<const ImmersedBoundary> ib() const
-    { return ib_; }
-
-    //- ICs/IBs
+    //- ICs
     void setInitialConditions(const Input &input);
 
     void setInitialConditions(const CommandLine &cl, const Input &input);
@@ -115,10 +106,6 @@ protected:
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     std::shared_ptr<IndexMap> scalarIndexMap_, vectorIndexMap_;
-
-    std::shared_ptr<CellGroup> cells_;
-
-    std::shared_ptr<ImmersedBoundary> ib_;
 
     //- Fields and geometries
     mutable std::unordered_map<std::string, std::shared_ptr<FiniteVolumeField<int>>> integerFields_;

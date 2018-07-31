@@ -1,6 +1,7 @@
 #ifndef PHASE_FRACTIONAL_STEP_H
 #define PHASE_FRACTIONAL_STEP_H
 
+#include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 #include "FiniteVolume/Field/ScalarGradient.h"
 #include "FiniteVolume/Field/JacobianField.h"
 
@@ -22,14 +23,6 @@ public:
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 
-    VectorFiniteVolumeField &u;
-
-    ScalarFiniteVolumeField &p;
-
-    ScalarGradient &gradP;
-
-    JacobianField &gradU;
-
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep);
@@ -40,15 +33,24 @@ protected:
 
     virtual Scalar maxDivergenceError();
 
-    FiniteVolumeEquation<Vector2D> uEqn_;
-
-    FiniteVolumeEquation<Scalar> pEqn_;
-
     Scalar rho_, mu_;
 
     Vector2D g_;
 
-    CellGroup &fluid_;
+    std::shared_ptr<CellGroup> fluid_;
+
+    VectorFiniteVolumeField &u_;
+
+    ScalarFiniteVolumeField &p_;
+
+    ScalarGradient &gradP_;
+
+    JacobianField &gradU_;
+
+    FiniteVolumeEquation<Vector2D> uEqn_;
+
+    FiniteVolumeEquation<Scalar> pEqn_;
+
 };
 
 #endif

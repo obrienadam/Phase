@@ -48,6 +48,20 @@ namespace fv
 
         return eqn;
     }
+
+    template<typename T>
+    FiniteVolumeEquation<T> ddt(FiniteVolumeField<T> &field, Scalar timeStep, const CellGroup &cells)
+    {
+        FiniteVolumeEquation<T> eqn(field);
+
+        for (const Cell &cell: cells)
+        {
+            eqn.add(cell, cell, cell.volume() / timeStep);
+            eqn.addSource(cell, -cell.volume() * field(cell) / timeStep);
+        }
+
+        return eqn;
+    }
 }
 
 #endif

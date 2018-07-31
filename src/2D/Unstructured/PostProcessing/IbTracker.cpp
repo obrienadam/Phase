@@ -1,17 +1,18 @@
-#include "Solvers/Solver.h"
-
 #include "IbTracker.h"
 
-IbTracker::IbTracker(const Solver &solver, double lineThickness, const std::string &fillColor)
+IbTracker::IbTracker(int fileWriteFreq,
+                     const std::weak_ptr<const ImmersedBoundary> &ib,
+                     double lineThickness,
+                     const std::string &fillColor)
         :
-        Object(),
+        Object(fileWriteFreq),
         lineThickness_(lineThickness),
         fillColor_(fillColor),
-        ib_(solver.ib())
+        ib_(ib)
 {
     path_ /= "IbTracker";
 
-    if (solver.grid()->comm().isMainProc())
+    if (ib_.lock()->grid()->comm().isMainProc())
     {
         createOutputDirectory();
 

@@ -1,5 +1,5 @@
-#ifndef INDEX_MAP_H
-#define INDEX_MAP_H
+#ifndef PHASE_INDEX_MAP_H
+#define PHASE_INDEX_MAP_H
 
 #include "FiniteVolumeGrid2D/FiniteVolumeGrid2D.h"
 
@@ -43,7 +43,9 @@ public:
 private:
 
     Size nCells_, nIndices_;
+
     std::pair<Index, Index> ownershipRange_;
+
     std::vector<Index> localIndices_, globalIndices_;
 };
 

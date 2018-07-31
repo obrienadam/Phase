@@ -1,7 +1,12 @@
-#ifndef CELL_LINK_H
-#define CELL_LINK_H
+#ifndef PHASE_CELL_LINK_H
+#define PHASE_CELL_LINK_H
+
+#include "Geometry/Point2D.h"
 
 #include "Link.h"
+
+template<class T>
+class FiniteVolumeField;
 
 class CellLink : public Link
 {
@@ -14,6 +19,10 @@ public:
 
     const Vector2D &rCellVec() const
     { return rCellVec_; }
+
+    Scalar alpha(const Point2D &pt) const;
+
+    Scalar linearInterpolate(const FiniteVolumeField<Scalar> &phi, const Point2D &pt) const;
 
 protected:
 

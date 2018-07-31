@@ -76,11 +76,25 @@ void TrilinosMueluSparseMatrixSolver::printStatus(const std::string &msg) const
 
 void TrilinosMueluSparseMatrixSolver::setCoordinates(const std::vector<Point2D> &coordinates)
 {
-    coords_ = rcp(new TpetraMultiVector(map_, 2));
+    coords_ = Teuchos::rcp(new TpetraMultiVector(rangeMap_, 2));
 
     std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(0).begin(), [](const Point2D &coord)
     { return coord.x; });
 
     std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(1).begin(), [](const Point2D &coord)
     { return coord.y; });
+}
+
+void TrilinosMueluSparseMatrixSolver::setCoordinates(const std::vector<Point3D> &coordinates)
+{
+    coords_ = Teuchos::rcp(new TpetraMultiVector(rangeMap_, 3));
+
+    std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(0).begin(), [](const Point3D &coord)
+    { return coord.x; });
+
+    std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(1).begin(), [](const Point3D &coord)
+    { return coord.y; });
+
+    std::transform(coordinates.begin(), coordinates.end(), coords_->getDataNonConst(2).begin(), [](const Point3D &coord)
+    { return coord.z; });
 }

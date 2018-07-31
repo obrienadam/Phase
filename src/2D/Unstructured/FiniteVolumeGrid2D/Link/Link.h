@@ -1,5 +1,5 @@
-#ifndef LINK_H
-#define LINK_H
+#ifndef PHASE_LINK_H
+#define PHASE_LINK_H
 
 #include "Geometry/Vector2D.h"
 

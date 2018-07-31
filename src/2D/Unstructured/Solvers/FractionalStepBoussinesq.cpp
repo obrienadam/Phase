@@ -6,10 +6,10 @@
 #include "FractionalStepBoussinesq.h"
 
 FractionalStepBoussinesq::FractionalStepBoussinesq(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
-        :
-        FractionalStep(input, grid),
-        T(*addField<Scalar>(input, "T")),
-        TEqn_(input, T, "TEqn")
+    :
+      FractionalStep(input, grid),
+      T(*addField<Scalar>(input, "T")),
+      TEqn_(input, T, "TEqn")
 {
     alpha_ = input.caseInput().get<Scalar>("Properties.alpha", 0.00369);
     T0_ = input.caseInput().get<Scalar>("Properties.T0", 273.);
@@ -18,9 +18,6 @@ FractionalStepBoussinesq::FractionalStepBoussinesq(const Input &input, const std
 
 Scalar FractionalStepBoussinesq::solve(Scalar timeStep)
 {
-    grid_->comm().printf("Updating IB positions...\n");
-    ib_->update(timeStep);
-
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
@@ -29,26 +26,23 @@ Scalar FractionalStepBoussinesq::solve(Scalar timeStep)
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
-    grid_->comm().printf("Computing IB forces...\n");
-    ib_->computeForce(rho_, mu_, u, p, g_);
-
     return 0;
 }
 
 Scalar FractionalStepBoussinesq::solveUEqn(Scalar timeStep)
 {
-    u.savePreviousTimeStep(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 1);
 
-    uEqn_ = (fv::ddt(u, timeStep) + fv::div(u, u, 0.5) + ib_->velocityBcs(u)
-             == fv::laplacian(mu_ / rho_, u, 0.5) - src::src(gradP / rho_ + alpha_ * (T - T0_) * g_));
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.5)
+             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_ + alpha_ * (T - T0_) * g_));
 
     Scalar error = uEqn_.solve();
 
     for (const Cell &cell: grid_->localCells())
-        u(cell) += timeStep / rho_ * gradP(cell);
+        u_(cell) += timeStep / rho_ * gradP_(cell);
 
-    grid_->sendMessages(u);
-    u.interpolateFaces();
+    grid_->sendMessages(u_);
+    u_.interpolateFaces();
 
     return error;
 }
@@ -57,7 +51,7 @@ Scalar FractionalStepBoussinesq::solveTEqn(Scalar timeStep)
 {
     T.savePreviousTimeStep(timeStep, 1);
 
-    TEqn_ = (fv::ddt(T, timeStep) + fv::div(u, T, 0.5) + ib_->bcs(T)
+    TEqn_ = (fv::ddt(T, timeStep) + fv::div(u_, T, 0.5)
              == fv::laplacian(kappa_, T, 0.5));
 
     Scalar error = TEqn_.solve();

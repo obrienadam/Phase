@@ -8,6 +8,7 @@
 #include "Math/TrilinosSparseMatrixSolver.h"
 
 #include "2D/Geometry/Point2D.h"
+#include "3D/Geometry/Point3D.h"
 
 class TrilinosMueluSparseMatrixSolver : public TrilinosSparseMatrixSolver
 {
@@ -32,6 +33,8 @@ public:
     void printStatus(const std::string &msg) const;
 
     void setCoordinates(const std::vector<Point2D>& coordinates);
+
+    void setCoordinates(const std::vector<Point3D>& coordinates);
 
 private:
 

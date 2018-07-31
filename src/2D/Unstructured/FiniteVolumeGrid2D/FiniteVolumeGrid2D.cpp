@@ -135,7 +135,7 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
 
     std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell) -> int
     {
-        return (int) globalGroup.isInGroup(cell);
+        return (int) globalGroup.isInSet(cell);
     });
 
     sendMessages(isInGlobalGroup);

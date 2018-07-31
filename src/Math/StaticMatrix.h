@@ -78,6 +78,9 @@ public:
     operator std::vector<Scalar>() const
     { return std::vector<Scalar>(begin(), end()); }
 
+    operator std::array<Scalar, M * N>() const
+    { return std::array<Scalar, M * N>(begin(), end()); }
+
     StaticMatrix<N, M> transpose() const
     {
         StaticMatrix<N, M> trans;

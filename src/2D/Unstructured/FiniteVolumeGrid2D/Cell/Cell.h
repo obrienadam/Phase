@@ -70,15 +70,8 @@ public:
     const std::vector<BoundaryLink> &boundaries() const
     { return boundaryLinks_; }
 
-    std::vector<Ref<const CellLink>> cellLinks() const;
-
-    template<class UnaryPredicate>
-    std::vector<Ref<const CellLink>> cellLinks(UnaryPredicate p)
-    {
-        auto result = cellLinks();
-        result.erase(std::remove_if(result.begin(), result.end(), p), result.end());
-        return result;
-    }
+    const std::vector<CellLink> &cellLinks() const
+    { return cellLinks_; }
 
     const Cell &faceNeighbour(const Node &lNode, const Node &rNode) const;
 
@@ -104,6 +97,10 @@ public:
     Size nNeighbours() const
     { return interiorLinks_.size(); }
 
+    //- Grid
+    const FiniteVolumeGrid2D &grid() const
+    { return grid_; }
+
     bool isInCell(const Point2D &point) const;
 
 private:
@@ -113,13 +110,19 @@ private:
     Polygon cellShape_;
 
     Scalar volume_;
+
     Vector2D centroid_;
 
     std::vector<Label> nodeIds_;
-    const std::vector<Node> &nodes_;
+
+    const FiniteVolumeGrid2D &grid_;
 
     std::vector<InteriorLink> interiorLinks_;
+
     std::vector<CellLink> diagonalLinks_;
+
+    std::vector<CellLink> cellLinks_;
+
     std::vector<BoundaryLink> boundaryLinks_;
 };
 

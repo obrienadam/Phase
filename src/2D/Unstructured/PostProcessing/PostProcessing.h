@@ -4,6 +4,7 @@
 #include "System/PostProcessingInterface.h"
 #include "System/Input.h"
 #include "Solvers/Solver.h"
+#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
 #include "CgnsViewer.h"
 
@@ -11,7 +12,7 @@ class PostProcessing : public PostProcessingInterface
 {
 public:
 
-    PostProcessing(const Input& input, const Solver& solver);
+    PostProcessing(const Input& input, const Solver& solver, const std::weak_ptr<const ImmersedBoundary> &ib);
 
     void compute(Scalar time);
 

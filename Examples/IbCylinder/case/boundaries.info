@@ -55,41 +55,12 @@ Boundaries
       value 0
     }    
   }
-  
-  gamma
-  {
-    x+
-    {
-      type normal_gradient
-      value 0
-    }
-
-    x-
-    {
-      type normal_gradient
-      value 0
-    }
-
-    y+
-    {
-      type normal_gradient
-      value 0
-    }
-
-    y-
-    {
-      type normal_gradient
-      value 0
-    }
-  }
 }
 
 ImmersedBoundaries
 {
-  Cylinder1
+  Cylinder
   {
-    method ghost-cell
-
     geometry
     {
       type circle
@@ -104,12 +75,6 @@ ImmersedBoundaries
     }
 
     p
-    {
-      type normal_gradient
-      value 0
-    }
-
-    gamma
     {
       type normal_gradient
       value 0

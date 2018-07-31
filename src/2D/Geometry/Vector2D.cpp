@@ -19,8 +19,8 @@ Vector2D::Vector2D(std::string vecStr)
     vector<string> components;
     split(components, vecStr, is_any_of(", \t"), token_compress_on);
 
-    x = stod(components[0]);
-    y = stod(components[1]);
+    x = std::stod(components[0]);
+    y = std::stod(components[1]);
 }
 
 Scalar Vector2D::mag() const
