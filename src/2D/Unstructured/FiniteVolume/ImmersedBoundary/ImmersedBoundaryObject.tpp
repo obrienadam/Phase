@@ -9,28 +9,27 @@ std::vector<Ref<const Cell>> ImmersedBoundaryObject::internalPerimeterCells(cons
 
     for(auto it = first; it != last; ++it)
     {
-        bool cellInIb = isInIb(*it);
+        if(!isInIb(*it))
+            continue;
 
         if(includeDiagonals)
+        {
             for(const CellLink &nb: it->get().cellLinks())
-            {
-                bool nbInIb = isInIb(nb.cell());
-
-                if(cellInIb && !nbInIb)
+                if(!isInIb(nb.cell()))
+                {
                     pCells.add(*it);
-                else if(!cellInIb && nbInIb)
-                    pCells.add(nb.cell());
-            }
+                    break;
+                }
+        }
         else
+        {
             for(const CellLink &nb: it->get().neighbours())
-            {
-                bool nbInIb = isInIb(nb.cell());
-
-                if(cellInIb && !nbInIb)
+                if(!isInIb(nb.cell()))
+                {
                     pCells.add(*it);
-                else if(!cellInIb && nbInIb)
-                    pCells.add(nb.cell());
-            }
+                    break;
+                }
+        }
     }
 
     return pCells.items();
@@ -44,43 +43,30 @@ std::vector<Ref<const Cell>> ImmersedBoundaryObject::outerPerimeterCells(const_i
 
     for(auto it = first; it != last; ++it)
     {
-        bool cellInIb = isInIb(*it);
+        if(isInIb(*it))
+            continue;
 
         if(includeDiagonals)
+        {
             for(const CellLink &nb: it->get().cellLinks())
-            {
-                bool nbInIb = isInIb(nb.cell());
-
-                if(cellInIb && !nbInIb)
-                    pCells.add(nb.cell());
-                else if(!cellInIb && nbInIb)
+                if(isInIb(nb.cell()))
+                {
                     pCells.add(*it);
-            }
+                    break;
+                }
+        }
         else
+        {
             for(const CellLink &nb: it->get().neighbours())
-            {
-                bool nbInIb = isInIb(nb.cell());
-
-                if(cellInIb && !nbInIb)
-                    pCells.add(nb.cell());
-                else if(!cellInIb && nbInIb)
+                if(isInIb(nb.cell()))
+                {
                     pCells.add(*it);
-            }
+                    break;
+                }
+        }
     }
 
     return pCells.items();
-}
-
-template<class const_iterator>
-void ImmersedBoundaryObject::addIbCells(const_iterator first, const_iterator last)
-{
-
-}
-
-template<class const_iterator>
-void ImmersedBoundaryObject::addSolidCells(const_iterator first, const_iterator last)
-{
-
 }
 
 template<class T>

@@ -1,6 +1,15 @@
 #include "Face.h"
 #include "StructuredGrid3D.h"
 
+const std::array<Face::Direction, 6> Face::DIRECTIONS = {
+    Face::I_POS,
+    Face::I_NEG,
+    Face::J_POS,
+    Face::J_NEG,
+    Face::K_POS,
+    Face::K_NEG
+};
+
 Face::Face(const StructuredGrid3D &grid, Face::Direction f, Label i, Label j, Label k)
     :
       _grid(grid),

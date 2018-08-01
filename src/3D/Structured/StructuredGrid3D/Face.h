@@ -11,6 +11,8 @@ public:
 
     enum Direction{I_POS, J_POS, K_POS, I_NEG, J_NEG, K_NEG};
 
+    static const std::array<Direction, 6> DIRECTIONS;
+
     Face(const StructuredGrid3D &grid, Direction f, Label i, Label j, Label k);
 
     const Rectangle &shape() const
@@ -31,11 +33,16 @@ public:
     const Vector3D &norm() const
     { return _shape.norm(); }
 
+    bool isBoundaryFace() const
+    { return _isBoundaryFace; }
+
 protected:
 
     const StructuredGrid3D &_grid;
 
     Label _id, _i, _j, _k;
+
+    bool _isBoundaryFace;
 
     Rectangle _shape;
 };

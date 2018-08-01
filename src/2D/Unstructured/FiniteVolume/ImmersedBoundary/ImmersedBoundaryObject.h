@@ -40,19 +40,9 @@ public:
     const CellGroup &solidCells() const
     { return _solidCells; }
 
-    template<class const_iterator>
-    void addIbCells(const_iterator first, const_iterator last);
-
-    template<class const_iterator>
-    void addSolidCells(const_iterator first, const_iterator last);
-
     void setIbCells(const CellGroup &ibCells);
 
     void setSolidCells(const CellGroup &solidCells);
-
-    void setIbCells(CellGroup &&ibCells);
-
-    void setSolidCells(CellGroup &&solidCells);
 
     void clear();
 

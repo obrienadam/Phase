@@ -77,7 +77,7 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
 
     smooth(gamma,
            *fluid_,
-           grid_->globalCellGroup(fst_->cells()),
+           grid_->globalCellGroup(*fluid_),
            kernelWidth_,
            *gammaTilde_,
            [](const Cell &cell, const Cell &kCell, Scalar e)

@@ -47,7 +47,7 @@ void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
     auto &gradGammaTilde = *gradGammaTilde_;
 
     gradGammaTilde.fill(Vector2D(0., 0.));
-    for (const Cell &cell: gradGammaTilde.cells())
+    for (const Cell &cell: *fluid_)
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
 }
 

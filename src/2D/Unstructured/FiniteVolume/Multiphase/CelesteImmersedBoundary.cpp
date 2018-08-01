@@ -139,11 +139,11 @@ void CelesteImmersedBoundary::computeCurvature()
 
     for (const Cell &cell: kappa.cells())
     {
-        bool isInterface = n(cell).magSqr() > 0. && !ib_.lock()->ibObj(cell.centroid()) && !ib_.lock()->ibObj(cell.centroid());
+        bool isInterface = n(cell).magSqr() > 0. && !ib_.lock()->ibObj(cell.centroid());
 
         if(isInterface)
             for(const CellLink &nb: cell.cellLinks())
-                if(n(nb.cell()).magSqr() == 0.)
+                if(n(nb.cell()).magSqr() == 0. || ib_.lock()->ibObj(nb.cell().centroid()))
                 {
                     isInterface = false;
                     break;

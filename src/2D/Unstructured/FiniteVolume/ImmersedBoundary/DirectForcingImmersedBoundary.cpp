@@ -25,7 +25,7 @@ void DirectForcingImmersedBoundary::updateCells()
     for(auto &ibObj: ibObjs_)
     {
         solidCells = ibObj->cellsWithin(*domainCells_);
-        ibCells = ibObj->outerPerimeterCells(solidCells.begin(), solidCells.end(), false);
+        ibCells = ibObj->outerPerimeterCells(domainCells_->begin(), domainCells_->end(), false);
         ibObj->setIbCells(ibCells);
         ibObj->setSolidCells(solidCells);
 

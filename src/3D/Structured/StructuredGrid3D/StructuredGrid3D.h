@@ -5,8 +5,8 @@
 
 #include "System/Input.h"
 #include "System/Communicator.h"
-#include "Cell.h"
-#include "Face.h"
+#include "CellSet.h"
+#include "FaceSet.h"
 
 class StructuredGrid3D
 {
@@ -96,6 +96,8 @@ protected:
     std::vector<Point3D> _nodes;
 
     std::vector<Cell> _cells;
+
+    CellSet _localCells;
 
     std::vector<Face> _ifaces, _jfaces, _kfaces;
 

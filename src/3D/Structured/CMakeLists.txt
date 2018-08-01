@@ -1,5 +1,5 @@
 file(GLOB HEADERS */*.h */*/*.h)
-file(GLOB SOURCES */*.cpp */*/*.cpp */*/*.tpp)
+file(GLOB SOURCES */*.cpp */*.tpp */*/*.cpp */*/*.tpp)
 
 add_library(phase_3d_structured ${HEADERS} ${SOURCES})
 target_link_libraries(phase_3d_structured phase_3d_geometry phase_math)

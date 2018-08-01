@@ -3,6 +3,7 @@
 
 #include "FiniteVolumeGrid2D/Group.h"
 #include "Cell.h"
+#include "CellSet.h"
 
 typedef Group<Cell> CellGroup;
 
