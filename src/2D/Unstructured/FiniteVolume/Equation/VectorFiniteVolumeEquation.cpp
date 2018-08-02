@@ -5,7 +5,7 @@
 template<>
 FiniteVolumeEquation<Vector2D>::FiniteVolumeEquation(VectorFiniteVolumeField &field, const std::string &name)
         :
-        Equation(2 * field.grid()->localCells().size(), 5),
+        Equation(2 * field.grid()->localCells().size(), 15),
         name(name),
         field_(field)
 {

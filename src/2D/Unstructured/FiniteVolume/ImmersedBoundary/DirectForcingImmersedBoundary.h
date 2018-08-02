@@ -18,7 +18,14 @@ public:
 
     void updateCells();
 
-    void computeForcingTerm(const VectorFiniteVolumeField &u, Scalar timeStep, VectorFiniteVolumeField &fib) const;
+    void computeForcingTerm(const VectorFiniteVolumeField &u,
+                            Scalar timeStep,
+                            VectorFiniteVolumeField &fib) const;
+
+    void computeForcingTerm(const VectorFiniteVolumeField &u,
+                            Scalar timeStep,
+                            Scalar slipLength,
+                            VectorFiniteVolumeField &fib) const;
 
     void computeForcingTerm(const ScalarFiniteVolumeField &rho,
                             const VectorFiniteVolumeField &u,

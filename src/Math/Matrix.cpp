@@ -46,6 +46,15 @@ void Matrix::setRow(int i, const std::initializer_list<Scalar> &coeffs)
     std::copy(coeffs.begin(), coeffs.end(), vals_.begin() + n_ * i);
 }
 
+void Matrix::addToRow(int i, const std::initializer_list<Scalar> &coeffs)
+{
+    std::transform(coeffs.begin(),
+                   coeffs.end(),
+                   vals_.begin() + n_ * i,
+                   vals_.begin() + n_ * i,
+                   std::plus<Scalar>());
+}
+
 Scalar &Matrix::operator()(Size i, Size j)
 {
     return vals_[i * n_ + j];

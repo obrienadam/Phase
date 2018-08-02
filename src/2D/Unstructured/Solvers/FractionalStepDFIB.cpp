@@ -48,7 +48,6 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
 
-    //reconstructVelocity(timeStep);
     ib_->computeForcingTerm(u_, timeStep, fb_);
 
     for (const Cell &cell: grid_->cells())

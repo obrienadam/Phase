@@ -44,6 +44,13 @@ public:
     const_iterator end() const
     { return _items.end(); }
 
+    //- Access
+    const T &operator[](int i) const
+    { return _items[i]; }
+
+    const T &operator[](Label i) const
+    { return _items[i]; }
+
 protected:
 
     std::string _name;

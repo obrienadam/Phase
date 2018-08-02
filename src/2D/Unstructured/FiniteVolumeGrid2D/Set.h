@@ -48,6 +48,9 @@ public:
     { return items_.empty(); }
 
     //- Access
+    const T &operator[](Label i) const
+    { return items_[i]; }
+
     const std::vector<Ref<const T> > &items() const
     { return items_; }
 

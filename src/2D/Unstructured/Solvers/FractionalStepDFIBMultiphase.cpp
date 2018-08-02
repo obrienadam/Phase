@@ -57,8 +57,9 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     //- Perform field extension
     //solveExtEqns();
 
-    // grid_->comm().printf("Updating IB positions...\n");
-    //ib_->update(timeStep);
+    grid_->comm().printf("Updating IB positions and cell categories...\n");
+    ib_->updateIbPositions(timeStep);
+    ib_->updateCells();
 
     grid_->comm().printf("Solving gamma equation...\n");
     solveGammaEqn(timeStep);
@@ -75,7 +76,7 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
-    //ib_->computeForce(rho, mu, u, p, gamma, fst, g_);
+    //ib_->computeForce(rho_, mu_, u_, p_, gamma_, fst_, g_);
 
     return 0;
 }
@@ -217,6 +218,7 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_.fst()->faceToCell(rho_, rho_, *fluid_);
+    fst_.fst()->fill(Vector2D(0., 0.), ib_->solidCells());
 
     //- Must be communicated for proper momentum interpolation
     grid_->sendMessages(*fst_.fst());

@@ -63,7 +63,7 @@ void CelesteImmersedBoundary::contactLineBcs(FiniteVolumeEquation<Scalar> &gamma
                                           theta,
                                           gamma);
 
-                    Scalar alpha = st.link().alpha(st.cl().ptB());
+                    Scalar alpha = st.link().alpha(st.cl()[2]);
 
                     gammaEqn.add(cell, cell, -1.);
                     gammaEqn.add(cell, st.link().self(), alpha);
@@ -72,8 +72,6 @@ void CelesteImmersedBoundary::contactLineBcs(FiniteVolumeEquation<Scalar> &gamma
                 else
                 {
                     gammaEqn.remove(cell);
-
-                    Scalar theta = ibContactAngles_.find(ibObj->name())->second;
                     gammaEqn.add(cell, cell, -1.);
                     gammaEqn.addSource(cell, 0.);
                 }
@@ -143,7 +141,7 @@ void CelesteImmersedBoundary::computeCurvature()
 
         if(isInterface)
             for(const CellLink &nb: cell.cellLinks())
-                if(n(nb.cell()).magSqr() == 0. || ib_.lock()->ibObj(nb.cell().centroid()))
+                if(n(nb.cell()).magSqr() == 0.)
                 {
                     isInterface = false;
                     break;

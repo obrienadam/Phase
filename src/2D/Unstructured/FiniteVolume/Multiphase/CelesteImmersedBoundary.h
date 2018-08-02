@@ -1,6 +1,8 @@
 #ifndef PHASE_CELESTE_IMMERSED_BOUNDARY_H
 #define PHASE_CELESTE_IMMERSED_BOUNDARY_H
 
+#include "Geometry/PolyLine2D.h"
+
 #include "Celeste.h"
 #include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
@@ -33,7 +35,7 @@ protected:
         const CellLink &link() const
         { return *link_; }
 
-        const LineSegment2D& cl() const
+        const PolyLine2D& cl() const
         { return cl_; }
 
         const Vector2D& ncl() const
@@ -43,6 +45,8 @@ protected:
         { return gamma_; }
 
     protected:
+
+        std::pair<PolyLine2D, const CellLink*> findIntersectingCellLink(const Ray2D &r, const ImmersedBoundaryObject &ibObj);
 
         static std::queue<Ref<const Cell>> cellQueue_;
 
@@ -57,7 +61,7 @@ protected:
 
         Scalar gamma_;
 
-        LineSegment2D cl_;
+        PolyLine2D cl_;
 
         Vector2D ncl_;
     };

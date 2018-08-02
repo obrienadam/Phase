@@ -28,6 +28,8 @@ public:
 
     void setRow(int i, const std::initializer_list<Scalar> &coeffs);
 
+    void addToRow(int i, const std::initializer_list<Scalar> &coeffs);
+
     void scaleRow(Size i, Scalar factor);
 
     Scalar &operator()(Size i, Size j);
