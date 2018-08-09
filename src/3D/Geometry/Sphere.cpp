@@ -3,12 +3,12 @@
 Sphere::Sphere(const Point3D &centroid, Scalar radius)
     :
       Shape3D(centroid),
-      radius_(radius)
+      _radius(radius)
 {
-    volume_ = 4. * M_PI * radius_ * radius_ * radius_ / 3.;
+    volume_ = 4. * M_PI * std::pow(_radius, 3) / 3.;
 }
 
 bool Sphere::isInside(const Point3D &pt) const
 {
-    return (pt - centroid_).magSqr() < radius_ * radius_;
+    return (pt - centroid_).magSqr() < std::pow(_radius, 2);
 }

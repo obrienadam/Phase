@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<Solver> solver = SolverFactory::create(input, grid);
 
-    PostProcessing postProcessing(input, *solver, std::weak_ptr<const ImmersedBoundary>());
+    PostProcessing postProcessing(input, *solver);
+    postProcessing.initIbPostProcessingObjects(input, *solver);
 
     RunControl runControl;
 

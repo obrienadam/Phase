@@ -27,14 +27,14 @@ public:
         { return std::hash<Label>()(item.id()); }
     };
 
+    Set(const std::string &name = "") : _name(name) {}
+
     const std::string &name() const
     { return _name; }
 
-    Set(const std::string &name = "") : _name(name) {}
+    virtual bool add(const T& item);
 
-    bool add(const T& item);
-
-    bool remove(const T& item);
+    virtual bool remove(const T& item);
 
     //- Iterators
 

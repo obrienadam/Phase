@@ -303,42 +303,36 @@ bool ImmersedBoundary::isIbCell(const Cell &cell) const
     return false;
 }
 
-void ImmersedBoundary::computeForce(Scalar rho,
-                                    Scalar mu,
-                                    const VectorFiniteVolumeField &u,
-                                    const ScalarFiniteVolumeField &p,
-                                    const Vector2D &g)
-{
-    //    for (auto ibObj: ibObjs_)
-    //        ibObj->computeForce(rho, mu, u, p, g);
+void ImmersedBoundary::applyHydrodynamicForce(Scalar rho,
+                                              Scalar mu,
+                                              const VectorFiniteVolumeField &u,
+                                              const ScalarFiniteVolumeField &p,
+                                              const Vector2D &g)
+{   
+    if (collisionModel_)
+        for (auto ibObjP: ibObjs_)
+        {
+            for (auto ibObjQ: ibObjs_)
+                ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
 
-    //    if (collisionModel_)
-    //        for (auto ibObjP: ibObjs_)
-    //        {
-    //            for (auto ibObjQ: ibObjs_)
-    //                ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
-
-    //            ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjP->grid()));
-    //        }
+            ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
+        }
 }
 
-void ImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
-                                    const ScalarFiniteVolumeField &mu,
-                                    const VectorFiniteVolumeField &u,
-                                    const ScalarFiniteVolumeField &p,
-                                    const Vector2D &g)
-{
-    //    for (auto ibObj: ibObjs_)
-    //        ibObj->computeForce(rho, mu, u, p, g);
+void ImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                                              const ScalarFiniteVolumeField &mu,
+                                              const VectorFiniteVolumeField &u,
+                                              const ScalarFiniteVolumeField &p,
+                                              const Vector2D &g)
+{   
+    if (collisionModel_)
+        for (auto ibObjP: ibObjs_)
+        {
+            for (auto ibObjQ: ibObjs_)
+                ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
 
-    //    if (collisionModel_)
-    //        for (auto ibObjP: ibObjs_)
-    //        {
-    //            for (auto ibObjQ: ibObjs_)
-    //                ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
-
-    //            ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjP->grid()));
-    //        }
+            ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
+        }
 }
 
 //- Protected

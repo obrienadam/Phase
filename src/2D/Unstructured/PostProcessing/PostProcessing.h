@@ -12,9 +12,11 @@ class PostProcessing : public PostProcessingInterface
 {
 public:
 
-    PostProcessing(const Input& input, const Solver& solver, const std::weak_ptr<const ImmersedBoundary> &ib);
+    PostProcessing(const Input& input, const Solver& solver);
 
-    void compute(Scalar time);
+    void initIbPostProcessingObjects(const Input &input, const Solver &solver);
+
+    void compute(Scalar time, bool force = false) override;
 
 protected:
 

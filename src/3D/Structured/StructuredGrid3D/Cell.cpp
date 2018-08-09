@@ -28,5 +28,13 @@ const Cell &Cell::nb(Cell::Index idx, int offset) const
 void Cell::initStencils(int order)
 {
     for(auto dir: Face::DIRECTIONS)
-        auto st = FaceStencil(*this, dir, order);
+    {
+        if(_grid(*this, dir).isBoundaryFace())
+        {
+        }
+        else
+        {
+            _interiorStencils.push_back(InteriorFaceStencil(*this, dir, order));
+        }
+    }
 }

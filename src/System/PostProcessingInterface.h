@@ -18,7 +18,7 @@ public:
 
         Object(int fileWriteFreq);
 
-        virtual void compute(Scalar timeStep) = 0;
+        virtual void compute(Scalar timeStep, bool force = false) = 0;
 
         virtual bool do_update();
 
@@ -31,7 +31,7 @@ public:
         int iter_ = 0, fileWriteFreq_ = 1;
     };
 
-    virtual void compute(Scalar time);
+    virtual void compute(Scalar time, bool force = false);
 
 protected:
 

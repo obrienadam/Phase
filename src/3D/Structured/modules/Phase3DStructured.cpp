@@ -2,6 +2,8 @@
 #include "Structured/StructuredGrid3D/FaceStencil.h"
 #include "Structured/PostProcessing/CgnsViewer.h"
 
+#include "Geometry/Intersections.h"
+
 int main(int argc, char *argv[])
 {
     using namespace std;
@@ -19,6 +21,24 @@ int main(int argc, char *argv[])
       Input input;
       input.parseInputFile();
 
+      Sphere sp(Point3D(1., 2., 3.), 1.);
+      Ray3D r(sp.centroid(), Point3D(254, 54, 135));
+
+      r = Ray3D(r(0.00983), -r.r());
+
+      for(auto pt: intersections(sp, r))
+      {
+          std::cout << pt << " " << (pt - r.x0()).mag() << std::endl;
+      }
+
+
+      Plane pn(Point3D(3., 0.431, 0.978), Point3D(1., 3., -1.), Point3D(1., 1., 0.2345));
+
+      std::cout << pn.n() << "\n";
+      std::cout << pn.nearestPoint(Point3D(4, 2, 4)) << "\n";
+
+      std::cout << intersection(pn, LineSegment3D(Point3D(-1, 0, -2), Point3D(2, 2, -4))).first << "\n";
+
 //    auto grid = std::make_shared<StructuredGrid3D>(input);
 
 //    std::shared_ptr<Solver> solver = SolverFactory::create(input, grid);
@@ -31,19 +51,19 @@ int main(int argc, char *argv[])
 
 //
 
-    auto grid = std::make_shared<StructuredGrid3D>(10, 10, 10, 10, 10, 10);
-    auto solver = SolverFactory().create(SolverFactory::POISSON, input, grid);
+//    auto grid = std::make_shared<StructuredGrid3D>(10, 10, 10, 10, 10, 10);
+//    auto solver = SolverFactory().create(SolverFactory::POISSON, input, grid);
 
-    CgnsViewer v(input, solver);
+//    CgnsViewer v(input, solver);
 
-    std::cout << "--- Grid initialized ---\n";
+//    std::cout << "--- Grid initialized ---\n";
 
-    FaceStencil st((*grid)(4, 4, 4), Face::J_POS, 3, 3);
+//    FaceStencil st((*grid)(4, 4, 4), Face::J_POS, 3, 3);
 
-    std::cout << (*grid)(6, 9, 5, Face::J_POS).centroid() << std::endl;
+//    std::cout << (*grid)(6, 9, 5, Face::J_POS).centroid() << std::endl;
 
-    for(auto c: st.coeffs())
-        std::cout << c << "\n";
+//    for(auto c: st.coeffs())
+//        std::cout << c << "\n";
 
 //    solver->solve(0);
 

@@ -16,6 +16,7 @@ public:
 
     Equation(Equation &&eqn) = default;
 
+    //- Special assignment operators ensure the sparse solver isn't accidently destroyed
     Equation &operator=(const Equation &eqn);
 
     Equation &operator=(Equation &&eqn);

@@ -27,7 +27,7 @@ void RunControl::run(const CommandLine &cl,
     Scalar timeStep = input.caseInput().get<Scalar>("Solver.initialTimeStep", solver.maxTimeStep());
 
     //- Initial output
-    postProcessing.compute(0.);
+    postProcessing.compute(0., true);
 
     time_.start();
     for (
@@ -37,7 +37,7 @@ void RunControl::run(const CommandLine &cl,
             )
     {
         solver.solve(timeStep);
-        postProcessing.compute(time + timeStep);
+        postProcessing.compute(time + timeStep, false);
 
         time_.stop();
 

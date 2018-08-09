@@ -108,11 +108,11 @@ FiniteVolumeEquation<Vector2D> GhostCellImmersedBoundary::velocityBcs(VectorFini
 
 //- Force computation
 
-void GhostCellImmersedBoundary::computeForce(Scalar rho,
-                                             Scalar mu,
-                                             const VectorFiniteVolumeField &u,
-                                             const ScalarFiniteVolumeField &p,
-                                             const Vector2D &g)
+void GhostCellImmersedBoundary::applyHydrodynamicForce(Scalar rho,
+                                                       Scalar mu,
+                                                       const VectorFiniteVolumeField &u,
+                                                       const ScalarFiniteVolumeField &p,
+                                                       const Vector2D &g)
 {
     std::vector<std::tuple<Point2D, Scalar, Scalar>> stresses;
 
@@ -167,11 +167,11 @@ void GhostCellImmersedBoundary::computeForce(Scalar rho,
     }
 }
 
-void GhostCellImmersedBoundary::computeForce(const ScalarFiniteVolumeField &rho,
-                                             const ScalarFiniteVolumeField &mu,
-                                             const VectorFiniteVolumeField &u,
-                                             const ScalarFiniteVolumeField &p,
-                                             const Vector2D &g)
+void GhostCellImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                                                       const ScalarFiniteVolumeField &mu,
+                                                       const VectorFiniteVolumeField &u,
+                                                       const ScalarFiniteVolumeField &p,
+                                                       const Vector2D &g)
 {
-
+    throw Exception("GhostCellImmersedBoundary", "applyHydrodynamicForce", "not implemented.");
 }

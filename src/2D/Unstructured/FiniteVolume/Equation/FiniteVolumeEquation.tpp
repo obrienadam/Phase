@@ -11,10 +11,37 @@ template<class T>
 FiniteVolumeEquation<T>::FiniteVolumeEquation(const Input &input,
                                               FiniteVolumeField<T> &field,
                                               const std::string &name)
-        :
-        FiniteVolumeEquation<T>::FiniteVolumeEquation(field, name)
+    :
+      FiniteVolumeEquation<T>::FiniteVolumeEquation(field, name)
 {
     configureSparseSolver(input, field.grid()->comm());
+}
+
+template<class T>
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(const FiniteVolumeEquation<T> &rhs)
+{
+    return operator =(static_cast<const Equation&>(rhs));
+}
+
+template<class T>
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(FiniteVolumeEquation<T> &&rhs)
+{
+    return operator =(static_cast<Equation&&>(rhs));
+}
+
+template<class T>
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(const Equation &rhs)
+{
+    if(this != &rhs)
+        Equation::operator =(rhs);
+    return *this;
+}
+
+template<class T>
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(Equation &&rhs)
+{
+    Equation::operator =(rhs);
+    return *this;
 }
 
 template<class T>
@@ -27,7 +54,7 @@ void FiniteVolumeEquation<T>::configureSparseSolver(const Input &input, const Co
 
     if (comm.nProcs() > 1 && !_spSolver->supportsMPI())
         throw Exception("FiniteVolumeEquation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
-                                                                            "\" does not support multiple processes in its current configuration.");
+                        "\" does not support multiple processes in its current configuration.");
 
     _spSolver->setup(input.caseInput().get_child("LinearAlgebra." + name));
 
@@ -47,7 +74,7 @@ Scalar FiniteVolumeEquation<T>::solve()
 
     if (_spSolver->type() == SparseMatrixSolver::TRILINOS_MUELU)
         std::static_pointer_cast<TrilinosMueluSparseMatrixSolver>(_spSolver)->setCoordinates(
-                field_.grid()->localCells().coordinates());
+                    field_.grid()->localCells().coordinates());
 
     _spSolver->solve();
 

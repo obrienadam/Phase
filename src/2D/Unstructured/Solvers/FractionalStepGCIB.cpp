@@ -18,7 +18,7 @@ Scalar FractionalStepGCIB::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-    ib_.computeForce(rho_, mu_, u_, p_);
+    ib_.applyHydrodynamicForce(rho_, mu_, u_, p_);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));

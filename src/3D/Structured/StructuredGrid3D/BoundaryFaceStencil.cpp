@@ -1,9 +1,8 @@
 #include "BoundaryFaceStencil.h"
 
-BoundaryFaceStencil::BoundaryFaceStencil(const Cell &cell, Face::Direction dir, int order, BoundaryType btype)
+BoundaryFaceStencil::BoundaryFaceStencil(const Cell &cell, Face::Direction dir, int order)
     :
-      FaceStencil(cell, dir, order),
-      _btype(btype)
+      FaceStencil(cell, dir, order)
 {
     _faceCoeffs = _taylorCoeffs.coeffs();
 

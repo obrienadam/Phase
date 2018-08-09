@@ -82,6 +82,8 @@ public:
             (*this)(face) = fcn(face);
     }
 
+    void faceToCell(const CellGroup &cells);
+
     template<class UnaryPredicate>
     void faceToCell(const FiniteVolumeField<Scalar> &cellWeight,
                     const FiniteVolumeField<Scalar> &faceWeight,

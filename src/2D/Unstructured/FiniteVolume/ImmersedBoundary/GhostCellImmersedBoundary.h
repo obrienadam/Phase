@@ -25,17 +25,17 @@ public:
 
     FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    void computeForce(Scalar rho,
-                      Scalar mu,
-                      const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p,
-                      const Vector2D &g = Vector2D(0., 0.));
+    void applyHydrodynamicForce(Scalar rho,
+                                Scalar mu,
+                                const VectorFiniteVolumeField &u,
+                                const ScalarFiniteVolumeField &p,
+                                const Vector2D &g = Vector2D(0., 0.)) override;
 
-    void computeForce(const ScalarFiniteVolumeField &rho,
-                      const ScalarFiniteVolumeField &mu,
-                      const VectorFiniteVolumeField &u,
-                      const ScalarFiniteVolumeField &p,
-                      const Vector2D &g = Vector2D(0., 0.));
+    void applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                                const ScalarFiniteVolumeField &mu,
+                                const VectorFiniteVolumeField &u,
+                                const ScalarFiniteVolumeField &p,
+                                const Vector2D &g = Vector2D(0., 0.)) override;
 
 protected:
 

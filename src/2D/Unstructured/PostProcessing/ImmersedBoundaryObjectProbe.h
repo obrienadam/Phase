@@ -13,7 +13,7 @@ public:
                                 const std::weak_ptr<const ScalarFiniteVolumeField> &field,
                                 const Vector2D& probePos);
 
-    void compute(Scalar time);
+    void compute(Scalar time, bool force = false) override;
 
 protected:
 

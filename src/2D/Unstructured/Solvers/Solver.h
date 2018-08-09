@@ -7,6 +7,7 @@
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 #include "FiniteVolume/Field/TensorFiniteVolumeField.h"
+#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
 class Solver : public SolverInterface
 {
@@ -76,6 +77,10 @@ public:
     void setInitialConditions(const Input &input);
 
     void setInitialConditions(const CommandLine &cl, const Input &input);
+
+    //- IBs
+    virtual std::shared_ptr<const ImmersedBoundary> ib() const
+    { return nullptr; }
 
 protected:
 

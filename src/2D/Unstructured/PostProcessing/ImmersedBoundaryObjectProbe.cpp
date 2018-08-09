@@ -30,9 +30,9 @@ ImmersedBoundaryObjectProbe::ImmersedBoundaryObjectProbe(int fileWriteFreq,
     }
 }
 
-void ImmersedBoundaryObjectProbe::compute(Scalar time)
+void ImmersedBoundaryObjectProbe::compute(Scalar time, bool force)
 {
-    if (do_update())
+    if (do_update() || force)
     {
         auto field = field_.lock();
 

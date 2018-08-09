@@ -13,7 +13,7 @@ public:
                                              const std::weak_ptr<const ScalarFiniteVolumeField> &gamma,
                                              const std::weak_ptr<const ImmersedBoundary> &ib);
 
-    void compute(Scalar time);
+    void compute(Scalar time, bool force = false) override;
 
 private:
 

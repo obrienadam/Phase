@@ -7,19 +7,12 @@ class BoundaryFaceStencil: public FaceStencil
 {
 public:
 
-    enum BoundaryType{FIXED, ZERO_GRADIENT};
-
-    BoundaryFaceStencil(const Cell& cell, Face::Direction dir, int order, BoundaryType btype);
-
-    BoundaryType btype() const
-    { return _btype; }
+    BoundaryFaceStencil(const Cell& cell, Face::Direction dir, int order);
 
     const std::vector<Scalar> &faceCoeffs() const
     { return _faceCoeffs; }
 
 protected:
-
-    BoundaryType _btype;
 
     std::vector<Scalar> _faceCoeffs;
 };

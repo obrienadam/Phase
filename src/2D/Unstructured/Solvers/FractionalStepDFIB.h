@@ -11,6 +11,9 @@ public:
 
     virtual Scalar solve(Scalar timeStep) override;
 
+    virtual std::shared_ptr<const ImmersedBoundary> ib() const override
+    { return ib_; }
+
 protected:
 
     virtual void solveExtEqns();
@@ -19,7 +22,9 @@ protected:
 
     VectorFiniteVolumeField &fb_;
 
-    FiniteVolumeEquation<Vector2D> extEqn_;
+    FiniteVolumeEquation<Vector2D> fbEqn_;
+
+    //FiniteVolumeEquation<Vector2D> extEqn_;
 
     std::shared_ptr<DirectForcingImmersedBoundary> ib_;
 };

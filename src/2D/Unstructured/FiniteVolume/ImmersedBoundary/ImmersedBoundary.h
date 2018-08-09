@@ -72,17 +72,17 @@ public:
 
     bool isIbCell(const Cell &cell) const;
 
-    virtual void computeForce(Scalar rho,
-                              Scalar mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.));
+    virtual void applyHydrodynamicForce(Scalar rho,
+                                        Scalar mu,
+                                        const VectorFiniteVolumeField &u,
+                                        const ScalarFiniteVolumeField &p,
+                                        const Vector2D &g = Vector2D(0., 0.));
 
-    virtual void computeForce(const ScalarFiniteVolumeField &rho,
-                              const ScalarFiniteVolumeField &mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.));
+    virtual void applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                                        const ScalarFiniteVolumeField &mu,
+                                        const VectorFiniteVolumeField &u,
+                                        const ScalarFiniteVolumeField &p,
+                                        const Vector2D &g = Vector2D(0., 0.));
 
     const std::shared_ptr<FiniteVolumeField<int>> &cellStatus()
     { return cellStatus_; }

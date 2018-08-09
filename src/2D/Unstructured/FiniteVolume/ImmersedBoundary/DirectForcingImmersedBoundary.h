@@ -18,14 +18,13 @@ public:
 
     void updateCells();
 
-    void computeForcingTerm(const VectorFiniteVolumeField &u,
-                            Scalar timeStep,
-                            VectorFiniteVolumeField &fib) const;
+    FiniteVolumeEquation<Vector2D> computeForcingTerm(const VectorFiniteVolumeField &u,
+                                                      Scalar timeStep,
+                                                      VectorFiniteVolumeField &fib) const;
 
-    void computeForcingTerm(const VectorFiniteVolumeField &u,
-                            Scalar timeStep,
-                            Scalar slipLength,
-                            VectorFiniteVolumeField &fib) const;
+    void computeFaceForcingTerm(const VectorFiniteVolumeField &u,
+                                Scalar timeStep,
+                                VectorFiniteVolumeField &fib) const;
 
     void computeForcingTerm(const ScalarFiniteVolumeField &rho,
                             const VectorFiniteVolumeField &u,
@@ -41,25 +40,39 @@ public:
     virtual FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const
     { return FiniteVolumeEquation<Vector2D>(u); }
 
-    virtual void computeForce(Scalar rho,
-                              Scalar mu,
-                              const VectorFiniteVolumeField &u,
-                              const ScalarFiniteVolumeField &p,
-                              const Vector2D &g = Vector2D(0., 0.));
+    virtual void applyHydrodynamicForce(Scalar rho,
+                                        Scalar mu,
+                                        const VectorFiniteVolumeField &u,
+                                        const ScalarFiniteVolumeField &p,
+                                        const Vector2D &g = Vector2D(0., 0.)) override;
 
-//    virtual void computeForce(const ScalarFiniteVolumeField &rho,
-//                              const ScalarFiniteVolumeField &mu,
-//                              const VectorFiniteVolumeField &u,
-//                              const ScalarFiniteVolumeField &p,
-//                              const ScalarFiniteVolumeField &gamma,
-//                              const SurfaceTensionForce &ft,
-//                              const Vector2D &g = Vector2D(0., 0.));
+    virtual void applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                                        const ScalarFiniteVolumeField &mu,
+                                        const VectorFiniteVolumeField &u,
+                                        const ScalarFiniteVolumeField &p,
+                                        const Vector2D &g = Vector2D(0., 0.)) override;
 
+    void applyHydrodynamicForce(const VectorFiniteVolumeField &fib);
+
+    //- Cell group access
+
+    const CellGroup &localIbCells() const
+    { return localIbCells_; }
+
+    const CellGroup &globalIbCells() const
+    { return globalIbCells_; }
+
+    const CellGroup &localSolidCells() const
+    { return localSolidCells_; }
+
+    const CellGroup &globalSolidCells() const
+    { return globalSolidCells_; }
 
 private:
 
-    CellGroup ibCells_, solidCells_;
+    CellGroup localIbCells_, globalIbCells_;
 
+    CellGroup localSolidCells_, globalSolidCells_;
 };
 
 

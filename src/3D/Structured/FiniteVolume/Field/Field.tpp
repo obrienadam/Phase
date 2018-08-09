@@ -13,11 +13,7 @@ Field<T>::Field(const std::string &name,
         _cells.resize(_grid->nCells());
 
     if(isFaceField)
-    {
-        _iFaces.resize(_grid->ifaces().size());
-        _jFaces.resize(_grid->jfaces().size());
-        _kFaces.resize(_grid->kfaces().size());
-    }
+        _faces.resize(_grid->nFaces());
 }
 
 template<class T>
@@ -30,4 +26,11 @@ Field<T>::Field(const std::string &name,
       Field(name, grid, isCellField, isFaceField)
 {
 
+}
+
+template<class T>
+const std::unique_ptr<BoundaryCondition<T>> &Field<T>::bc(const BoundaryPatch &patch) const
+{
+    auto it = _bcs.find(patch.name());
+    return it != _bcs.end() ? it->second: nullptr;
 }

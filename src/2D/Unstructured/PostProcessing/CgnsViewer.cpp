@@ -12,8 +12,8 @@
 #include "CgnsViewer.h"
 
 CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
-        :
-        Viewer(input, solver)
+    :
+      Viewer(input, solver)
 {
     boost::filesystem::path path = "solution/Proc" + std::to_string(solver.grid()->comm().rank());
     boost::filesystem::create_directories(path);
@@ -65,7 +65,7 @@ CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
 void CgnsViewer::write(Scalar time)
 {
     boost::filesystem::path path = "solution/" + std::to_string(time)
-                                   + "/Proc" + std::to_string(solver_.grid()->comm().rank());
+            + "/Proc" + std::to_string(solver_.grid()->comm().rank());
 
     boost::filesystem::create_directories(path);
 
@@ -77,14 +77,26 @@ void CgnsViewer::write(Scalar time)
 
     int sid = file.writeSolution(bid, zid, "Solution");
 
-    for (const FiniteVolumeField<int> &field: integerFields_)
-        file.writeField(bid, zid, sid, field.name(), field);
+    for (const std::string &fieldname: integerFields_)
+    {
+        auto field = solver_.integerField(fieldname);
+        if (field)
+            file.writeField(bid, zid, sid, field->name(), *field);
+    }
 
-    for (const ScalarFiniteVolumeField &field: scalarFields_)
-        file.writeField(bid, zid, sid, field.name(), field);
+    for (const std::string &fieldname: scalarFields_)
+    {
+        auto field = solver_.scalarField(fieldname);
+        if (field)
+            file.writeField(bid, zid, sid, field->name(), *field);
+    }
 
-    for (const VectorFiniteVolumeField &field: vectorFields_)
-        file.writeField(bid, zid, sid, field.name(), field);
+    for (const std::string &fieldname: vectorFields_)
+    {
+        auto field = solver_.vectorField(fieldname);
+        if (field)
+            file.writeField(bid, zid, sid, field->name(), *field);
+    }
 
     path = boost::filesystem::path("../../../") / gridfile_;
 

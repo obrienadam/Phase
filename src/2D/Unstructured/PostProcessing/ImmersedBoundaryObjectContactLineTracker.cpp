@@ -26,11 +26,11 @@ ImmersedBoundaryObjectContactLineTracker::ImmersedBoundaryObjectContactLineTrack
     }
 }
 
-void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time)
+void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time, bool force)
 {
     typedef std::tuple<Point2D, Scalar> IbVal;
 
-    if (do_update())
+    if (do_update() || force)
     {
         for (const auto &ibObj: *ib_.lock())
         {

@@ -15,6 +15,9 @@ public:
 
     Vector3D unit() const;
 
+    Vector3D operator -() const
+    { return Vector3D(-x, -y, -z); }
+
     Vector3D &operator+=(const Vector3D &rhs);
 
     Vector3D &operator-=(const Vector3D &rhs);

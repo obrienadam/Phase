@@ -13,7 +13,7 @@ public:
               double lineThickness = 0.4,
               const std::string &fillColor = "CUST2");
 
-    void compute(Scalar time);
+    void compute(Scalar time, bool force = false) override;
 
 private:
 

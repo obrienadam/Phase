@@ -1,5 +1,5 @@
-#ifndef VIEWER_H
-#define VIEWER_H
+#ifndef PHASE_VIEWER_H
+#define PHASE_VIEWER_H
 
 #include "System/Input.h"
 #include "System/Communicator.h"
@@ -19,11 +19,7 @@ protected:
 
     std::string filename_;
 
-    std::vector< Ref<const FiniteVolumeField<int> > > integerFields_;
-
-    std::vector< Ref<const ScalarFiniteVolumeField> > scalarFields_;
-
-    std::vector< Ref<const VectorFiniteVolumeField> > vectorFields_;
+    std::unordered_set<std::string> integerFields_, scalarFields_, vectorFields_;
 
 };
 

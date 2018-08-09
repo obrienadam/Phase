@@ -15,6 +15,8 @@ public:
 
 protected:
 
+    Scalar _gamma;
+
     ScalarField &_phi;
 
     ScalarFiniteVolumeEquation _phiEqn;

@@ -31,10 +31,10 @@ IbTracker::IbTracker(int fileWriteFreq,
     }
 }
 
-void IbTracker::compute(Scalar time)
+void IbTracker::compute(Scalar time, bool force)
 {
     //- Remove invalid objects
-    if (do_update())
+    if (do_update() || force)
     {
         //- Loop over remaining
         if (ib_.lock()->grid()->comm().isMainProc())

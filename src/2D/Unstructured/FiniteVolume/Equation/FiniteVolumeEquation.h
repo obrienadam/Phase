@@ -25,11 +25,15 @@ public:
                          FiniteVolumeField<T> &field,
                          const std::string &name);
 
-    Equation &operator =(const Equation &rhs) //- Necessary
-    { return Equation::operator =(rhs); }
+    FiniteVolumeEquation(const FiniteVolumeEquation<T> &other) = default;
 
-    Equation &operator =(Equation &&rhs)
-    { return Equation::operator =(rhs); }
+    FiniteVolumeEquation<T> &operator =(const FiniteVolumeEquation<T> &rhs);
+
+    FiniteVolumeEquation<T> &operator =(FiniteVolumeEquation<T> &&rhs);
+
+    FiniteVolumeEquation<T> &operator =(const Equation &rhs);
+
+    FiniteVolumeEquation<T> &operator =(Equation &&rhs);
 
     //- Add/set/get coefficients
     void set(const Cell &cell, const Cell &nb, Scalar val);

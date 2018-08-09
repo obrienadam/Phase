@@ -11,12 +11,22 @@ public:
 
     enum Direction{I_POS, J_POS, K_POS, I_NEG, J_NEG, K_NEG};
 
+    enum Index{I, J, K};
+
+    static Index idx(Direction dir);
+
     static const std::array<Direction, 6> DIRECTIONS;
 
     Face(const StructuredGrid3D &grid, Direction f, Label i, Label j, Label k);
 
     const Rectangle &shape() const
     { return _shape; }
+
+    Index idx() const
+    { return _idx; }
+
+    Label id() const
+    { return _id; }
 
     Label i() const
     { return _i; }
@@ -39,6 +49,8 @@ public:
 protected:
 
     const StructuredGrid3D &_grid;
+
+    Index _idx;
 
     Label _id, _i, _j, _k;
 

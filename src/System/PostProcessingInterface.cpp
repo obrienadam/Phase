@@ -17,8 +17,8 @@ void PostProcessingInterface::Object::createOutputDirectory() const
     boost::filesystem::create_directories(path_);
 }
 
-void PostProcessingInterface::compute(Scalar time)
+void PostProcessingInterface::compute(Scalar time, bool force)
 {
     for (auto &obj: objs_)
-        obj->compute(time);
+        obj->compute(time, force);
 }

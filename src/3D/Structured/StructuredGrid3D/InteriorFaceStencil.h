@@ -5,7 +5,9 @@
 
 class InteriorFaceStencil: public FaceStencil
 {
+public:
 
+    using FaceStencil::FaceStencil;
 };
 
 #endif

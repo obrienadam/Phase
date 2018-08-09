@@ -9,7 +9,8 @@ FractionalStepDFIB::FractionalStepDFIB(const Input &input, const std::shared_ptr
     :
       FractionalStep(input, grid),
       fb_(*addField<Vector2D>("fb", fluid_)),
-      extEqn_(input, gradP_, "extEqn"),
+      fbEqn_(input, fb_, "fbEqn"),
+      //extEqn_(input, gradP_, "extEqn"),
       ib_(std::make_shared<DirectForcingImmersedBoundary>(input, grid, fluid_))
 {
     ib_->updateCells();
@@ -32,8 +33,8 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
-    //    grid_->comm().printf("Computing IB forces...\n");
-    //    ib_->computeForce(rho_, mu_, u, p, g_);
+    grid_->comm().printf("Computing IB forces...\n");
+    ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
 
     return 0;
 }
@@ -48,7 +49,17 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
 
-    ib_->computeForcingTerm(u_, timeStep, fb_);
+    fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
+    fbEqn_.solve();
+    grid_->sendMessages(fb_);
+
+    Vector2D f(0., 0.);
+    for(const Cell& cell: grid_->localCells())
+        f += -rho_ * fb_(cell) * cell.volume();
+
+    f = Vector2D(grid_->comm().sum(f.x), grid_->comm().sum(f.y));
+
+    grid_->comm().printf("IB FORCE = (%lf,%lf)\n", f.x, f.y);
 
     for (const Cell &cell: grid_->cells())
         u_(cell) = u_.oldField(0)(cell);
@@ -58,8 +69,8 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 
     error = uEqn_.solve();
 
-    for (const Cell &cell: *fluid_)
-        u_(cell) += timeStep / rho_ * gradP_(cell);
+    for(const Cell &c: u_.cells())
+        u_(c) += timeStep / rho_ * gradP_(c);
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();

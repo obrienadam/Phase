@@ -6,7 +6,7 @@
 #include "System/Input.h"
 #include "System/Communicator.h"
 #include "CellSet.h"
-#include "FaceSet.h"
+#include "BoundaryPatch.h"
 
 class StructuredGrid3D
 {
@@ -58,6 +58,9 @@ public:
     Size kMax() const
     { return _nCellsK - 1; }
 
+    Size nFaces() const
+    { return _ifaces.size() + _jfaces.size() + _kfaces.size(); }
+
     //- Access methods
     const Point3D &node(Label i, Label j, Label k) const
     { return _nodes[(_nCellsI + 1) * (_nCellsJ + 1) * k + (_nCellsI + 1) * j + i]; }
@@ -100,6 +103,8 @@ protected:
     CellSet _localCells;
 
     std::vector<Face> _ifaces, _jfaces, _kfaces;
+
+
 
     std::shared_ptr<const Communicator> _comm;
 };
