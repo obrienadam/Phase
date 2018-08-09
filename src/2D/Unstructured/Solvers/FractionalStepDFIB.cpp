@@ -22,7 +22,7 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     //    //grid_->comm().printf("Performing field extensions...\n");
     //    //solveExtEqns();
 
-    grid_->comm().printf("Updating IB positions...\n");
+    grid_->comm().printf("Updating IB positions and cells...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
@@ -52,14 +52,6 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
     fbEqn_.solve();
     grid_->sendMessages(fb_);
-
-    Vector2D f(0., 0.);
-    for(const Cell& cell: grid_->localCells())
-        f += -rho_ * fb_(cell) * cell.volume();
-
-    f = Vector2D(grid_->comm().sum(f.x), grid_->comm().sum(f.y));
-
-    grid_->comm().printf("IB FORCE = (%lf,%lf)\n", f.x, f.y);
 
     for (const Cell &cell: grid_->cells())
         u_(cell) = u_.oldField(0)(cell);

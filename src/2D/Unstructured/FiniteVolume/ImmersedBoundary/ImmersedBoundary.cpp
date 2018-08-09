@@ -132,7 +132,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                         0
                         );
         }
-        else if (motionType == "solidBody")
+        else if (motionType == "solidBody" || motionType == "solid-body")
         {
             motion = std::make_shared<SolidBodyMotion>(
                         ibObj,

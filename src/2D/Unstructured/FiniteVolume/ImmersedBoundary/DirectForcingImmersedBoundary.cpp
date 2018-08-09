@@ -274,7 +274,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
         Index row = 0;
         for(const Cell &cell: ibObj->ibCells())
         {
-            auto st = LeastSquaresQuadraticStencil(cell, *this);
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
 
             eqn.setRank(eqn.rank() + st.nReconstructionPoints() + 1);
 
@@ -434,7 +434,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
 
 }
 
-void DirectForcingImmersedBoundary::applyHydrodynamicForce(const VectorFiniteVolumeField &fib)
+void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib)
 {
     for(const auto &ibObj: ibObjs_)
     {
@@ -443,7 +443,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const VectorFiniteVol
         for(const Cell &c: ibObj->cells())
             f -= fib(c) * c.volume();
 
-        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), f));
+        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), rho * f));
     }
 }
 

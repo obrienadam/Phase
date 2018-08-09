@@ -60,14 +60,11 @@ public:
     { return vectorFields_; }
 
     //- Field lookup
-    const std::shared_ptr<FiniteVolumeField<int>> &integerField(const std::string &name) const
-    { return integerFields_.find(name)->second; }
+    std::shared_ptr<FiniteVolumeField<int> > integerField(const std::string &name) const;
 
-    const std::shared_ptr<ScalarFiniteVolumeField> &scalarField(const std::string &name) const
-    { return scalarFields_.find(name)->second; }
+    std::shared_ptr<ScalarFiniteVolumeField> scalarField(const std::string &name) const;
 
-    const std::shared_ptr<VectorFiniteVolumeField> &vectorField(const std::string &name) const
-    { return vectorFields_.find(name)->second; }
+    std::shared_ptr<VectorFiniteVolumeField> vectorField(const std::string &name) const;
 
     //- Grid
     const std::shared_ptr<const FiniteVolumeGrid2D> &grid() const

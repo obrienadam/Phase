@@ -1,6 +1,6 @@
 #include "SolidBodyMotion.h"
 
-SolidBodyMotion::SolidBodyMotion(std::weak_ptr<ImmersedBoundaryObject> ibObj, const Vector2D& v0)
+SolidBodyMotion::SolidBodyMotion(std::weak_ptr<const ImmersedBoundaryObject> ibObj, const Vector2D& v0)
         :
         Motion(),
         ibObj_(ibObj)
@@ -27,8 +27,8 @@ void SolidBodyMotion::update(Scalar timeStep)
     acc_ = force_ / ibObj->mass();
 
     Vector2D v0 = vel_;
-    vel_ += timeStep / 2. * (acc_ + acc0);
-    pos_ += timeStep / 2. * (vel_ + v0);
+    vel_ += timeStep * (acc_ + acc0) / 2.;
+    pos_ += timeStep * (vel_ + v0) / 2.;
 
     //- Update rotational motion
     Scalar alpha0 = alpha_;
@@ -36,9 +36,6 @@ void SolidBodyMotion::update(Scalar timeStep)
     alpha_ = torque_ / ibObj->momentOfInertia();
 
     Scalar omega0 = omega_, theta0 = theta_;
-    omega_ += timeStep / 2. * (alpha_ + alpha0);
+    omega_ += timeStep * (alpha_ + alpha0) / 2.;
     theta_ = std::fmod(theta_ + timeStep / 2. * (omega_ + omega0), 2. * M_PI);
-
-    //ibObj->shape().move(pos_);
-    //ibObj->shape().rotate(theta_ - theta0);
 }

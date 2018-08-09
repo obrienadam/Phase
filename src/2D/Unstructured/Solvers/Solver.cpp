@@ -41,6 +41,24 @@ Scalar Solver::getStartTime() const
     return startTime_;
 }
 
+std::shared_ptr<FiniteVolumeField<int> > Solver::integerField(const std::string &name) const
+{
+    auto it = integerFields_.find(name);
+    return it != integerFields_.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<ScalarFiniteVolumeField> Solver::scalarField(const std::string &name) const
+{
+    auto it = scalarFields_.find(name);
+    return it != scalarFields_.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<VectorFiniteVolumeField> Solver::vectorField(const std::string &name) const
+{
+    auto it = vectorFields_.find(name);
+    return it != vectorFields_.end() ? it->second : nullptr;
+}
+
 template<>
 std::shared_ptr<FiniteVolumeField<int>> Solver::addField(const std::string &name, const std::shared_ptr<CellGroup> &cells)
 {

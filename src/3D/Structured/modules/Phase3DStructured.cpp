@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Structured/Solvers/SolverFactory.h"
 #include "Structured/StructuredGrid3D/FaceStencil.h"
 #include "Structured/PostProcessing/CgnsViewer.h"

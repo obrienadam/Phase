@@ -57,9 +57,6 @@ FaceStencil::FaceStencil(const Cell &cell, Face::Direction dir, int forwardBias,
     //- The face location
     offsets.push_back(0.);
 
-    for(auto of: offsets)
-        std::cout << of << std::endl;
-
     _taylorCoeffs.computeTaylorCoeffs(offsets, 1);
 }
 

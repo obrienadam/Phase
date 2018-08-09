@@ -16,10 +16,10 @@ public:
         {}
 
         Vector2D velocity() const
-        { _ibObj->velocity(_pt); }
+        { return _ibObj->velocity(_pt); }
 
         Vector2D acceleration() const
-        { _ibObj->acceleration(_pt); }
+        { return _ibObj->acceleration(_pt); }
 
         const Cell &cell() const
         { return *_cell; }

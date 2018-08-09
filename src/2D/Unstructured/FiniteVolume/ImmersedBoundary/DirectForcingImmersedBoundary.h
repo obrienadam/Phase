@@ -52,7 +52,7 @@ public:
                                         const ScalarFiniteVolumeField &p,
                                         const Vector2D &g = Vector2D(0., 0.)) override;
 
-    void applyHydrodynamicForce(const VectorFiniteVolumeField &fib);
+    void applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib);
 
     //- Cell group access
 
