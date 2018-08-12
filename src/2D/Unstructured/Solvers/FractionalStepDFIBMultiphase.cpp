@@ -117,7 +117,9 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_);
 
-    ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
+    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
+    fbEqn_.solve();
+    grid_->sendMessages(fb_);
 
     for (const Cell &cell: grid_->cells())
         u_(cell) = u_.oldField(0)(cell);
