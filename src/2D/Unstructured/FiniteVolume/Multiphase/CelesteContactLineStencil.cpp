@@ -21,6 +21,25 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const Cell &cell
     auto l1 = findIntersectingCellLink(r1, ibObj);
     auto l2 = findIntersectingCellLink(r2, ibObj);
 
+    if(!l1.second)
+    {
+        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+                        "ContactLineStencil",
+                        "no intersection found. Cell id = "
+                        + std::to_string(cell.centroid())
+                        + "."
+                        + " r = " + std::to_string(r1.x0()) + std::to_string(r1.r()));
+    }
+    else if(!l2.second)
+    {
+        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+                        "ContactLineStencil",
+                        "no intersection found. Cell id = "
+                        + std::to_string(cell.centroid())
+                        + "."
+                        + " r = " + std::to_string(r1.x0()) + std::to_string(r1.r()));
+    }
+
     Scalar g1 = l1.second->linearInterpolate(gamma, l1.first[2]);
     Scalar g2 = l2.second->linearInterpolate(gamma, l2.first[2]);
 
@@ -43,7 +62,14 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const Cell &cell
 std::pair<PolyLine2D, const CellLink*> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
                                                                                                              const ImmersedBoundaryObject &ibObj)
 {
-    Vector2D bp = ibObj.shape().intersections(r).front();
+    auto intersections = ibObj.shape().intersections(r);
+
+    if(intersections.size() != 1)
+        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+                        "findIntersectingCellLink",
+                        "no intersection found.");
+
+    Vector2D bp = intersections.front();
 
     cellQueue_.push(std::cref(cell_.grid().globalCells().nearestItem(bp)));
     cellIdSet_.insert(cellQueue_.back().get().id());

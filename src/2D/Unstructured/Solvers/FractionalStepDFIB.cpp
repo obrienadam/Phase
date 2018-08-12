@@ -34,7 +34,9 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
+
     ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
+    // ib_->applyHydrodynamicForce(rho_, fb_, g_);
 
     return 0;
 }
@@ -66,6 +68,18 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();
+
+//    const auto &u0 = u_.oldField(0);
+//    for(const Face &f: grid_->interiorFaces())
+//    {
+//        const Cell &l = f.lCell();
+//        const Cell &r = f.rCell();
+//        Scalar g = f.volumeWeight();
+
+//        u_(f) = g * (u_(l) - u0(l)) + (1. - g) * (u_(r) - u0(r)) + u0(f);
+//    }
+
+//    u_.setBoundaryFaces();
 
     return error;
 }

@@ -76,7 +76,7 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
-    //ib_->computeForce(rho_, mu_, u_, p_, gamma_, fst_, g_);
+    ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
 
     return 0;
 }

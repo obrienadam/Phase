@@ -1,5 +1,4 @@
 #include "Math/TrilinosAmesosSparseMatrixSolver.h"
-#include "Geometry/Tensor2D.h"
 
 #include "DirectForcingImmersedBoundary.h"
 #include "DirectForcingImmersedBoundaryLeastSquaresQuadraticStencil.h"
@@ -178,13 +177,12 @@ void DirectForcingImmersedBoundary::computeFaceForcingTerm(const VectorFiniteVol
     }
 }
 
-void DirectForcingImmersedBoundary::computeForcingTerm(const ScalarFiniteVolumeField &rho,
-                                                       const VectorFiniteVolumeField &u,
-                                                       Scalar timeStep,
-                                                       VectorFiniteVolumeField &fib) const
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm(const ScalarFiniteVolumeField &rho,
+                                                                                 const VectorFiniteVolumeField &u,
+                                                                                 Scalar timeStep,
+                                                                                 VectorFiniteVolumeField &fib) const
 {
     FiniteVolumeEquation<Vector2D> eqn(fib);
-    eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm()));
 
     for(const Cell& cell: grid_->localCells())
     {
@@ -243,8 +241,7 @@ void DirectForcingImmersedBoundary::computeForcingTerm(const ScalarFiniteVolumeF
         }
     }
 
-    eqn.solve();
-    grid_->sendMessages(fib);
+    return eqn;
 }
 
 void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
@@ -431,10 +428,188 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
                                                            const ScalarFiniteVolumeField &p,
                                                            const Vector2D &g)
 {
+    for(auto &ibObj: ibObjs_)
+    {
+        Equation eqn;
+
+        auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
+
+        auto indexStart = 6 * std::accumulate(
+                    nLocalCells.begin(),
+                    nLocalCells.begin() + grid_->comm().rank(), 0);
+
+        auto cellIdToIndexMap = std::vector<Index>(grid_->cells().size(), -1);
+
+        Index ibCellId = 0;
+        for(const Cell& cell: ibObj->ibCells())
+            cellIdToIndexMap[cell.id()] = indexStart + 6 * ibCellId++;
+
+        grid_->sendMessages(cellIdToIndexMap);
+
+        Index row = 0;
+        for(const Cell &cell: ibObj->ibCells())
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+
+            eqn.setRank(eqn.rank() + st.nReconstructionPoints() + 1);
+
+            Index col = cellIdToIndexMap[cell.id()];
+
+            for(const auto &cellPtr: st.cells())
+            {
+                Point2D x = cellPtr->centroid();
+
+                eqn.setCoeffs(row,
+                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+
+                eqn.setRhs(row++, -p(*cellPtr));
+            }
+
+            for(const auto &compatPt: st.compatPts())
+            {
+                if(&cell == &compatPt.cell())
+                    continue;
+
+                Point2D x = compatPt.pt();
+
+                eqn.setCoeffs(row,
+                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+
+                Index col2 = cellIdToIndexMap[compatPt.cell().id()];
+
+                eqn.setCoeffs(row++,
+                {col2, col2 + 1, col2 + 2, col2 + 3, col2 + 4, col2 + 5},
+                {-x.x * x.x, -x.y * x.y, -x.x * x.y, -x.x, -x.y, -1.});
+            }
+
+            Point2D x = ibObj->nearestIntersect(cell.centroid());
+            Vector2D n = ibObj->nearestEdgeUnitNormal(x);
+
+            eqn.setCoeffs(row,
+            {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+            {2. * x.x * n.x, 2. * x.y * n.y, x.y * n.x + x.x * n.y, n.x, n.y, 0.});
+
+            eqn.setRhs(row++, rho(cell) * dot(ibObj->acceleration(x), n));
+        }
+
+        eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
+        eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
+        eqn.solveLeastSquares();
+
+        std::vector<std::tuple<Point2D, Scalar, Tensor2D>> stresses;
+
+        for(int i = 0; i < 6 * ibObj->ibCells().size(); i += 6)
+        {
+            Scalar a = eqn.x(i);
+            Scalar b = eqn.x(i + 1);
+            Scalar c = eqn.x(i + 2);
+            Scalar d = eqn.x(i + 3);
+            Scalar e = eqn.x(i + 4);
+            Scalar f = eqn.x(i + 5);
+
+            Point2D x = ibObj->nearestIntersect(ibObj->ibCells()[i / 6].centroid());
+
+            Scalar pb = a * x.x * x.x + b * x.y * x.y + c * x.x * x.y + d * x.x + e * x.y + f + rho(ibObj->ibCells()[i / 6]) * dot(x, g);
+
+            std::vector<std::pair<Point2D, Vector2D>> pts;
+            pts.reserve(8);
+
+            const Cell &cell = ibObj->ibCells()[i / 6];
+
+            for(const CellLink &nb: cell.cellLinks())
+                if(!globalSolidCells_.isInSet(nb.cell()))
+                {
+                    pts.push_back(std::make_pair(nb.cell().centroid(), u(nb.cell())));
+
+                    if(globalIbCells_.isInSet(nb.cell()))
+                    {
+                        auto bp = ibObj->nearestIntersect(nb.cell().centroid());
+                        pts.push_back(std::make_pair(bp, ibObj->velocity(bp)));
+                    }
+                }
+
+            auto bp = ibObj->nearestIntersect(cell.centroid());
+            pts.push_back(std::make_pair(bp, ibObj->velocity(bp)));
+
+            Matrix A(pts.size(), 6), rhs(pts.size(), 2);
+
+            for(int i = 0; i < pts.size(); ++i)
+            {
+                Point2D x = pts[i].first;
+                Point2D u = pts[i].second;
+
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+                rhs.setRow(i, {u.x, u.y});
+            }
+
+            auto coeffs = solve(A, rhs);
+            auto derivs = Matrix(2, 6, {
+                                     2. * bp.x, 0., bp.y, 1., 0., 0.,
+                                     0., 2. * bp.y, bp.x, 0., 1., 0.
+                                 }) * coeffs;
+
+            //- Then tensor is tranposed here
+            auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
+
+            stresses.push_back(std::make_tuple(x, pb, mu(ibObj->ibCells()[i / 6]) * (tau + tau.transpose())));
+        }
+
+        stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
+
+        Vector2D force(0., 0.);
+
+        if(grid_->comm().isMainProc())
+        {
+
+            std::sort(stresses.begin(), stresses.end(), [&ibObj](std::tuple<Point2D, Scalar, Tensor2D> &lhs,
+                      std::tuple<Point2D, Scalar, Tensor2D> &rhs)
+            {
+                return (std::get<0>(lhs) - ibObj->shape().centroid()).angle()
+                        < (std::get<0>(rhs) - ibObj->shape().centroid()).angle();
+            });
+
+            Vector2D fShear(0., 0.), fPressure(0., 0.);
+
+            for(int i = 0; i < stresses.size(); ++i)
+            {
+                auto qpa = stresses[i];
+                auto qpb = stresses[(i + 1) % stresses.size()];
+
+                auto ptA = std::get<0>(qpa);
+                auto ptB = std::get<0>(qpb);
+                auto pA = std::get<1>(qpa);
+                auto pB = std::get<1>(qpb);
+                auto tauA = std::get<2>(qpa);
+                auto tauB = std::get<2>(qpb);
+
+                fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
+                fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+            }
+
+            force = fPressure + fShear + ibObj->rho * g * ibObj->shape().area();
+
+            std::cout << "Pressure force = " << fPressure << "\n"
+                      << "Shear force = " << fShear << "\n"
+                      << "Weight = " << ibObj->rho * g * ibObj->shape().area() << "\n"
+                      << "Net force = " << force << "\n";
+        }
+
+        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), force));
+    }
+}
+
+void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ImmersedBoundaryObject::SurfaceField<Scalar> &rho,
+                                                           const ImmersedBoundaryObject::SurfaceField<Scalar> &mu,
+                                                           const ImmersedBoundaryObject::SurfaceField<Tensor2D> &gradU,
+                                                           const ImmersedBoundaryObject::SurfaceField<Scalar> &p,
+                                                           const Vector2D &g)
+{
 
 }
 
-void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib)
+void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib, const Vector2D &g)
 {
     for(const auto &ibObj: ibObjs_)
     {
@@ -443,8 +618,17 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const Vec
         for(const Cell &c: ibObj->cells())
             f -= fib(c) * c.volume();
 
+        f = Vector2D(grid_->comm().sum(f.x), grid_->comm().sum(f.y));
+
+        f += ibObj->rho * g * ibObj->shape().area();
+
         ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), rho * f));
     }
+}
+
+void DirectForcingImmersedBoundary::applyHydrodynamicForce(const VectorFiniteVolumeField &fib)
+{
+    applyHydrodynamicForce(1., fib);
 }
 
 //void DirectForcingImmersedBoundary::rce(const ScalarFiniteVolumeField &rho,

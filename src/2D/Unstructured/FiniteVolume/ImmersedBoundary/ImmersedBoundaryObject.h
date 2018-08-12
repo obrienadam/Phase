@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "Geometry/Shape2D.h"
+#include "Geometry/Tensor2D.h"
 #include "FiniteVolume/Motion/Motion.h"
 #include "FiniteVolumeGrid2D/Cell/CellGroup.h"
 
@@ -15,6 +16,9 @@ public:
     {
         FIXED, NORMAL_GRADIENT, VELOCITY
     };
+
+    template<class T>
+    class SurfaceField;
 
     //- Constructors, one for circles, another for polygons
     ImmersedBoundaryObject(const std::string &name);
@@ -136,6 +140,11 @@ public:
 
     Scalar momentOfInertia() const
     { return rho * _shape->momentOfInertia(); }
+
+    void applyHydrodynamicForce(const SurfaceField<Scalar> &rho,
+                                const SurfaceField<Tensor2D> &tau,
+                                const SurfaceField<Scalar> &p,
+                                const Vector2D &g = Vector2D(0., 0.));
 
     void applyForce(const Vector2D &force)
     { _force = force; }

@@ -1,9 +1,12 @@
 #ifndef PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_H
 #define PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_H
 
-#include "ImmersedBoundary.h"
+#include "Geometry/Tensor2D.h"
 #include "Math/StaticMatrix.h"
 #include "Math/Matrix.h"
+
+#include "ImmersedBoundary.h"
+#include "ImmersedBoundaryObjectSurfaceField.h"
 
 class DirectForcingImmersedBoundary : public ImmersedBoundary
 {
@@ -26,10 +29,10 @@ public:
                                 Scalar timeStep,
                                 VectorFiniteVolumeField &fib) const;
 
-    void computeForcingTerm(const ScalarFiniteVolumeField &rho,
-                            const VectorFiniteVolumeField &u,
-                            Scalar timeStep,
-                            VectorFiniteVolumeField &fib) const;
+    FiniteVolumeEquation<Vector2D> computeForcingTerm(const ScalarFiniteVolumeField &rho,
+                                                      const VectorFiniteVolumeField &u,
+                                                      Scalar timeStep,
+                                                      VectorFiniteVolumeField &fib) const;
 
     virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &phi) const
     { return FiniteVolumeEquation<Scalar>(phi); }
@@ -52,7 +55,15 @@ public:
                                         const ScalarFiniteVolumeField &p,
                                         const Vector2D &g = Vector2D(0., 0.)) override;
 
-    void applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib);
+    void applyHydrodynamicForce(const ImmersedBoundaryObject::SurfaceField<Scalar> &rho,
+                                const ImmersedBoundaryObject::SurfaceField<Scalar> &mu,
+                                const ImmersedBoundaryObject::SurfaceField<Tensor2D> &gradU,
+                                const ImmersedBoundaryObject::SurfaceField<Scalar> &p,
+                                const Vector2D &g = Vector2D(0., 0.));
+
+    void applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib, const Vector2D &g = Vector2D(0., 0.));
+
+    void applyHydrodynamicForce(const VectorFiniteVolumeField &fib);
 
     //- Cell group access
 
