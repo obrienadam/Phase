@@ -59,6 +59,11 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const Cell &cell
     }
 }
 
+void CelesteImmersedBoundary::ContactLineStencil::init()
+{
+
+}
+
 std::pair<PolyLine2D, const CellLink*> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
                                                                                                              const ImmersedBoundaryObject &ibObj)
 {

@@ -32,6 +32,8 @@ protected:
                            Scalar theta,
                            const ScalarFiniteVolumeField &gamma);
 
+        void init();
+
         const CellLink &link() const
         { return *link_; }
 

@@ -4,6 +4,7 @@
 #include "FractionalStepGCIB.h"
 #include "FractionalStepELIB.h"
 #include "FractionalStepDFIB.h"
+#include "FractionalStepDFIBImplicit.h"
 #include "FractionalStepDFIBMultiphase.h"
 #include "FractionalStepMultiphase.h"
 #include "FractionalStepBoussinesq.h"
@@ -26,6 +27,8 @@ std::shared_ptr<Solver> SolverFactory::create(SolverType type,
         return std::make_shared<FractionalStepELIB>(input, grid);
     case FRACTIONAL_STEP_DIRECT_FORCING_IB:
         return std::make_shared<FractionalStepDFIB>(input, grid);
+    case FRACTIONAL_STEP_DIRECT_FORCING_IB_IMPLICIT:
+        return std::make_shared<FractionalStepDFIBImplicit>(input, grid);
     case FRACTIONAL_STEP_DIRECT_FORCING_IB_MULTIPHASE:
         return std::make_shared<FractionalStepDirectForcingMultiphase>(input, grid);
     case FRACTIONAL_STEP_BOUSSINESQ:
@@ -56,6 +59,8 @@ std::shared_ptr<Solver> SolverFactory::create(std::string type,
         return create(FRACTIONAL_STEP_EULER_LAGRANGE_IB, input, grid);
     else if (type == "fractional step direct-forcing")
         return create(FRACTIONAL_STEP_DIRECT_FORCING_IB, input, grid);
+    else if (type == "fractional step direct-forcing implicit")
+        return create(FRACTIONAL_STEP_DIRECT_FORCING_IB_IMPLICIT, input, grid);
     else if (type == "fractional step direct-forcing multiphase")
         return create(FRACTIONAL_STEP_DIRECT_FORCING_IB_MULTIPHASE, input, grid);
     else if (type == "fractional step multiphase")

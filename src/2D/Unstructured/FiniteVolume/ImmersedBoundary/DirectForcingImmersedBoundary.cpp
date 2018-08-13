@@ -149,9 +149,6 @@ void DirectForcingImmersedBoundary::computeFaceForcingTerm(const VectorFiniteVol
             continue;
         }
 
-        if(cells.size() + 1 < 6)
-            throw Exception("F", "U", "CK");
-
         Matrix A(cells.size() + 1, 6), b(cells.size() + 1, 2);
 
         int i = 0;
@@ -242,6 +239,64 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
     }
 
     return eqn;
+}
+
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u, Scalar timeStep) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(u);
+
+    for(const Cell& cell: grid_->localCells())
+    {
+        if(localIbCells_.isInSet(cell))
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+
+            if(st.nReconstructionPoints() < 6)
+            {
+                throw Exception("DirectForcingImmersedBoundary",
+                                "velocityBcs",
+                                "not enough cells to perform velocity interpolation. Cell id = "
+                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
+            }
+
+            Matrix A(st.nReconstructionPoints(), 6);
+
+            for(int i = 0; i < st.cells().size(); ++i)
+            {
+                Point2D x = st.cells()[i]->centroid();
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+            }
+
+            for(int i = 0; i < st.compatPts().size(); ++i)
+            {
+                Point2D x = st.compatPts()[i].pt();
+                A.setRow(i + st.cells().size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+            }
+
+            Point2D x = cell.centroid();
+
+            Matrix beta = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
+
+            for(int i = 0; i < st.cells().size(); ++i)
+                eqn.add(cell, *st.cells()[i], beta(0, i) / timeStep);
+
+            for(int i = 0; i < st.compatPts().size(); ++i)
+                eqn.addSource(cell, beta(0, i + st.cells().size()) * st.compatPts()[i].velocity() / timeStep);
+
+            eqn.add(cell, cell, -1. / timeStep);
+        }
+        else if (localSolidCells_.isInSet(cell))
+        {
+            auto ibObj = this->ibObj(cell.centroid());
+
+            eqn.add(cell, cell, -1. / timeStep);
+            eqn.addSource(cell, ibObj->velocity(cell.centroid()) / timeStep);
+        }
+    }
+
+    return eqn;
+
+    return u;
 }
 
 void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,

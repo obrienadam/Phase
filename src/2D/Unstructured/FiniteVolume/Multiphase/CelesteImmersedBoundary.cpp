@@ -37,6 +37,8 @@ void CelesteImmersedBoundary::computeContactLineExtension(ScalarFiniteVolumeFiel
                                           *ibObj,
                                           ibContactAngles_.find(ibObj->name())->second,
                                           gamma);
+
+                    gamma(cell) = st.gamma();
                 }
             }
 }
