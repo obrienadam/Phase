@@ -17,7 +17,7 @@ Scalar FractionalStepDFIBImplicit::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 1);
 
     uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.)
-             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_) + ib_->velocityBcs(u_, timeStep));
+             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_) + ib_->velocityBcs(u_, timeStep));
 
     Scalar error = uEqn_.solve();
 

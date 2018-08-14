@@ -19,7 +19,7 @@ public:
 
     void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
 
-    void contactLineBcs(FiniteVolumeEquation<Scalar> &gammaEqn) const;
+    FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
 
 protected:
 

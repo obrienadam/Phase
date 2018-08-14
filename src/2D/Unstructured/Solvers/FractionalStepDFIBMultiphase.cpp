@@ -75,8 +75,6 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
-    fst_.computeContactLineExtension(gamma_);
-
     grid_->comm().printf("Computing IB forces...\n");
     ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
 
@@ -89,7 +87,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma_.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, beta, gamma_, 0.5) == 0.);
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, beta, gamma_, 0.5) == fst_.contactLineBcs(gamma_, timeStep));
     //fst_.contactLineBcs(gammaEqn_);
 
     Scalar error = gammaEqn_.solve();
@@ -114,38 +112,33 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
     uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
-             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
+             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_) + ib_->velocityBcs(rho_, u_, timeStep));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(u_);
-
-    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
-    fbEqn_.solve();
-    grid_->sendMessages(fb_);
-
-    for (const Cell &cell: grid_->cells())
-        u_(cell) = u_.oldField(0)(cell);
-
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
-             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ + fb_ - gradP_));
-
-    error = uEqn_.solve();
 
     for(const Cell& cell: *fluid_)
         u_(cell) += timeStep / rho_(cell) * gradP_(cell);
 
     grid_->sendMessages(u_);
+    u_.interpolateFaces();
+    return error;
 
-    const VectorFiniteVolumeField &u0 = u_.oldField(0);
     for (const Face &f: grid_->interiorFaces())
     {
-        const Cell &l = f.lCell();
-        const Cell &r = f.rCell();
         Scalar g = f.volumeWeight();
 
-        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)) - u0(l))
-                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)) - u0(r))
-                + timeStep / rho_(f) * (fst(f) + sg_(f)) + u0(f);
+        //        if(ib_->ibObj(f.lCell().centroid()) || ib_->ibObj(f.rCell().centroid()))
+        //        {
+        //            u_(f) = f.interpolate(u_);
+        //            continue;
+        //        }
+
+        const Cell &l = f.lCell();
+        const Cell &r = f.rCell();
+
+        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
+                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
+                + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())
@@ -157,8 +150,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
             for (const Face &f: patch)
             {
                 const Cell &l = f.lCell();
-                u_(f) = u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)) - u0(l)
-                        + timeStep / rho_(f) * (fst(f) + sg_(f)) + u0(f);
+                u_(f) = u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l))
+                        + timeStep / rho_(f) * (fst(f) + sg_(f));
             }
             break;
         case VectorFiniteVolumeField::SYMMETRY:

@@ -43,9 +43,9 @@ void CelesteImmersedBoundary::computeContactLineExtension(ScalarFiniteVolumeFiel
             }
 }
 
-void CelesteImmersedBoundary::contactLineBcs(FiniteVolumeEquation<Scalar> &gammaEqn) const
+FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const
 {
-    const ScalarFiniteVolumeField &gamma = gammaEqn.field();
+    FiniteVolumeEquation<Scalar> eqn(gamma);
 
     for(const std::shared_ptr<ImmersedBoundaryObject> &ibObj: *ib_.lock())
         for(const Cell& cell: ibObj->cells())
@@ -54,8 +54,6 @@ void CelesteImmersedBoundary::contactLineBcs(FiniteVolumeEquation<Scalar> &gamma
 
             if(ibObj->isInIb(cell.centroid()))
             {
-                gammaEqn.remove(cell);
-
                 Scalar distSqr = (ibObj->nearestIntersect(cell.centroid()) - cell.centroid()).magSqr();
 
                 if(distSqr <= kernelWidth_ * kernelWidth_)
@@ -67,18 +65,15 @@ void CelesteImmersedBoundary::contactLineBcs(FiniteVolumeEquation<Scalar> &gamma
 
                     Scalar alpha = st.link().alpha(st.cl()[2]);
 
-                    gammaEqn.add(cell, cell, -1.);
-                    gammaEqn.add(cell, st.link().self(), alpha);
-                    gammaEqn.add(cell, st.link().cell(), 1. - alpha);
-                }
-                else
-                {
-                    gammaEqn.remove(cell);
-                    gammaEqn.add(cell, cell, -1.);
-                    gammaEqn.addSource(cell, 0.);
+                    //- Add a source
+                    eqn.add(cell, st.link().self(), alpha * cell.volume() / timeStep);
+                    eqn.add(cell, st.link().cell(), (1. - alpha) * cell.volume() / timeStep);
+                    eqn.add(cell, cell, -cell.volume() / timeStep);
                 }
             }
         }
+
+    return eqn;
 }
 
 void CelesteImmersedBoundary::computeInterfaceNormals()

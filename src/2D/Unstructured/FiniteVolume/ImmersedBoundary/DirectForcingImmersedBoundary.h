@@ -42,6 +42,8 @@ public:
 
     virtual FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u, Scalar timeStep) const;
 
+    virtual FiniteVolumeEquation<Vector2D> velocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, Scalar timeStep) const;
+
     virtual void applyHydrodynamicForce(Scalar rho,
                                         Scalar mu,
                                         const VectorFiniteVolumeField &u,

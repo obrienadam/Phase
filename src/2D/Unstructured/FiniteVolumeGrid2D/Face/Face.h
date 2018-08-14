@@ -72,6 +72,8 @@ public:
     const FiniteVolumeGrid2D &grid() const
     { return grid_; }
 
+    //- Interpolation
+
 private:
     Type type_;
 
