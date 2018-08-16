@@ -2,7 +2,6 @@
 
 #include "ImmersedBoundaryObject.h"
 #include "ImmersedBoundary.h"
-#include "ImmersedBoundaryObjectSurfaceField.h"
 
 ImmersedBoundaryObject::ImmersedBoundaryObject(const std::string &name)
     :
@@ -168,47 +167,6 @@ Scalar ImmersedBoundaryObject::omega() const
 Scalar ImmersedBoundaryObject::alpha() const
 {
     return _motion ? _motion->alpha() : 0.;
-}
-
-void ImmersedBoundaryObject::applyHydrodynamicForce(const SurfaceField<Scalar> &rho,
-                                                    const SurfaceField<Tensor2D> &tau,
-                                                    const SurfaceField<Scalar> &p,
-                                                    const Vector2D &g)
-{
-    Vector2D fp(0., 0.), fs(0., 0.);
-
-    //- Pressure
-    for(int i = 0; i < p.size(); ++i)
-    {
-        auto ptA = p.pt(i);
-        auto ptB = p.pt((i + 1) % p.size());
-        auto pA = p(i);
-        auto pB = p((i + 1) % p.size());
-
-        fp += (pA + pB) / 2. * (ptA - ptB).normalVec();
-    }
-
-    for(int i = 0; i < rho.size(); ++i)
-    {
-        auto ptA = rho.pt(i);
-        auto ptB = rho.pt((i + 1) % rho.size());
-        auto rhogA = rho(i) * dot(ptA, g);
-        auto rhogB = rho((i + 1) % rho.size()) * dot(ptB, g);
-
-        fp += (rhogA + rhogB) / 2. * (ptA - ptB).normalVec();
-    }
-
-    for(int i = 0; i < tau.size(); ++i)
-    {
-        auto ptA = tau.pt(i);
-        auto ptB = tau.pt((i + 1) % tau.size());
-        auto tauA = tau(i);
-        auto tauB = tau((i + 1) % tau.size());
-
-        fs += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
-    }
-
-    _force = fp + fs + this->rho * g * _shape->area();
 }
 
 void ImmersedBoundaryObject::updatePosition(Scalar timeStep)

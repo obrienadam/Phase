@@ -4,9 +4,9 @@
 #include "CellLink.h"
 
 CellLink::CellLink(const Cell &self, const Cell &other)
-        :
-        Link(self),
-        cell_(other)
+    :
+      Link(self),
+      cell_(other)
 {
     rCellVec_ = cell_.centroid() - self_.centroid();
 }
@@ -22,4 +22,10 @@ Scalar CellLink::linearInterpolate(const FiniteVolumeField<Scalar> &phi, const P
 {
     Scalar alpha = this->alpha(pt);
     return alpha * phi(self_) + (1. - alpha) * phi(cell_);
+}
+
+Vector2D CellLink::linearInterpolate(const FiniteVolumeField<Vector2D> &u, const Point2D &pt) const
+{
+    Scalar alpha = this->alpha(pt);
+    return alpha * u(self_) + (1. - alpha) * u(cell_);
 }

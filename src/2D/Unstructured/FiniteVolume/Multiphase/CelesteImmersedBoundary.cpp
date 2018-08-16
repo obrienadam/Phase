@@ -1,5 +1,9 @@
+#include "Math/TrilinosAmesosSparseMatrixSolver.h"
+
 #include "CelesteImmersedBoundary.h"
 #include "Geometry/Intersection.h"
+#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundaryLeastSquaresQuadraticStencil.h"
+#include "FiniteVolume/ImmersedBoundary/SurfaceField.h"
 
 CelesteImmersedBoundary::CelesteImmersedBoundary(const Input &input,
                                                  const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
@@ -74,6 +78,194 @@ FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFinit
         }
 
     return eqn;
+}
+
+void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
+                                         const ScalarFiniteVolumeField &mu,
+                                         const VectorFiniteVolumeField &u,
+                                         const ScalarFiniteVolumeField &p,
+                                         const Vector2D &g,
+                                         DirectForcingImmersedBoundary &ib) const
+{
+    struct Stress
+    {
+        Point2D pt;
+        Scalar p, gamma;
+        Tensor2D tau;
+    };
+
+    for(auto &ibObj: ib)
+    {
+        Equation eqn;
+
+        auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
+
+        auto indexStart = 6 * std::accumulate(
+                    nLocalCells.begin(),
+                    nLocalCells.begin() + grid_->comm().rank(), 0);
+
+        auto cellIdToIndexMap = std::vector<Index>(grid_->cells().size(), -1);
+
+        Index ibCellId = 0;
+        for(const Cell& cell: ibObj->ibCells())
+            cellIdToIndexMap[cell.id()] = indexStart + 6 * ibCellId++;
+
+        grid_->sendMessages(cellIdToIndexMap);
+
+        Index row = 0;
+        for(const Cell &cell: ibObj->ibCells())
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, ib);
+
+            eqn.setRank(eqn.rank() + st.nReconstructionPoints() + 1);
+
+            Index col = cellIdToIndexMap[cell.id()];
+
+            for(const auto &cellPtr: st.cells())
+            {
+                Point2D x = cellPtr->centroid();
+
+                eqn.setCoeffs(row,
+                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+
+                eqn.setRhs(row++, -p(*cellPtr));
+            }
+
+            for(const auto &compatPt: st.compatPts())
+            {
+                if(&cell == &compatPt.cell())
+                    continue;
+
+                Point2D x = compatPt.pt();
+
+                eqn.setCoeffs(row,
+                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+
+                Index col2 = cellIdToIndexMap[compatPt.cell().id()];
+
+                eqn.setCoeffs(row++,
+                {col2, col2 + 1, col2 + 2, col2 + 3, col2 + 4, col2 + 5},
+                {-x.x * x.x, -x.y * x.y, -x.x * x.y, -x.x, -x.y, -1.});
+            }
+
+            Point2D x = ibObj->nearestIntersect(cell.centroid());
+            Vector2D n = ibObj->nearestEdgeUnitNormal(x);
+
+            eqn.setCoeffs(row,
+            {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+            {2. * x.x * n.x, 2. * x.y * n.y, x.y * n.x + x.x * n.y, n.x, n.y, 0.});
+
+            eqn.setRhs(row++, rho(cell) * dot(ibObj->acceleration(x), n));
+        }
+
+        eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
+        eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
+        eqn.solveLeastSquares();
+
+        std::vector<Stress> stresses;
+        stresses.reserve(ibObj->ibCells().size());
+
+        for(int i = 0; i < 6 * ibObj->ibCells().size(); i += 6)
+        {
+            Scalar a = eqn.x(i);
+            Scalar b = eqn.x(i + 1);
+            Scalar c = eqn.x(i + 2);
+            Scalar d = eqn.x(i + 3);
+            Scalar e = eqn.x(i + 4);
+            Scalar f = eqn.x(i + 5);
+
+            const Cell &cell = ibObj->ibCells()[i / 6];
+
+            Stress stress;
+            stress.pt = ibObj->nearestIntersect(cell.centroid());
+
+            Point2D x = stress.pt;
+            stress.p = a * x.x * x.x + b * x.y * x.y + c * x.x * x.y + d * x.x + e * x.y + f + rho(cell) * dot(x, g);
+
+            std::vector<std::pair<Point2D, Vector2D>> pts;
+            pts.reserve(8);
+
+            for(const CellLink &nb: cell.cellLinks())
+                if(!ib.globalSolidCells().isInSet(nb.cell()))
+                {
+                    pts.push_back(std::make_pair(nb.cell().centroid(), u(nb.cell())));
+
+                    if(ib.globalIbCells().isInSet(nb.cell()))
+                    {
+                        auto bp = ibObj->nearestIntersect(nb.cell().centroid());
+                        pts.push_back(std::make_pair(bp, ibObj->velocity(bp)));
+                    }
+                }
+
+            pts.push_back(std::make_pair(stress.pt, ibObj->velocity(stress.pt)));
+
+            Matrix A(pts.size(), 6), rhs(pts.size(), 2);
+
+            for(int i = 0; i < pts.size(); ++i)
+            {
+                Point2D x = pts[i].first;
+                Point2D u = pts[i].second;
+
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+                rhs.setRow(i, {u.x, u.y});
+            }
+
+            auto coeffs = solve(A, rhs);
+            auto derivs = Matrix(2, 6, {
+                                     2. * x.x, 0., x.y, 1., 0., 0.,
+                                     0., 2. * x.y, x.x, 0., 1., 0.
+                                 }) * coeffs;
+
+            //- Then tensor is tranposed here
+            auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
+
+            stress.tau = mu(cell) * (tau + tau.transpose());
+            stresses.push_back(stress);
+        }
+
+        stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
+
+        Vector2D force(0., 0.);
+
+        if(grid_->comm().isMainProc())
+        {
+
+            std::sort(stresses.begin(), stresses.end(), [&ibObj](const Stress &lhs, const Stress &rhs)
+            {
+                return (lhs.pt - ibObj->shape().centroid()).angle()
+                        < (rhs.pt - ibObj->shape().centroid()).angle();
+            });
+
+            Vector2D fShear(0., 0.), fPressure(0., 0.);
+
+            for(int i = 0; i < stresses.size(); ++i)
+            {
+                auto qpa = stresses[i];
+                auto qpb = stresses[(i + 1) % stresses.size()];
+
+                auto ptA = qpa.pt;
+                auto ptB = qpb.pt;
+                auto pA = qpa.p;
+                auto pB = qpb.p;
+                auto tauA = qpa.tau;
+                auto tauB = qpb.tau;
+
+                fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
+                fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+            }
+
+            force = fPressure + fShear + ibObj->rho * g * ibObj->shape().area();
+
+            std::cout << "Pressure force = " << fPressure << "\n"
+                      << "Shear force = " << fShear << "\n"
+                      << "Weight = " << ibObj->rho * g * ibObj->shape().area() << "\n"
+                      << "Net force = " << force << "\n";
+        }
+
+        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), force));
+    }
 }
 
 void CelesteImmersedBoundary::computeInterfaceNormals()

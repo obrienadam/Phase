@@ -4,7 +4,7 @@
 #include "Geometry/PolyLine2D.h"
 
 #include "Celeste.h"
-#include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
+#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
 
 class CelesteImmersedBoundary: public Celeste
 {
@@ -20,6 +20,13 @@ public:
     void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
 
     FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
+
+    void applyForce(const ScalarFiniteVolumeField &rho,
+                    const ScalarFiniteVolumeField &mu,
+                    const VectorFiniteVolumeField &u,
+                    const ScalarFiniteVolumeField &p,
+                    const Vector2D &g,
+                    DirectForcingImmersedBoundary &ib) const;
 
 protected:
 
@@ -45,6 +52,10 @@ protected:
 
         Scalar gamma() const
         { return gamma_; }
+
+        template<class T>
+        T interpolate(const FiniteVolumeField<T> &field) const
+        { return link_->linearInterpolate(field, cl_[2]); }
 
     protected:
 

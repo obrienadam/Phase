@@ -39,8 +39,32 @@ int main(int argc, char *argv[])
         return stod(matches[0][0].str()) < stod(matches[1][0].str());
     });
 
+    //- Check if stride command exists
+    int stride = 1;
+    for(int argno = 1; argno < argc; ++argno)
+        if(strcmp(argv[argno], "-s") == 0 || strcmp(argv[argno], "--s") == 0)
+        {
+            try
+            {
+                stride = std::stoi(argv[++argno]);
+            }
+            catch(...)
+            {
+                throw std::invalid_argument("bad argument for stride.");
+            }
+        }
+        else if(strcmp(argv[argno], "-h") == 0)
+        {
+            cout << "phase-reconstruct-solution\n\n"
+                 << "Usage: phase-reconstruct-solution [OPTION]...\n\n"
+                 << "\t-s|--stride\tSpecify the spacing of time steps to reconstruct\n";
+
+            exit(0);
+        }
+
+    int timeStepNo = 0;
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
-        if (regex_match(dir->path().filename().string(), re))
+        if (regex_match(dir->path().filename().string(), re) && (timeStepNo++ % stride == 0))
             solutionDirs.insert(dir->path());
 
     //- Read in global node/elements
@@ -66,9 +90,9 @@ int main(int argc, char *argv[])
         cgsize_t offset = nodes.size();
 
         std::transform(buffer[0].begin(), buffer[0].end(),
-                       buffer[1].begin(), std::back_inserter(nodes), [](double x, double y) -> Node {
-                    return Node(x, y);
-                });
+                buffer[1].begin(), std::back_inserter(nodes), [](double x, double y) -> Node {
+            return Node(x, y);
+        });
 
         cgsize_t elementDataSize, parentData;
         cg_ElementDataSize(fn, 1, 1, 1, &elementDataSize);
@@ -81,14 +105,14 @@ int main(int argc, char *argv[])
             elements.push_back(elementBuffer[i]);
             switch (elementBuffer[i++])
             {
-                case CGNS_ENUMV(TRI_3):
-                    for (int j = 0; j < 3; ++j)
-                        elements.push_back(elementBuffer[i++] + offset);
-                    break;
-                case CGNS_ENUMV(QUAD_4):
-                    for (int j = 0; j < 4; ++j)
-                        elements.push_back(elementBuffer[i++] + offset);
-                    break;
+            case CGNS_ENUMV(TRI_3):
+                for (int j = 0; j < 3; ++j)
+                    elements.push_back(elementBuffer[i++] + offset);
+                break;
+            case CGNS_ENUMV(QUAD_4):
+                for (int j = 0; j < 4; ++j)
+                    elements.push_back(elementBuffer[i++] + offset);
+                break;
             }
 
             ++nElements;
@@ -116,9 +140,9 @@ int main(int argc, char *argv[])
                 continue;
 
             boost::geometry::model::box<Node> box(
-                    Node(node.first.get<0>() - tolerance, node.first.get<1>() - tolerance),
-                    Node(node.first.get<0>() + tolerance, node.first.get<1>() + tolerance)
-            );
+                        Node(node.first.get<0>() - tolerance, node.first.get<1>() - tolerance),
+                        Node(node.first.get<0>() + tolerance, node.first.get<1>() + tolerance)
+                        );
 
             std::vector<std::pair<Node, cgsize_t>> mergeToNode;
             rtree.query(boost::geometry::index::covered_by(box), std::back_inserter(mergeToNode));
@@ -150,20 +174,20 @@ int main(int argc, char *argv[])
 
             switch (elements[i++])
             {
-                case CGNS_ENUMV(TRI_3):
-                    for (int j = 0; j < 3; ++j)
-                    {
-                        elements[i] = nodeIds[elements[i] - 1];
-                        element.push_back(elements[i++]);
-                    }
-                    break;
-                case CGNS_ENUMV(QUAD_4):
-                    for (int j = 0; j < 4; ++j)
-                    {
-                        elements[i] = nodeIds[elements[i] - 1];
-                        element.push_back(elements[i++]);
-                    }
-                    break;
+            case CGNS_ENUMV(TRI_3):
+                for (int j = 0; j < 3; ++j)
+                {
+                    elements[i] = nodeIds[elements[i] - 1];
+                    element.push_back(elements[i++]);
+                }
+                break;
+            case CGNS_ENUMV(QUAD_4):
+                for (int j = 0; j < 4; ++j)
+                {
+                    elements[i] = nodeIds[elements[i] - 1];
+                    element.push_back(elements[i++]);
+                }
+                break;
             }
 
             auto insert = elementSet.insert(std::make_pair(std::set<cgsize_t>(element.begin() + 1, element.end()), id));
@@ -239,20 +263,20 @@ int main(int argc, char *argv[])
 
                 switch (type)
                 {
-                    case CGNS_ENUMV(Integer):
-                    {
-                        std::vector<int> buffer(sizes[1]);
-                        cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(Integer), &rmin, &rmax, buffer.data());
-                        intFields[name].insert(intFields[name].end(), buffer.begin(), buffer.end());
-                    }
-                        break;
-                    case CGNS_ENUMV(RealDouble):
-                    {
-                        std::vector<double> buffer(sizes[1]);
-                        cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
-                        doubleFields[name].insert(doubleFields[name].end(), buffer.begin(), buffer.end());
-                    }
-                        break;
+                case CGNS_ENUMV(Integer):
+                {
+                    std::vector<int> buffer(sizes[1]);
+                    cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(Integer), &rmin, &rmax, buffer.data());
+                    intFields[name].insert(intFields[name].end(), buffer.begin(), buffer.end());
+                }
+                    break;
+                case CGNS_ENUMV(RealDouble):
+                {
+                    std::vector<double> buffer(sizes[1]);
+                    cg_field_read(fn2, 1, 1, 1, name, CGNS_ENUMV(RealDouble), &rmin, &rmax, buffer.data());
+                    doubleFields[name].insert(doubleFields[name].end(), buffer.begin(), buffer.end());
+                }
+                    break;
                 }
             }
 

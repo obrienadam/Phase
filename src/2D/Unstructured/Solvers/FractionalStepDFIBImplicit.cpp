@@ -21,6 +21,34 @@ Scalar FractionalStepDFIBImplicit::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
 
+    Vector2D fib(0., 0.);
+
+    for(const Cell& cell: *fluid_)
+    {
+        Vector2D f(0., 0.);
+
+        f += rho_ * (u_(cell) - u_.oldField(0)(cell)) * cell.volume() / timeStep;
+
+        for(const InteriorLink &nb: cell.neighbours())
+        {
+            Scalar flux = rho_ * dot(u_(nb.face()), nb.outwardNorm());
+            f += std::max(flux, 0.) * u_.oldField(0)(cell);
+            f += std::min(flux, 0.) * u_.oldField(0)(nb.cell());
+
+            f -= mu_ * (u_.oldField(0)(nb.cell()) - u_.oldField(0)(cell)) * dot(nb.outwardNorm(), nb.rCellVec()) / nb.rCellVec().magSqr();
+        }
+
+        f += gradP_(cell) * cell.volume();
+
+
+        fib += f;
+    }
+
+    fib = Vector2D(grid_->comm().sum(fib.x), grid_->comm().sum(fib.y));
+
+    if(grid_->comm().isMainProc())
+        std::cout << "FIB = " << fib << "\n";
+
     for(const Cell &c: u_.cells())
         u_(c) += timeStep / rho_ * gradP_(c);
 

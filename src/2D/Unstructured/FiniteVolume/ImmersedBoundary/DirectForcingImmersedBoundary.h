@@ -6,7 +6,6 @@
 #include "Math/Matrix.h"
 
 #include "ImmersedBoundary.h"
-#include "ImmersedBoundaryObjectSurfaceField.h"
 
 class DirectForcingImmersedBoundary : public ImmersedBoundary
 {
@@ -55,12 +54,6 @@ public:
                                         const VectorFiniteVolumeField &u,
                                         const ScalarFiniteVolumeField &p,
                                         const Vector2D &g = Vector2D(0., 0.)) override;
-
-    void applyHydrodynamicForce(const ImmersedBoundaryObject::SurfaceField<Scalar> &rho,
-                                const ImmersedBoundaryObject::SurfaceField<Scalar> &mu,
-                                const ImmersedBoundaryObject::SurfaceField<Tensor2D> &gradU,
-                                const ImmersedBoundaryObject::SurfaceField<Scalar> &p,
-                                const Vector2D &g = Vector2D(0., 0.));
 
     void applyHydrodynamicForce(Scalar rho, const VectorFiniteVolumeField &fib, const Vector2D &g = Vector2D(0., 0.));
 

@@ -120,25 +120,19 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         u_(cell) += timeStep / rho_(cell) * gradP_(cell);
 
     grid_->sendMessages(u_);
-    u_.interpolateFaces();
-    return error;
 
     for (const Face &f: grid_->interiorFaces())
     {
         Scalar g = f.volumeWeight();
-
-        //        if(ib_->ibObj(f.lCell().centroid()) || ib_->ibObj(f.rCell().centroid()))
-        //        {
-        //            u_(f) = f.interpolate(u_);
-        //            continue;
-        //        }
-
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
-                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
-                + timeStep / rho_(f) * (fst(f) + sg_(f));
+        if(ib_->ibObj(f.lCell().centroid()) || ib_->ibObj(f.rCell().centroid()))
+            u_(f) = g * u_(l) + (1. - g) * u_(r);
+        else
+            u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
+                    + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
+                    + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())

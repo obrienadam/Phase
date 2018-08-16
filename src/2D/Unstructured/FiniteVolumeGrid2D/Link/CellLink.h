@@ -24,6 +24,8 @@ public:
 
     Scalar linearInterpolate(const FiniteVolumeField<Scalar> &phi, const Point2D &pt) const;
 
+    Vector2D linearInterpolate(const FiniteVolumeField<Vector2D> &u, const Point2D &pt) const;
+
 protected:
 
     const Cell &cell_;
