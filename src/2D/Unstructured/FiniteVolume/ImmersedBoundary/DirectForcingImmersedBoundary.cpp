@@ -388,24 +388,60 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
 
         grid_->sendMessages(cellIdToIndexMap);
 
+        std::vector<Stress> stresses;
+        stresses.reserve(ibObj->ibCells().size());
+
         Index row = 0;
         for(const Cell &cell: ibObj->ibCells())
         {
             auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
 
-            eqn.setRank(eqn.rank() + st.nReconstructionPoints() + 1);
+            //- Compute the stress tensor
+            Matrix A(st.nReconstructionPoints(), 6), rhs(st.nReconstructionPoints(), 2);
 
-            Index col = cellIdToIndexMap[cell.id()];
-
-            for(const auto &cellPtr: st.cells())
+            int i = 0;
+            for(const Cell *cell: st.cells())
             {
-                Point2D x = cellPtr->centroid();
+                Point2D x = cell->centroid();
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+                rhs.setRow(i++, {u(*cell).x, u(*cell).y});
+            }
+
+            for(const auto &compatPt: st.compatPts())
+            {
+                Point2D x = compatPt.pt();
+                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+                rhs.setRow(i++, {compatPt.velocity().x, compatPt.velocity().y});
+            }
+
+            Point2D xb = ibObj->nearestIntersect(cell.centroid());
+            auto coeffs = solve(A, rhs);
+            auto derivs = Matrix(2, 6, {
+                                     2. * xb.x, 0., xb.y, 1., 0., 0.,
+                                     0., 2. * xb.y, xb.x, 0., 1., 0.
+                                 }) * coeffs;
+
+            //- The tensor is tranposed here
+            auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
+            tau = mu * (tau + tau.transpose());
+
+            stresses.push_back(Stress{xb, 0., tau});
+
+            auto divTau = mu * Vector2D(4 * coeffs(0, 0) + 2 * coeffs(1, 0) + coeffs(2, 1),
+                                        2 * coeffs(0, 1) + 4 * coeffs(1, 1) + coeffs(2, 0));
+
+            eqn.setRank(eqn.rank() + st.nReconstructionPoints());
+
+            Index colStart = cellIdToIndexMap[cell.id()];
+            for(const Cell *cell: st.cells())
+            {
+                Point2D x = cell->centroid();
 
                 eqn.setCoeffs(row,
-                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {colStart, colStart + 1, colStart + 2, colStart + 3, colStart + 4, colStart + 5},
                 {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
 
-                eqn.setRhs(row++, -p(*cellPtr));
+                eqn.setRhs(row++, -p(*cell));
             }
 
             for(const auto &compatPt: st.compatPts())
@@ -416,33 +452,30 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
                 Point2D x = compatPt.pt();
 
                 eqn.setCoeffs(row,
-                {col, col + 1, col + 2, col + 3, col + 4, col + 5},
+                {colStart, colStart + 1, colStart + 2, colStart + 3, colStart + 4, colStart + 5},
                 {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
 
-                Index col2 = cellIdToIndexMap[compatPt.cell().id()];
+                Index colStart2 = cellIdToIndexMap[compatPt.cell().id()];
 
                 eqn.setCoeffs(row++,
-                {col2, col2 + 1, col2 + 2, col2 + 3, col2 + 4, col2 + 5},
+                {colStart2, colStart2 + 1, colStart2 + 2, colStart2 + 3, colStart2 + 4, colStart2 + 5},
                 {-x.x * x.x, -x.y * x.y, -x.x * x.y, -x.x, -x.y, -1.});
             }
 
-            Point2D x = ibObj->nearestIntersect(cell.centroid());
-            Vector2D n = ibObj->nearestEdgeUnitNormal(x);
+            Vector2D n = ibObj->nearestEdgeUnitNormal(xb);
 
             eqn.setCoeffs(row,
-            {col, col + 1, col + 2, col + 3, col + 4, col + 5},
-            {2. * x.x * n.x, 2. * x.y * n.y, x.y * n.x + x.x * n.y, n.x, n.y, 0.});
+            {colStart, colStart + 1, colStart + 2, colStart + 3, colStart + 4, colStart + 5},
+            {2. * xb.x * n.x, 2. * xb.y * n.y, xb.y * n.x + xb.x * n.y, n.x, n.y, 0.});
 
-            eqn.setRhs(row++, rho * dot(ibObj->acceleration(x), n));
+            eqn.setRhs(row++, rho * dot(ibObj->acceleration(xb), n) - dot(divTau, n));
         }
 
         eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
         eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
         eqn.solveLeastSquares();
 
-        std::vector<Stress> stresses;
-        stresses.reserve(ibObj->ibCells().size());
-
+        //- Extract the pressure coeffs and compute
         for(int i = 0; i < 6 * ibObj->ibCells().size(); i += 6)
         {
             Scalar a = eqn.x(i);
@@ -452,60 +485,16 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
             Scalar e = eqn.x(i + 4);
             Scalar f = eqn.x(i + 5);
 
-            const Cell &cell = ibObj->ibCells()[i / 6];
-
-            Stress stress;
-            stress.pt = ibObj->nearestIntersect(cell.centroid());
-
-            Point2D x = stress.pt;
-            stress.p = a * x.x * x.x + b * x.y * x.y + c * x.x * x.y + d * x.x + e * x.y + f + rho * dot(x, g);
-
-            std::vector<std::pair<Point2D, Vector2D>> pts;
-            pts.reserve(8);
-
-            for(const CellLink &nb: cell.cellLinks())
-                if(!globalSolidCells_.isInSet(nb.cell()))
-                {
-                    pts.push_back(std::make_pair(nb.cell().centroid(), u(nb.cell())));
-
-                    if(globalIbCells_.isInSet(nb.cell()))
-                    {
-                        auto bp = ibObj->nearestIntersect(nb.cell().centroid());
-                        pts.push_back(std::make_pair(bp, ibObj->velocity(bp)));
-                    }
-                }
-
-            pts.push_back(std::make_pair(stress.pt, ibObj->velocity(stress.pt)));
-
-            Matrix A(pts.size(), 6), rhs(pts.size(), 2);
-
-            for(int i = 0; i < pts.size(); ++i)
-            {
-                Point2D x = pts[i].first;
-                Point2D u = pts[i].second;
-
-                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-                rhs.setRow(i, {u.x, u.y});
-            }
-
-            auto coeffs = solve(A, rhs);
-            auto derivs = Matrix(2, 6, {
-                                     2. * x.x, 0., x.y, 1., 0., 0.,
-                                     0., 2. * x.y, x.x, 0., 1., 0.
-                                 }) * coeffs;
-
-            //- Then tensor is tranposed here
-            auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
-
-            stress.tau = mu * (tau + tau.transpose());
-
-            stresses.push_back(stress);
+            Stress &stress = stresses[i / 6];
+            Point2D xb = stress.pt;
+            stress.p = a * xb.x * xb.x + b * xb.y * xb.y + c * xb.x * xb.y + d * xb.x + e * xb.y + f + rho * dot(xb, g);
         }
 
         stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
 
         Vector2D force(0., 0.);
 
+        //- Integrate the stresses
         if(grid_->comm().isMainProc())
         {
 
@@ -576,6 +565,9 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
 
         grid_->sendMessages(cellIdToIndexMap);
 
+        std::vector<Stress> stresses;
+        stresses.reserve(ibObj->ibCells().size());
+
         Index row = 0;
         for(const Cell &cell: ibObj->ibCells())
         {
@@ -599,16 +591,18 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
                 rhs.setRow(i++, {compatPt.velocity().x, compatPt.velocity().y});
             }
 
-            Point2D xc = ibObj->nearestIntersect(cell.centroid());
+            Point2D xb = ibObj->nearestIntersect(cell.centroid());
             auto coeffs = solve(A, rhs);
             auto derivs = Matrix(2, 6, {
-                                     2. * xc.x, 0., xc.y, 1., 0., 0.,
-                                     0., 2. * xc.y, xc.x, 0., 1., 0.
+                                     2. * xb.x, 0., xb.y, 1., 0., 0.,
+                                     0., 2. * xb.y, xb.x, 0., 1., 0.
                                  }) * coeffs;
 
             //- The tensor is tranposed here
             auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
             tau = mu(cell) * (tau + tau.transpose());
+
+            stresses.push_back(Stress{xb, 0., tau});
 
             auto divTau = mu(cell) * Vector2D(4 * coeffs(0, 0) + 2 * coeffs(1, 0) + coeffs(2, 1),
                                               2 * coeffs(0, 1) + 4 * coeffs(1, 1) + coeffs(2, 0));
@@ -645,21 +639,18 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
                 {-x.x * x.x, -x.y * x.y, -x.x * x.y, -x.x, -x.y, -1.});
             }
 
-            Vector2D n = ibObj->nearestEdgeUnitNormal(xc);
+            Vector2D n = ibObj->nearestEdgeUnitNormal(xb);
 
             eqn.setCoeffs(row,
             {colStart, colStart + 1, colStart + 2, colStart + 3, colStart + 4, colStart + 5},
-            {2. * xc.x * n.x, 2. * xc.y * n.y, xc.y * n.x + xc.x * n.y, n.x, n.y, 0.});
+            {2. * xb.x * n.x, 2. * xb.y * n.y, xb.y * n.x + xb.x * n.y, n.x, n.y, 0.});
 
-            eqn.setRhs(row++, rho(cell) * dot(ibObj->acceleration(xc), n) - dot(divTau, n));
+            eqn.setRhs(row++, rho(cell) * dot(ibObj->acceleration(xb), n) - dot(divTau, n));
         }
 
         eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
         eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
         eqn.solveLeastSquares();
-
-        std::vector<Stress> stresses;
-        stresses.reserve(ibObj->ibCells().size());
 
         //- Extract the pressure coeffs and compute
         for(int i = 0; i < 6 * ibObj->ibCells().size(); i += 6)
@@ -673,11 +664,9 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
 
             const Cell &cell = ibObj->ibCells()[i / 6];
 
-            Stress stress;
-            stress.pt = ibObj->nearestIntersect(cell.centroid());
-
-            Point2D x = stress.pt;
-            stress.p = a * x.x * x.x + b * x.y * x.y + c * x.x * x.y + d * x.x + e * x.y + f + rho(cell) * dot(x, g);
+            Stress &stress = stresses[i / 6];
+            Point2D xb = stress.pt;
+            stress.p = a * xb.x * xb.x + b * xb.y * xb.y + c * xb.x * xb.y + d * xb.x + e * xb.y + f + rho(cell) * dot(xb, g);
         }
 
         stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);

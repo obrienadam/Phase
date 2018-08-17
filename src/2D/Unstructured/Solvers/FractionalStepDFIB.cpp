@@ -38,6 +38,24 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
     // ib_->applyHydrodynamicForce(rho_, fb_, g_);
 
+    Vector2D force = Vector2D(0., 0.);
+    for(const FaceGroup &patch: grid_->patches())
+        for(const Face &f: patch)
+        {
+            Vector2D sf = f.outwardNorm(f.lCell().centroid());
+
+            if(grid_->localCells().isInSet(f.lCell()))
+            {
+                //force -= rho_ * dot(u_(f), sf) * sf.unitVec();
+                force -= p_(f) * sf;
+            }
+        }
+
+    force = Vector2D(grid_->comm().sum(force.x), grid_->comm().sum(force.y));
+
+    if(grid_->comm().isMainProc())
+        std::cout << "Momentum deficit = " << force << "\n";
+
     return 0;
 }
 
@@ -69,17 +87,17 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     grid_->sendMessages(u_);
     u_.interpolateFaces();
 
-//    const auto &u0 = u_.oldField(0);
-//    for(const Face &f: grid_->interiorFaces())
-//    {
-//        const Cell &l = f.lCell();
-//        const Cell &r = f.rCell();
-//        Scalar g = f.volumeWeight();
+    //    const auto &u0 = u_.oldField(0);
+    //    for(const Face &f: grid_->interiorFaces())
+    //    {
+    //        const Cell &l = f.lCell();
+    //        const Cell &r = f.rCell();
+    //        Scalar g = f.volumeWeight();
 
-//        u_(f) = g * (u_(l) - u0(l)) + (1. - g) * (u_(r) - u0(r)) + u0(f);
-//    }
+    //        u_(f) = g * (u_(l) - u0(l)) + (1. - g) * (u_(r) - u0(r)) + u0(f);
+    //    }
 
-//    u_.setBoundaryFaces();
+    //    u_.setBoundaryFaces();
 
     return error;
 }
