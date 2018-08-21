@@ -1,5 +1,11 @@
 #include "PolyLine2D.h"
 
+PolyLine2D &PolyLine2D::operator =(const std::initializer_list<Point2D> &pts)
+{
+    pts_.assign(pts);
+    return *this;
+}
+
 Scalar PolyLine2D::length() const
 {
     Scalar l = 0.;

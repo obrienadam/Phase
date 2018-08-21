@@ -15,8 +15,7 @@ public:
     PolyLine2D(const_iterator begin, const_iterator end) : pts_(begin, end) {}
 
     //- Operators
-    PolyLine2D &operator =(const std::initializer_list<Point2D> &pts)
-    { pts_.assign(pts); }
+    PolyLine2D &operator =(const std::initializer_list<Point2D> &pts);
 
     const Point2D &operator [](std::size_t i) const
     { return pts_[i]; }

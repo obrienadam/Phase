@@ -1,7 +1,7 @@
 #ifndef PHASE_CELESTE_IMMERSED_BOUNDARY_H
 #define PHASE_CELESTE_IMMERSED_BOUNDARY_H
 
-#include "Geometry/PolyLine2D.h"
+#include "Geometry/StaticPolyLine2D.h"
 
 #include "Celeste.h"
 #include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
@@ -25,6 +25,7 @@ public:
                     const ScalarFiniteVolumeField &mu,
                     const VectorFiniteVolumeField &u,
                     const ScalarFiniteVolumeField &p,
+                    const ScalarFiniteVolumeField &gamma,
                     const Vector2D &g,
                     DirectForcingImmersedBoundary &ib) const;
 
@@ -34,8 +35,8 @@ protected:
     {
     public:
 
-        ContactLineStencil(const Cell &cell,
-                           const ImmersedBoundaryObject &ibObj,
+        ContactLineStencil(const ImmersedBoundaryObject &ibObj,
+                           const Point2D &pt,
                            Scalar theta,
                            const ScalarFiniteVolumeField &gamma);
 
@@ -44,7 +45,7 @@ protected:
         const CellLink &link() const
         { return *link_; }
 
-        const PolyLine2D& cl() const
+        const StaticPolyLine2D<3>& cl() const
         { return cl_; }
 
         const Vector2D& ncl() const
@@ -59,22 +60,23 @@ protected:
 
     protected:
 
-        std::pair<PolyLine2D, const CellLink*> findIntersectingCellLink(const Ray2D &r, const ImmersedBoundaryObject &ibObj);
-
         static std::queue<Ref<const Cell>> cellQueue_;
 
         static std::unordered_set<Label> cellIdSet_;
 
-        const Cell& cell_;
+        void init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma);
+
+        std::pair<StaticPolyLine2D<3>, const CellLink*> findIntersectingCellLink(const Ray2D &r, const ImmersedBoundaryObject &ibObj);
+
+        const ImmersedBoundaryObject &ibObj_;
 
         const CellLink* link_;
-
 
         Scalar theta_;
 
         Scalar gamma_;
 
-        PolyLine2D cl_;
+        StaticPolyLine2D<3> cl_;
 
         Vector2D ncl_;
     };

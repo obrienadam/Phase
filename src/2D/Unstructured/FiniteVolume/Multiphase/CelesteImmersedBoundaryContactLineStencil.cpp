@@ -5,39 +5,32 @@ std::queue<Ref<const Cell>> CelesteImmersedBoundary::ContactLineStencil::cellQue
 
 std::unordered_set<Label> CelesteImmersedBoundary::ContactLineStencil::cellIdSet_;
 
-CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const Cell &cell,
-                                                                const ImmersedBoundaryObject &ibObj,
-                                                                Scalar theta, const ScalarFiniteVolumeField &gamma)
+CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBoundaryObject &ibObj,
+                                                                const Point2D &pt,
+                                                                Scalar theta,
+                                                                const ScalarFiniteVolumeField &gamma)
     :
-      cell_(cell),
+      ibObj_(ibObj),
       link_(nullptr),
       theta_(theta)
 {
-    Vector2D ns = -ibObj.nearestEdgeUnitNormal(cell.centroid());
+    Vector2D ns = -ibObj.nearestEdgeUnitNormal(ibObj.nearestEdgeUnitNormal(pt));
+    Ray2D r1 = Ray2D(pt, ns.rotate(M_PI_2 - theta_));
+    Ray2D r2 = Ray2D(pt, ns.rotate(theta_ - M_PI_2));
 
-    Ray2D r1 = Ray2D(cell_.centroid(), ns.rotate(M_PI_2 - theta_));
-    Ray2D r2 = Ray2D(cell_.centroid(), ns.rotate(theta_ - M_PI_2));
+    init(r1, r2, gamma);
+}
 
-    auto l1 = findIntersectingCellLink(r1, ibObj);
-    auto l2 = findIntersectingCellLink(r2, ibObj);
+void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)
+{
+    auto l1 = findIntersectingCellLink(r1, ibObj_);
+    auto l2 = findIntersectingCellLink(r2, ibObj_);
 
-    if(!l1.second)
+    if(!l1.second || !l2.second)
     {
         throw Exception("CelesteImmersedBoundary::ContactLineStencil",
                         "ContactLineStencil",
-                        "no intersection found. Cell id = "
-                        + std::to_string(cell.centroid())
-                        + "."
-                        + " r = " + std::to_string(r1.x0()) + std::to_string(r1.r()));
-    }
-    else if(!l2.second)
-    {
-        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
-                        "ContactLineStencil",
-                        "no intersection found. Cell id = "
-                        + std::to_string(cell.centroid())
-                        + "."
-                        + " r = " + std::to_string(r1.x0()) + std::to_string(r1.r()));
+                        "no gridline intersection found.");
     }
 
     Scalar g1 = l1.second->linearInterpolate(gamma, l1.first[2]);
@@ -47,41 +40,36 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const Cell &cell
     {
         link_ = l1.second;
         cl_ = l1.first;
-        ncl_ = -ibObj.nearestEdgeUnitNormal(cl_[1]).rotate(-theta);
+        ncl_ = -ibObj_.nearestEdgeUnitNormal(cl_[1]).rotate(-theta_);
         gamma_ = g1;
     }
     else
     {
         link_ = l2.second;
         cl_ = l2.first;
-        ncl_ = -ibObj.nearestEdgeUnitNormal(cl_[1]).rotate(theta);
+        ncl_ = -ibObj_.nearestEdgeUnitNormal(cl_[1]).rotate(theta_);
         gamma_ = g2;
     }
 }
 
-void CelesteImmersedBoundary::ContactLineStencil::init()
-{
-
-}
-
-std::pair<PolyLine2D, const CellLink*> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
-                                                                                                             const ImmersedBoundaryObject &ibObj)
+std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
+                                                                                                                       const ImmersedBoundaryObject &ibObj)
 {
     auto intersections = ibObj.shape().intersections(r);
 
     if(intersections.size() != 1)
         throw Exception("CelesteImmersedBoundary::ContactLineStencil",
                         "findIntersectingCellLink",
-                        "no intersection found.");
+                        "contact line does not intersect boundary.");
 
     Vector2D bp = intersections.front();
 
-    cellQueue_.push(std::cref(cell_.grid().globalCells().nearestItem(bp)));
+    cellQueue_.push(std::cref(ibObj.ibCells().nearestItem(r.x0())));
     cellIdSet_.insert(cellQueue_.back().get().id());
 
     const CellLink *link = nullptr;
     Scalar minDistSqr;
-    PolyLine2D cl;
+    StaticPolyLine2D<3> cl;
 
     while(!cellQueue_.empty())
     {

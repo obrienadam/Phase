@@ -16,8 +16,11 @@ public:
     void update(Scalar timeStep);
 
 private:
+
     Point2D pos0_;
+
     Vector2D freq_, amp_, phase_;
+
     Scalar time_;
 };
 

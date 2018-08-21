@@ -1,6 +1,7 @@
 set(HEADERS Input.h
         CommandLine.h
         Exception.h
+        StaticVector.h
         Communicator.h
         Timer.h
         RunControl.h
@@ -12,6 +13,7 @@ set(HEADERS Input.h
 set(SOURCES Input.cpp
         CommandLine.cpp
         Exception.cpp
+        StaticVector.tpp
         Communicator.cpp
         Timer.cpp
         RunControl.cpp

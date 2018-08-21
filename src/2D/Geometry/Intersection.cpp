@@ -37,7 +37,7 @@ std::pair<Point2D, bool> intersection(const Ray2D &ray, const LineSegment2D &ln)
     return std::make_pair(xc, ray.isBounded(xc) && ln.isBounded(xc));
 }
 
-Intersection<2> intersection(const Ray2D &ray, const Circle &circle)
+StaticVector<Point2D, 2> intersection(const Circle &circle, const Ray2D &ray)
 {
     Vector2D r = ray.x0() - circle.centroid();
 
@@ -46,25 +46,23 @@ Intersection<2> intersection(const Ray2D &ray, const Circle &circle)
     Scalar c = r.magSqr() - circle.radius() * circle.radius();
     Scalar disc = b * b - 4 * a * c;
 
+    StaticVector<Point2D, 2> result;
+
     if (disc == 0. && b < 0.)
     {
-        return Intersection<2>({ray(-b / (2. * a))});
+        result.push_back(ray(-b / (2. * a)));
     }
     else if (disc > 0.)
     {
         Scalar t1 = (-b - sqrt(disc)) / (2 * a);
         Scalar t2 = (-b + sqrt(disc)) / (2 * a);
 
-        Intersection<2> result;
-
         if (t1 > 0.)
-            result.add(ray(t1));
+            result.push_back(ray(t1));
 
         if (t2 > 0.)
-            result.add(ray(t2));
-
-        return result;
+            result.push_back(ray(t2));
     }
 
-    return Intersection<2>();
+    return result;
 }

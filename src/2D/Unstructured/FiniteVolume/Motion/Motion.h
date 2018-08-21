@@ -7,13 +7,30 @@ class Motion
 {
 public:
 
-    Motion(const Point2D &pos = Point2D(0., 0.), const Vector2D &vel = Vector2D(0., 0.),
-           const Vector2D &acc = Vector2D(0., 0.), Scalar theta = 0., Scalar omega = 0., Scalar alpha = 0.);
+    Motion(const Point2D &pos = Point2D(0., 0.),
+           const Vector2D &vel = Vector2D(0., 0.),
+           const Vector2D &acc = Vector2D(0., 0.),
+           Scalar theta = 0.,
+           Scalar omega = 0.,
+           Scalar alpha = 0.);
 
     virtual void update(Scalar timeStep) = 0;
 
+    virtual void init(const Point2D &pos = Point2D(0., 0.),
+                      const Vector2D &vel = Vector2D(0., 0.),
+                      const Vector2D &acc = Vector2D(0., 0.),
+                      Scalar theta = 0.,
+                      Scalar omega = 0.,
+                      Scalar alpha = 0.);
+
     Point2D position() const
     { return pos_; }
+
+    Vector2D velocity() const
+    { return vel_; }
+
+    Vector2D acceleration() const
+    { return acc_; }
 
     Vector2D acceleration(const Point2D &pt) const
     { return acc_ + alpha_ * (pt - pos_).tangentVec() + omega_ * omega_ * (pos_ - pt); }

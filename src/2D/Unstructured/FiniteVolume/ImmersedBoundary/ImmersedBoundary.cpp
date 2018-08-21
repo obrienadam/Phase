@@ -3,6 +3,7 @@
 #include "FiniteVolume/Motion/TranslatingMotion.h"
 #include "FiniteVolume/Motion/OscillatingMotion.h"
 #include "FiniteVolume/Motion/SolidBodyMotion.h"
+#include "FiniteVolume/Motion/MotionProfile.h"
 
 #include "ImmersedBoundary.h"
 
@@ -138,6 +139,10 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                         ibObj,
                         ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
                         );
+        }
+        else if(motionType == "motionProfile" || motionType == "motion-profile")
+        {
+            motion = std::make_shared<MotionProfile>(ibObj->position());
         }
         else if (motionType == "none")
         {
