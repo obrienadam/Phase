@@ -5,30 +5,50 @@
 
 namespace cicsam
 {
-std::vector<Scalar> beta(const VectorFiniteVolumeField &u,
-                         const VectorFiniteVolumeField &gradGamma,
-                         const ScalarFiniteVolumeField &gamma,
-                         Scalar timeStep,
-                         Scalar k = 1.);
+Scalar hc(Scalar gammaDTilde, Scalar coD);
+
+Scalar uq(Scalar gammaDTilde, Scalar coD);
+
+Scalar beta(const VectorFiniteVolumeField &u,
+            const ScalarFiniteVolumeField &gamma,
+            const VectorFiniteVolumeField &gradGamma,
+            Scalar timeStep,
+            Scalar k,
+            const Face &f);
 
 void computeMomentumFlux(Scalar rho1,
                          Scalar rho2,
                          const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField &gamma,
-                         const std::vector<Scalar> &beta,
+                         const VectorFiniteVolumeField &gradGamma,
                          Scalar timeStep,
                          VectorFiniteVolumeField &rhoU);
 
 FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
-                                 const std::vector<Scalar> &beta,
                                  ScalarFiniteVolumeField &gamma,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 Scalar timeStep,
                                  Scalar theta,
                                  const CellGroup &cells);
 
 FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
-                                 const std::vector<Scalar> &beta,
                                  ScalarFiniteVolumeField &gamma,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 Scalar timeStep,
                                  Scalar theta);
+
+FiniteVolumeEquation<Scalar> div2e(const VectorFiniteVolumeField &u,
+                                   ScalarFiniteVolumeField &gamma,
+                                   const VectorFiniteVolumeField &gradGamma,
+                                   Scalar timeStep,
+                                   Scalar theta,
+                                   const CellGroup &cells);
+
+FiniteVolumeEquation<Scalar> div2e(const VectorFiniteVolumeField &u,
+                                   ScalarFiniteVolumeField &gamma,
+                                   const VectorFiniteVolumeField &gradGamma,
+                                   Scalar timeStep,
+                                   Scalar theta);
 }
 
 #endif

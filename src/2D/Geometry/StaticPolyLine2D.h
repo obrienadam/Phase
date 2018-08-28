@@ -34,7 +34,15 @@ public:
     Size nSegments() const
     { return pts_.size() - 1; }
 
-    Scalar length() const;
+    Scalar length() const
+    {
+        Scalar l = 0.;
+
+        for(std::size_t i = 1; i < N; ++i)
+            l += (pts_[i] - pts_[i - 1]).mag();
+
+        return l;
+    }
 
     //- Iterators
     typename std::vector<Point2D>::const_iterator begin() const

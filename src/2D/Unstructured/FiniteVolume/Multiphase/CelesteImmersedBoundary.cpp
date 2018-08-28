@@ -80,18 +80,19 @@ FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFinit
     return eqn;
 }
 
-void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
-                                         const ScalarFiniteVolumeField &mu,
-                                         const VectorFiniteVolumeField &u,
-                                         const ScalarFiniteVolumeField &p,
-                                         const ScalarFiniteVolumeField &gamma,
-                                         const Vector2D &g,
-                                         DirectForcingImmersedBoundary &ib) const
+void CelesteImmersedBoundary::appyFluidForces(const ScalarFiniteVolumeField &rho,
+                                              const ScalarFiniteVolumeField &mu,
+                                              const VectorFiniteVolumeField &u,
+                                              const ScalarFiniteVolumeField &p,
+                                              const ScalarFiniteVolumeField &gamma,
+                                              const Vector2D &g,
+                                              DirectForcingImmersedBoundary &ib) const
 {
     struct Stress
     {
         Point2D pt;
-        Scalar p, gamma;
+        Scalar rho, p, gamma;
+        Vector2D tcl;
         Tensor2D tau;
     };
 
@@ -140,10 +141,6 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
             }
 
             Point2D xb = ibObj->nearestIntersect(cell.centroid());
-
-            //- Compute the surface properties from the contact line
-            CelesteImmersedBoundary::ContactLineStencil clst(*ibObj, xb, theta(*ibObj), gamma);
-
             auto coeffs = solve(A, rhs);
             auto derivs = Matrix(2, 6, {
                                      2. * xb.x, 0., xb.y, 1., 0., 0.,
@@ -151,13 +148,23 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
                                  }) * coeffs;
 
             //- The tensor is tranposed here
+
             auto tau = Tensor2D(derivs(0, 0), derivs(1, 0), derivs(0, 1), derivs(1, 1));
-            tau = mu(cell) * (tau + tau.transpose());
 
-            stresses.push_back(Stress{xb, 0., clst.gamma(), tau});
 
-            auto divTau = mu(cell) * Vector2D(4 * coeffs(0, 0) + 2 * coeffs(1, 0) + coeffs(2, 1),
-                                              2 * coeffs(0, 1) + 4 * coeffs(1, 1) + coeffs(2, 0));
+            auto clst = ContactLineStencil(*ibObj,
+                                           xb,
+                                           theta(*ibObj),
+                                           gamma);
+
+            Scalar mub = clst.interpolate(mu);
+
+            tau = mub * (tau + tau.transpose());
+
+            stresses.push_back(Stress{xb, clst.interpolate(rho), 0., clst.gamma(), clst.tcl(), tau});
+
+            auto divTau = mub * Vector2D(4 * coeffs(0, 0) + 2 * coeffs(1, 0) + coeffs(2, 1),
+                                         2 * coeffs(0, 1) + 4 * coeffs(1, 1) + coeffs(2, 0));
 
             eqn.setRank(eqn.rank() + st.nReconstructionPoints());
 
@@ -197,7 +204,7 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
             {colStart, colStart + 1, colStart + 2, colStart + 3, colStart + 4, colStart + 5},
             {2. * xb.x * n.x, 2. * xb.y * n.y, xb.y * n.x + xb.x * n.y, n.x, n.y, 0.});
 
-            eqn.setRhs(row++, rho(cell) * dot(ibObj->acceleration(xb), n) - dot(divTau, n));
+            eqn.setRhs(row++, stresses.back().rho * dot(ibObj->acceleration(xb), n) - dot(divTau, n));
         }
 
         eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
@@ -214,11 +221,11 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
             Scalar e = eqn.x(i + 4);
             Scalar f = eqn.x(i + 5);
 
-            const Cell &cell = ibObj->ibCells()[i / 6];
-
             Stress &stress = stresses[i / 6];
             Point2D xb = stress.pt;
-            stress.p = a * xb.x * xb.x + b * xb.y * xb.y + c * xb.x * xb.y + d * xb.x + e * xb.y + f + rho(cell) * dot(xb, g);
+            Scalar rhob = stress.rho;
+
+            stress.p = a * xb.x * xb.x + b * xb.y * xb.y + c * xb.x * xb.y + d * xb.x + e * xb.y + f + rhob * dot(xb, g);
         }
 
         stresses = grid_->comm().gatherv(grid_->comm().mainProcNo(), stresses);
@@ -235,7 +242,7 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
                         < (rhs.pt - ibObj->shape().centroid()).angle();
             });
 
-            Vector2D fShear(0., 0.), fPressure(0., 0.);
+            Vector2D fShear(0., 0.), fPressure(0., 0.), fCapillary(0., 0.);
 
             for(int i = 0; i < stresses.size(); ++i)
             {
@@ -248,15 +255,83 @@ void CelesteImmersedBoundary::applyForce(const ScalarFiniteVolumeField &rho,
                 auto pB = qpb.p;
                 auto tauA = qpa.tau;
                 auto tauB = qpb.tau;
+                auto gA = qpa.gamma;
+                auto gB = qpb.gamma;
 
-                fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
-                fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+                if(ibObj->shape().type() == Shape2D::CIRCLE)
+                {
+                    const Circle &c = static_cast<const Circle&>(ibObj->shape());
+                    Scalar r = c.radius();
+                    Scalar tA = (ptA - c.centroid()).angle();
+                    Scalar tB = (ptB - c.centroid()).angle();
+
+                    while(tB < tA)
+                        tB += 2 * M_PI;
+
+                    fPressure += r * Vector2D(
+                                pA*tA*sin(tA) - pA*tB*sin(tA) + pA*cos(tA) - pA*cos(tB) - pB*tA*sin(tB) + pB*tB*sin(tB) - pB*cos(tA) + pB*cos(tB),
+                                -pA*tA*cos(tA) + pA*tB*cos(tA) + pA*sin(tA) - pA*sin(tB) + pB*tA*cos(tB) - pB*tB*cos(tB) - pB*sin(tA) + pB*sin(tB)
+                                ) / (tA - tB);
+
+                    fShear += r * Vector2D(
+                                -tA*tauA.xx*sin(tA) + tA*tauA.xy*cos(tA) + tA*tauB.xx*sin(tB) - tA*tauB.xy*cos(tB) + tB*tauA.xx*sin(tA) - tB*tauA.xy*cos(tA) - tB*tauB.xx*sin(tB) + tB*tauB.xy*cos(tB) - tauA.xx*cos(tA) + tauA.xx*cos(tB) - tauA.xy*sin(tA) + tauA.xy*sin(tB) + tauB.xx*cos(tA) - tauB.xx*cos(tB) + tauB.xy*sin(tA) - tauB.xy*sin(tB),
+                                -tA*tauA.yx*sin(tA) + tA*tauA.yy*cos(tA) + tA*tauB.yx*sin(tB) - tA*tauB.yy*cos(tB) + tB*tauA.yx*sin(tA) - tB*tauA.yy*cos(tA) - tB*tauB.yx*sin(tB) + tB*tauB.yy*cos(tB) - tauA.yx*cos(tA) + tauA.yx*cos(tB) - tauA.yy*sin(tA) + tauA.yy*sin(tB) + tauB.yx*cos(tA) - tauB.yx*cos(tB) + tauB.yy*sin(tA) - tauB.yy*sin(tB)
+                                ) / (tA - tB);
+
+                    // Scalar dgamma = std::abs(gB - gA) / (tB - tA);
+                    Scalar theta = this->theta(*ibObj);
+
+                    //- sharp method
+                    if(gA < 0.5 != gB <= 0.5)
+                    {
+                        Scalar alpha = (0.5 - gB) / (gA - gB);
+                        Scalar phi = alpha * tA + (1. - alpha) * tB;
+
+                        Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
+                        Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
+
+                        fCapillary += sigma_ * (dot(t1, qpa.tcl) > dot(t2, qpa.tcl) ? t1 : t2);
+                    }
+
+                    // - diffuse method
+
+                    //                    Vector2D t1 = Vector2D(std::cos(tA - M_PI_2 + theta), std::sin(tA - M_PI_2 + theta));
+                    //                    Vector2D t2 = Vector2D(std::cos(tA + M_PI_2 - theta), std::sin(tA + M_PI_2 - theta));
+
+                    //                    if(dot(t1, qpa.tcl) > dot(t2, qpa.tcl))
+                    //                    {
+                    //                        fCapillary += Vector2D(
+                    //                                    dgamma*sigma_*(cos(tA + theta) - cos(tB + theta)),
+                    //                                    dgamma*sigma_*(sin(tA + theta) - sin(tB + theta))
+                    //                                    );
+                    //                    }
+                    //                    else
+                    //                    {
+                    //                        fCapillary += Vector2D(
+                    //                                    dgamma*sigma_*(-cos(tA - theta) + cos(tB - theta)),
+                    //                                    dgamma*sigma_*(-sin(tA - theta) + sin(tB - theta))
+                    //                                    );
+                    //                    }
+                }
+                else
+                {
+                    fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
+                    fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+
+                    if(gA < 0.5 != gB <= 0.5)
+                    {
+                        Scalar alpha = (0.5 - gB) / (gA - gB);
+                        Vector2D tcl = (alpha * qpa.tcl + (1. - alpha) * qpb.tcl).unitVec();
+                        fCapillary += sigma_ * tcl;
+                    }
+                }
             }
 
-            force = fPressure + fShear + ibObj->rho * g * ibObj->shape().area();
+            force = fPressure + fShear + fCapillary + ibObj->rho * g * ibObj->shape().area();
 
             std::cout << "Pressure force = " << fPressure << "\n"
                       << "Shear force = " << fShear << "\n"
+                      << "Capillary force = " << fCapillary << "\n"
                       << "Weight = " << ibObj->rho * g * ibObj->shape().area() << "\n"
                       << "Net force = " << force << "\n";
         }

@@ -14,7 +14,7 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBo
       link_(nullptr),
       theta_(theta)
 {
-    Vector2D ns = -ibObj.nearestEdgeUnitNormal(ibObj.nearestEdgeUnitNormal(pt));
+    Vector2D ns = -ibObj_.nearestEdgeUnitNormal(pt);
     Ray2D r1 = Ray2D(pt, ns.rotate(M_PI_2 - theta_));
     Ray2D r2 = Ray2D(pt, ns.rotate(theta_ - M_PI_2));
 
@@ -57,19 +57,24 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
 {
     auto intersections = ibObj.shape().intersections(r);
 
-    if(intersections.size() != 1)
-        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
-                        "findIntersectingCellLink",
-                        "contact line does not intersect boundary.");
+    if(intersections.size() < 1)
+        intersections.push_back(ibObj.nearestIntersect(r.x0()));
+
+//    if(intersections.size() != 1)
+//        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+//                        "findIntersectingCellLink",
+//                        "contact line does not intersect boundary.");
 
     Vector2D bp = intersections.front();
 
-    cellQueue_.push(std::cref(ibObj.ibCells().nearestItem(r.x0())));
+    cellQueue_.push(std::cref(ibObj.ibCells().nearestItem(bp)));
     cellIdSet_.insert(cellQueue_.back().get().id());
 
     const CellLink *link = nullptr;
     Scalar minDistSqr;
     StaticPolyLine2D<3> cl;
+
+    bool addToQueue = true;
 
     while(!cellQueue_.empty())
     {
@@ -78,7 +83,7 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
 
         for(const CellLink &nb: cell.cellLinks())
         {
-            if(cellIdSet_.find(nb.cell().id()) == cellIdSet_.end() && !link) // don't add to queue if a result has been found
+            if(cellIdSet_.find(nb.cell().id()) == cellIdSet_.end() && addToQueue) // don't add to queue if a result has been found
             {
                 cellQueue_.push(std::cref(nb.cell()));
                 cellIdSet_.insert(nb.cell().id());
@@ -106,6 +111,8 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
                 }
             }
         }
+
+        addToQueue = !link;
     }
 
     cellIdSet_.clear();

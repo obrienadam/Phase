@@ -9,7 +9,10 @@ class TaylorSeries
 {
 public:
 
-    //void computeTaylorCoeffs(const std::array<Scalar, N> &offsets, int derivOrder);
+    TaylorSeries() {}
+
+    TaylorSeries(const std::vector<Scalar> &offsets, int derivOrder)
+    { computeTaylorCoeffs(offsets, derivOrder); }
 
     void computeTaylorCoeffs(const std::vector<Scalar> &offsets, int derivOrder);
 

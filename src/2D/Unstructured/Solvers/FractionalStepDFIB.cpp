@@ -1,5 +1,5 @@
 #include "FiniteVolume/Equation/TimeDerivative.h"
-#include "FiniteVolume/Equation/Divergence.h"
+#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
 
@@ -61,9 +61,9 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
 
 Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 {
-    u_.savePreviousTimeStep(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 2);
 
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.)
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
              == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_));
 
     Scalar error = uEqn_.solve();
@@ -76,8 +76,8 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     for (const Cell &cell: grid_->cells())
         u_(cell) = u_.oldField(0)(cell);
 
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.)
-             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_ - fb_));
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
+             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_ - fb_));
 
     error = uEqn_.solve();
 

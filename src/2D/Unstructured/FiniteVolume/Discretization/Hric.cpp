@@ -53,5 +53,5 @@ FiniteVolumeEquation<Scalar> hric::div(const VectorFiniteVolumeField &u,
                            ScalarFiniteVolumeField &gamma,
                            Scalar theta)
 {
-    return cicsam::div(u, beta, gamma, theta);
+    throw Exception("hric", "div", "not implemented.");
 }

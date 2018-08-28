@@ -43,10 +43,13 @@ public:
                                  const DirectForcingImmersedBoundary &ib);
 
     Size nReconstructionPoints() const
-    { return _cells.size() + _compatPts.size(); }
+    { return _cells.size() + _faces.size() + _compatPts.size(); }
 
     const std::vector<const Cell*> &cells() const
     { return _cells; }
+
+//    const std::vector<const Face*> &faces() const
+//    { return _faces; }
 
     const std::vector<CompatPoint> &compatPts() const
     { return _compatPts; }
@@ -54,6 +57,8 @@ public:
 protected:
 
     std::vector<const Cell*> _cells;
+
+    std::vector<const Face*> _faces;
 
     std::vector<CompatPoint> _compatPts;
 };

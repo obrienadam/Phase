@@ -5,83 +5,86 @@
 
 #include "System/Communicator.h"
 
-#include "Geometry/Point2D.h"
+#include "Cell.h"
+#include "Face.h"
 
 class StructuredGrid2D
 {
 public:
 
-    enum Boundary
-    {
-        EAST, WEST, NORTH, SOUTH
-    };
+    enum Coordinate{I, J};
 
-    class Node : public Point2D
-    {
-    public:
-
-        Node(const Point2D &loc, Label i, Label j, Label id)
-                : Point2D(loc), _i(i), _j(j), _id(id)
-        {}
-
-        Label i() const
-        { return _i; }
-
-        Label j() const
-        { return _j; }
-
-        Label id() const
-        { return _id; }
-
-    protected:
-
-        Label _i, _j, _id;
-    };
+    enum CoordinateDirection{I_POS, I_NEG, J_POS, J_NEG};
 
     StructuredGrid2D()
     {}
 
-    StructuredGrid2D(Size nNodesI, Size nNodesJ, Scalar lx, Scalar ly);
+    StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
 
-    void init(Size nNodesI, Size nNodesJ, Scalar lx, Scalar ly);
+    void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
 
-    size_t id(size_t i, size_t j) const
-    { return j * nNodesI_ + i; }
+    //- Parameters
+    Size nNodesI() const
+    { return _nCellsI + 1; }
 
-    size_t nNodesI() const
-    { return nNodesI_; }
+    Size nNodesJ() const
+    { return _nCellsJ + 1; }
 
-    size_t nNodesJ() const
-    { return nNodesJ_; }
+    Size nCellsI() const
+    { return _nCellsI; }
 
-    size_t nNodes() const
-    { return nNodesI_ * nNodesJ_; }
+    Size nCellsJ() const
+    { return _nCellsJ; }
 
-    const Point2D &node(size_t i, size_t j) const
-    { return nodes_[j * nNodesI_ + i]; }
+    Size nFacesI() const
+    { return nNodesI() * nCellsJ(); }
 
-    Scalar dxe(size_t i, size_t j) const;
+    Size nFacesJ() const
+    { return nCellsI() * nNodesJ(); }
 
-    Scalar dxw(size_t i, size_t j) const;
+    //- Element access
+    const std::vector<Cell> &cells() const
+    { return _cells; }
 
-    Scalar dxn(size_t i, size_t j) const;
+    const Cell &cell(Label i, Label j) const
+    { return _cells[j * _nCellsI + i]; }
 
-    Scalar dxs(size_t i, size_t j) const;
+    const std::vector<Point2D> nodes() const
+    { return _nodes; }
+
+    const Point2D &node(Label i, Label j) const
+    { return _nodes[j * nNodesI() + i]; }
+
+    const std::vector<Face> &faces() const
+    { return _faces; }
+
+    const std::vector<Face> &ifaces() const
+    { return _ifaces; }
+
+    const std::vector<Face> &jfaces() const
+    { return _jfaces; }
 
     const Communicator &comm() const
-    { return _comm; }
+    { return *_comm; }
 
 protected:
 
-    size_t nNodesI_, nNodesJ_;
+    //- Mesh parameters
+    Size _nCellsI, _nCellsJ;
 
-    Scalar lx_, ly_;
+    Scalar _lx, _ly;
 
-    std::vector<Node> nodes_;
+    //- Mesh entities
+    std::vector<Point2D> _nodes;
 
-    std::vector<int> ownership_, globalIds_;
+    std::vector<Cell> _cells;
 
-    Communicator _comm;
+    std::vector<Face> _faces, _ifaces, _jfaces;
+
+    //- Parallel
+    std::shared_ptr<const Communicator> _comm;
+
+    std::vector<int> _ownership;
 };
 
 

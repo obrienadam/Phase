@@ -1,6 +1,6 @@
 #include "Math/Algorithm.h"
 #include "FiniteVolume/Equation/TimeDerivative.h"
-#include "FiniteVolume/Equation/Divergence.h"
+#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -49,8 +49,9 @@ void FractionalStepMultiphase::initialize()
 
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
-    u_.savePreviousTimeStep(0, 1);
-    gamma_.savePreviousTimeStep(0, 1);
+    u_.savePreviousTimeStep(0, 2);
+    gamma_.savePreviousTimeStep(0, 2);
+    gradGamma_.savePreviousTimeStep(0, 2);
     updateProperties(0.);
     updateProperties(0.);
 }
@@ -77,23 +78,24 @@ Scalar FractionalStepMultiphase::solve(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 {
-    auto beta = cicsam::beta(u_, gradGamma_, gamma_, timeStep, 0.5);
-
     //- Advect volume fractions
-    gamma_.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, beta, gamma_, 0.5)
+    gamma_.savePreviousTimeStep(timeStep, 2);
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, gradGamma_, timeStep, 0.5)
                  == 0.);
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma_);
     gamma_.interpolateFaces();
 
+    //- Momentum flux
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, gradGamma_, timeStep, rhoU_);
+
     //- Update the gradient
+    gradGamma_.savePreviousTimeStep(timeStep, 2);
     gradGamma_.compute(*fluid_);
     grid_->sendMessages(gradGamma_);
 
     //- Update all other properties
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, timeStep, rhoU_);
     updateProperties(timeStep);
 
     return error;
@@ -101,10 +103,10 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
-    u_.savePreviousTimeStep(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 2);
     const auto &fst = *fst_.fst();
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div2e(rhoU_, u_, 0.5)
              == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_));
 
     Scalar error = uEqn_.solve();

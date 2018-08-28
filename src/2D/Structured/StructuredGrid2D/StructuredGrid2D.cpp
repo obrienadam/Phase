@@ -1,45 +1,48 @@
 #include "StructuredGrid2D.h"
 
-StructuredGrid2D::StructuredGrid2D(Size nNodesI, Size nNodesJ, Scalar lx, Scalar ly)
+StructuredGrid2D::StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly)
 {
-    init(nNodesI, nNodesJ, lx, ly);
+    init(nCellsI, nCellsJ, lx, ly);
 }
 
-void StructuredGrid2D::init(Size nNodesI, Size nNodesJ, Scalar lx, Scalar ly)
+void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly)
 {
-    nNodesI_ = nNodesI;
-    nNodesJ_ = nNodesJ;
-    lx_ = lx;
-    ly_ = ly;
+    _nCellsI = nCellsI;
+    _nCellsJ = nCellsJ;
+    _lx = lx;
+    _ly = ly;
 
-    Scalar dx = lx_ / (nNodesI_ - 1);
-    Scalar dy = ly_ / (nNodesJ_ - 1);
+    Scalar dx = _lx / _nCellsI;
+    Scalar dy = _ly / _nCellsJ;
 
-    for (auto j = 0; j < nNodesJ_; ++j)
-        for (auto i = 0; i < nNodesI_; ++i)
-            nodes_.push_back(Node(Point2D(i * dx, j * dy), i, j, nodes_.size()));
+    _nodes.clear();
 
-    ownership_.assign(nodes_.size(), _comm.rank());
-    globalIds_.resize(nodes_.size());
-    std::iota(globalIds_.begin(), globalIds_.end(), 0);
-}
+    for (auto j = 0; j < nNodesJ(); ++j)
+        for (auto i = 0; i < nNodesI(); ++i)
+            _nodes.push_back(Point2D(i * dx, j * dy));
 
-Scalar StructuredGrid2D::dxe(size_t i, size_t j) const
-{
-    return node(i + 1, j).x - node(i, j).x;
-}
+    _cells.clear();
 
-Scalar StructuredGrid2D::dxw(size_t i, size_t j) const
-{
-    return node(i - 1, j).x - node(i, j).x;
-}
+    for(auto j = 0; j < _nCellsJ; ++j)
+        for(auto i = 0; i < _nCellsI; ++i)
+            _cells.push_back(Cell(*this, i, j));
 
-Scalar StructuredGrid2D::dxn(size_t i, size_t j) const
-{
-    return node(i, j + 1).y - node(i, j).y;
-}
+    _ifaces.clear();
 
-Scalar StructuredGrid2D::dxs(size_t i, size_t j) const
-{
-    return node(i, j - 1).y - node(i, j).y;
+    for(int j = 0; j < _nCellsJ; ++j)
+        for(int i = 0; i < nNodesI(); ++i)
+            _ifaces.push_back(Face(*this, Face::I, i, j));
+
+    _jfaces.clear();
+
+    for(int i = 0; i < _nCellsI; ++i)
+        for(int j = 0; j < nNodesJ(); ++j)
+            _jfaces.push_back(Face(*this, Face::J, i, j));
+
+    _faces.clear();
+    for(const Face &f: _ifaces)
+        _faces.push_back(f);
+
+    for(const Face &f: _jfaces)
+        _faces.push_back(f);
 }

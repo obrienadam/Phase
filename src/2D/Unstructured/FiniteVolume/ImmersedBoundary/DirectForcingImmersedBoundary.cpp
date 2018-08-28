@@ -518,8 +518,31 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
                 auto tauA = qpa.tau;
                 auto tauB = qpb.tau;
 
-                fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
-                fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+                if(ibObj->shape().type() == Shape2D::CIRCLE)
+                {
+                    const Circle &c = static_cast<const Circle&>(ibObj->shape());
+                    Scalar r = c.radius();
+                    Scalar tA = (ptA - c.centroid()).angle();
+                    Scalar tB = (ptB - c.centroid()).angle();
+
+                    while(tB < tA)
+                        tB += 2 * M_PI;
+
+                    fPressure += r * Vector2D(
+                                pA*tA*sin(tA) - pA*tB*sin(tA) + pA*cos(tA) - pA*cos(tB) - pB*tA*sin(tB) + pB*tB*sin(tB) - pB*cos(tA) + pB*cos(tB),
+                                -pA*tA*cos(tA) + pA*tB*cos(tA) + pA*sin(tA) - pA*sin(tB) + pB*tA*cos(tB) - pB*tB*cos(tB) - pB*sin(tA) + pB*sin(tB)
+                                ) / (tA - tB);
+
+                    fShear += r * Vector2D(
+                                -tA*tauA.xx*sin(tA) + tA*tauA.xy*cos(tA) + tA*tauB.xx*sin(tB) - tA*tauB.xy*cos(tB) + tB*tauA.xx*sin(tA) - tB*tauA.xy*cos(tA) - tB*tauB.xx*sin(tB) + tB*tauB.xy*cos(tB) - tauA.xx*cos(tA) + tauA.xx*cos(tB) - tauA.xy*sin(tA) + tauA.xy*sin(tB) + tauB.xx*cos(tA) - tauB.xx*cos(tB) + tauB.xy*sin(tA) - tauB.xy*sin(tB),
+                                -tA*tauA.yx*sin(tA) + tA*tauA.yy*cos(tA) + tA*tauB.yx*sin(tB) - tA*tauB.yy*cos(tB) + tB*tauA.yx*sin(tA) - tB*tauA.yy*cos(tA) - tB*tauB.yx*sin(tB) + tB*tauB.yy*cos(tB) - tauA.yx*cos(tA) + tauA.yx*cos(tB) - tauA.yy*sin(tA) + tauA.yy*sin(tB) + tauB.yx*cos(tA) - tauB.yx*cos(tB) + tauB.yy*sin(tA) - tauB.yy*sin(tB)
+                                ) / (tA - tB);
+                }
+                else
+                {
+                    fPressure += (pA + pB) / 2. * (ptA - ptB).normalVec();
+                    fShear += dot((tauA + tauB) / 2., (ptB - ptA).normalVec());
+                }
             }
 
             force = fPressure + fShear + ibObj->rho * g * ibObj->shape().area();

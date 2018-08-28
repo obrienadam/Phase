@@ -24,7 +24,7 @@ LinearAlgebra
 		lib eigen
 	}
 
-	extEqn
+	fbEqn
 	{
 		lib eigen
 	}
@@ -32,8 +32,8 @@ LinearAlgebra
 
 Properties
 {
-	rho 1
-	mu 0.01 ; Re = 100
+	rho 998
+	mu 8.94e-4 ; Re = 100
 	g (0,0)
 	sigma 0
 }

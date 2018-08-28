@@ -16,10 +16,10 @@ FiniteVolumeField<T>::FiniteVolumeField(const std::shared_ptr<const FiniteVolume
                                         bool nodes,
                                         const std::shared_ptr<const CellGroup> &cellGroup,
                                         const std::shared_ptr<IndexMap> &indexMap)
-        :
-        Field<T>::Field(grid->cells().size(), val, name),
-        grid_(grid),
-        indexMap_(indexMap)
+    :
+      Field<T>::Field(grid->cells().size(), val, name),
+      grid_(grid),
+      indexMap_(indexMap)
 {
     cellGroup_ = cellGroup;
 
@@ -39,8 +39,8 @@ FiniteVolumeField<T>::FiniteVolumeField(const Input &input,
                                         bool nodes,
                                         const std::shared_ptr<const CellGroup> &cellGroup,
                                         const std::shared_ptr<IndexMap> &indexMap)
-        :
-        FiniteVolumeField(grid, name, val, faces, nodes, cellGroup, indexMap)
+    :
+      FiniteVolumeField(grid, name, val, faces, nodes, cellGroup, indexMap)
 {
     setBoundaryTypes(input);
     setBoundaryRefValues(input);
@@ -131,18 +131,18 @@ void FiniteVolumeField<T>::interpolateFaces(InterpolationType type)
 {
     switch (type)
     {
-        case VOLUME:
-            interpolateFaces([](const Face &face)
-                             {
-                                 return face.volumeWeight();
-                             });
-            break;
-        case DISTANCE:
-            interpolateFaces([](const Face &face)
-                             {
-                                 return face.distanceWeight();
-                             });
-            break;
+    case VOLUME:
+        interpolateFaces([](const Face &face)
+        {
+            return face.volumeWeight();
+        });
+        break;
+    case DISTANCE:
+        interpolateFaces([](const Face &face)
+        {
+            return face.distanceWeight();
+        });
+        break;
     }
 }
 
@@ -155,13 +155,13 @@ void FiniteVolumeField<T>::setBoundaryFaces()
     {
         switch (boundaryType(patch))
         {
-            case FIXED:
-                break;
-            case NORMAL_GRADIENT:
-            case SYMMETRY:
-                for (const Face &face: patch)
-                    faces_[face.id()] = self[face.lCell().id()];
-                break;
+        case FIXED:
+            break;
+        case NORMAL_GRADIENT:
+        case SYMMETRY:
+            for (const Face &face: patch)
+                faces_[face.id()] = self[face.lCell().id()];
+            break;
         }
     }
 }
@@ -181,19 +181,25 @@ void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::funct
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
 {
-    if (previousTimeSteps_.size() == nPreviousFields)
+    if (previousTimeSteps_.size() >= nPreviousFields)
     {
         auto prevTimeStep = previousTimeSteps_.back();
         prevTimeStep->second = *this;
         prevTimeStep->second.clearHistory();
         previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
-        previousTimeSteps_.pop_back();
+
+        while(previousTimeSteps_.size() > nPreviousFields)
+            previousTimeSteps_.pop_back();
     }
     else
     {
-        auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
-        prevTimeStep->second.clearHistory();
-        previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
+        while(previousTimeSteps_.size() < nPreviousFields)
+        {
+
+            auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
+            prevTimeStep->second.clearHistory();
+            previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
+        }
     }
 
     return previousTimeSteps_.front()->second;
@@ -394,8 +400,8 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
     for (const FaceGroup &patch: grid_->patches())
     {
         typeStr = input.boundaryInput().get<std::string>(
-                "Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
-                "");
+                    "Boundaries." + Field<T>::name() + "." + patch.name() + ".type",
+                    "");
 
         if (typeStr.empty())
             continue;

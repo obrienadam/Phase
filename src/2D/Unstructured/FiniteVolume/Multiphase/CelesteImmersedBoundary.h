@@ -21,13 +21,13 @@ public:
 
     FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
 
-    void applyForce(const ScalarFiniteVolumeField &rho,
-                    const ScalarFiniteVolumeField &mu,
-                    const VectorFiniteVolumeField &u,
-                    const ScalarFiniteVolumeField &p,
-                    const ScalarFiniteVolumeField &gamma,
-                    const Vector2D &g,
-                    DirectForcingImmersedBoundary &ib) const;
+    void appyFluidForces(const ScalarFiniteVolumeField &rho,
+                         const ScalarFiniteVolumeField &mu,
+                         const VectorFiniteVolumeField &u,
+                         const ScalarFiniteVolumeField &p,
+                         const ScalarFiniteVolumeField &gamma,
+                         const Vector2D &g,
+                         DirectForcingImmersedBoundary &ib) const;
 
 protected:
 
@@ -50,6 +50,9 @@ protected:
 
         const Vector2D& ncl() const
         { return ncl_; }
+
+        Vector2D tcl() const
+        { return (cl_[2] - cl_[0]).unitVec(); }
 
         Scalar gamma() const
         { return gamma_; }
