@@ -46,7 +46,9 @@ void FractionalStepDirectForcingMultiphase::initialize()
 
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
-    u_.savePreviousTimeStep(0, 1);
+    u_.savePreviousTimeStep(0, 2);
+    gamma_.savePreviousTimeStep(0, 2);
+    gradGamma_.savePreviousTimeStep(0, 2);
 
     updateProperties(0.);
     updateProperties(0.);
@@ -85,7 +87,7 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
 Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 {
     //- Advect volume fractions
-    gamma_.savePreviousTimeStep(timeStep, 1);
+    gamma_.savePreviousTimeStep(timeStep, 2);
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, gradGamma_, timeStep, 0.5) == fst_.contactLineBcs(gamma_, timeStep));
     //fst_.contactLineBcs(gammaEqn_);
 
@@ -96,6 +98,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, gradGamma_, timeStep, rhoU_);
 
     //- Update the gradient
+    gradGamma_.savePreviousTimeStep(timeStep, 2);
     gradGamma_.compute(*fluid_);
     grid_->sendMessages(gradGamma_);
 
