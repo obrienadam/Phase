@@ -1,6 +1,6 @@
 #include "FractionalStepDFIBMultiphase.h"
 #include "FiniteVolume/Equation/TimeDerivative.h"
-#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
+#include "FiniteVolume/Equation/Divergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -46,9 +46,7 @@ void FractionalStepDirectForcingMultiphase::initialize()
 
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
-    u_.savePreviousTimeStep(0, 2);
-    gamma_.savePreviousTimeStep(0, 2);
-    gradGamma_.savePreviousTimeStep(0, 2);
+    u_.savePreviousTimeStep(0, 1);
 
     updateProperties(0.);
     updateProperties(0.);
@@ -78,27 +76,30 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
-    //ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
     fst_.appyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
+    ib_->applyCollisionForce(true);
 
     return 0;
 }
 
 Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 {
+    auto beta = cicsam::faceInterpolationWeights(u_, gamma_, gradGamma_, timeStep);
+
     //- Advect volume fractions
-    gamma_.savePreviousTimeStep(timeStep, 2);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, gradGamma_, timeStep, 0.5) == fst_.contactLineBcs(gamma_, timeStep));
-    //fst_.contactLineBcs(gammaEqn_);
+    gamma_.savePreviousTimeStep(timeStep, 1);
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == fst_.contactLineBcs(gamma_, timeStep));
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma_);
     gamma_.interpolateFaces();
 
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, gradGamma_, timeStep, rhoU_);
+    //- Compute exact fluxes used for gamma advection
+    rhoU_.savePreviousTimeStep(timeStep, 1);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(0));
 
     //- Update the gradient
-    gradGamma_.savePreviousTimeStep(timeStep, 2);
     gradGamma_.compute(*fluid_);
     grid_->sendMessages(gradGamma_);
 
@@ -107,12 +108,12 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 
 Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
-    u_.savePreviousTimeStep(timeStep, 2);
+    u_.savePreviousTimeStep(timeStep, 1);
 
     const auto &fst = *fst_.fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div2e(rhoU_, u_, 0.5)
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
              == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
@@ -126,7 +127,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     for (const Cell &cell: grid_->cells())
         u_(cell) = u_.oldField(0)(cell);
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div2e(rhoU_, u_, 0.5)
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
              == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_ + fb_));
 
     error = uEqn_.solve();

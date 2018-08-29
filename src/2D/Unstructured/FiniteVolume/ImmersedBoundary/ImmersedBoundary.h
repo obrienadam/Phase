@@ -84,6 +84,8 @@ public:
                                         const ScalarFiniteVolumeField &p,
                                         const Vector2D &g = Vector2D(0., 0.));
 
+    virtual void applyCollisionForce(bool add = false);
+
     const std::shared_ptr<FiniteVolumeField<int>> &cellStatus()
     { return cellStatus_; }
 

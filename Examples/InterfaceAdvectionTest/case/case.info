@@ -4,6 +4,7 @@ CaseName InterfaceAdvectionTest2D
 
 Solver
 {
+	type "fractional step direct-forcing multiphase"
 	timeDependent On
 	maxIterations 100
 	timeStep 1.25e-3
@@ -40,12 +41,17 @@ LinearAlgebra
 	{
 		lib eigen
 	}
+
+	fbEqn
+	{
+		lib eigen
+	}
 }
 
 Properties
 {
 	rho1 1
-	rho2 1
+	rho2 1000
 	mu1 0.01
 	mu2 0.01
 	sigma 0.1

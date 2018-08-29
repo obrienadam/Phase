@@ -141,6 +141,9 @@ public:
     void applyForce(const Vector2D &force)
     { _force = force; }
 
+    void addForce(const Vector2D &force)
+    { _force += force; }
+
     const Vector2D &force() const
     { return _force; }
 
