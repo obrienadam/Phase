@@ -346,7 +346,10 @@ void ImmersedBoundary::applyCollisionForce(bool add)
         for (auto ibObjP: ibObjs_)
         {
             for (auto ibObjQ: ibObjs_)
-                ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
+                if(add)
+                    ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
+                else
+                    ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
 
             if(add)
                 ibObjP->addForce(collisionModel_->force(*ibObjP, *grid_));
