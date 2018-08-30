@@ -62,10 +62,18 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-    int timeStepNo = 0;
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
-        if (regex_match(dir->path().filename().string(), re) && (timeStepNo++ % stride == 0))
+        if (regex_match(dir->path().filename().string(), re))
             solutionDirs.insert(dir->path());
+
+    // must do this since the directory_iterator won't sort
+    auto tmp = solutionDirs;
+    solutionDirs.clear();
+
+    int timeStepNo = 0;
+    for(const path &p: tmp)
+        if((timeStepNo++ % stride) == 0)
+            solutionDirs.insert(p);
 
     //- Read in global node/elements
     std::vector<Node> nodes;
