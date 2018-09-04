@@ -1,5 +1,5 @@
-#ifndef RUN_CONTROL_H
-#define RUN_CONTROL_H
+#ifndef PHASE_RUN_CONTROL_H
+#define PHASE_RUN_CONTROL_H
 
 #include "CommandLine.h"
 #include "Input.h"

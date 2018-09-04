@@ -1,27 +1,29 @@
 #ifndef PHASE_STRUCTURED_GRID_2D_H
 #define PHASE_STRUCTURED_GRID_2D_H
 
-#include <vector>
-
+#include "System/Input.h"
 #include "System/Communicator.h"
 
 #include "Cell.h"
 #include "Face.h"
+#include "Set.h"
 
 class StructuredGrid2D
 {
 public:
 
-    enum Coordinate{I, J};
-
-    enum CoordinateDirection{I_POS, I_NEG, J_POS, J_NEG};
-
-    StructuredGrid2D()
+    StructuredGrid2D() : _comm(std::make_shared<Communicator>())
     {}
 
     StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
 
+    StructuredGrid2D(const std::vector<Scalar> &xcoords, const std::vector<Scalar> &ycoords);
+
+    StructuredGrid2D(const Input &input);
+
     void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
+
+    void init(std::vector<Scalar> xcoords, std::vector<Scalar> ycoords);
 
     //- Parameters
     Size nNodesI() const
@@ -46,8 +48,13 @@ public:
     const std::vector<Cell> &cells() const
     { return _cells; }
 
-    const Cell &cell(Label i, Label j) const
+    const Cell& operator()(Label i, Label j) const
     { return _cells[j * _nCellsI + i]; }
+
+    const Cell &cell(const Cell& cell, Orientation dir, int offset) const;
+
+    const Set<Cell> &localCells() const
+    { return _localCells; }
 
     const std::vector<Point2D> nodes() const
     { return _nodes; }
@@ -64,8 +71,24 @@ public:
     const std::vector<Face> &jfaces() const
     { return _jfaces; }
 
+    const Face &iface(Label i, Label j) const
+    { return _ifaces[j * nNodesI() + i]; }
+
+    const Face &jface(Label i, Label j) const
+    { return _jfaces[i * nNodesJ() + j]; }
+
+    const Face &face(const Cell &cell, Orientation dir) const;
+
+    //- Misc mesh functions
+
+    Scalar dh(const Cell &cell, Orientation dir, int offset) const;
+
+    //- Communication
     const Communicator &comm() const
     { return *_comm; }
+
+    const std::vector<int> &ownership() const
+    { return _ownership; }
 
 protected:
 
@@ -83,6 +106,8 @@ protected:
 
     //- Parallel
     std::shared_ptr<const Communicator> _comm;
+
+    Set<Cell> _localCells;
 
     std::vector<int> _ownership;
 };

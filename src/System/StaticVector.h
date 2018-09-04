@@ -38,6 +38,15 @@ public:
     bool empty() const
     { return (bool)_size; }
 
+    void resize(std::size_t size)
+    { _size = size; }
+
+    void pop_back()
+    { _size = _size > 0 ? _size - 1: 0; }
+
+    void clear()
+    { _size = 0; }
+
     //- Iterators
 
     iterator begin()

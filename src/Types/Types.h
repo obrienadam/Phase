@@ -5,8 +5,8 @@
 #include <functional>
 
 typedef double Scalar;
-typedef size_t Label;
-typedef size_t Size;
+typedef std::size_t Label;
+typedef std::size_t Size;
 typedef int Index;
 
 template <class T>

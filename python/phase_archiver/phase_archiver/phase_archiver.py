@@ -12,11 +12,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    with tarfile.open(args.ARCHIVE, 'w'):
-        pass
-
+    prog = re.compile(r'^Proc\d+$')
     solution_set = set()
-    prog = re.compile(r'^\d+(\.\d+)?$')
+
+    with tarfile.open(args.ARCHIVE, 'w') as f:
+        for dir in (dir for dir in os.listdir(args.dir) if prog.match(dir) and os.path.isdir(os.path.join(args.dir, dir))):
+            f.add(os.path.join(args.dir, dir))
+            solution_set.add(dir)
+
+    prog = re.compile(r'^\d+(?:\.\d+)?$')
 
     while True:
         new_solns = set(f for f in os.listdir(args.dir) if

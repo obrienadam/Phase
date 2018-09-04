@@ -1,5 +1,5 @@
-#ifndef COMMUNICATOR_H
-#define COMMUNICATOR_H
+#ifndef PHASE_COMMUNICATOR_H
+#define PHASE_COMMUNICATOR_H
 
 #include <mpi.h>
 #include <vector>

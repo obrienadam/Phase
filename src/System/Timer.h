@@ -1,5 +1,5 @@
-#ifndef TIME_H
-#define TIME_H
+#ifndef PHASE_TIME_H
+#define PHASE_TIME_H
 
 #include <chrono>
 

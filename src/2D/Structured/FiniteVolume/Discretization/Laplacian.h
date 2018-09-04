@@ -14,12 +14,7 @@ FiniteVolumeEquation<T> lap(Scalar gamma, Field<T> &phi)
 
     for(const Cell& cell: phi.grid()->cells())
     {
-        for(auto dir: Stencil::DIRECTIONS)
-        {
-            if(cell.face(dir).isBoundary())
-            auto st = Stencil(cell, {1, 0}, dir);
 
-        }
     }
 
     return eqn;

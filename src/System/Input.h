@@ -1,5 +1,5 @@
-#ifndef INPUT_H
-#define INPUT_H
+#ifndef PHASE_INPUT_H
+#define PHASE_INPUT_H
 
 #include <string>
 

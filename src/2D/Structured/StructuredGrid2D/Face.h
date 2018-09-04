@@ -7,9 +7,13 @@ class Face
 {
 public:
 
-    enum Orientation{I, J};
+    Face(const StructuredGrid2D &grid, Coordinate coord, Label i, Label j);
 
-    Face(const StructuredGrid2D &grid, Orientation orientation, Label i, Label j);
+    const LineSegment2D &shape() const
+    { return _shape; }
+
+    Point2D centroid() const
+    { return _shape.center(); }
 
     Label lid() const
     { return _lid; }

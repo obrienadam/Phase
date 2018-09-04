@@ -1,5 +1,5 @@
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
+#ifndef PHASE_EXCEPTION_H
+#define PHASE_EXCEPTION_H
 
 #include <string>
 #include <exception>

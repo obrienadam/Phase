@@ -15,6 +15,12 @@ public:
 
     //- Access
 
+    const std::string &name() const
+    { return _name; }
+
+    const std::shared_ptr<const StructuredGrid2D> &grid() const
+    { return _grid; }
+
     T& operator()(const Cell &cell)
     { return _cellData[cell.lid()]; }
 

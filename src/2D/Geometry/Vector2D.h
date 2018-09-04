@@ -18,17 +18,22 @@ public:
 
     Vector2D(std::string vecStr);
 
-    Scalar magSqr() const;
+    Scalar magSqr() const
+    { return x * x + y * y; }
 
-    Scalar mag() const;
+    Scalar mag() const
+    { return std::sqrt(x * x + y * y); }
 
-    Vector2D abs() const;
+    Vector2D abs() const
+    { return Vector2D(std::abs(x), std::abs(y)); }
 
     Vector2D unitVec() const;
 
-    Vector2D normalVec() const;
+    Vector2D normalVec() const
+    { return Vector2D(y, -x); }
 
-    Vector2D tangentVec() const;
+    Vector2D tangentVec() const
+    { return Vector2D(-y, x); }
 
     Scalar angle() const;
 
@@ -55,7 +60,8 @@ public:
 
     Vector2D &operator/=(Scalar other);
 
-    bool operator==(const Vector2D& rhs) const { return x == rhs.x && y == rhs.y; }
+    bool operator==(const Vector2D& rhs) const
+    { return x == rhs.x && y == rhs.y; }
 
     bool operator<(const Vector2D &rhs) const;
 
@@ -87,7 +93,7 @@ Scalar cross(const Vector2D &u, const Vector2D &v);
 Vector2D pointwise(const Vector2D& u, const Vector2D &v);
 
 namespace std {
-    string to_string(const Vector2D &vec);
+string to_string(const Vector2D &vec);
 }
 
 #endif

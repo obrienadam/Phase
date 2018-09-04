@@ -23,34 +23,9 @@ Vector2D::Vector2D(std::string vecStr)
     y = std::stod(components[1]);
 }
 
-Scalar Vector2D::mag() const
-{
-    return std::sqrt(x * x + y * y);
-}
-
-Scalar Vector2D::magSqr() const
-{
-    return x * x + y * y;
-}
-
-Vector2D Vector2D::abs() const
-{
-    return Vector2D(std::abs(x), std::abs(y));
-}
-
 Vector2D Vector2D::unitVec() const
 {
     return *this / mag();
-}
-
-Vector2D Vector2D::normalVec() const
-{
-    return Vector2D(y, -x);
-}
-
-Vector2D Vector2D::tangentVec() const
-{
-    return Vector2D(-y, x);
 }
 
 Scalar Vector2D::angle() const
@@ -93,12 +68,12 @@ Scalar &Vector2D::operator()(int component)
 {
     switch (component)
     {
-        case 0:
-            return x;
-        case 1:
-            return y;
-        default:
-            throw Exception("Vector2D", "operator()", "invalid component.");
+    case 0:
+        return x;
+    case 1:
+        return y;
+    default:
+        throw Exception("Vector2D", "operator()", "invalid component.");
     }
 }
 
@@ -106,12 +81,12 @@ Scalar Vector2D::operator()(int component) const
 {
     switch (component)
     {
-        case 0:
-            return x;
-        case 1:
-            return y;
-        default:
-            throw Exception("Vector2D", "operator()", "invalid component.");
+    case 0:
+        return x;
+    case 1:
+        return y;
+    default:
+        throw Exception("Vector2D", "operator()", "invalid component.");
     }
 }
 
