@@ -1,6 +1,7 @@
 #include "FractionalStepDFIBMultiphase.h"
 #include "FiniteVolume/Equation/TimeDerivative.h"
 #include "FiniteVolume/Equation/Divergence.h"
+#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -27,8 +28,11 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
     for (const Face &face: grid_->interiorFaces())
     {
         Scalar delta = (face.rCell().centroid() - face.lCell().centroid()).mag();
-        capillaryTimeStep_ = std::min(capillaryTimeStep_,
-                                      std::sqrt(((rho1_ + rho2_) * delta * delta * delta) / (4 * M_PI * fst_.sigma())));
+        capillaryTimeStep_ = std::min(
+                    capillaryTimeStep_,
+                    std::sqrt(
+                        (rho1_ + rho2_) * std::pow(delta, 3) / (4. * M_PI * fst_.sigma())
+                        ));
     }
 
     capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
@@ -45,9 +49,10 @@ void FractionalStepDirectForcingMultiphase::initialize()
     FractionalStepDFIB::initialize();
 
     //- Ensure the computation starts with a valid gamma field
+    //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
     u_.savePreviousTimeStep(0, 1);
-
+    gamma_.savePreviousTimeStep(0, 1);
     updateProperties(0.);
     updateProperties(0.);
 }
@@ -109,12 +114,12 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 1);
-
     const auto &fst = *fst_.fst();
+
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
     uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
-             == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_));
+             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
@@ -128,7 +133,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         u_(cell) = u_.oldField(0)(cell);
 
     uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
-             == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_ + fb_));
+             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_ + fb_));
 
     error = uEqn_.solve();
 
@@ -175,7 +180,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 
 Scalar FractionalStepDirectForcingMultiphase::solvePEqn(Scalar timeStep)
 {
-    pEqn_ = (fv::laplacian(timeStep / rho_, p_) + ib_->bcs(p_) == src::div(u_));
+    pEqn_ = (fv::laplacian(timeStep / rho_, p_) == src::div(u_));
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p_);
@@ -242,21 +247,6 @@ void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)
 
     grid_->sendMessages(u_);
 
-    for (const Face &face: grid_->interiorFaces())
+    for (const Face &face: grid_->faces())
         u_(face) -= timeStep / rho_(face) * gradP_(face);
-
-    for (const FaceGroup &patch: grid_->patches())
-        switch (u_.boundaryType(patch))
-        {
-        case VectorFiniteVolumeField::FIXED:
-            break;
-        case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            for (const Face &face: patch)
-                u_(face) -= timeStep / rho_(face) * gradP_(face);
-            break;
-        case VectorFiniteVolumeField::SYMMETRY:
-            for (const Face &f: patch)
-                u_(f) = u_(f.lCell()) - dot(u_(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
-            break;
-        }
 }

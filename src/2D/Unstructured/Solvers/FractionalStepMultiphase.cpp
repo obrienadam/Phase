@@ -1,6 +1,7 @@
 #include "Math/Algorithm.h"
 #include "FiniteVolume/Equation/TimeDerivative.h"
 #include "FiniteVolume/Equation/Divergence.h"
+#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -107,10 +108,15 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 1);
     const auto &fst = *fst_.fst();
 
+    gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
+
     uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
-             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_));
+             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
+
+    for(const Cell &c: *fluid_)
+        u_(c) += timeStep / rho_(c) * gradP_(c);
 
     grid_->sendMessages(u_);
 
@@ -165,23 +171,8 @@ void FractionalStepMultiphase::correctVelocity(Scalar timeStep)
 
     grid_->sendMessages(u_);
 
-    for (const Face &face: grid_->interiorFaces())
+    for (const Face &face: grid_->faces())
         u_(face) -= timeStep / rho_(face) * gradP_(face);
-
-    for (const FaceGroup &patch: grid_->patches())
-        switch (u_.boundaryType(patch))
-        {
-        case VectorFiniteVolumeField::FIXED:
-            break;
-        case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            for (const Face &face: patch)
-                u_(face) -= timeStep / rho_(face) * gradP_(face);
-            break;
-        case VectorFiniteVolumeField::SYMMETRY:
-            for (const Face &f: patch)
-                u_(f) = u_(f.lCell()) - dot(u_(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
-            break;
-        }
 }
 
 void FractionalStepMultiphase::updateProperties(Scalar timeStep)

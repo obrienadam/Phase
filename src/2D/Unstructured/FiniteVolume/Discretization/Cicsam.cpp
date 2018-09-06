@@ -207,5 +207,5 @@ FiniteVolumeEquation<Scalar> cicsam::div2e(const VectorFiniteVolumeField &u,
                                            const std::vector<Scalar> &faceInterpolationWeights1,
                                            Scalar theta)
 {
-    return div2e(u, gamma, faceInterpolationWeights0, faceInterpolationWeights1, theta);
+    return div2e(u, gamma, faceInterpolationWeights0, faceInterpolationWeights1, theta, gamma.cells());
 }
