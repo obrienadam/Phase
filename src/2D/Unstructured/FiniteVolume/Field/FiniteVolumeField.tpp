@@ -457,31 +457,3 @@ FiniteVolumeField<T> operator/(FiniteVolumeField<T> lhs, Scalar rhs)
     lhs /= rhs;
     return lhs;
 }
-
-//- External functions
-
-template<class T, class TFunc>
-void smooth(const FiniteVolumeField<T> &field,
-            const CellGroup &cellsToSmooth,
-            const CellGroup &cells,
-            Scalar epsilon,
-            FiniteVolumeField<T> &smoothedField,
-            const TFunc &kernel)
-{
-    for (const Cell &cell: cellsToSmooth)
-    {
-        //- Determine the normalizing constant for this kernel
-        Scalar integralK = 0.;
-
-        auto kCells = cells.itemsWithin(Circle(cell.centroid(), epsilon));
-
-        for (const Cell &kCell: kCells)
-            integralK += kernel(cell, kCell, epsilon) * kCell.volume();
-
-        Scalar tilde = 0.;
-        for (const Cell &kCell: kCells)
-            tilde += field(kCell) * kernel(cell, kCell, epsilon) * kCell.volume();
-
-        smoothedField(cell) = tilde / integralK;
-    }
-}

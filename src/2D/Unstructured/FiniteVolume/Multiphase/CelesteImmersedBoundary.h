@@ -86,8 +86,6 @@ protected:
 
     void computeInterfaceNormals() override;
 
-    void computeCurvature() override;
-
     std::weak_ptr<const ImmersedBoundary> ib_;
 
     std::unordered_map<std::string, Scalar> ibContactAngles_;

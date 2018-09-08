@@ -5,7 +5,7 @@ CaseName ImmersedBoundaryCylinder2D
 Solver
 {
         type "fractional step direct-forcing"
-	timeStep 5e-3
+	timeStep 1e-2
 	maxCo 1
 	maxTime 200
 	smoothingKernelRadius 0
@@ -17,6 +17,7 @@ LinearAlgebra
 	{
 		lib belos
 		solver bicgstab
+		preconditioner DIAGONAL
 	}
 
 	pEqn
@@ -26,14 +27,16 @@ LinearAlgebra
 
 	fbEqn
 	{
-		lib eigen
+		lib belos
+		solver gmres
+		preconditioner DIAGONAL
 	}
 }
 
 Properties
 {
-	rho 998
-	mu 8.94e-4 ; Re = 100
+	rho 10
+	mu 0.0001 ; Re = 100
 	g (0,0)
 	sigma 0
 }
@@ -41,8 +44,8 @@ Properties
 Grid
 {
 	type rectilinear
-	nCellsX 300
-	nCellsY 150
+	nCellsX 400
+	nCellsY 200
 
 	; Rectilinear parameters
 	width 10

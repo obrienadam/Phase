@@ -93,7 +93,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma_.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == fst_.contactLineBcs(gamma_, timeStep));
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.)
+                 == fst_.contactLineBcs(gamma_, timeStep));
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma_);
@@ -128,13 +129,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     fbEqn_.solve();
     grid_->sendMessages(fb_);
 
-    //- Reset velocity field
-    for (const Cell &cell: grid_->cells())
-        u_(cell) = u_.oldField(0)(cell);
-
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
-             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_ + fb_));
-
+    //- solve again with fb
+    uEqn_ == src::src(fb_);
     error = uEqn_.solve();
 
     for(const Cell& cell: *fluid_)

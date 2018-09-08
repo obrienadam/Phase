@@ -38,24 +38,6 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
     // ib_->applyHydrodynamicForce(rho_, fb_, g_);
 
-    Vector2D force = Vector2D(0., 0.);
-    for(const FaceGroup &patch: grid_->patches())
-        for(const Face &f: patch)
-        {
-            Vector2D sf = f.outwardNorm(f.lCell().centroid());
-
-            if(grid_->localCells().isInSet(f.lCell()))
-            {
-                //force -= rho_ * dot(u_(f), sf) * sf.unitVec();
-                force -= p_(f) * sf;
-            }
-        }
-
-    force = Vector2D(grid_->comm().sum(force.x), grid_->comm().sum(force.y));
-
-    if(grid_->comm().isMainProc())
-        std::cout << "Momentum deficit = " << force << "\n";
-
     return 0;
 }
 
@@ -64,7 +46,7 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 2);
 
     uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
-             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_));
+             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
@@ -73,12 +55,16 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     fbEqn_.solve();
     grid_->sendMessages(fb_);
 
-    for (const Cell &cell: grid_->cells())
-        u_(cell) = u_.oldField(0)(cell);
+    Vector2D fib(0., 0.);
+    for(const Cell &cell: *fluid_)
+        fib -= rho_ * fb_(cell) * cell.volume();
 
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
-             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_ - fb_));
+    fib = Vector2D(grid_->comm().sum(fib.x), grid_->comm().sum(fib.y));
 
+    if(grid_->comm().isMainProc())
+        std::cout << "Fib = " << fib << std::endl;
+
+    uEqn_ == src::src(fb_);
     error = uEqn_.solve();
 
     for(const Cell &c: u_.cells())
@@ -86,18 +72,6 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();
-
-    //    const auto &u0 = u_.oldField(0);
-    //    for(const Face &f: grid_->interiorFaces())
-    //    {
-    //        const Cell &l = f.lCell();
-    //        const Cell &r = f.rCell();
-    //        Scalar g = f.volumeWeight();
-
-    //        u_(f) = g * (u_(l) - u0(l)) + (1. - g) * (u_(r) - u0(r)) + u0(f);
-    //    }
-
-    //    u_.setBoundaryFaces();
 
     return error;
 }

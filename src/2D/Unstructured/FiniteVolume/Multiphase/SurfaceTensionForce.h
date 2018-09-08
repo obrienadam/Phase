@@ -8,6 +8,35 @@ class SurfaceTensionForce
 {
 public:
 
+    class SmoothingKernel
+    {
+    public:
+
+        SmoothingKernel(const Cell& cell, Scalar eps);
+
+        const Cell &cell() const
+        { return cell_; }
+
+        Scalar eval(const ScalarFiniteVolumeField &phi) const;
+
+    private:
+
+        //        Scalar kernel(Scalar r) const
+        //        { return r < eps_ ? std::cos(M_PI * r / eps_) + 1. : 0.; }
+
+        Scalar kcos(Scalar x) const
+        { return x < eps_ ?  eps_ * (1. + std::cos(M_PI * x / eps_)) : 0.; }
+
+        Scalar kernel(Vector2D dx) const
+        { return  kcos(dx.x) * kcos(dx.y); }
+
+        Scalar eps_, A_;
+
+        const Cell &cell_;
+
+        std::vector<Ref<const Cell>> kCells_;
+    };
+
     //- Constructor
     SurfaceTensionForce(const Input &input,
                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
@@ -55,6 +84,8 @@ protected:
     Scalar sigma_, kernelWidth_, eps_ = 1e-8;
 
     std::unordered_map<std::string, Scalar> patchContactAngles_;
+
+    std::vector<SmoothingKernel> kernels_;
 
     //- Fields, can share ownership
     std::shared_ptr<VectorFiniteVolumeField> fst_;

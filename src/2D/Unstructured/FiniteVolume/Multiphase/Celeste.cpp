@@ -97,5 +97,5 @@ void Celeste::computeStencils()
     gradGammaTildeStencils_.resize(gradGammaTilde_->grid()->cells().size());
 
     for (const Cell &cell: gradGammaTilde_->grid()->cells())
-        gradGammaTildeStencils_[cell.id()] = Stencil(cell, true);
+        gradGammaTildeStencils_[cell.id()] = Stencil(cell, false);
 }

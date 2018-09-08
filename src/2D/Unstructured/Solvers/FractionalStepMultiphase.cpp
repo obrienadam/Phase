@@ -82,7 +82,7 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
 
     //- Advect volume fractions
     gamma_.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.5) == 0.);
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma_);
@@ -110,7 +110,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
              == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();

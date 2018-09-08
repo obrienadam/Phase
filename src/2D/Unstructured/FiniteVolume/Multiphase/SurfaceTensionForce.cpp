@@ -17,7 +17,11 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 {
     //- Input properties
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
+
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
+
+    for(const Cell &cell: *fluid_)
+        kernels_.push_back(SmoothingKernel(cell, kernelWidth_));
 
     //- Determine which patches contact angles will be enforced on
     for (const FaceGroup &patch: grid->patches())
@@ -73,21 +77,14 @@ Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const
 
 void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
 {
-    gammaTilde_->fill(0);
+    auto &gammaTilde = *gammaTilde_;
 
-    smooth(gamma,
-           *fluid_,
-           grid_->globalCellGroup(*fluid_),
-           kernelWidth_,
-           *gammaTilde_,
-           [](const Cell &cell, const Cell &kCell, Scalar e)
-    {
-        Scalar r = (cell.centroid() - kCell.centroid()).mag() / e;
-        return r < 1. ? std::cos(M_PI * r) + 1. : 0.;
-    });
+    gammaTilde.fill(0.);
+    for(const auto &k: kernels_)
+        gammaTilde(k.cell()) = k.eval(gamma);
 
-    grid_->sendMessages(*gammaTilde_);
-    gammaTilde_->setBoundaryFaces();
+    grid_->sendMessages(gammaTilde);
+    gammaTilde.setBoundaryFaces();
 }
 
 //Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeField &gamma,
