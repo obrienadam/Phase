@@ -31,10 +31,10 @@ void RunControl::run(const CommandLine &cl,
 
     time_.start();
     for (
-            size_t iterNo = 0;
-            time < maxTime && time_.elapsedSeconds(solver.comm()) < maxWallTime;
-            time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
-            )
+         size_t iterNo = 0;
+         time < maxTime && time_.elapsedSeconds(solver.comm()) < maxWallTime;
+         time += timeStep, timeStep = solver.computeMaxTimeStep(maxCo, timeStep), ++iterNo
+         )
     {
         solver.solve(timeStep);
         postProcessing.compute(time + timeStep, false);
@@ -42,7 +42,7 @@ void RunControl::run(const CommandLine &cl,
         time_.stop();
 
         solver.printf("Time step: %.2e s\n", timeStep);
-        solver.printf("Simulation time: %.2lf s (%.2lf%% complete.)\n", time + timeStep,
+        solver.printf("Simulation time: %lf s (%.2lf%% complete.)\n", time + timeStep,
                       (time + timeStep) / maxTime * 100);
         solver.printf("Elapsed time: %s\n", time_.elapsedTime().c_str());
         solver.printf("Average time per iteration: %.2lf s.\n", time_.elapsedSeconds() / (iterNo + 1));

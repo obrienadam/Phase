@@ -50,6 +50,10 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
         ncl_ = -ibObj_.nearestEdgeUnitNormal(cl_[1]).rotate(theta_);
         gamma_ = g2;
     }
+
+//    Scalar dg = gamma(link_->cell()) - gamma(link_->self());
+//    if(dot(dg * link_->rCellVec(), ncl_) > 0.)
+//        ncl_ = -ncl_;
 }
 
 std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
