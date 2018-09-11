@@ -12,7 +12,9 @@ public:
     {
     public:
 
-        SmoothingKernel(const Cell& cell, Scalar eps);
+        enum Type{PESKIN, POW_6, POW_8};
+
+        SmoothingKernel(const Cell& cell, Scalar eps, Type type = POW_8);
 
         const Cell &cell() const
         { return cell_; }
@@ -27,8 +29,9 @@ public:
         Scalar kcos(Scalar x) const
         { return x < eps_ ?  eps_ * (1. + std::cos(M_PI * x / eps_)) : 0.; }
 
-        Scalar kernel(Vector2D dx) const
-        { return  kcos(dx.x) * kcos(dx.y); }
+        Scalar kernel(Vector2D dx, Type type) const;
+
+        Type type_;
 
         Scalar eps_, A_;
 
@@ -77,11 +80,15 @@ public:
 
 protected:
 
+    static SmoothingKernel::Type getKernelType(std::string type);
+
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     std::shared_ptr<const CellGroup> fluid_;
 
     Scalar sigma_, kernelWidth_, eps_ = 1e-8;
+
+    SmoothingKernel::Type kernelType_;
 
     std::unordered_map<std::string, Scalar> patchContactAngles_;
 

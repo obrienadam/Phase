@@ -17,11 +17,11 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
 {
     //- Input properties
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
-
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
+    kernelType_ = getKernelType(input.caseInput().get<std::string>("Solver.kernelType", "pow8"));
 
     for(const Cell &cell: *fluid_)
-        kernels_.push_back(SmoothingKernel(cell, kernelWidth_));
+        kernels_.push_back(SmoothingKernel(cell, kernelWidth_, kernelType_));
 
     //- Determine which patches contact angles will be enforced on
     for (const FaceGroup &patch: grid->patches())
@@ -85,6 +85,21 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
 
     grid_->sendMessages(gammaTilde);
     gammaTilde.setBoundaryFaces();
+}
+
+SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(std::string type)
+{
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+    if(type == "peskin")
+        return SmoothingKernel::PESKIN;
+    else if(type == "pow6")
+        return SmoothingKernel::POW_6;
+    else if(type == "pow8")
+        return SmoothingKernel::POW_8;
+    else
+        throw Exception("SurfaceTensionForce", "getKernelType", "bad kernel type + \"" + type + "\".");
+
 }
 
 //Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeField &gamma,
