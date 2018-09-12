@@ -91,6 +91,9 @@ public:
 
 protected:
 
+    static std::shared_ptr<ImmersedBoundaryObject> createIbObj(const std::string &name,
+                                                               const std::unordered_map<std::string, std::string> &properties);
+
     void setCellStatus();
 
     std::shared_ptr<CellGroup> domainCells_;

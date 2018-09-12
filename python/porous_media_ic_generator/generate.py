@@ -9,7 +9,7 @@ if __name__ == '__main__':
     lx = 2
     ly = 1
     n = 32
-    vf_target = 0.5
+    vf_target = 0.4
 
     domain = Box(np.array([0, 0]), np.array([lx, ly]))
     r = np.random.normal(0.1, 0.02, n)
@@ -61,3 +61,16 @@ if __name__ == '__main__':
     plt.show()
 
     print(r.shape)
+
+    with open('ibs.info', 'w') as f:
+        for i, c in enumerate(cylinders):
+            f.write(
+                'Cylinder{}\n'.format(i) +
+                '{\n' +
+                '  geometry\n' +
+                '  {\n' +
+                '    center ({},{})\n'.format(c.x[0], c.x[1]) +
+                     'radius {}\n'.format(c.r) +
+                '  }\n'
+                '}\n\n'
+            )

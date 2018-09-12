@@ -1,4 +1,5 @@
 #include <fstream>
+#include <boost/property_tree/info_parser.hpp>
 
 #include "FiniteVolume/Motion/TranslatingMotion.h"
 #include "FiniteVolume/Motion/OscillatingMotion.h"
@@ -17,193 +18,177 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
 {
     auto ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaries");
 
-    for (const auto &ibObjectInput: ibInput.get())
-    {
-        grid_->comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
-        auto ibObj = std::make_shared<ImmersedBoundaryObject>(ibObjectInput.first);
-
-        //- Initialize the geometry
-        std::string shape = ibObjectInput.second.get<std::string>("geometry.type");
-        Point2D center = Point2D(ibObjectInput.second.get<std::string>("geometry.center"));
-
-        if (shape == "circle")
-            ibObj->initCircle(center, ibObjectInput.second.get<Scalar>("geometry.radius"));
-        else if (shape == "box")
-            ibObj->initBox(center, ibObjectInput.second.get<Scalar>("geometry.width"),
-                           ibObjectInput.second.get<Scalar>("geometry.height"));
-        else if (shape == "polygon")
+    if(ibInput)
+        for (const auto &ibObjectInput: ibInput.get())
         {
-            std::ifstream fin;
-            std::vector<Point2D> verts;
-            std::string filename = "case/";
-            filename += ibObjectInput.second.get<std::string>("geometry.file").c_str();
+            grid_->comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
+            auto ibObj = std::make_shared<ImmersedBoundaryObject>(ibObjectInput.first);
 
-            fin.open(filename.c_str());
+            //- Initialize the geometry
+            std::string shape = ibObjectInput.second.get<std::string>("geometry.type");
+            Point2D center = Point2D(ibObjectInput.second.get<std::string>("geometry.center"));
 
-            if (!fin.is_open())
-                throw Exception("ImmersedBoundary", "ImmersedBoundary",
-                                "failed to open file \"" + filename + "\".");
-
-            grid_->comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(),
-                                 filename.c_str());
-
-            while (!fin.eof())
+            if (shape == "circle")
+                ibObj->initCircle(center, ibObjectInput.second.get<Scalar>("geometry.radius"));
+            else if (shape == "box")
+                ibObj->initBox(center, ibObjectInput.second.get<Scalar>("geometry.width"),
+                               ibObjectInput.second.get<Scalar>("geometry.height"));
+            else if (shape == "polygon")
             {
-                Scalar x, y;
-                fin >> x;
-                fin >> y;
+                std::ifstream fin;
+                std::vector<Point2D> verts;
+                std::string filename = "case/";
+                filename += ibObjectInput.second.get<std::string>("geometry.file").c_str();
 
-                verts.push_back(Point2D(x, y));
-            }
+                fin.open(filename.c_str());
 
-            fin.close();
+                if (!fin.is_open())
+                    throw Exception("ImmersedBoundary", "ImmersedBoundary",
+                                    "failed to open file \"" + filename + "\".");
 
-            Vector2D translation = center - Polygon(verts.begin(), verts.end()).centroid();
+                grid_->comm().printf("Reading data for \"%s\" from file \"%s\".\n", ibObjectInput.first.c_str(),
+                                     filename.c_str());
 
-            for (Point2D &vert: verts)
-                vert += translation;
+                while (!fin.eof())
+                {
+                    Scalar x, y;
+                    fin >> x;
+                    fin >> y;
 
-            ibObj->initPolygon(verts.begin(), verts.end());
-        }
-        else
-            throw Exception("ImmersedBoundary", "ImmersedBoundary",
-                            "invalid geometry type \"" + shape + "\".");
+                    verts.push_back(Point2D(x, y));
+                }
 
-        //- Optional geometry parameters
-        boost::optional<Scalar> scaleFactor = ibObjectInput.second.get_optional<Scalar>("geometry.scale");
+                fin.close();
 
-        if (scaleFactor)
-        {
-            grid_->comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(),
-                                 scaleFactor.get());
-            ibObj->shape().scale(scaleFactor.get());
-        }
+                Vector2D translation = center - Polygon(verts.begin(), verts.end()).centroid();
 
-        boost::optional<Scalar> rotationAngle = ibObjectInput.second.get_optional<Scalar>("geometry.rotate");
-
-        if (rotationAngle)
-        {
-            grid_->comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n",
-                                 ibObjectInput.first.c_str(),
-                                 rotationAngle.get());
-
-            if (ibObj->shape().type() == Shape2D::BOX)
-            {
-                Box *box = (Box *) &ibObj->shape();
-                auto verts = box->vertices();
+                for (Point2D &vert: verts)
+                    vert += translation;
 
                 ibObj->initPolygon(verts.begin(), verts.end());
             }
+            else
+                throw Exception("ImmersedBoundary", "ImmersedBoundary",
+                                "invalid geometry type \"" + shape + "\".");
 
-            ibObj->shape().rotate(rotationAngle.get() * M_PI / 180.);
-        }
+            //- Optional geometry parameters
+            boost::optional<Scalar> scaleFactor = ibObjectInput.second.get_optional<Scalar>("geometry.scale");
 
-        //- Properties
-        ibObj->rho = ibObjectInput.second.get<Scalar>("properties.rho", 0.);
-
-        //- Boundary information
-        for (const auto &child: ibObjectInput.second)
-        {
-            if (child.first == "geometry" || child.first == "interpolation"
-                    || child.first == "motion" || child.first == "properties")
-                continue;
-
-            ibObj->addBoundaryCondition(child.first, child.second.get<std::string>("type"), child.second.get<std::string>("value"));
-        }
-
-        //- Set the motion type
-        std::shared_ptr<Motion> motion = nullptr;
-        std::string motionType = ibObjectInput.second.get<std::string>("motion.type", "none");
-
-        if (motionType == "translating")
-        {
-            motion = std::make_shared<TranslatingMotion>(
-                        ibObj->position(),
-                        ibObjectInput.second.get<std::string>("motion.velocity"),
-                        ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)")
-                        );
-        }
-        else if (motionType == "oscillating")
-        {
-            motion = std::make_shared<OscillatingMotion>(
-                        ibObj->position(),
-                        ibObjectInput.second.get<std::string>("motion.frequency"),
-                        ibObjectInput.second.get<std::string>("motion.amplitude"),
-                        ibObjectInput.second.get<std::string>("motion.phase", "(0,0)"),
-                        0
-                        );
-        }
-        else if (motionType == "solidBody" || motionType == "solid-body")
-        {
-            motion = std::make_shared<SolidBodyMotion>(
-                        ibObj,
-                        ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
-                        );
-        }
-        else if(motionType == "motionProfile" || motionType == "motion-profile")
-        {
-            motion = std::make_shared<MotionProfile>(ibObj->position());
-        }
-        else if (motionType == "none")
-        {
-            motion = nullptr;
-        }
-        else
-            throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
-
-        ibObj->setMotion(motion);
-        ibObjs_.push_back(ibObj);
-    }
-
-    auto ibArrayInput = input.boundaryInput().get_child_optional("ImmersedBoundaryArray");
-
-    if (ibArrayInput)
-    {
-        int shapeI = ibArrayInput.get().get<int>("shapeI");
-        int shapeJ = ibArrayInput.get().get<int>("shapeJ");
-        Point2D anchor = ibArrayInput.get().get<std::string>("anchor");
-        Vector2D spacing = ibArrayInput.get().get<std::string>("spacing");
-        std::string name = ibArrayInput.get().get<std::string>("Boundary.name");
-        std::string shape = ibArrayInput.get().get<std::string>("Boundary.Geometry.type");
-        std::string motionType = ibArrayInput.get().get<std::string>("Boundary.Motion.type");
-        Scalar rho = ibArrayInput.get().get<Scalar>("Boundary.Properties.rho", 0.);
-
-        std::shared_ptr<ImmersedBoundaryObject> ibObj;
-        std::shared_ptr<Motion> motion;
-
-        for (int j = 0; j < shapeJ; ++j)
-            for (int i = 0; i < shapeI; ++i)
+            if (scaleFactor)
             {
-                Point2D center = anchor + Vector2D(spacing.x * i, spacing.y * j);
-                std::string ibObjName = name + "_" + std::to_string(i) + "_" + std::to_string(j);
-
-                if (shape == "circle")
-                {
-                    ibObj->initCircle(
-                                center,
-                                ibArrayInput.get().get<Scalar>("Boundary.Geometry.radius")
-                                );
-                }
-
-                ibObj->rho = rho;
-
-                for (const auto &fieldInput: ibArrayInput.get().get_child("Boundary.Fields"))
-                {
-                    ibObj->addBoundaryCondition(
-                                fieldInput.first,
-                                fieldInput.second.get<std::string>("type"),
-                                fieldInput.second.get<std::string>("value"));
-                }
-
-                if (motionType == "solidBody")
-                    motion = std::make_shared<SolidBodyMotion>(ibObj);
-                else
-                    motion = nullptr;
-
-                ibObj->setMotion(motion);
-                ibObjs_.push_back(ibObj);
+                grid_->comm().printf("Scaling \"%s\" by a factor of %lf.\n", ibObjectInput.first.c_str(),
+                                     scaleFactor.get());
+                ibObj->shape().scale(scaleFactor.get());
             }
+
+            boost::optional<Scalar> rotationAngle = ibObjectInput.second.get_optional<Scalar>("geometry.rotate");
+
+            if (rotationAngle)
+            {
+                grid_->comm().printf("Rotating \"%s\" by an angle of %lf degrees.\n",
+                                     ibObjectInput.first.c_str(),
+                                     rotationAngle.get());
+
+                if (ibObj->shape().type() == Shape2D::BOX)
+                {
+                    Box *box = (Box *) &ibObj->shape();
+                    auto verts = box->vertices();
+
+                    ibObj->initPolygon(verts.begin(), verts.end());
+                }
+
+                ibObj->shape().rotate(rotationAngle.get() * M_PI / 180.);
+            }
+
+            //- Properties
+            ibObj->rho = ibObjectInput.second.get<Scalar>("properties.rho", 0.);
+
+            //- Boundary information
+            for (const auto &child: ibObjectInput.second)
+            {
+                if (child.first == "geometry" || child.first == "interpolation"
+                        || child.first == "motion" || child.first == "properties")
+                    continue;
+
+                ibObj->addBoundaryCondition(child.first, child.second.get<std::string>("type"), child.second.get<std::string>("value"));
+            }
+
+            //- Set the motion type
+            std::shared_ptr<Motion> motion = nullptr;
+            std::string motionType = ibObjectInput.second.get<std::string>("motion.type", "none");
+
+            if (motionType == "translating")
+            {
+                motion = std::make_shared<TranslatingMotion>(
+                            ibObj->position(),
+                            ibObjectInput.second.get<std::string>("motion.velocity"),
+                            ibObjectInput.second.get<std::string>("motion.acceleration", "(0,0)")
+                            );
+            }
+            else if (motionType == "oscillating")
+            {
+                motion = std::make_shared<OscillatingMotion>(
+                            ibObj->position(),
+                            ibObjectInput.second.get<std::string>("motion.frequency"),
+                            ibObjectInput.second.get<std::string>("motion.amplitude"),
+                            ibObjectInput.second.get<std::string>("motion.phase", "(0,0)"),
+                            0
+                            );
+            }
+            else if (motionType == "solidBody" || motionType == "solid-body")
+            {
+                motion = std::make_shared<SolidBodyMotion>(
+                            ibObj,
+                            ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
+                            );
+            }
+            else if(motionType == "motionProfile" || motionType == "motion-profile")
+            {
+                motion = std::make_shared<MotionProfile>(ibObj->position());
+            }
+            else if (motionType == "none")
+            {
+                motion = nullptr;
+            }
+            else
+                throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
+
+            ibObj->setMotion(motion);
+            ibObjs_.push_back(ibObj);
+        }
+
+    ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaryGeometryFile");
+
+    if(ibInput)
+    {
+        std::string filename = ibInput.get().get<std::string>("filename");
+
+
+        boost::property_tree::ptree ptree;
+        boost::property_tree::read_info(filename, ptree);
+
+        for(const auto &ibObjInput: ptree)
+        {
+            std::string name = ibObjInput.first;
+            auto ibObj = std::make_shared<ImmersedBoundaryObject>(name);
+
+            ibObj->initCircle(
+                        ibObjInput.second.get<std::string>("geometry.center"),
+                        ibObjInput.second.get<Scalar>("geometry.radius")
+                        );
+
+            //- Init bcs
+            for(const auto &ibFieldBcInput: ibInput.get().get_child("fields"))
+            {
+                ibObj->addBoundaryCondition(ibFieldBcInput.first,
+                                            ibFieldBcInput.second.get<std::string>("type"),
+                                            ibFieldBcInput.second.get<std::string>("value"));
+            }
+
+            ibObjs_.push_back(ibObj);
+        }
     }
+
 
     //- Collision model
     collisionModel_ = std::make_shared<CollisionModel>(
@@ -357,6 +342,7 @@ void ImmersedBoundary::applyCollisionForce(bool add)
                 ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
         }
 }
+
 
 //- Protected
 
