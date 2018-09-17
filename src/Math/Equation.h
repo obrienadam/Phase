@@ -22,11 +22,13 @@ public:
     Equation &operator=(Equation &&eqn);
 
     Size rank() const
-    { return _coeffs.size(); }
+    { return coeffs_.size(); }
 
     void setRank(Size rank);
 
     void setRank(Size nRows, Size nCols);
+
+    void addRow(Size nnz);
 
     Scalar coeff(Index localRow, Index globalCol) const;
 
@@ -37,16 +39,16 @@ public:
     void addCoeff(Index localRow, Index globalCol, Scalar val);
 
     const SparseMatrixSolver::CoefficientList &coeffs() const
-    { return _coeffs; }
+    { return coeffs_; }
 
     const Vector &rhs() const
-    { return _rhs; }
+    { return rhs_; }
 
     Scalar x(Index idx) const
-    { return _spSolver->x(idx); }
+    { return solver_->x(idx); }
 
     Scalar b(Index idx) const
-    { return _rhs(idx); }
+    { return rhs_(idx); }
 
     template<class ColIt, class ValIt>
     void setCoeffs(Index row, ColIt colBegin, ColIt colEnd, ValIt valBegin)
@@ -69,13 +71,13 @@ public:
     { addCoeffs(row, cols.begin(), cols.end(), vals.begin()); }
 
     void addRhs(Index localRow, Scalar val)
-    { _rhs(localRow) += val; }
+    { rhs_(localRow) += val; }
 
     void setRhs(Index localRow, Scalar val)
-    { _rhs(localRow) = val; }
+    { rhs_(localRow) = val; }
 
-    void setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &spSolver)
-    { _spSolver = spSolver; }
+    void setSparseSolver(const std::shared_ptr<SparseMatrixSolver> &solver)
+    { solver_ = solver; }
 
     virtual Scalar solve();
 
@@ -101,11 +103,11 @@ public:
 
 protected:
 
-    SparseMatrixSolver::CoefficientList _coeffs;
+    SparseMatrixSolver::CoefficientList coeffs_;
 
-    Vector _rhs;
+    Vector rhs_;
 
-    std::shared_ptr<SparseMatrixSolver> _spSolver;
+    std::shared_ptr<SparseMatrixSolver> solver_;
 
 };
 

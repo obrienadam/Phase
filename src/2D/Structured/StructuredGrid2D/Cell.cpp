@@ -12,17 +12,16 @@ Cell::Cell(const StructuredGrid2D &grid, Label i, Label j)
     _shape = Box(grid.node(_i, _j), grid.node(_i + 1, _j + 1));
 }
 
-const Cell &Cell::cell(Orientation dir, int offset) const
+Cell::Cell(const StructuredGrid2D &grid, Label i, Label j, Label gid)
+    :
+      Cell(grid, i, j)
 {
-    return _grid.cell(*this, dir, offset);
+    _gid = gid;
 }
 
-Scalar Cell::dh(Orientation dir, int offset) const
+void Cell::initStencils()
 {
-    return _grid.dh(*this, dir, offset);
-}
-
-const Face &Cell::face(Orientation dir) const
-{
-    return _grid.face(*this, dir);
+    for(auto zeta: Coordinates::DIRECTIONS)
+        if(_grid.maxInc(*this, zeta) > 0)
+            _interiorFaceStencils.push_back(InteriorFaceStencil(*this, zeta));
 }

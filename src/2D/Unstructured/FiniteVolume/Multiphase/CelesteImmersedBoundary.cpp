@@ -98,7 +98,7 @@ void CelesteImmersedBoundary::appyFluidForces(const ScalarFiniteVolumeField &rho
 
     for(auto &ibObj: ib)
     {
-        Equation eqn;
+        CrsEquation eqn;
 
         auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
 

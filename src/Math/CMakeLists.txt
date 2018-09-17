@@ -12,6 +12,7 @@ set(HEADERS Factorial.h
         TrilinosMueluSparseMatrixSolver.h
         SparseMatrixSolverFactory.h
         Equation.h
+        CrsEquation.h
         Vector.h
         Algorithm.h)
 
@@ -26,6 +27,7 @@ set(SOURCES Matrix.cpp
         TrilinosMueluSparseMatrixSolver.cpp
         SparseMatrixSolverFactory.cpp
         Equation.cpp
+        CrsEquation.cpp
         Vector.cpp)
 
 add_library(phase_math ${HEADERS} ${SOURCES})

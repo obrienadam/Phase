@@ -3,9 +3,9 @@
 #include "FiniteVolumeEquation.h"
 
 template<>
-FiniteVolumeEquation<Vector2D>::FiniteVolumeEquation(VectorFiniteVolumeField &field, const std::string &name)
+FiniteVolumeEquation<Vector2D>::FiniteVolumeEquation(VectorFiniteVolumeField &field, const std::string &name, int nnz)
         :
-        Equation(2 * field.grid()->localCells().size(), 15),
+        CrsEquation(2 * field.grid()->localCells().size(), nnz),
         name(name),
         field_(field)
 {
@@ -96,64 +96,75 @@ Vector2D FiniteVolumeEquation<Vector2D>::get(const Cell &cell, const Cell &nb)
 template<>
 void FiniteVolumeEquation<Vector2D>::remove(const Cell &cell)
 {
-    _coeffs[field_.indexMap()->local(cell, 0)].clear();
-    _coeffs[field_.indexMap()->local(cell, 1)].clear();
-    _rhs(field_.indexMap()->local(cell, 0)) = 0.;
-    _rhs(field_.indexMap()->local(cell, 1)) = 0.;
+    Index rowX = field_.indexMap()->local(cell, 0);
+    Index rowY = field_.indexMap()->local(cell, 1);
+
+    std::fill(colInd_.begin() + rowPtr_[rowX],
+              colInd_.begin() + rowPtr_[rowX + 1],
+              -1);
+
+    std::fill(colInd_.begin() + rowPtr_[rowY],
+              colInd_.begin() + rowPtr_[rowY + 1],
+              -1);
+
+    rhs_(rowX) = 0.;
+    rhs_(rowY) = 0.;
 }
 
 template<>
 void FiniteVolumeEquation<Vector2D>::addSource(const Cell &cell, Scalar val)
 {
-    _rhs(field_.indexMap()->local(cell, 0)) += val;
-    _rhs(field_.indexMap()->local(cell, 1)) += val;
+    rhs_(field_.indexMap()->local(cell, 0)) += val;
+    rhs_(field_.indexMap()->local(cell, 1)) += val;
 }
 
 template<>
 void FiniteVolumeEquation<Vector2D>::setSource(const Cell &cell, Scalar val)
 {
-    _rhs(field_.indexMap()->local(cell, 0)) = val;
-    _rhs(field_.indexMap()->local(cell, 1)) = val;
+    rhs_(field_.indexMap()->local(cell, 0)) = val;
+    rhs_(field_.indexMap()->local(cell, 1)) = val;
 }
 
 template<>
 template<>
 void FiniteVolumeEquation<Vector2D>::addSource(const Cell &cell, const Vector2D &u)
 {
-    _rhs(field_.indexMap()->local(cell, 0)) += u.x;
-    _rhs(field_.indexMap()->local(cell, 1)) += u.y;
+    rhs_(field_.indexMap()->local(cell, 0)) += u.x;
+    rhs_(field_.indexMap()->local(cell, 1)) += u.y;
 }
 
 template<>
 template<>
 void FiniteVolumeEquation<Vector2D>::setSource(const Cell &cell, const Vector2D &u)
 {
-    _rhs(field_.indexMap()->local(cell, 0)) = u.x;
-    _rhs(field_.indexMap()->local(cell, 1)) = u.y;
+    rhs_(field_.indexMap()->local(cell, 0)) = u.x;
+    rhs_(field_.indexMap()->local(cell, 1)) = u.y;
 }
 
 template<>
 template<>
 void FiniteVolumeEquation<Vector2D>::addSource(const Cell &cell, const Tensor2D &tau)
 {
-    _rhs(field_.indexMap()->local(cell, 0)) += tau.xx + tau.xy;
-    _rhs(field_.indexMap()->local(cell, 1)) += tau.yx + tau.yy;
+    rhs_(field_.indexMap()->local(cell, 0)) += tau.xx + tau.xy;
+    rhs_(field_.indexMap()->local(cell, 1)) += tau.yx + tau.yy;
 }
 
 template<>
 void FiniteVolumeEquation<Vector2D>::relax(Scalar relaxationFactor)
 {
-    for (const Cell &cell: field_.grid()->localCells())
-    {
-        Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
-        Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
+    throw Exception("FiniteVolumeEquation<Vector2D>", "relax", "method removed.");
 
-        coeffX /= relaxationFactor;
-        coeffY /= relaxationFactor;
+//    for (const Cell &cell: field_.grid()->localCells())
+//    {
+//        Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
+//        Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
 
-        _rhs(field_.indexMap()->local(cell, 0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
-        _rhs(field_.indexMap()->local(cell, 1)) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
-    }
+//        coeffX /= relaxationFactor;
+//        coeffY /= relaxationFactor;
+
+//        _rhs(field_.indexMap()->local(cell, 0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
+//        _rhs(field_.indexMap()->local(cell, 1)) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
+//    }
 }
 
 //- Private
@@ -164,8 +175,8 @@ void FiniteVolumeEquation<Vector2D>::mapFromSparseSolver()
 
     for (const Cell &cell: field_.grid()->localCells())
     {
-        field_(cell).x = _spSolver->x(idxMap.local(cell, 0));
-        field_(cell).y = _spSolver->x(idxMap.local(cell, 1));
+        field_(cell).x = solver_->x(idxMap.local(cell, 0));
+        field_(cell).y = solver_->x(idxMap.local(cell, 1));
     }
 }
 

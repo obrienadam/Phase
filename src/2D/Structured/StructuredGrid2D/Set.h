@@ -11,6 +11,10 @@ class Set
 {
 public:
 
+    typedef typename std::vector<Ref<const T>>::iterator iterator;
+
+    typedef typename std::vector<Ref<const T>>::const_iterator const_iterator;
+
     Set(const std::string &name = "") : _name(name)
     { }
 
@@ -28,6 +32,20 @@ public:
 
     std::size_t size() const
     { return _items.size(); }
+
+    //- Iterators
+
+    iterator begin()
+    { return _items.begin(); }
+
+    iterator end()
+    { return _items.end(); }
+
+    const_iterator begin() const
+    { return _items.begin(); }
+
+    const_iterator end() const
+    { return _items.end(); }
 
     //- Tests
     bool isInSet(const T& item) const

@@ -81,13 +81,12 @@ std::vector<Ref<const T> > Group<T>::itemsWithin(const Shape2D &shape) const
     switch (shape.type())
     {
     case Shape2D::CIRCLE:
-        return std::vector<Ref<const T>>(
-                                            rTree_.qbegin(bgi::within(shape.boundingBox())
-                                                          && bgi::satisfies([&shape](const T &item)
-        { return shape.isInside(item.centroid()); })),
-                                            rTree_.qend());
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())
+                                                       && bgi::satisfies([&shape](const T &item) { return shape.isInside(item.centroid()); })),
+                                         rTree_.qend());
     case Shape2D::BOX:
-        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())), rTree_.qend());
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(shape.boundingBox())),
+                                         rTree_.qend());
     case Shape2D::POLYGON:
         return std::vector<Ref<const T>>(rTree_.qbegin(bgi::within(static_cast<const Polygon &>(shape).boostRing())),
                                          rTree_.qend());
@@ -102,17 +101,60 @@ std::vector<Ref<const T> > Group<T>::itemsCoveredBy(const Shape2D &shape) const
     switch (shape.type())
     {
     case Shape2D::CIRCLE:
-        return std::vector<Ref<const T>>(
-                                            rTree_.qbegin(bgi::covered_by(shape.boundingBox())
-                                                          && bgi::satisfies([&shape](const T &item)
-        { return shape.isCovered(item.centroid()); })),
-                                            rTree_.qend());
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())
+                                                       && bgi::satisfies([&shape](const T &item) { return shape.isCovered(item.centroid()); })),
+                                         rTree_.qend());
 
     case Shape2D::BOX:
-        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())), rTree_.qend());
+        return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(shape.boundingBox())),
+                                         rTree_.qend());
     case Shape2D::POLYGON:
         return std::vector<Ref<const T>>(rTree_.qbegin(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing())),
                                          rTree_.qend());
+    }
+}
+
+template<class T>
+void Group<T>::itemsWithin(const Shape2D &shape, std::vector<Ref<const T>> &result) const
+{
+    namespace bgi = boost::geometry::index;
+
+    switch (shape.type())
+    {
+    case Shape2D::CIRCLE:
+        result.assign(
+                    rTree_.qbegin(bgi::within(shape.boundingBox())
+                                  && bgi::satisfies([&shape](const T &item) { return shape.isInside(item.centroid()); })),
+                    rTree_.qend());
+    case Shape2D::BOX:
+        result.assign(
+                    rTree_.qbegin(bgi::within(shape.boundingBox())),
+                    rTree_.qend());
+    case Shape2D::POLYGON:
+        result.assign(rTree_.qbegin(bgi::within(static_cast<const Polygon &>(shape).boostRing())),
+                      rTree_.qend());
+    }
+}
+
+template<class T>
+void Group<T>::itemsCoveredBy(const Shape2D &shape, std::vector<Ref<const T>> &result) const
+{
+    namespace bgi = boost::geometry::index;
+
+    switch (shape.type())
+    {
+    case Shape2D::CIRCLE:
+        result.assign(
+                    rTree_.qbegin(bgi::covered_by(shape.boundingBox())
+                                  && bgi::satisfies([&shape](const T &item) { return shape.isCovered(item.centroid()); })),
+                    rTree_.qend());
+
+    case Shape2D::BOX:
+        result.assign(rTree_.qbegin(bgi::covered_by(shape.boundingBox())),
+                      rTree_.qend());
+    case Shape2D::POLYGON:
+        result.assign(rTree_.qbegin(bgi::covered_by(static_cast<const Polygon &>(shape).boostRing())),
+                      rTree_.qend());
     }
 }
 

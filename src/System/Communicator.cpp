@@ -75,8 +75,8 @@ void Communicator::barrier() const
 
 void Communicator::waitAll() const
 {
-    std::vector<MPI_Status> statuses(currentRequests_.size());
-    MPI_Waitall(currentRequests_.size(), currentRequests_.data(), statuses.data());
+    statuses_.resize(currentRequests_.size());
+    MPI_Waitall(currentRequests_.size(), currentRequests_.data(), statuses_.data());
     currentRequests_.clear();
 }
 

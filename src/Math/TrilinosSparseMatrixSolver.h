@@ -26,7 +26,9 @@ public:
 
     virtual void setRank(int rowRank, int colRank);
 
-    virtual void set(const CoefficientList &eqn);
+    virtual void set(const CoefficientList &eqn) override;
+
+    virtual void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) override;
 
     virtual void setGuess(const Vector &x0);
 

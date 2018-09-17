@@ -7,7 +7,7 @@ class Face
 {
 public:
 
-    Face(const StructuredGrid2D &grid, Coordinate coord, Label i, Label j);
+    Face(const StructuredGrid2D &grid, Coordinates::Index coord, Label i, Label j);
 
     const LineSegment2D &shape() const
     { return _shape; }
@@ -27,9 +27,17 @@ public:
     bool isBoundaryFace() const
     { return (bool)_rCell; }
 
+    const Vector2D &norm() const
+    { return _norm; }
+
+    Vector2D sf(const Point2D &pt) const
+    { return dot(_norm, _shape.center() - pt) > 0. ? _norm : -_norm; }
+
 protected:
 
     LineSegment2D _shape;
+
+    Vector2D _norm;
 
     Label _i, _j, _lid;
 

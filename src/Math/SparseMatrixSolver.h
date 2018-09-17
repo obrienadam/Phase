@@ -30,6 +30,8 @@ public:
 
     virtual void set(const CoefficientList &eqn) = 0;
 
+    virtual void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) = 0;
+
     virtual void setGuess(const Vector &x0) = 0;
 
     virtual void setRhs(const Vector &rhs) = 0;

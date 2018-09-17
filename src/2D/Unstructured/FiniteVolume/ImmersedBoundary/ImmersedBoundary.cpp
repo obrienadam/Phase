@@ -177,7 +177,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                         ibObjInput.second.get<Scalar>("geometry.radius")
                         );
 
-            //- Init bcs
+            //- Init bcs, set the defaults first
             for(const auto &ibFieldBcInput: ibInput.get().get_child("fields"))
             {
                 ibObj->addBoundaryCondition(ibFieldBcInput.first,

@@ -1,7 +1,7 @@
 #include "Face.h"
 #include "StructuredGrid2D.h"
 
-Face::Face(const StructuredGrid2D &grid, Coordinate coord, Label i, Label j)
+Face::Face(const StructuredGrid2D &grid, Coordinates::Index coord, Label i, Label j)
     :
       _i(i),
       _j(j),
@@ -10,10 +10,12 @@ Face::Face(const StructuredGrid2D &grid, Coordinate coord, Label i, Label j)
 {
     switch (coord)
     {
-    case I:
+    case Coordinates::I:
         _shape = LineSegment2D(_grid.node(_i, _j), _grid.node(_i, _j + 1));
         break;
-    case J:
+    case Coordinates::J:
         _shape = LineSegment2D(_grid.node(_i, _j), _grid.node(_i + 1, _j));
     }
+
+    _norm = _shape.norm();
 }

@@ -1,9 +1,9 @@
 #include "FiniteVolumeEquation.h"
 
 template<>
-FiniteVolumeEquation<Scalar>::FiniteVolumeEquation(ScalarFiniteVolumeField &field, const std::string &name)
+FiniteVolumeEquation<Scalar>::FiniteVolumeEquation(ScalarFiniteVolumeField &field, const std::string &name, int nnz)
         :
-        Equation(field.grid()->localCells().size(), 5),
+        CrsEquation(field.grid()->localCells().size(), nnz),
         name(name),
         field_(field)
 {
@@ -37,21 +37,23 @@ void FiniteVolumeEquation<Scalar>::setSource(const Cell &cell, Scalar val)
 template<>
 void FiniteVolumeEquation<Scalar>::remove(const Cell &cell)
 {
-    _coeffs[field_.indexMap()->local(cell, 0)].clear();
-    _rhs(field_.indexMap()->local(cell, 0)) = 0.;
+    Index row = field_.indexMap()->local(cell, 0);
+    std::fill(colInd_.begin() + rowPtr_[row], colInd_.begin() + rowPtr_[row + 1], -1);
+    rhs_(row) = 0.;
 }
 
 template<>
 void FiniteVolumeEquation<Scalar>::relax(Scalar relaxationFactor)
 {
-    for (const Cell &cell: field_.grid()->localCells())
-    {
-        Index row = field_.indexMap()->local(cell, 0);
-        Scalar &coeff = coeffRef(row, row);
+    throw Exception("FiniteVolumeEquation<Scalar>", "relax", "method removed.");
+//    for (const Cell &cell: field_.grid()->localCells())
+//    {
+//        Index row = field_.indexMap()->local(cell, 0);
+//        Scalar &coeff = coeffRef(row, row);
 
-        coeff /= relaxationFactor;
-        _rhs(row) -= (1. - relaxationFactor) * coeff * field_(cell);
-    }
+//        coeff /= relaxationFactor;
+//        _rhs(row) -= (1. - relaxationFactor) * coeff * field_(cell);
+//    }
 }
 
 //- Private
@@ -62,7 +64,7 @@ void FiniteVolumeEquation<Scalar>::mapFromSparseSolver()
     const IndexMap &idxMap = *field_.indexMap();
 
     for (const Cell &cell: field_.grid()->localCells())
-        field_(cell) = _spSolver->x(idxMap.local(cell, 0));
+        field_(cell) = solver_->x(idxMap.local(cell, 0));
 }
 
 template<>

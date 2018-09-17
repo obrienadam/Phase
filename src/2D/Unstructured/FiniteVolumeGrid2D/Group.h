@@ -58,6 +58,10 @@ public:
 
     std::vector<Ref<const T> > itemsCoveredBy(const Shape2D &shape) const;
 
+    void itemsWithin(const Shape2D &shape, std::vector<Ref<const T>> &result) const;
+
+    void itemsCoveredBy(const Shape2D &shape, std::vector<Ref<const T>> &result) const;
+
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
     const T &nearestItem(const Point2D &pt) const;

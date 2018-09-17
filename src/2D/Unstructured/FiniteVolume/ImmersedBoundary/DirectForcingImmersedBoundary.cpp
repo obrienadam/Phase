@@ -51,7 +51,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
                                                                                  Scalar timeStep,
                                                                                  VectorFiniteVolumeField &fib) const
 {
-    FiniteVolumeEquation<Vector2D> eqn(fib);
+    FiniteVolumeEquation<Vector2D> eqn(fib, 12);
 
     for(const Cell& cell: grid_->localCells())
     {
@@ -370,10 +370,12 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
         Tensor2D tau;
     };
 
+    CrsEquation eqn;
+    eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
+
+
     for(auto &ibObj: ibObjs_)
     {
-        Equation eqn;
-
         auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
 
         auto indexStart = 6 * std::accumulate(
@@ -391,6 +393,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
         std::vector<Stress> stresses;
         stresses.reserve(ibObj->ibCells().size());
 
+        eqn.clear();
         Index row = 0;
         for(const Cell &cell: ibObj->ibCells())
         {
@@ -430,7 +433,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
             auto divTau = mu * Vector2D(4 * coeffs(0, 0) + 2 * coeffs(1, 0) + coeffs(2, 1),
                                         2 * coeffs(0, 1) + 4 * coeffs(1, 1) + coeffs(2, 0));
 
-            eqn.setRank(eqn.rank() + st.nReconstructionPoints());
+            eqn.addRows(st.nReconstructionPoints(), 12);
 
             Index colStart = cellIdToIndexMap[cell.id()];
             for(const Cell *cell: st.cells())
@@ -471,7 +474,6 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
             eqn.setRhs(row++, rho * dot(ibObj->acceleration(xb), n) - dot(divTau, n));
         }
 
-        eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm(), Tpetra::DynamicProfile));
         eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
         eqn.solveLeastSquares();
 
@@ -547,10 +549,10 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
 
             force = fPressure + fShear + ibObj->rho * g * ibObj->shape().area();
 
-            std::cout << "Pressure force = " << fPressure << "\n"
-                      << "Shear force = " << fShear << "\n"
-                      << "Weight = " << ibObj->rho * g * ibObj->shape().area() << "\n"
-                      << "Net force = " << force << "\n";
+            //            std::cout << "Pressure force = " << fPressure << "\n"
+            //                      << "Shear force = " << fShear << "\n"
+            //                      << "Weight = " << ibObj->rho * g * ibObj->shape().area() << "\n"
+            //                      << "Net force = " << force << "\n";
         }
 
         ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), force));
@@ -572,7 +574,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVol
 
     for(auto &ibObj: ibObjs_)
     {
-        Equation eqn;
+        CrsEquation eqn;
 
         auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
 

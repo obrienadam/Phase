@@ -5,25 +5,31 @@
 
 #include "System/Input.h"
 
-#include "Math/Equation.h"
+#include "Math/CrsEquation.h"
 
 #include "FiniteVolumeGrid2D/FiniteVolumeGrid2D.h"
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 
 template<class T>
-class FiniteVolumeEquation : public Equation
+class FiniteVolumeEquation : public CrsEquation
 {
 public:
 
     //- Constructors
 
     FiniteVolumeEquation(FiniteVolumeField<T> &field,
-                         const std::string &name = "");
+                         const std::string &name = "",
+                         int nnz = 5);
+
+    FiniteVolumeEquation(FiniteVolumeField<T> &field, int nnz)
+        : FiniteVolumeEquation(field, "", nnz)
+    {}
 
     FiniteVolumeEquation(const Input &input,
                          FiniteVolumeField<T> &field,
-                         const std::string &name);
+                         const std::string &name,
+                         int nnz = 5);
 
     FiniteVolumeEquation(const FiniteVolumeEquation<T> &other) = default;
 
@@ -31,9 +37,9 @@ public:
 
     FiniteVolumeEquation<T> &operator =(FiniteVolumeEquation<T> &&rhs);
 
-    FiniteVolumeEquation<T> &operator =(const Equation &rhs);
+    FiniteVolumeEquation<T> &operator =(const CrsEquation &rhs);
 
-    FiniteVolumeEquation<T> &operator =(Equation &&rhs);
+    FiniteVolumeEquation<T> &operator =(CrsEquation &&rhs);
 
     //- Add/set/get coefficients
     void set(const Cell &cell, const Cell &nb, Scalar val);

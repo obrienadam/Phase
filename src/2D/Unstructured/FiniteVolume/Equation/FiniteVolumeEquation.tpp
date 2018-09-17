@@ -10,9 +10,9 @@
 template<class T>
 FiniteVolumeEquation<T>::FiniteVolumeEquation(const Input &input,
                                               FiniteVolumeField<T> &field,
-                                              const std::string &name)
+                                              const std::string &name, int nnz)
     :
-      FiniteVolumeEquation<T>::FiniteVolumeEquation(field, name)
+      FiniteVolumeEquation<T>::FiniteVolumeEquation(field, name, nnz)
 {
     configureSparseSolver(input, field.grid()->comm());
 }
@@ -20,27 +20,27 @@ FiniteVolumeEquation<T>::FiniteVolumeEquation(const Input &input,
 template<class T>
 FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(const FiniteVolumeEquation<T> &rhs)
 {
-    return operator =(static_cast<const Equation&>(rhs));
+    return operator =(static_cast<const CrsEquation&>(rhs));
 }
 
 template<class T>
 FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(FiniteVolumeEquation<T> &&rhs)
 {
-    return operator =(static_cast<Equation&&>(rhs));
+    return operator =(static_cast<CrsEquation&&>(rhs));
 }
 
 template<class T>
-FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(const Equation &rhs)
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(const CrsEquation &rhs)
 {
     if(this != &rhs)
-        Equation::operator =(rhs);
+        CrsEquation::operator =(rhs);
     return *this;
 }
 
 template<class T>
-FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(Equation &&rhs)
+FiniteVolumeEquation<T> &FiniteVolumeEquation<T>::operator =(CrsEquation &&rhs)
 {
-    Equation::operator =(rhs);
+    CrsEquation::operator =(rhs);
     return *this;
 }
 
@@ -50,13 +50,13 @@ void FiniteVolumeEquation<T>::configureSparseSolver(const Input &input, const Co
     std::string lib = input.caseInput().get<std::string>("LinearAlgebra." + name + ".lib");
     boost::algorithm::to_lower(lib);
 
-    _spSolver = SparseMatrixSolverFactory().create(lib, comm);
+    solver_ = SparseMatrixSolverFactory().create(lib, comm);
 
-    if (comm.nProcs() > 1 && !_spSolver->supportsMPI())
+    if (comm.nProcs() > 1 && !solver_->supportsMPI())
         throw Exception("FiniteVolumeEquation<T>", "configureSparseSolver", "equation \"" + name + "\", lib \"" + lib +
                         "\" does not support multiple processes in its current configuration.");
 
-    _spSolver->setup(input.caseInput().get_child("LinearAlgebra." + name));
+    solver_->setup(input.caseInput().get_child("LinearAlgebra." + name));
 
     comm.printf("Initialized sparse matrix solver for equation \"%s\" using lib%s.\n", name.c_str(), lib.c_str());
 }
@@ -64,23 +64,23 @@ void FiniteVolumeEquation<T>::configureSparseSolver(const Input &input, const Co
 template<class T>
 Scalar FiniteVolumeEquation<T>::solve()
 {
-    if (!_spSolver)
+    if (!solver_)
         throw Exception("FiniteVolumeEquation<T>", "solve",
                         "must allocate a SparseMatrixSolver object before attempting to solve.");
 
-    _spSolver->setRank(getRank());
-    _spSolver->set(_coeffs);
-    _spSolver->setRhs(-_rhs);
+    solver_->setRank(getRank());
+    solver_->set(rowPtr_, colInd_, vals_);
+    solver_->setRhs(-rhs_);
 
-    if (_spSolver->type() == SparseMatrixSolver::TRILINOS_MUELU)
-        std::static_pointer_cast<TrilinosMueluSparseMatrixSolver>(_spSolver)->setCoordinates(
+    if (solver_->type() == SparseMatrixSolver::TRILINOS_MUELU)
+        std::static_pointer_cast<TrilinosMueluSparseMatrixSolver>(solver_)->setCoordinates(
                     field_.grid()->localCells().coordinates());
 
-    _spSolver->solve();
+    solver_->solve();
 
     mapFromSparseSolver();
 
-    _spSolver->printStatus("FiniteVolumeEquation " + name + ":");
+    solver_->printStatus("FiniteVolumeEquation " + name + ":");
 
-    return _spSolver->error();
+    return solver_->error();
 }

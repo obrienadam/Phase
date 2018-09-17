@@ -25,19 +25,7 @@ TrilinosSparseMatrixSolver::TrilinosSparseMatrixSolver(const Communicator &comm,
 
 void TrilinosSparseMatrixSolver::setRank(int rank)
 {
-    using namespace Teuchos;
-
-    auto map = rcp(new TpetraMap(OrdinalTraits<Tpetra::global_size_t>::invalid(), rank, 0, Tcomm_));
-
-    if (mat_.is_null() || !mat_->getRangeMap()->isSameAs(*map) || !mat_->getDomainMap()->isSameAs(*map)) //- Check if a new map is needed
-    {
-        rangeMap_ = domainMap_ = map;
-        x_ = rcp(new TpetraMultiVector(map, 1, true));
-        b_ = rcp(new TpetraMultiVector(map, 1, true));
-        xData_ = x_->getData(0);
-    }
-
-    mat_ = rcp(new TpetraCrsMatrix(map, 20, pftype_));
+    setRank(rank, rank);
 }
 
 void TrilinosSparseMatrixSolver::setRank(int rowRank, int colRank)
@@ -83,6 +71,31 @@ void TrilinosSparseMatrixSolver::set(const CoefficientList &eqn)
         }
 
         mat_->insertGlobalValues(localRow + minGlobalIndex, cols.size(), vals.data(), cols.data());
+    }
+
+    mat_->fillComplete(domainMap_, rangeMap_);
+}
+
+void TrilinosSparseMatrixSolver::set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals)
+{
+    using namespace Teuchos;
+
+    mat_->resumeFill();
+    mat_->setAllToScalar(0.);
+
+    Index minGlobalIndex = mat_->getRowMap()->getMinGlobalIndex();
+
+    for(Index localRow = 0; localRow < rowPtr.size() - 1; ++localRow)
+    {
+        Index ibegin = rowPtr[localRow];
+        Index iend = rowPtr[localRow + 1];
+
+        auto rend = colInds.rend() - ibegin;
+        auto rbeg = colInds.rend() - iend;
+
+        Size n = rend - std::find_if_not(rbeg, rend, [](Index idx) { return idx < 0; });
+
+        mat_->insertGlobalValues(localRow + minGlobalIndex, n, vals.data() + ibegin, colInds.data() + ibegin);
     }
 
     mat_->fillComplete(domainMap_, rangeMap_);

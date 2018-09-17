@@ -1,4 +1,5 @@
 #include "FiniteVolume/Equation/TimeDerivative.h"
+#include "FiniteVolume/Equation/Divergence.h"
 #include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
 #include "FiniteVolume/Equation/Laplacian.h"
 #include "FiniteVolume/Equation/Source.h"
@@ -54,15 +55,6 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
     fbEqn_.solve();
     grid_->sendMessages(fb_);
-
-    Vector2D fib(0., 0.);
-    for(const Cell &cell: *fluid_)
-        fib -= rho_ * fb_(cell) * cell.volume();
-
-    fib = Vector2D(grid_->comm().sum(fib.x), grid_->comm().sum(fib.y));
-
-    if(grid_->comm().isMainProc())
-        std::cout << "Fib = " << fib << std::endl;
 
     uEqn_ == src::src(fb_);
     error = uEqn_.solve();

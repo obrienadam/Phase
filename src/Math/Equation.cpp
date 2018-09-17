@@ -2,10 +2,10 @@
 
 Equation::Equation(Size rank, Size nnz)
     :
-      _coeffs(rank),
-      _rhs(rank, 0.)
+      coeffs_(rank),
+      rhs_(rank, 0.)
 {
-    std::for_each(_coeffs.begin(), _coeffs.end(), [nnz](SparseMatrixSolver::Row &row)
+    std::for_each(coeffs_.begin(), coeffs_.end(), [nnz](SparseMatrixSolver::Row &row)
     { row.reserve(nnz); });
 }
 
@@ -13,9 +13,9 @@ Equation &Equation::operator=(const Equation &eqn)
 {
     if(this != &eqn)
     {
-        _spSolver = eqn._spSolver ? eqn._spSolver: _spSolver;
-        _coeffs = eqn._coeffs;
-        _rhs = eqn._rhs;
+        solver_ = eqn.solver_ ? eqn.solver_: solver_;
+        coeffs_ = eqn.coeffs_;
+        rhs_ = eqn.rhs_;
     }
 
     return *this;
@@ -23,34 +23,41 @@ Equation &Equation::operator=(const Equation &eqn)
 
 Equation &Equation::operator=(Equation &&eqn)
 {
-    _spSolver = eqn._spSolver ? eqn._spSolver: _spSolver;
-    _coeffs = std::move(eqn._coeffs);
-    _rhs = std::move(eqn._rhs);
+    solver_ = eqn.solver_ ? eqn.solver_: solver_;
+    coeffs_ = std::move(eqn.coeffs_);
+    rhs_ = std::move(eqn.rhs_);
 
     return *this;
 }
 
 void Equation::setRank(Size rank)
 {
-    _coeffs.resize(rank);
-    _rhs.resize(rank, 0.);
+    coeffs_.resize(rank);
+    rhs_.resize(rank, 0.);
 
-    if(_spSolver)
-        _spSolver->setRank(rank);
+    if(solver_)
+        solver_->setRank(rank);
 }
 
 void Equation::setRank(Size nRows, Size nCols)
 {
-    _coeffs.resize(nRows);
-    _rhs.resize(nRows);
+    coeffs_.resize(nRows);
+    rhs_.resize(nRows);
 
-    if(_spSolver)
-        _spSolver->setRank(nRows, nCols);
+    if(solver_)
+        solver_->setRank(nRows, nCols);
+}
+
+void Equation::addRow(Size nnz)
+{
+    coeffs_.push_back(SparseMatrixSolver::Row());
+    coeffs_.back().reserve(nnz);
+    rhs_.resize(rhs_.size() + 1, 0.);
 }
 
 Scalar Equation::coeff(Index localRow, Index globalCol) const
 {
-    for (const SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+    for (const SparseMatrixSolver::Entry &entry: coeffs_[localRow])
         if (entry.first == globalCol)
             return entry.second;
 
@@ -59,101 +66,101 @@ Scalar Equation::coeff(Index localRow, Index globalCol) const
 
 Scalar &Equation::coeffRef(Index localRow, Index globalCol)
 {
-    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+    for (SparseMatrixSolver::Entry &entry: coeffs_[localRow])
         if (entry.first == globalCol)
             return entry.second;
 }
 
 void Equation::setCoeff(Index localRow, Index globalCol, Scalar val)
 {
-    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+    for (SparseMatrixSolver::Entry &entry: coeffs_[localRow])
         if (entry.first == globalCol)
         {
             entry.second = val;
             return;
         }
 
-    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
+    coeffs_[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
 }
 
 void Equation::addCoeff(Index localRow, Index globalCol, Scalar val)
 {
-    for (SparseMatrixSolver::Entry &entry: _coeffs[localRow])
+    for (SparseMatrixSolver::Entry &entry: coeffs_[localRow])
         if (entry.first == globalCol)
         {
             entry.second += val;
             return;
         }
 
-    _coeffs[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
+    coeffs_[localRow].push_back(SparseMatrixSolver::Entry(globalCol, val));
 }
 
 Scalar Equation::solve()
 {
-    _spSolver->setRank(_coeffs.size());
-    _spSolver->set(_coeffs);
-    _spSolver->setRhs(-_rhs);
-    _spSolver->solve();
-    return _spSolver->error();
+    solver_->setRank(coeffs_.size());
+    solver_->set(coeffs_);
+    solver_->setRhs(-rhs_);
+    solver_->solve();
+    return solver_->error();
 }
 
 Scalar Equation::solveLeastSquares()
 {
-    _spSolver->set(_coeffs);
-    _spSolver->setRhs(-_rhs);
-    _spSolver->solveLeastSquares();
-    return _spSolver->error();
+    solver_->set(coeffs_);
+    solver_->setRhs(-rhs_);
+    solver_->solveLeastSquares();
+    return solver_->error();
 }
 
 void Equation::clear()
 {
-    for (auto &row: _coeffs)
+    for (auto &row: coeffs_)
         row.clear();
 
-    _rhs.zero();
+    rhs_.zero();
 }
 
 Equation &Equation::operator+=(const Equation &rhs)
 {
-    for (int i = 0; i < _coeffs.size(); ++i)
-        for (const auto &entry: rhs._coeffs[i])
+    for (int i = 0; i < coeffs_.size(); ++i)
+        for (const auto &entry: rhs.coeffs_[i])
             addCoeff(i, entry.first, entry.second);
 
-    _rhs += rhs._rhs;
+    rhs_ += rhs.rhs_;
 
     return *this;
 }
 
 Equation &Equation::operator-=(const Equation &rhs)
 {
-    for (int i = 0; i < _coeffs.size(); ++i)
-        for (const auto &entry: rhs._coeffs[i])
+    for (int i = 0; i < coeffs_.size(); ++i)
+        for (const auto &entry: rhs.coeffs_[i])
             addCoeff(i, entry.first, -entry.second);
 
-    _rhs -= rhs._rhs;
+    rhs_ -= rhs.rhs_;
 
     return *this;
 }
 
 Equation &Equation::operator+=(const Vector &rhs)
 {
-    _rhs += rhs;
+    rhs_ += rhs;
     return *this;
 }
 
 Equation &Equation::operator-=(const Vector &rhs)
 {
-    _rhs -= rhs;
+    rhs_ -= rhs;
     return *this;
 }
 
 Equation &Equation::operator*=(Scalar rhs)
 {
-    for (int i = 0; i < _coeffs.size(); ++i)
-        for (auto &entry: _coeffs[i])
+    for (int i = 0; i < coeffs_.size(); ++i)
+        for (auto &entry: coeffs_[i])
             entry.second *= rhs;
 
-    _rhs *= rhs;
+    rhs_ *= rhs;
 
     return *this;
 }
@@ -161,25 +168,25 @@ Equation &Equation::operator*=(Scalar rhs)
 Equation &Equation::operator==(Scalar rhs)
 {
     if (rhs != 0.)
-        _rhs -= rhs;
+        rhs_ -= rhs;
 
     return *this;
 }
 
 Equation &Equation::operator==(const Equation &rhs)
 {
-    for (int i = 0; i < _coeffs.size(); ++i)
-        for (const auto &entry: rhs._coeffs[i])
+    for (int i = 0; i < coeffs_.size(); ++i)
+        for (const auto &entry: rhs.coeffs_[i])
             addCoeff(i, entry.first, -entry.second);
 
-    _rhs -= rhs._rhs;
+    rhs_ -= rhs.rhs_;
 
     return *this;
 }
 
 Equation &Equation::operator==(const Vector &rhs)
 {
-    _rhs -= rhs;
+    rhs_ -= rhs;
     return *this;
 }
 

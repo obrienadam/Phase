@@ -14,5 +14,9 @@ Poisson::Poisson(const Input &input, const std::shared_ptr<StructuredGrid2D> &gr
 Scalar Poisson::solve(Scalar timeStep)
 {
     _phiEqn = (fv::lap(_gamma, _phi));
-    return _phiEqn.solve();
+    Scalar error = _phiEqn.solve();
+
+    _phi.sendMessages(true);
+
+    return 0;
 }

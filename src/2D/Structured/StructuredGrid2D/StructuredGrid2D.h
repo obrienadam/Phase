@@ -12,18 +12,17 @@ class StructuredGrid2D
 {
 public:
 
-    StructuredGrid2D() : _comm(std::make_shared<Communicator>())
-    {}
+    StructuredGrid2D();
+
+    StructuredGrid2D(const StructuredGrid2D&) = delete;
 
     StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
 
-    StructuredGrid2D(const std::vector<Scalar> &xcoords, const std::vector<Scalar> &ycoords);
-
     StructuredGrid2D(const Input &input);
 
-    void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
+    void init(Size nCellsI, Size nCellsJ, std::pair<Scalar, Scalar> xb, std::pair<Scalar, Scalar> yb);
 
-    void init(std::vector<Scalar> xcoords, std::vector<Scalar> ycoords);
+    void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nBufferCells);
 
     //- Parameters
     Size nNodesI() const
@@ -51,7 +50,7 @@ public:
     const Cell& operator()(Label i, Label j) const
     { return _cells[j * _nCellsI + i]; }
 
-    const Cell &cell(const Cell& cell, Orientation dir, int offset) const;
+    const Cell &cell(const Cell& cell, Coordinates::Direction dir, int offset) const;
 
     const Set<Cell> &localCells() const
     { return _localCells; }
@@ -77,25 +76,33 @@ public:
     const Face &jface(Label i, Label j) const
     { return _jfaces[i * nNodesJ() + j]; }
 
-    const Face &face(const Cell &cell, Orientation dir) const;
+    const Face &face(const Cell &cell, Coordinates::Direction dir) const;
 
     //- Misc mesh functions
 
-    Scalar dh(const Cell &cell, Orientation dir, int offset) const;
+    Scalar dh(const Cell &cell, Coordinates::Direction dir, int offset) const;
 
-    //- Communication
+    Size maxInc(const Cell &cell, Coordinates::Direction dir) const;
+
+    //- Communication and parallel
     const Communicator &comm() const
     { return *_comm; }
 
     const std::vector<int> &ownership() const
     { return _ownership; }
 
+    const Set<Cell> &sendBuffer(int proc) const
+    { return _sendBuffers[proc]; }
+
+    const Set<Cell> &recvBuffer(int proc) const
+    { return _recvBuffers[proc]; }
+
 protected:
 
     //- Mesh parameters
     Size _nCellsI, _nCellsJ;
 
-    Scalar _lx, _ly;
+    std::pair<Scalar, Scalar> _xb, _yb;
 
     //- Mesh entities
     std::vector<Point2D> _nodes;
@@ -107,9 +114,11 @@ protected:
     //- Parallel
     std::shared_ptr<const Communicator> _comm;
 
-    Set<Cell> _localCells;
-
     std::vector<int> _ownership;
+
+    Set<Cell> _localCells, _globalCells;
+
+    std::vector<Set<Cell>> _sendBuffers, _recvBuffers;
 };
 
 

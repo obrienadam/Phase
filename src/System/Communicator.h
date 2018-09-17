@@ -161,7 +161,10 @@ private:
     static MPI_Datatype MPI_VECTOR2D_, MPI_TENSOR2D_;
 
     MPI_Comm comm_;
+
     mutable std::vector<MPI_Request> currentRequests_;
+
+    mutable std::vector<MPI_Status> statuses_;
 };
 
 template<class T>

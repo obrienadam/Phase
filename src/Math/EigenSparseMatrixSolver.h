@@ -25,7 +25,9 @@ public:
 
     void setRank(int rowRank, int colRank);
 
-    void set(const CoefficientList &coeffs);
+    void set(const CoefficientList &coeffs) override;
+
+    void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) override;
 
     void setGuess(const Vector &x0);
 
@@ -51,6 +53,8 @@ public:
     { return std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver()); }
 
 private:
+
+    std::vector<Triplet> triplets_;
 
     EigenSparseMatrix mat_;
 

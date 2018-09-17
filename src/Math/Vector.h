@@ -25,6 +25,9 @@ public:
     void resize(Size size, Scalar val)
     { data_.resize(size, val); }
 
+    void clear()
+    { data_.clear(); }
+
     const std::vector<Scalar>& data() const
     { return data_; }
 

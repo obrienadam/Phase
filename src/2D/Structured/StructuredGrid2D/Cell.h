@@ -1,9 +1,11 @@
 #ifndef PHASE_CELL_H
 #define PHASE_CELL_H
 
-#include "Orientation.h"
+#include "Coordinates.h"
 #include "Geometry/Box.h"
 #include "System/StaticVector.h"
+
+#include "InteriorFaceStencil.h"
 
 class StructuredGrid2D;
 class Face;
@@ -13,6 +15,8 @@ class Cell
 public:
 
     Cell(const StructuredGrid2D &grid, Label i, Label j);
+
+    Cell(const StructuredGrid2D &grid, Label i, Label j, Label gid);
 
     const Box& shape() const
     { return _shape; }
@@ -35,20 +39,25 @@ public:
     Label gid() const
     { return _gid; }
 
+    void setgid(Label gid)
+    { _gid = gid; }
+
     const StructuredGrid2D &grid() const
     { return _grid; }
 
-    const Cell &cell(Orientation dir, int offset) const;
+    //- Stencils
+    void initStencils();
 
-    Scalar dh(Orientation dir, int offset) const;
-
-    const Face &face(Orientation dir) const;
+    const std::vector<InteriorFaceStencil> &interiorFaceStencils() const
+    { return _interiorFaceStencils; }
 
 protected:
 
+    std::vector<InteriorFaceStencil> _interiorFaceStencils;
+
     Box _shape;
 
-    Label _i, _j, _lid, _gid;    //- Stencils
+    Label _i, _j, _lid, _gid;
 
     const StructuredGrid2D &_grid;
 
