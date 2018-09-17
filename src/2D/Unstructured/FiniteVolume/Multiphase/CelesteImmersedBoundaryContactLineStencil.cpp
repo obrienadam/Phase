@@ -1,5 +1,6 @@
-#include "CelesteImmersedBoundary.h"
 #include "Geometry/Intersection.h"
+
+#include "CelesteImmersedBoundary.h"
 
 std::queue<Ref<const Cell>> CelesteImmersedBoundary::ContactLineStencil::cellQueue_;
 

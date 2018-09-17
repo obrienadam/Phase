@@ -1,36 +1,35 @@
-#ifndef PHASE_CRS_EQUATION_H
-#define PHASE_CRS_EQUATION_H
+#ifndef PHASE_COO_EQUATION_H
+#define PHASE_COO_EQUATION_H
 
+#include "CrsEquation.h"
 #include "SparseMatrixSolver.h"
+#include "SparseEntry.h"
 
-class CrsEquation
+class CooEquation
 {
 public:
 
-    CrsEquation() : rowPtr_(1, 0) {}
+    CooEquation() {}
 
-    CrsEquation(Size nRows, Size nnz);
+    CooEquation(Size nRows, Size nnz);
 
-    CrsEquation(const CrsEquation &eqn) = default;
+    CooEquation(const CooEquation &eqn) = default;
 
-    CrsEquation(CrsEquation &&eqn) = default;
+    CooEquation(CooEquation &&eqn) = default;
 
     //- Assignment operators
-    CrsEquation &operator=(const CrsEquation &eqn);
+    CooEquation &operator=(const CooEquation &eqn);
 
-    CrsEquation &operator=(CrsEquation &&eqn);
+    CooEquation &operator=(CooEquation &&eqn);
 
     void setRank(Size rank);
 
     void setRank(Size nRows, Size nCols);
 
-    void clear();
-
     Size rank() const
-    { return rowPtr_.size() - 1; }
+    { return rank_; }
 
-    Size capacity(Size row) const
-    { return rowPtr_[row + 1] - rowPtr_[row]; }
+    void clear();
 
     Size expand(Size row, Size nnz);
 
@@ -74,14 +73,8 @@ public:
     { addCoeffs(row, cols.begin(), cols.end(), vals.begin()); }
 
     //- Retrieve
-    const std::vector<Index> &rowPtr() const
-    { return rowPtr_; }
-
-    const std::vector<Index> &colInd() const
-    { return colInd_; }
-
-    const std::vector<Scalar> &vals() const
-    { return vals_; }
+    const std::vector<SparseEntry> &entries() const
+    { return entries_; }
 
     Scalar coeff(Index localRow, Index globalCol) const;
 
@@ -104,27 +97,32 @@ public:
     virtual Scalar solveLeastSquares();
 
     //- Operators
-    CrsEquation& operator +=(const CrsEquation &rhs);
 
-    CrsEquation& operator -=(const CrsEquation &rhs);
+    CooEquation& operator +=(const std::vector<SparseEntry> &entries);
 
-    CrsEquation &operator+=(const Vector &rhs);
+    CooEquation& operator +=(const CooEquation &rhs);
 
-    CrsEquation &operator-=(const Vector &rhs);
+    CooEquation& operator -=(const CooEquation &rhs);
 
-    CrsEquation &operator*=(Scalar rhs);
+    CooEquation &operator+=(const Vector &rhs);
 
-    CrsEquation &operator==(Scalar rhs);
+    CooEquation &operator-=(const Vector &rhs);
 
-    CrsEquation &operator==(const CrsEquation &rhs);
+    CooEquation &operator*=(Scalar rhs);
 
-    CrsEquation &operator==(const Vector &rhs);
+    CooEquation &operator==(Scalar rhs);
+
+    CooEquation &operator==(const CooEquation &rhs);
+
+    CooEquation &operator==(const Vector &rhs);
 
 protected:
 
-    std::vector<Index> rowPtr_, colInd_;
+    static std::vector<SparseEntry> tmp_;
 
-    std::vector<Scalar> vals_;
+    Size rank_;
+
+    std::vector<SparseEntry> entries_;
 
     Vector rhs_;
 
@@ -133,14 +131,14 @@ protected:
 
 //- Operators
 
-std::ostream& operator<<(std::ostream &os, const CrsEquation &eqn);
+std::ostream& operator<<(std::ostream &os, const CooEquation &eqn);
 
-CrsEquation operator +(CrsEquation lhs, const CrsEquation &rhs);
+CooEquation operator +(CooEquation lhs, const CooEquation &rhs);
 
-CrsEquation operator -(CrsEquation lhs, const CrsEquation &rhs);
+CooEquation operator -(CooEquation lhs, const CooEquation &rhs);
 
-CrsEquation operator +(CrsEquation lhs, const Vector &rhs);
+CooEquation operator +(CooEquation lhs, const Vector &rhs);
 
-CrsEquation operator -(CrsEquation lhs, const Vector &rhs);
+CooEquation operator -(CooEquation lhs, const Vector &rhs);
 
 #endif

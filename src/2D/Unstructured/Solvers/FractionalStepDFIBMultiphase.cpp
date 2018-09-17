@@ -16,7 +16,7 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
       rhoU_(grid_, "rhoU", Vector2D(0., 0.), true, false, fluid_),
       gradGamma_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma_, fluid_)))),
       gradRho_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(rho_, fluid_)))),
-      fst_(input, grid_, fluid_, ib_),
+      fst_(std::make_shared<CelesteImmersedBoundary>(input, grid_, fluid_, ib_)),
       gammaEqn_(input, gamma_, "gammaEqn")
 {
     rho1_ = input.caseInput().get<Scalar>("Properties.rho1", FractionalStep::rho_);
@@ -31,17 +31,17 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
         capillaryTimeStep_ = std::min(
                     capillaryTimeStep_,
                     std::sqrt(
-                        (rho1_ + rho2_) * std::pow(delta, 3) / (4. * M_PI * fst_.sigma())
+                        (rho1_ + rho2_) * std::pow(delta, 3) / (4. * M_PI * fst_->sigma())
                         ));
     }
 
     capillaryTimeStep_ = grid_->comm().min(capillaryTimeStep_);
 
-    addField(fst_.fst());
-    addField(fst_.kappa());
-    addField(fst_.gammaTilde());
-    addField<Vector2D>(fst_.gradGammaTilde());
-    addField(fst_.n());
+    addField(fst_->fst());
+    addField(fst_->kappa());
+    addField(fst_->gammaTilde());
+    addField<Vector2D>(fst_->gradGammaTilde());
+    addField(fst_->n());
 }
 
 void FractionalStepDirectForcingMultiphase::initialize()
@@ -81,7 +81,7 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
-    fst_.appyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
+    fst_->appyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
     ib_->applyCollisionForce(true);
 
     return 0;
@@ -94,7 +94,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     //- Advect volume fractions
     gamma_.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.)
-                 == fst_.contactLineBcs(gamma_, timeStep));
+                 == fst_->contactLineBcs(gamma_, timeStep));
 
     Scalar error = gammaEqn_.solve();
     grid_->sendMessages(gamma_);
@@ -115,7 +115,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 1);
-    const auto &fst = *fst_.fst();
+    const auto &fst = *fst_->fst();
 
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
@@ -228,12 +228,12 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     });
 
     //- Update the surface tension
-    fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
-    fst_.fst()->faceToCell(rho_, rho_, *fluid_);
-    fst_.fst()->fill(Vector2D(0., 0.), ib_->solidCells());
+    fst_->computeFaceInterfaceForces(gamma_, gradGamma_);
+    fst_->fst()->faceToCell(rho_, rho_, *fluid_);
+    fst_->fst()->fill(Vector2D(0., 0.), ib_->solidCells());
 
     //- Must be communicated for proper momentum interpolation
-    grid_->sendMessages(*fst_.fst());
+    grid_->sendMessages(*fst_->fst());
 }
 
 void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)

@@ -53,6 +53,48 @@ void CrsEquation::clear()
     rhs_.clear();
 }
 
+Size CrsEquation::expand(Size row, Size nnz)
+{
+    colInd_.insert(colInd_.begin() + rowPtr_[row + 1], nnz, -1);
+    vals_.insert(vals_.begin() + rowPtr_[row + 1], nnz, 0.);
+
+    std::transform(rowPtr_.begin() + row + 1,
+                   rowPtr_.end(),
+                   rowPtr_.begin() + row + 1,
+                   [nnz](Index i) { return i + nnz; });
+}
+
+Size CrsEquation::expand(Size nnz)
+{
+    std::vector<Index> newCols;
+    std::vector<Scalar> newVals;
+
+    newCols.reserve(colInd_.size() + nnz * rank());
+    newVals.reserve(vals_.size() + nnz * rank());
+
+    for(auto row = 0; row < rank(); ++row)
+    {
+        newCols.insert(newCols.end(),
+                       colInd_.begin() + rowPtr_[row],
+                       colInd_.begin() + rowPtr_[row + 1]);
+
+        newCols.insert(newCols.end(), nnz, -1);
+
+        newVals.insert(newVals.end(),
+                       vals_.begin() + rowPtr_[row],
+                       vals_.begin() + rowPtr_[row + 1]);
+
+        newVals.insert(newVals.end(), nnz, 0.);
+    }
+
+    colInd_ = std::move(newCols);
+    vals_ = std::move(newVals);
+
+    int i = 1;
+    std::transform(rowPtr_.begin() + 1, rowPtr_.end(), rowPtr_.begin() + 1,
+                   [nnz, &i](Index idx) { return idx + nnz * i++; });
+}
+
 void CrsEquation::addRow(Size nnz)
 {
     rowPtr_.push_back(rowPtr().back() + nnz);
@@ -161,9 +203,16 @@ Scalar CrsEquation::solveLeastSquares()
 //- Operators
 CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 {
-    for(auto row = 0; row < rowPtr_.size() - 1; ++row)
+    int maxDiff = 0;
+    for(auto row = 0; row < rank(); ++row)
+        maxDiff = std::max((int)rhs.capacity(row) - (int)capacity(row), maxDiff);
+
+    if(maxDiff > 0)
+        expand(maxDiff);
+
+    for(auto row = 0; row < rank(); ++row)
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
-            addCoeff(row, rhs.colInd_[j], rhs.vals_[j]);
+            addCoeff(row, rhs.colInd_[j], -rhs.vals_[j]);
 
     rhs_ += rhs.rhs_;
     return *this;
@@ -171,7 +220,14 @@ CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 
 CrsEquation& CrsEquation::operator -=(const CrsEquation &rhs)
 {
-    for(auto row = 0; row < rowPtr_.size() - 1; ++row)
+    int maxDiff = 0;
+    for(auto row = 0; row < rank(); ++row)
+        maxDiff = std::max((int)rhs.capacity(row) - (int)capacity(row), maxDiff);
+
+    if(maxDiff > 0)
+        expand(maxDiff);
+
+    for(auto row = 0; row < rank(); ++row)
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
             addCoeff(row, rhs.colInd_[j], -rhs.vals_[j]);
 
@@ -194,6 +250,7 @@ CrsEquation &CrsEquation::operator-=(const Vector &rhs)
 CrsEquation &CrsEquation::operator*=(Scalar rhs)
 {
     std::transform(vals_.begin(), vals_.end(), vals_.begin(), [rhs](Scalar val) { return rhs * val; });
+    rhs_ *= rhs;
     return *this;
 }
 

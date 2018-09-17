@@ -6,8 +6,8 @@
 
 TrilinosMueluSparseMatrixSolver::TrilinosMueluSparseMatrixSolver(const Communicator &comm,
                                                                  const std::string &solverName)
-        :
-        TrilinosSparseMatrixSolver(comm)
+    :
+      TrilinosSparseMatrixSolver(comm)
 {
     typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
@@ -28,9 +28,9 @@ void TrilinosMueluSparseMatrixSolver::setRank(int rank)
 Scalar TrilinosMueluSparseMatrixSolver::solve()
 {
     precon_ = MueLu::CreateTpetraPreconditioner(
-            Teuchos::rcp_static_cast<TpetraOperator>(mat_),
-            *mueluParams_,
-            coords_);
+                Teuchos::rcp_static_cast<TpetraOperator>(mat_),
+                *mueluParams_,
+                coords_);
 
     linearProblem_->setProblem(x_, b_);
     linearProblem_->setLeftPrec(precon_);

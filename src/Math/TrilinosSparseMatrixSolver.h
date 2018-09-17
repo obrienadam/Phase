@@ -30,6 +30,8 @@ public:
 
     virtual void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) override;
 
+    virtual void set(const std::vector<SparseEntry> &entries) override;
+
     virtual void setGuess(const Vector &x0);
 
     virtual void setRhs(const Vector &rhs);

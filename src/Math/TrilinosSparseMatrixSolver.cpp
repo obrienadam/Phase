@@ -101,6 +101,21 @@ void TrilinosSparseMatrixSolver::set(const std::vector<Index> &rowPtr, const std
     mat_->fillComplete(domainMap_, rangeMap_);
 }
 
+void TrilinosSparseMatrixSolver::set(const std::vector<SparseEntry> &entries)
+{
+    using namespace Teuchos;
+
+    mat_->resumeFill();
+    mat_->setAllToScalar(0.);
+
+    Index minGlobalIndex = mat_->getRowMap()->getMinGlobalIndex();
+
+    for(const SparseEntry &e: entries)
+        mat_->insertGlobalValues(e.row + minGlobalIndex, 1, &e.val, &e.col);
+
+    mat_->fillComplete(domainMap_, rangeMap_);
+}
+
 void TrilinosSparseMatrixSolver::setGuess(const Vector &x0)
 {
     x_->getDataNonConst(0).assign(std::begin(x0.data()), std::end(x0.data()));

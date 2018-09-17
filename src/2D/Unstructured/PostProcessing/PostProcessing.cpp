@@ -26,8 +26,8 @@ void PostProcessing::initIbPostProcessingObjects(const Input &input, const Solve
         if (name == "IbTracker")
         {
             objs_.push_back(
-                        std::make_shared<IbTracker>(objInput.second.get<int>("fileWriteFrequency", fileWriteFrequency_), solver.ib())
-                        );
+                        std::make_shared<IbTracker>(
+                            objInput.second.get<int>("fileWriteFrequency", fileWriteFrequency_), solver.ib()));
         }
         else if (name == "ImmersedBoundaryObjectProbe")
         {
@@ -44,7 +44,7 @@ void PostProcessing::initIbPostProcessingObjects(const Input &input, const Solve
             objs_.push_back(
                         std::make_shared<ImmersedBoundaryObjectContactLineTracker>(
                             objInput.second.get<int>("fileWriteFrequency", fileWriteFrequency_),
-                            solver.scalarField(inputTree.get<std::string>("field")),
+                            solver.scalarField(inputTree.get<std::string>("field", "gamma")),
                             solver.ib()
                             ));
         }

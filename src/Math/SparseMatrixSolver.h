@@ -6,6 +6,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "Vector.h"
+#include "SparseEntry.h"
 
 class SparseMatrixSolver
 {
@@ -17,7 +18,9 @@ public:
     };
 
     typedef std::pair<Index, Scalar> Entry;
+
     typedef std::vector<Entry> Row;
+
     typedef std::vector<Row> CoefficientList;
 
     virtual Type type() const = 0;
@@ -31,6 +34,8 @@ public:
     virtual void set(const CoefficientList &eqn) = 0;
 
     virtual void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) = 0;
+
+    virtual void set(const std::vector<SparseEntry> &entries) = 0;
 
     virtual void setGuess(const Vector &x0) = 0;
 

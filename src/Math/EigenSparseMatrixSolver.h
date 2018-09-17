@@ -29,6 +29,8 @@ public:
 
     void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) override;
 
+    void set(const std::vector<SparseEntry> &entries) override;
+
     void setGuess(const Vector &x0);
 
     void setRhs(const Vector &rhs);

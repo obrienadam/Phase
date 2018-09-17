@@ -2,34 +2,13 @@
 #define PHASE_CELESTE_IMMERSED_BOUNDARY_H
 
 #include "Geometry/StaticPolyLine2D.h"
+#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
 
 #include "Celeste.h"
-#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
 
 class CelesteImmersedBoundary: public Celeste
 {
 public:
-
-    CelesteImmersedBoundary(const Input &input,
-                            const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                            const std::shared_ptr<CellGroup> &fluidCells,
-                            const std::weak_ptr<const ImmersedBoundary> &ib);
-
-    Scalar theta(const ImmersedBoundaryObject &ibObj) const;
-
-    void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
-
-    FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
-
-    void appyFluidForces(const ScalarFiniteVolumeField &rho,
-                         const ScalarFiniteVolumeField &mu,
-                         const VectorFiniteVolumeField &u,
-                         const ScalarFiniteVolumeField &p,
-                         const ScalarFiniteVolumeField &gamma,
-                         const Vector2D &g,
-                         DirectForcingImmersedBoundary &ib) const;
-
-protected:
 
     class ContactLineStencil
     {
@@ -83,6 +62,27 @@ protected:
 
         Vector2D ncl_;
     };
+
+    CelesteImmersedBoundary(const Input &input,
+                            const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                            const std::shared_ptr<CellGroup> &fluidCells,
+                            const std::weak_ptr<const ImmersedBoundary> &ib);
+
+    Scalar theta(const ImmersedBoundaryObject &ibObj) const;
+
+    void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
+
+    FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
+
+    void appyFluidForces(const ScalarFiniteVolumeField &rho,
+                         const ScalarFiniteVolumeField &mu,
+                         const VectorFiniteVolumeField &u,
+                         const ScalarFiniteVolumeField &p,
+                         const ScalarFiniteVolumeField &gamma,
+                         const Vector2D &g,
+                         DirectForcingImmersedBoundary &ib) const;
+
+protected:
 
     void computeInterfaceNormals() override;
 

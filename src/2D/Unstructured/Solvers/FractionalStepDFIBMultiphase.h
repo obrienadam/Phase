@@ -34,7 +34,7 @@ protected:
 
     ScalarGradient &gradGamma_, &gradRho_;
 
-    CelesteImmersedBoundary fst_;
+    std::shared_ptr<CelesteImmersedBoundary> fst_;
 
     FiniteVolumeEquation<Scalar> gammaEqn_;
 };

@@ -1,4 +1,4 @@
-#include "FiniteVolumeGrid2D/BilinearInterpolator.h"
+#include "FiniteVolume/Multiphase/CelesteImmersedBoundary.h"
 
 #include "ImmersedBoundaryObjectContactLineTracker.h"
 
@@ -28,65 +28,74 @@ ImmersedBoundaryObjectContactLineTracker::ImmersedBoundaryObjectContactLineTrack
 
 void ImmersedBoundaryObjectContactLineTracker::compute(Scalar time, bool force)
 {
-    typedef std::tuple<Point2D, Scalar> IbVal;
+    struct ContactLinePoint
+    {
+        Point2D pt;
+        Scalar gamma;
+        Vector2D n;
+    };
 
     if (do_update() || force)
     {
         for (const auto &ibObj: *ib_.lock())
         {
-            std::vector<std::tuple<Point2D, Scalar>> ibVals;
+            std::vector<ContactLinePoint> clPts;
+            clPts.reserve(ibObj->solidCells().size());
 
             const auto &gamma = *gamma_.lock();
-            auto bi = BilinearInterpolator(gamma.grid());
-            for (const Cell &cell: ibObj->ibCells())
-            {
-                bi.setPoint(ibObj->nearestIntersect(cell.centroid()));
 
-                if (bi.isValid())
-                {
-                    ibVals.push_back(std::make_tuple(
-                                         bi.point(),
-                                         bi(gamma)
-                                         ));
-                }
+            for (const Cell &cell: ibObj->solidCells())
+            {
+                bool computeContactLine = false;
+
+                for(const auto &nb: cell.neighbours())
+                    if(!ibObj->isInIb(nb.cell()))
+                        computeContactLine = true;
+
+                if(!computeContactLine)
+                    continue;
+
+                auto st = CelesteImmersedBoundary::ContactLineStencil(*ibObj, cell.centroid(), 111. * M_PI / 180., gamma);
+
+                clPts.push_back(ContactLinePoint{st.cl()[1], st.gamma(), st.ncl()});
             }
 
             //- Gather all data to the main proc
-            ibVals = gamma_.lock()->grid()->comm().gatherv(gamma_.lock()->grid()->comm().mainProcNo(), ibVals);
+            clPts = gamma_.lock()->grid()->comm().gatherv(gamma_.lock()->grid()->comm().mainProcNo(), clPts);
 
             if (gamma_.lock()->grid()->comm().isMainProc())
             {
                 //- Sort ccw
-                std::sort(ibVals.begin(), ibVals.end(), [&ibObj](const IbVal &lhs,
-                          const IbVal &rhs)
+                std::sort(clPts.begin(), clPts.end(), [&ibObj](const ContactLinePoint &lhs,
+                          const ContactLinePoint &rhs)
                 {
-                    return (std::get<0>(lhs) - ibObj->shape().centroid()).angle() <
-                            (std::get<0>(rhs) - ibObj->shape().centroid()).angle();
+                    return (lhs.pt - ibObj->shape().centroid()).angle() <
+                            (rhs.pt - ibObj->shape().centroid()).angle();
                 });
 
-                std::vector<Vector2D> clPoints;
-                for (int i = 0; i < ibVals.size(); ++i)
+                std::vector<Point2D> clLocs;
+                for (int i = 0; i < clPts.size(); ++i)
                 {
-                    const auto &a = ibVals[i];
-                    const auto &b = ibVals[(i + 1) % ibVals.size()];
-                    bool isCandidate = (std::get<1>(a) < 0.5) != (std::get<1>(b) < 0.5);
+                    const auto &a = clPts[i];
+                    const auto &b = clPts[(i + 1) % clPts.size()];
+                    bool isCandidate = (a.gamma < 0.5) != (b.gamma <= 0.5);
 
                     if (isCandidate)
                     {
-                        Scalar alpha = (0.5 - std::get<1>(b)) / (std::get<1>(a) - std::get<1>(b));
+                        Scalar alpha = (0.5 - b.gamma) / (a.gamma - b.gamma);
 
                         Point2D xc = ibObj->shape().nearestIntersect(
-                                    alpha * std::get<0>(a) + (1. - alpha) * std::get<0>(b)
+                                    alpha * a.pt + (1. - alpha) * b.pt
                                     );
 
-                        clPoints.push_back(xc);
+                        clLocs.push_back(xc);
                     }
                 }
 
                 std::ofstream fout((path_ / (ibObj->name() + "_contact_lines.csv")).string(),
                                    std::ofstream::out | std::ofstream::app);
 
-                for (const auto &cl: clPoints)
+                for (const auto &cl: clLocs)
                 {
                     Vector2D r = cl - ibObj->shape().centroid();
 

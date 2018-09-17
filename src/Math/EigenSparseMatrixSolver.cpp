@@ -22,11 +22,10 @@ void EigenSparseMatrixSolver::setRank(int rowRank, int colRank)
 void EigenSparseMatrixSolver::set(const CoefficientList &coeffs)
 {
     triplets_.clear();
-    triplets_.reserve(5 * coeffs.size());
 
     for (int i = 0, end = coeffs.size(); i < end; ++i)
         for (const auto &entry: coeffs[i])
-            triplets_.push_back(Triplet(i, entry.first, entry.second));
+            triplets_.emplace_back(i, entry.first, entry.second);
 
     mat_.setFromTriplets(triplets_.begin(), triplets_.end());
     mat_.makeCompressed();
@@ -35,12 +34,21 @@ void EigenSparseMatrixSolver::set(const CoefficientList &coeffs)
 void EigenSparseMatrixSolver::set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals)
 {
     triplets_.clear();
-    triplets_.reserve(rowPtr.back());
 
     for(auto row = 0; row < rowPtr.size() - 1; ++row)
         for(auto j = rowPtr[row]; j < rowPtr[row + 1]; ++j)
             if(colInds[j] >= 0)
-                triplets_.push_back(Triplet(row, colInds[j], vals[j]));
+                triplets_.emplace_back(row, colInds[j], vals[j]);
+
+    mat_.setFromTriplets(triplets_.begin(), triplets_.end());
+}
+
+void EigenSparseMatrixSolver::set(const std::vector<SparseEntry> &entries)
+{
+    triplets_.clear();
+
+    for(const auto &e: entries)
+        triplets_.emplace_back(e.row, e.col, e.val);
 
     mat_.setFromTriplets(triplets_.begin(), triplets_.end());
 }

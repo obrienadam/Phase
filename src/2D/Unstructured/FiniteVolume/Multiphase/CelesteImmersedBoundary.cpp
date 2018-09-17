@@ -49,7 +49,7 @@ void CelesteImmersedBoundary::computeContactLineExtension(ScalarFiniteVolumeFiel
 
 FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const
 {
-    FiniteVolumeEquation<Scalar> eqn(gamma);
+    FiniteVolumeEquation<Scalar> eqn(gamma, 7);
 
     for(const std::shared_ptr<ImmersedBoundaryObject> &ibObj: *ib_.lock())
         for(const Cell& cell: ibObj->cells())
