@@ -38,6 +38,12 @@ Vector &Vector::operator*=(Scalar rhs)
     return *this;
 }
 
+Vector &Vector::operator/=(Scalar rhs)
+{
+    std::for_each(data_.begin(), data_.end(), [rhs](Scalar &val) { val /= rhs; });
+    return *this;
+}
+
 Vector Vector::operator-() const
 {
     Vector newVector(*this);

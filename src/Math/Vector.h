@@ -41,6 +41,8 @@ public:
 
     Vector &operator*=(Scalar rhs);
 
+    Vector &operator/=(Scalar rhs);
+
     Vector operator-() const;
 
     void zero();

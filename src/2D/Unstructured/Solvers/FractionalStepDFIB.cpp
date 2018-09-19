@@ -39,6 +39,25 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     ib_->applyHydrodynamicForce(rho_, mu_, u_, p_, g_);
     // ib_->applyHydrodynamicForce(rho_, fb_, g_);
 
+    for(const auto& ibObj: *ib_)
+    {
+        Vector2D f(0., 0.);
+
+        for(const Cell &c: *fluid_)
+        {
+            f -= rho_ * fb_(c) * c.volume();
+        }
+
+        f = Vector2D(grid_->comm().sum(f.x), grid_->comm().sum(f.y));
+
+        if(grid_->comm().isMainProc())
+        {
+            std::cout << "IB Object \"" << ibObj->name() << "\":\n"
+                      << "Force method 1: " << ibObj->force() << "\n"
+                      << "Force method 2: " << f << "\n";
+        }
+    }
+
     return 0;
 }
 
@@ -46,17 +65,19 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 2);
 
+    //- explicit predictor
     uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
-             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_ / rho_));
+             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_ / rho_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
+    grid_->sendMessages(u_);
 
     fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
     fbEqn_.solve();
     grid_->sendMessages(fb_);
 
-    uEqn_ == src::src(fb_);
+    //- semi-implicit corrector
+    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.) + src::src(fb_);
     error = uEqn_.solve();
 
     for(const Cell &c: u_.cells())

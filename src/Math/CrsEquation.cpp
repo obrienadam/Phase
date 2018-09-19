@@ -321,8 +321,15 @@ CrsEquation &CrsEquation::operator-=(const Vector &rhs)
 
 CrsEquation &CrsEquation::operator*=(Scalar rhs)
 {
-    std::transform(vals_.begin(), vals_.end(), vals_.begin(), [rhs](Scalar val) { return rhs * val; });
+    std::for_each(vals_.begin(), vals_.end(), [rhs](Scalar &val) { val *= rhs; });
     rhs_ *= rhs;
+    return *this;
+}
+
+CrsEquation &CrsEquation::operator/=(Scalar rhs)
+{
+    std::for_each(vals_.begin(), vals_.end(), [rhs](Scalar &val) { val /= rhs; });
+    rhs_ /= rhs;
     return *this;
 }
 
@@ -372,5 +379,17 @@ CrsEquation operator +(CrsEquation lhs, const Vector &rhs)
 CrsEquation operator -(CrsEquation lhs, const Vector &rhs)
 {
     lhs -= rhs;
+    return lhs;
+}
+
+CrsEquation operator *(CrsEquation lhs, Scalar rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+CrsEquation operator /(CrsEquation lhs, Scalar rhs)
+{
+    lhs /= rhs;
     return lhs;
 }

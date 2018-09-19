@@ -114,6 +114,8 @@ public:
 
     CrsEquation &operator*=(Scalar rhs);
 
+    CrsEquation &operator/=(Scalar rhs);
+
     CrsEquation &operator==(Scalar rhs);
 
     CrsEquation &operator==(const CrsEquation &rhs);
@@ -146,5 +148,9 @@ CrsEquation operator -(CrsEquation lhs, const CrsEquation &rhs);
 CrsEquation operator +(CrsEquation lhs, const Vector &rhs);
 
 CrsEquation operator -(CrsEquation lhs, const Vector &rhs);
+
+CrsEquation operator *(CrsEquation lhs, Scalar rhs);
+
+CrsEquation operator /(CrsEquation lhs, Scalar rhs);
 
 #endif
