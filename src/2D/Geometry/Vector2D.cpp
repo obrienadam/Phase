@@ -30,8 +30,7 @@ Vector2D Vector2D::unitVec() const
 
 Scalar Vector2D::angle() const
 {
-    Scalar theta = std::atan2(y, x);
-    return theta < 0. ? theta + 2. * M_PI : theta;
+    return std::atan2(y, x);
 }
 
 Scalar Vector2D::angle(const Vector2D &other) const

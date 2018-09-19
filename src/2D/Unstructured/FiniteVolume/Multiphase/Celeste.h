@@ -14,9 +14,9 @@ public:
             const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
             const std::shared_ptr<CellGroup> &fluidCells);
 
-    void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
+    virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
-    void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
+    virtual void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
 
 protected:
 

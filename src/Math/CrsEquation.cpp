@@ -2,6 +2,10 @@
 
 #include "CrsEquation.h"
 
+std::vector<Index> CrsEquation::tmpRowPtr_, CrsEquation::tmpColInd_;
+
+std::vector<Scalar> CrsEquation::tmpVals_;
+
 CrsEquation::CrsEquation(Size nRows, Size nnz)
     :
       rowPtr_(nRows + 1, nnz),
@@ -203,16 +207,50 @@ Scalar CrsEquation::solveLeastSquares()
 //- Operators
 CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 {
-    int maxDiff = 0;
-    for(auto row = 0; row < rank(); ++row)
-        maxDiff = std::max((int)rhs.capacity(row) - (int)capacity(row), maxDiff);
+    tmpRowPtr_.clear();
+    tmpColInd_.clear();
+    tmpVals_.clear();
 
-    if(maxDiff > 0)
-        expand(maxDiff);
+    tmpRowPtr_.emplace_back(0);
 
     for(auto row = 0; row < rank(); ++row)
+    {
+        tmpRowPtr_.emplace_back(tmpRowPtr_.back());
+
+        for(auto j = rowPtr_[row]; j < rowPtr_[row + 1]; ++j)
+        {
+            if(colInd_[j] < 0)
+                break;
+
+            tmpColInd_.emplace_back(colInd_[j]);
+            tmpVals_.emplace_back(vals_[j]);
+            ++tmpRowPtr_.back();
+        }
+
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
-            addCoeff(row, rhs.colInd_[j], -rhs.vals_[j]);
+        {
+            if(rhs.colInd_[j] < 0)
+                break;
+
+            auto first = tmpColInd_.begin() + tmpRowPtr_[row];
+            auto last = tmpColInd_.begin() + tmpRowPtr_[row + 1];
+
+            auto it = std::find(first, last, rhs.colInd_[j]);
+
+            if(it != last)
+                tmpVals_[it - tmpColInd_.begin()] += rhs.vals_[j];
+            else
+            {
+                tmpColInd_.emplace_back(rhs.colInd_[j]);
+                tmpVals_.emplace_back(rhs.vals_[j]);
+                ++tmpRowPtr_.back();
+            }
+        }
+    }
+
+    rowPtr_ = tmpRowPtr_;
+    colInd_ = tmpColInd_;
+    vals_ = tmpVals_;
 
     rhs_ += rhs.rhs_;
     return *this;
@@ -220,16 +258,50 @@ CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 
 CrsEquation& CrsEquation::operator -=(const CrsEquation &rhs)
 {
-    int maxDiff = 0;
-    for(auto row = 0; row < rank(); ++row)
-        maxDiff = std::max((int)rhs.capacity(row) - (int)capacity(row), maxDiff);
+    tmpRowPtr_.clear();
+    tmpColInd_.clear();
+    tmpVals_.clear();
 
-    if(maxDiff > 0)
-        expand(maxDiff);
+    tmpRowPtr_.emplace_back(0);
 
     for(auto row = 0; row < rank(); ++row)
+    {
+        tmpRowPtr_.emplace_back(tmpRowPtr_.back());
+
+        for(auto j = rowPtr_[row]; j < rowPtr_[row + 1]; ++j)
+        {
+            if(colInd_[j] < 0)
+                break;
+
+            tmpColInd_.emplace_back(colInd_[j]);
+            tmpVals_.emplace_back(vals_[j]);
+            ++tmpRowPtr_.back();
+        }
+
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
-            addCoeff(row, rhs.colInd_[j], -rhs.vals_[j]);
+        {
+            if(rhs.colInd_[j] < 0)
+                break;
+
+            auto first = tmpColInd_.begin() + tmpRowPtr_[row];
+            auto last = tmpColInd_.begin() + tmpRowPtr_[row + 1];
+
+            auto it = std::find(first, last, rhs.colInd_[j]);
+
+            if(it != last)
+                tmpVals_[it - tmpColInd_.begin()] -= rhs.vals_[j];
+            else
+            {
+                tmpColInd_.emplace_back(rhs.colInd_[j]);
+                tmpVals_.emplace_back(-rhs.vals_[j]);
+                ++tmpRowPtr_.back();
+            }
+        }
+    }
+
+    rowPtr_ = tmpRowPtr_;
+    colInd_ = tmpColInd_;
+    vals_ = tmpVals_;
 
     rhs_ -= rhs.rhs_;
     return *this;

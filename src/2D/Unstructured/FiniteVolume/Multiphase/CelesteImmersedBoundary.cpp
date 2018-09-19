@@ -348,10 +348,10 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
     for (const Cell &cell: n.grid()->cells())
         n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
-    //- Override the ib cells
+    //- Override the ib cells in the contact line region only
     for(const auto &ibObj: *ib_.lock())
         for(const Cell& cell: ibObj->cells())
-            if(ibObj->isInIb(cell.centroid()))
+            if(ibObj->isInIb(cell.centroid()) && n(cell).magSqr() != 0.)
             {
                 Scalar distSqr = (ibObj->nearestIntersect(cell.centroid()) - cell.centroid()).magSqr();
 

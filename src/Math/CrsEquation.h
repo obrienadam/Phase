@@ -122,6 +122,10 @@ public:
 
 protected:
 
+    static std::vector<Index> tmpRowPtr_, tmpColInd_;
+
+    static std::vector<Scalar> tmpVals_;
+
     std::vector<Index> rowPtr_, colInd_;
 
     std::vector<Scalar> vals_;

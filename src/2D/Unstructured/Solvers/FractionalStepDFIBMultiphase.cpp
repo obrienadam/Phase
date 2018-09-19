@@ -12,6 +12,7 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
       gamma_(*addField<Scalar>(input, "gamma", fluid_)),
       rho_(*addField<Scalar>("rho", fluid_)),
       mu_(*addField<Scalar>("mu", fluid_)),
+      gammaSrc_(*addField<Scalar>("gammaSrc", fluid_)),
       sg_(*addField<Vector2D>("sg", fluid_)),
       rhoU_(grid_, "rhoU", Vector2D(0., 0.), true, false, fluid_),
       gradGamma_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma_, fluid_)))),
@@ -91,12 +92,23 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
 {
     auto beta = cicsam::faceInterpolationWeights(u_, gamma_, gradGamma_, timeStep);
 
-    //- Advect volume fractions
+    //- Predictor
     gamma_.savePreviousTimeStep(timeStep, 1);
-    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.)
-                 == fst_->contactLineBcs(gamma_, timeStep));
+    gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
 
     Scalar error = gammaEqn_.solve();
+    grid_->sendMessages(gamma_);
+
+    //- Corrector
+    gamma_.savePreviousIteration();
+    fst_->computeContactLineExtension(gamma_);
+
+    for(const Cell &c: *fluid_)
+        gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
+
+    gammaEqn_ == src::src(gammaSrc_);
+
+    gammaEqn_.solve();
     grid_->sendMessages(gamma_);
     gamma_.interpolateFaces();
 
@@ -120,7 +132,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
     uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
-             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
+             == fv::laplacian(mu_, u_, 0.5)
+             + src::src(fst + sg_ - gradP_ /*+ (rho2_ - rho1_) * gammaSrc_ * u_*/));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
