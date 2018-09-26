@@ -15,6 +15,9 @@ public:
     Point2D centroid() const
     { return _shape.center(); }
 
+    Label id() const
+    { return _lid; }
+
     Label lid() const
     { return _lid; }
 

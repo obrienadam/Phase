@@ -1,5 +1,5 @@
-#ifndef  JACOBIAN_FIELD
-#define  JACOBIAN_FIELD
+#ifndef  PHASE_JACOBIAN_FIELD
+#define  PHASE_JACOBIAN_FIELD
 
 #include "TensorFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"

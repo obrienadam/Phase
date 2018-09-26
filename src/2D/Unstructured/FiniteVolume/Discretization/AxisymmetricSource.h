@@ -9,6 +9,8 @@ namespace axi
 {
     namespace src
     {
+        Vector src(const VectorFiniteVolumeField &u);
+
         Vector div(const VectorFiniteVolumeField &u);
     }
 }

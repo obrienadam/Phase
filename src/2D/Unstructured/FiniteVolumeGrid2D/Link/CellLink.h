@@ -20,6 +20,9 @@ public:
     const Vector2D &rCellVec() const
     { return rCellVec_; }
 
+    const Vector2D &rc() const
+    { return rCellVec_; }
+
     Scalar alpha(const Point2D &pt) const;
 
     Scalar linearInterpolate(const FiniteVolumeField<Scalar> &phi, const Point2D &pt) const;

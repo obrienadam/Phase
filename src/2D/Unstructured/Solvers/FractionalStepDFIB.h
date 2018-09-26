@@ -2,7 +2,8 @@
 #define PHASE_FRACTIONAL_STEP_DIRECT_FORCING_H
 
 #include "FractionalStep.h"
-#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
+
+class DirectForcingImmersedBoundary;
 
 class FractionalStepDFIB : public FractionalStep
 {
@@ -11,8 +12,7 @@ public:
 
     virtual Scalar solve(Scalar timeStep) override;
 
-    virtual std::shared_ptr<const ImmersedBoundary> ib() const override
-    { return ib_; }
+    virtual std::shared_ptr<const ImmersedBoundary> ib() const override;
 
 protected:
 

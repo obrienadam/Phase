@@ -1,0 +1,13 @@
+; Initial conditions for the 2D channel
+
+InitialConditions
+{
+  u
+  {
+    all
+    {
+      type uniform
+      value (0,1)
+    }
+  }
+}

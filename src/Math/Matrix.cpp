@@ -17,6 +17,8 @@ extern "C"
 
 #include "Matrix.h"
 
+Matrix Matrix::_tmp;
+
 Matrix::Matrix(Size m, Size n, const std::initializer_list<Scalar> &coeffs)
 {
     vals_.assign(coeffs);
@@ -34,6 +36,14 @@ void Matrix::resize(Size m, Size n)
 void Matrix::zero()
 {
     std::fill(vals_.begin(), vals_.end(), 0.);
+}
+
+void Matrix::setIdentity(Size m)
+{
+    resize(m, m);
+    for(auto i = 0; i < m_; ++i)
+        for(auto j = 0; j < n_; ++j)
+            vals_[i * n_ + j] = i == j ? 1. : 0.;
 }
 
 void Matrix::init(const Scalar *begin, const Scalar *end)
@@ -177,6 +187,14 @@ Matrix &Matrix::invert()
         throw Exception("Matrix", "invert", "inversion failed, matrix is singular to working precision.");
 
     return *this;
+}
+
+Matrix &Matrix::pinvert()
+{
+    _tmp.setIdentity(std::max(m_, n_));
+    LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m_, n_, _tmp.n(), data(), n_, _tmp.data(), _tmp.n());
+    _tmp.resize(n_, m_);
+    return (*this = _tmp);
 }
 
 Scalar Matrix::norm(char type) const

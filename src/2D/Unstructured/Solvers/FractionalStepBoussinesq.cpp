@@ -1,7 +1,7 @@
-#include "FiniteVolume/Equation/TimeDerivative.h"
-#include "FiniteVolume/Equation/Divergence.h"
-#include "FiniteVolume/Equation/Laplacian.h"
-#include "FiniteVolume/Equation/Source.h"
+#include "FiniteVolume/Discretization/TimeDerivative.h"
+#include "FiniteVolume/Discretization/Divergence.h"
+#include "FiniteVolume/Discretization/Laplacian.h"
+#include "FiniteVolume/Discretization/Source.h"
 
 #include "FractionalStepBoussinesq.h"
 

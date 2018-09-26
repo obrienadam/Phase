@@ -179,30 +179,36 @@ void FiniteVolumeField<T>::setBoundaryFaces(BoundaryType bType, const std::funct
 }
 
 template<class T>
-FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
+void FiniteVolumeField<T>::interpolateNodes()
 {
-    if (previousTimeSteps_.size() >= nPreviousFields)
+    for(const Node &node: grid_->nodes())
     {
-        auto prevTimeStep = previousTimeSteps_.back();
-        prevTimeStep->second = *this;
-        prevTimeStep->second.clearHistory();
-        previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
-
-        while(previousTimeSteps_.size() > nPreviousFields)
-            previousTimeSteps_.pop_back();
-    }
-    else
-    {
-        while(previousTimeSteps_.size() < nPreviousFields)
+        for(const Cell& cell: node.cells())
         {
 
-            auto prevTimeStep = std::make_shared<PreviousField>(timeStep, *this);
-            prevTimeStep->second.clearHistory();
-            previousTimeSteps_.insert(previousTimeSteps_.begin(), prevTimeStep);
         }
     }
+}
 
-    return previousTimeSteps_.front()->second;
+template<class T>
+FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep, int nPreviousFields)
+{
+    std::shared_ptr<FiniteVolumeField<T>> tmp;
+
+    if(previousTimeSteps_.size() >= nPreviousFields)
+    {
+        tmp = previousTimeSteps_.back().second;
+        *tmp = *this;
+    }
+    else
+        tmp = std::make_shared<FiniteVolumeField<T>>(*this);
+
+    tmp->clearHistory();
+
+    previousTimeSteps_.emplace_front(timeStep, tmp);
+    previousTimeSteps_.resize(nPreviousFields, previousTimeSteps_.back());
+
+    return *previousTimeSteps_.front().second;
 }
 
 template<class T>

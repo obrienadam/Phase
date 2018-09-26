@@ -19,3 +19,17 @@ Vector axi::src::div(const VectorFiniteVolumeField &u)
     return divU;
 }
 
+
+Vector axi::src::src(const VectorFiniteVolumeField &u)
+{
+    Vector divU(2 * u.grid()->localCells().size());
+
+    for (const Cell &cell: u.cells())
+    {
+        Vector2D tmp = u(cell) * cell.polarVolume();
+        divU(u.indexMap()->local(cell, 0)) = tmp.x;
+        divU(u.indexMap()->local(cell, 1)) = tmp.y;
+    }
+
+    return divU;
+}

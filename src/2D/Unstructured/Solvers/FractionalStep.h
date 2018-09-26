@@ -19,7 +19,7 @@ public:
 
     virtual Scalar solve(Scalar timeStep);
 
-    Scalar maxCourantNumber(Scalar timeStep) const;
+    virtual Scalar maxCourantNumber(Scalar timeStep) const;
 
     virtual Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const;
 

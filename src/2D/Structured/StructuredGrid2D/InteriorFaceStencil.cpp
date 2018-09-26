@@ -10,4 +10,5 @@ InteriorFaceStencil::InteriorFaceStencil(const Cell &cell, Coordinates::Directio
 {
     _rf = _face.centroid() - _cell.centroid();
     _sf = _face.sf(cell.centroid());
+    _isBoundary = _face.isBoundaryFace();
 }

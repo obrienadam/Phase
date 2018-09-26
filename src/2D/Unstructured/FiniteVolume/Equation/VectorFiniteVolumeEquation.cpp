@@ -4,10 +4,10 @@
 
 template<>
 FiniteVolumeEquation<Vector2D>::FiniteVolumeEquation(VectorFiniteVolumeField &field, const std::string &name, int nnz)
-        :
-        CrsEquation(2 * field.grid()->localCells().size(), nnz),
-        name(name),
-        field_(field)
+    :
+      CrsEquation(2 * field.grid()->localCells().size(), nnz),
+      name(name),
+      field_(field)
 {
 
 }
@@ -57,13 +57,16 @@ void FiniteVolumeEquation<Vector2D>::add(const Cell &cell, const Cell &nb, const
              field_.indexMap()->global(nb, 0),
              val.xx);
 
-    addCoeff(field_.indexMap()->local(cell, 0),
-             field_.indexMap()->global(nb, 1),
-             val.xy);
+    //- Added this to avoid coupling whenever possible (i.e. cartesian domains)
+    if(val.xy != 0.)
+        addCoeff(field_.indexMap()->local(cell, 0),
+                 field_.indexMap()->global(nb, 1),
+                 val.xy);
 
-    addCoeff(field_.indexMap()->local(cell, 1),
-             field_.indexMap()->global(nb, 0),
-             val.yx);
+    if(val.yx != 0.)
+        addCoeff(field_.indexMap()->local(cell, 1),
+                 field_.indexMap()->global(nb, 0),
+                 val.yx);
 
     addCoeff(field_.indexMap()->local(cell, 1),
              field_.indexMap()->global(nb, 1),
@@ -101,11 +104,11 @@ void FiniteVolumeEquation<Vector2D>::remove(const Cell &cell)
 
     std::fill(colInd_.begin() + rowPtr_[rowX],
               colInd_.begin() + rowPtr_[rowX + 1],
-              -1);
+            -1);
 
     std::fill(colInd_.begin() + rowPtr_[rowY],
               colInd_.begin() + rowPtr_[rowY + 1],
-              -1);
+            -1);
 
     rhs_(rowX) = 0.;
     rhs_(rowY) = 0.;
@@ -154,17 +157,17 @@ void FiniteVolumeEquation<Vector2D>::relax(Scalar relaxationFactor)
 {
     throw Exception("FiniteVolumeEquation<Vector2D>", "relax", "method removed.");
 
-//    for (const Cell &cell: field_.grid()->localCells())
-//    {
-//        Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
-//        Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
+    //    for (const Cell &cell: field_.grid()->localCells())
+    //    {
+    //        Scalar &coeffX = coeffRef(field_.indexMap()->local(cell, 0), field_.indexMap()->global(cell, 0));
+    //        Scalar &coeffY = coeffRef(field_.indexMap()->local(cell, 1), field_.indexMap()->global(cell, 1));
 
-//        coeffX /= relaxationFactor;
-//        coeffY /= relaxationFactor;
+    //        coeffX /= relaxationFactor;
+    //        coeffY /= relaxationFactor;
 
-//        _rhs(field_.indexMap()->local(cell, 0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
-//        _rhs(field_.indexMap()->local(cell, 1)) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
-//    }
+    //        _rhs(field_.indexMap()->local(cell, 0)) -= (1. - relaxationFactor) * coeffX * field_(cell).x;
+    //        _rhs(field_.indexMap()->local(cell, 1)) -= (1. - relaxationFactor) * coeffY * field_(cell).y;
+    //    }
 }
 
 //- Private

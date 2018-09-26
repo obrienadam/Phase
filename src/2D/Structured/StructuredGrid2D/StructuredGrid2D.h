@@ -1,6 +1,8 @@
 #ifndef PHASE_STRUCTURED_GRID_2D_H
 #define PHASE_STRUCTURED_GRID_2D_H
 
+#include <unordered_map>
+
 #include "System/Input.h"
 #include "System/Communicator.h"
 
@@ -16,13 +18,13 @@ public:
 
     StructuredGrid2D(const StructuredGrid2D&) = delete;
 
-    StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly);
+    StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nBufferCells);
 
     StructuredGrid2D(const Input &input);
 
     void init(Size nCellsI, Size nCellsJ, std::pair<Scalar, Scalar> xb, std::pair<Scalar, Scalar> yb);
 
-    void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nBufferCells);
+    void init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nbuff);
 
     //- Parameters
     Size nNodesI() const
@@ -99,6 +101,10 @@ public:
 
 protected:
 
+    std::array<Size, 2> computeBlockDims(bool stripPartitioning) const;
+
+    void initParallel(const std::vector<int> &ownership, const std::vector<Label> &gids);
+
     //- Mesh parameters
     Size _nCellsI, _nCellsJ;
 
@@ -115,6 +121,8 @@ protected:
     std::shared_ptr<const Communicator> _comm;
 
     std::vector<int> _ownership;
+
+    std::unordered_map<Label, Label> _globalToLocalIdMap;
 
     Set<Cell> _localCells, _globalCells;
 

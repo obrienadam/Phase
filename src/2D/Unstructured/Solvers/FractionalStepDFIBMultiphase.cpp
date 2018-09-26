@@ -1,10 +1,13 @@
-#include "FractionalStepDFIBMultiphase.h"
-#include "FiniteVolume/Equation/TimeDerivative.h"
-#include "FiniteVolume/Equation/Divergence.h"
-#include "FiniteVolume/Equation/SecondOrderExplicitDivergence.h"
-#include "FiniteVolume/Equation/Laplacian.h"
-#include "FiniteVolume/Equation/Source.h"
+#include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
+#include "FiniteVolume/Multiphase/CelesteImmersedBoundary.h"
+#include "FiniteVolume/Discretization/TimeDerivative.h"
+#include "FiniteVolume/Discretization/Divergence.h"
+#include "FiniteVolume/Discretization/SecondOrderExplicitDivergence.h"
+#include "FiniteVolume/Discretization/Laplacian.h"
+#include "FiniteVolume/Discretization/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
+
+#include "FractionalStepDFIBMultiphase.h"
 
 FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
     :
@@ -106,16 +109,16 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     for(const Cell &c: *fluid_)
         gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
 
-    gammaEqn_ == src::src(gammaSrc_);
+    gammaEqn_ == cicsam::div(u_, gamma_, beta, 0.5) - cicsam::div(u_, gamma_, beta, 0.) + src::src(gammaSrc_);
 
     gammaEqn_.solve();
     grid_->sendMessages(gamma_);
     gamma_.interpolateFaces();
 
     //- Compute exact fluxes used for gamma advection
-    rhoU_.savePreviousTimeStep(timeStep, 1);
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_);
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(0));
+    rhoU_.savePreviousTimeStep(timeStep, 2);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_.oldField(0));
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(1));
 
     //- Update the gradient
     gradGamma_.compute(*fluid_);
@@ -131,23 +134,24 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.)
-             == fv::laplacian(mu_, u_, 0.5)
-             + src::src(fst + sg_ - gradP_ /*+ (rho2_ - rho1_) * gammaSrc_ * u_*/));
+    //- Explicit predictor
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div2e(rhoU_, u_, 0.5)
+             == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(u_); //- velocities on non-local procs may be needed for fb
+    grid_->sendMessages(u_);
 
+    //- Compute forcing term
     fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
     fbEqn_.solve();
     grid_->sendMessages(fb_);
 
-    //- solve again with fb
-    uEqn_ == src::src(fb_);
+    //- Semi-implicit corrector
+    uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.) + src::src(fb_);
     error = uEqn_.solve();
 
-    for(const Cell& cell: *fluid_)
-        u_(cell) += timeStep / rho_(cell) * gradP_(cell);
+    for(const Cell& c: *fluid_)
+        u_(c) += timeStep / rho_(c) * gradP_(c);
 
     grid_->sendMessages(u_);
 

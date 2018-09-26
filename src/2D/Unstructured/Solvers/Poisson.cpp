@@ -1,4 +1,4 @@
-#include "FiniteVolume/Equation/Laplacian.h"
+#include "FiniteVolume/Discretization/Laplacian.h"
 
 #include "Poisson.h"
 

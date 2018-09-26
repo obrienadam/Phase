@@ -11,7 +11,7 @@ public:
 
     CgnsUnstructuredGrid(const Input &input);
 
-    void load(const std::string& filename);
+    void load(const std::string& filename, const Point2D &origin);
 
     void readPartitionData(const std::string& filename);
 

@@ -50,6 +50,7 @@ public:
 protected:
 
     Scalar alpha_, omega_, theta_;
+
     Vector2D acc_, vel_, pos_;
 };
 

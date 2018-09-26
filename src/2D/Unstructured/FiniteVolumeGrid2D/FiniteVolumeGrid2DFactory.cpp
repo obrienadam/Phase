@@ -16,7 +16,7 @@ std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(GridType t
             break;
         case LOAD:
             auto grid = std::make_shared<CgnsUnstructuredGrid>();
-            grid->load("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns");
+            grid->load("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns", Vector2D(0., 0.));
             grid->readPartitionData("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns");
             return grid;
     }

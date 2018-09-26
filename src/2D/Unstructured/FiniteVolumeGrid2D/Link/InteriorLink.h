@@ -24,8 +24,13 @@ public:
 
     Scalar distanceSqrWeight() const;
 
+    const Vector2D &sf() const
+    { return outwardNorm_; }
+
     const Vector2D &outwardNorm() const
     { return outwardNorm_; }
+
+    Vector2D polarOutwardNorm() const;
 
     const Vector2D &rFaceVec() const
     { return rFaceVec_; }

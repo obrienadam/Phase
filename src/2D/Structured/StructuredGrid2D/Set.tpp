@@ -3,10 +3,14 @@
 #include "Set.h"
 
 template<class T>
-void Set<T>::add(const T &item)
+bool Set<T>::add(const T &item)
 {
-    if(_itemSet.insert(item).second)
-        _items.push_back(item);
+    auto insert = _itemSet.emplace(item);
+
+    if(insert.second)
+        _items.emplace_back(item);
+
+    return insert.second;
 }
 
 template<class T>

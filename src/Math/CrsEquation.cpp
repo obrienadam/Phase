@@ -219,8 +219,8 @@ CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 
         for(auto j = rowPtr_[row]; j < rowPtr_[row + 1]; ++j)
         {
-            if(colInd_[j] < 0)
-                break;
+            if(vals_[j] == 0. || colInd_[j] < 0)
+                continue;
 
             tmpColInd_.emplace_back(colInd_[j]);
             tmpVals_.emplace_back(vals_[j]);
@@ -229,8 +229,8 @@ CrsEquation& CrsEquation::operator +=(const CrsEquation &rhs)
 
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
         {
-            if(rhs.colInd_[j] < 0)
-                break;
+            if(rhs.vals_[j] == 0. || rhs.colInd_[j] < 0)
+                continue;
 
             auto first = tmpColInd_.begin() + tmpRowPtr_[row];
             auto last = tmpColInd_.begin() + tmpRowPtr_[row + 1];
@@ -270,8 +270,8 @@ CrsEquation& CrsEquation::operator -=(const CrsEquation &rhs)
 
         for(auto j = rowPtr_[row]; j < rowPtr_[row + 1]; ++j)
         {
-            if(colInd_[j] < 0)
-                break;
+            if(vals_[j] == 0. || colInd_[j] < 0)
+                continue;
 
             tmpColInd_.emplace_back(colInd_[j]);
             tmpVals_.emplace_back(vals_[j]);
@@ -280,8 +280,8 @@ CrsEquation& CrsEquation::operator -=(const CrsEquation &rhs)
 
         for(auto j = rhs.rowPtr_[row]; j < rhs.rowPtr_[row + 1]; ++j)
         {
-            if(rhs.colInd_[j] < 0)
-                break;
+            if(rhs.vals_[j] == 0. || rhs.colInd_[j] < 0)
+                continue;
 
             auto first = tmpColInd_.begin() + tmpRowPtr_[row];
             auto last = tmpColInd_.begin() + tmpRowPtr_[row + 1];

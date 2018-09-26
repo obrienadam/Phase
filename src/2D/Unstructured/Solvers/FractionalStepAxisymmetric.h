@@ -9,15 +9,17 @@ public:
 
     FractionalStepAxisymmetric(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
+    virtual Scalar maxCourantNumber(Scalar timeStep) const override;
+
 protected:
 
-    Scalar solveUEqn(Scalar timeStep);
+    virtual Scalar solveUEqn(Scalar timeStep) override;
 
-    Scalar solvePEqn(Scalar timeStep);
+    virtual Scalar solvePEqn(Scalar timeStep) override;
 
-    void correctVelocity(Scalar timeStep);
+    virtual void correctVelocity(Scalar timeStep) override;
 
-    Scalar maxDivergenceError();
+    Scalar maxDivergenceError() override;
 };
 
 

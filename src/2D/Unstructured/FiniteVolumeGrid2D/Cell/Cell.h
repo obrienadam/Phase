@@ -32,6 +32,8 @@ public:
 
     Scalar polarVolume() const;
 
+    Scalar polarVolume(const Vector2D &zaxis) const;
+
     const Point2D &centroid() const
     { return centroid_; }
 
@@ -77,10 +79,8 @@ public:
 
     //- Nodes
 
-    const std::vector<Label> &nodeIds() const
-    { return nodeIds_; }
-
-    const std::vector<Ref<const Node> > nodes() const;
+    const std::vector<Ref<const Node> > &nodes() const
+    { return nodes_; }
 
     const Polygon &shape() const
     { return cellShape_; }
@@ -113,7 +113,7 @@ private:
 
     Vector2D centroid_;
 
-    std::vector<Label> nodeIds_;
+    std::vector<Ref<const Node>> nodes_;
 
     const FiniteVolumeGrid2D &grid_;
 

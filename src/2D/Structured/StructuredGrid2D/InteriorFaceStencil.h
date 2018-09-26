@@ -17,12 +17,16 @@ public:
     const Vector2D& sf() const
     { return _sf; }
 
+    bool isBoundary() const
+    { return _isBoundary; }
+
 protected:
 
     const Face &_face;
 
     Vector2D _rf, _sf;
 
+    bool _isBoundary;
 };
 
 #endif

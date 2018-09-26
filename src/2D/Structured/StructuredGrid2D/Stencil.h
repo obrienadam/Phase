@@ -17,6 +17,9 @@ public:
 
     Vector2D rc(int inc) const;
 
+    Coordinates::Direction zeta() const
+    { return _zeta; }
+
 protected:
 
     const Cell &_cell;

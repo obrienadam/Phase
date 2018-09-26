@@ -5,9 +5,10 @@
 Node::Node(Scalar x, Scalar y, const FiniteVolumeGrid2D &grid)
         :
         Point2D(x, y),
-        cells_(grid.cells())
+        grid_(grid),
+        id_(grid.nodes().size())
 {
-    id_ = grid.nodes().size();
+
 }
 
 Node::Node(const Point2D &point, const FiniteVolumeGrid2D &grid)
@@ -17,27 +18,21 @@ Node::Node(const Point2D &point, const FiniteVolumeGrid2D &grid)
 
 }
 
-void Node::addCell(const Cell &cell)
+bool Node::isBoundaryNode() const
 {
-    cellIds_.push_back(cell.id());
-}
+    for(const Cell &c: cells_)
+        for(const auto &nb: c.neighbours())
+            if((nb.face().lNode().id() == id_ || nb.face().rNode().id() == id_) && nb.face().isBoundary())
+                    return true;
 
-const std::vector<Ref<const Cell> > Node::cells() const
-{
-    using namespace std;
-    vector<Ref<const Cell>> cells;
-    cells.reserve(cells_.size());
-
-    for (Label id: cellIds_)
-        cells.push_back(cref(cells_[id]));
-
-    return cells;
+    return false;
 }
 
 std::vector<Scalar> Node::volumeWeights() const
 {
     Scalar sumW = 0.;
     std::vector<Scalar> weights;
+    weights.reserve(4);
 
     for(const Cell& cell: cells())
     {

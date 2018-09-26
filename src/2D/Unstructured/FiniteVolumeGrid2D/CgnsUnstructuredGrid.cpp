@@ -13,10 +13,11 @@ CgnsUnstructuredGrid::CgnsUnstructuredGrid(const Input &input)
         :
         CgnsUnstructuredGrid()
 {
-    load(input.caseInput().get<std::string>("Grid.filename"));
+    load(input.caseInput().get<std::string>("Grid.filename"),
+         input.caseInput().get<std::string>("Grid.origin", "(0,0)"));
 }
 
-void CgnsUnstructuredGrid::load(const std::string &filename)
+void CgnsUnstructuredGrid::load(const std::string &filename, const Point2D &origin)
 {
     CgnsFile file(filename, CgnsFile::READ);
 
@@ -60,6 +61,8 @@ void CgnsUnstructuredGrid::load(const std::string &filename)
     { return id - 1; });
 
     std::vector<Point2D> nodes = file.readCoords<Point2D>(1, 1);
+    std::transform(nodes.begin(), nodes.end(), nodes.begin(), [origin](const Point2D &node)
+    { return node + origin; });
 
     std::unordered_map<std::string, std::vector<Label>> patches;
     int nBoCos = file.nBoCos(1, 1);

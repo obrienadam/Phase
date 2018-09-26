@@ -23,12 +23,13 @@ public:
     void setId(Label id)
     { id_ = id; }
 
-    void addCell(const Cell &cell);
+    void addCell(const Cell &cell)
+    { cells_.emplace_back(cell); }
 
-    const std::vector<Label> &cellIds() const
-    { return cellIds_; }
+    const std::vector<Ref<const Cell>> &cells() const
+    { return cells_; }
 
-    const std::vector<Ref<const Cell>> cells() const;
+    bool isBoundaryNode() const;
 
     std::vector<Scalar> volumeWeights() const;
 
@@ -43,8 +44,9 @@ protected:
 
     Label id_;
 
-    std::vector<Label> cellIds_;
-    const std::vector<Cell> &cells_;
+    std::vector<Ref<const Cell>> cells_;
+
+    const FiniteVolumeGrid2D &grid_;
 };
 
 #endif

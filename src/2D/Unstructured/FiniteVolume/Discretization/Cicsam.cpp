@@ -88,6 +88,7 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                                          const CellGroup &cells)
 {
     FiniteVolumeEquation<Scalar> eqn(gamma);
+    const ScalarFiniteVolumeField &gamma0 = gamma.oldField(0);
 
     for (const Cell &cell: cells)
     {
@@ -104,7 +105,7 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
             eqn.add(cell, donor, theta * (1. - b) * flux);
             eqn.add(cell, acceptor, theta * b * flux);
 
-            Scalar gammaF = (1. - b) * gamma(donor) + b * gamma(acceptor);
+            Scalar gammaF = (1. - b) * gamma0(donor) + b * gamma0(acceptor);
             eqn.addSource(cell, (1. - theta) * flux * gammaF);
         }
 
@@ -114,12 +115,13 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
             switch (gamma.boundaryType(bd.face()))
             {
             case ScalarFiniteVolumeField::FIXED:
-                eqn.addSource(cell, flux * gamma(bd.face()));
+                eqn.addSource(cell, theta * flux * gamma(bd.face()));
+                eqn.addSource(cell, (1. - theta) * flux * gamma0(bd.face()));
                 break;
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 eqn.add(cell, cell, theta * flux);
-                eqn.addSource(cell, (1. - theta) * flux * gamma(bd.face()));
+                eqn.addSource(cell, (1. - theta) * flux * gamma0(bd.face()));
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:

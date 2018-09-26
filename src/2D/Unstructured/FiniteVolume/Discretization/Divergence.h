@@ -1,7 +1,7 @@
 #ifndef PHASE_DIVERGENCE_H
 #define PHASE_DIVERGENCE_H
 
-#include "FiniteVolumeEquation.h"
+#include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 #include "FiniteVolume/Field/JacobianField.h"
 
 namespace fv

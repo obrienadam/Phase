@@ -1,0 +1,55 @@
+; Test case for the axisymetric pipe
+
+CaseName Channel2D
+
+Solver
+{
+	type "fractional step axisymmetric"
+	timeStep 2.5e-3
+	maxTime 20
+	maxCo 1
+	zaxis (0,1)
+}
+
+LinearAlgebra
+{
+  uEqn
+  {
+    lib belos
+    solver bicgstab
+    tolerance 1e-12
+    preconditioner DIAGONAL
+  }
+
+  pEqn
+  {
+    lib eigen
+  }
+}
+
+Properties
+{
+	rho 1
+	mu 1e-3
+	g (0,0)
+	gamma 0.001
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 100
+	nCellsY 600
+
+	; Rectilinear parameters
+	width 0.4
+	height 2.4
+}
+
+Viewer
+{
+	type tecplot
+	integerFields proc
+	vectorFields u,gradP
+	scalarFields p,pCorr,m
+}

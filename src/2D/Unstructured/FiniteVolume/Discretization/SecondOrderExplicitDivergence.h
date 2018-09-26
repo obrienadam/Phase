@@ -1,7 +1,7 @@
 #ifndef PHASE_SECOND_ORDER_EXPLICIT_DIVERGENCE_H
 #define PHASE_SECOND_ORDER_EXPLICIT_DIVERGENCE_H
 
-#include "FiniteVolumeEquation.h"
+#include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace fv
 {

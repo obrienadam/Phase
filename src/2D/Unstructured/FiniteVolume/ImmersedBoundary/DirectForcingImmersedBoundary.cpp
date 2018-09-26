@@ -14,36 +14,28 @@ DirectForcingImmersedBoundary::DirectForcingImmersedBoundary(const Input &input,
 
 void DirectForcingImmersedBoundary::updateCells()
 {
-    for(auto &ibObj: ibObjs_)
-        ibObj->clear();
-
     localIbCells_.clear();
     localSolidCells_.clear();
 
-    CellGroup solidCells, ibCells;
-
     for(auto &ibObj: ibObjs_)
     {
-        solidCells = ibObj->cellsWithin(*domainCells_);
-        ibCells = ibObj->outerPerimeterCells(domainCells_->begin(), domainCells_->end(), false);
-        ibObj->setIbCells(ibCells);
-        ibObj->setSolidCells(solidCells);
+        ibObj->clear();
 
-        localIbCells_.add(ibCells);
-        localSolidCells_.add(solidCells);
+        for(const Cell &c: ibObj->cellsWithin(*domainCells_))
+            if(localSolidCells_.add(c))
+                ibObj->addSolidCell(c);
+
+        for(const Cell &c: ibObj->outerPerimeterCells(domainCells_->begin(), domainCells_->end(), false))
+            if(localIbCells_.add(c))
+                ibObj->addIbCell(c);
     }
 
     globalIbCells_ = grid_->globalCellGroup(localIbCells_);
     globalSolidCells_ = grid_->globalCellGroup(localSolidCells_);
 
-    cellStatus_->fill(FLUID_CELLS);
-
-    for(const Cell& cell: localIbCells_)
-        (*cellStatus_)(cell) = IB_CELLS;
-
-    for(const Cell& cell: localSolidCells_)
-        (*cellStatus_)(cell) = SOLID_CELLS;
-
+    cellStatus_->fill(FLUID_CELLS, *domainCells_);
+    cellStatus_->fill(IB_CELLS, globalIbCells_);
+    cellStatus_->fill(SOLID_CELLS, globalSolidCells_);
     grid_->sendMessages(*cellStatus_);
 }
 
@@ -58,43 +50,38 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
         if(localIbCells_.isInSet(cell))
         {
             auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
-
-            if(st.nReconstructionPoints() < 6)
-            {
-                throw Exception("DirectForcingImmersedBoundary",
-                                "computeForcingTerm",
-                                "not enough cells to perform velocity interpolation. Cell id = "
-                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
-            }
-
-            Matrix A(st.nReconstructionPoints(), 6);
-
-            for(int i = 0; i < st.cells().size(); ++i)
-            {
-                Point2D x = st.cells()[i]->centroid();
-                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
-
-            for(int i = 0; i < st.compatPts().size(); ++i)
-            {
-                Point2D x = st.compatPts()[i].pt();
-                A.setRow(i + st.cells().size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
-
-            Point2D x = cell.centroid();
-
-            Matrix beta = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
+            auto beta = st.interpolationCoeffs(cell.centroid());
 
             eqn.add(cell, cell, -timeStep);
 
-            for(int i = 0; i < st.cells().size(); ++i)
+            int i = 0;
+            for(const Cell *cellPtr: st.cells())
             {
-                eqn.add(cell, *st.cells()[i], beta(0, i) * timeStep);
-                eqn.addSource(cell, beta(0, i) * u(*st.cells()[i]));
+                eqn.add(cell, *cellPtr, beta(0, i) * timeStep);
+                eqn.addSource(cell, beta(0, i++) * u(*cellPtr));
             }
 
-            for(int i = 0; i < st.compatPts().size(); ++i)
-                eqn.addSource(cell, beta(0, i + st.cells().size()) * st.compatPts()[i].velocity());
+            for(const auto &cmpt: st.compatPts())
+                eqn.addSource(cell, beta(0, i++) * cmpt.velocity());
+
+            for(const Face *facePtr: st.faces())
+                switch(u.boundaryType(*facePtr))
+                {
+                case VectorFiniteVolumeField::FIXED:
+                    eqn.addSource(cell, beta(0, i++) * u(*facePtr));
+                    break;
+                case VectorFiniteVolumeField::SYMMETRY:
+                {
+                    Vector2D n = facePtr->norm().unitVec();
+                    Vector2D t = n.tangentVec();
+                    Tensor2D tmp = outer(t, t);
+                    eqn.add(cell, cell, beta(0, i) * timeStep * tmp);
+                    eqn.addSource(cell, beta(0, i++) * u(cell));
+                    break;
+                }
+                default:
+                    throw Exception("DirectForcingImmersedBoundary", "velocityBcs", "grid boundary type not recognized.");
+                }
 
             eqn.addSource(cell, -u(cell));
         }
@@ -111,67 +98,6 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
     }
 
     return eqn;
-}
-
-void DirectForcingImmersedBoundary::computeFaceForcingTerm(const VectorFiniteVolumeField &u, Scalar timeStep, VectorFiniteVolumeField &fib) const
-{
-    std::vector<const Cell*> cells;
-
-    for(const Face &f: grid_->interiorFaces())
-    {
-        cells.clear();
-        bool isIbFace = false;
-
-        for(const Cell &c: grid_->globalCells().itemsWithin(Circle(f.centroid(), (f.rCell().centroid() - f.lCell().centroid()).mag() * 1.51)))
-        {
-            if(!ibObj(c.centroid()))
-                cells.push_back(&c);
-            else
-                isIbFace = true;
-        }
-
-        if(!isIbFace)
-        {
-            fib(f) = Vector2D(0., 0.);
-            continue;
-        }
-
-        auto ibObj = this->ibObj(f.centroid());
-
-        if(ibObj)
-        {
-            fib(f) = (ibObj->velocity(f.centroid()) - u(f)) / timeStep;
-            continue;
-        }
-        else
-        {
-            fib(f) = Vector2D(0., 0.);
-            continue;
-        }
-
-        Matrix A(cells.size() + 1, 6), b(cells.size() + 1, 2);
-
-        int i = 0;
-        for(const Cell *c: cells)
-        {
-            Point2D x = c->centroid();
-            A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            b.setRow(i++, {u(*c).x, u(*c).y});
-        }
-
-        Point2D xb = nearestIbObj(f.centroid())->nearestIntersect(f.centroid());
-        Vector2D ub = nearestIbObj(f.centroid())->velocity(xb);
-
-        A.setRow(i, {xb.x * xb.x, xb.y * xb.y, xb.x * xb.y, xb.x, xb.y, 1.});
-        b.setRow(i++, {ub.x, ub.y});
-        b = solve(A, b);
-
-        Point2D x = f.centroid();
-        b = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * b;
-
-        Vector2D ur = Vector2D(b(0, 0), b(0, 1));
-        fib(f) = (ur - u(f)) / timeStep;
-    }
 }
 
 FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm(const ScalarFiniteVolumeField &rho,
@@ -241,62 +167,104 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
     return eqn;
 }
 
-FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u, Scalar timeStep) const
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u,
+                                                                          const VectorFiniteVolumeField &uTilde,
+                                                                          Scalar timeStep) const
 {
-    FiniteVolumeEquation<Vector2D> eqn(u);
+    FiniteVolumeEquation<Vector2D> eqn(u, 10);
 
     for(const Cell& cell: grid_->localCells())
     {
         if(localIbCells_.isInSet(cell))
         {
             auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+            auto beta = st.interpolationCoeffs(cell.centroid());
 
-            if(st.nReconstructionPoints() < 6)
-            {
-                throw Exception("DirectForcingImmersedBoundary",
-                                "velocityBcs",
-                                "not enough cells to perform velocity interpolation. Cell id = "
-                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
-            }
+            int i = 0;
+            for(const Cell *cellPtr: st.cells())
+                eqn.add(cell, *cellPtr, beta(0, i++) * cell.volume() / timeStep);
 
-            Matrix A(st.nReconstructionPoints(), 6);
+            for(const auto &cmpt: st.compatPts())
+                eqn.addSource(cell, beta(0, i++) * cmpt.velocity() * cell.volume() / timeStep);
 
-            for(int i = 0; i < st.cells().size(); ++i)
-            {
-                Point2D x = st.cells()[i]->centroid();
-                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
+            for(const Face *facePtr: st.faces())
+                switch(u.boundaryType(*facePtr))
+                {
+                case VectorFiniteVolumeField::FIXED:
+                    eqn.addSource(cell, beta(0, i++) * u(*facePtr) * cell.volume() / timeStep);
+                    break;
+                case VectorFiniteVolumeField::SYMMETRY:
+                {
+                    Vector2D n = facePtr->norm().unitVec();
+                    Vector2D t = n.tangentVec();
+                    Tensor2D tmp = outer(t, t);
+                    eqn.add(cell, cell, beta(0, i++) * tmp * cell.volume() / timeStep);
+                    break;
+                }
+                case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                    eqn.add(cell, cell, beta(0, i++) * cell.volume() / timeStep);
+                    break;
+                default:
+                    throw Exception("DirectForcingImmersedBoundary", "velocityBcs", "grid boundary type not recognized.");
+                }
 
-            for(int i = 0; i < st.compatPts().size(); ++i)
-            {
-                Point2D x = st.compatPts()[i].pt();
-                A.setRow(i + st.cells().size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
-
-            Point2D x = cell.centroid();
-
-            Matrix beta = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
-
-            for(int i = 0; i < st.cells().size(); ++i)
-                eqn.add(cell, *st.cells()[i], beta(0, i) * cell.volume() / timeStep);
-
-            for(int i = 0; i < st.compatPts().size(); ++i)
-                eqn.addSource(cell, beta(0, i + st.cells().size()) * st.compatPts()[i].velocity() * cell.volume() / timeStep);
-
-            eqn.add(cell, cell, -cell.volume() / timeStep);
+            eqn.addSource(cell, -uTilde(cell) * cell.volume() / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-        {
-            auto ibObj = this->ibObj(cell.centroid());
-
-            eqn.add(cell, cell, -cell.volume() / timeStep);
-            eqn.addSource(cell, ibObj->velocity(cell.centroid()) * cell.volume() / timeStep);
-        }
+            eqn.addSource(cell, (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
     }
 
     return eqn;
+}
 
-    return u;
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(VectorFiniteVolumeField &u,
+                                                                               const VectorFiniteVolumeField &uTilde,
+                                                                               Scalar timeStep) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(u, 10);
+
+    for(const Cell& cell: grid_->localCells())
+    {
+        if(localIbCells_.isInSet(cell))
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+            auto beta = st.interpolationCoeffs(cell.centroid());
+            Scalar vol = cell.polarVolume();
+            int i = 0;
+            for(const Cell *cellPtr: st.cells())
+                eqn.add(cell, *cellPtr, beta(0, i++) * vol / timeStep);
+
+            for(const auto &cmpt: st.compatPts())
+                eqn.addSource(cell, beta(0, i++) * cmpt.velocity() * vol / timeStep);
+
+            for(const Face *facePtr: st.faces())
+                switch(u.boundaryType(*facePtr))
+                {
+                case VectorFiniteVolumeField::FIXED:
+                    eqn.addSource(cell, beta(0, i++) * u(*facePtr) * vol / timeStep);
+                    break;
+                case VectorFiniteVolumeField::SYMMETRY:
+                {
+                    Vector2D n = facePtr->norm().unitVec();
+                    Vector2D t = n.tangentVec();
+                    Tensor2D tmp = outer(t, t);
+                    eqn.add(cell, cell, beta(0, i++) * tmp * vol / timeStep);
+                    break;
+                }
+                case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                    eqn.add(cell, cell, beta(0, i++) * vol / timeStep);
+                    break;
+                default:
+                    throw Exception("DirectForcingImmersedBoundary", "polarVelocityBcs", "grid boundary type not recognized.");
+                }
+
+            eqn.addSource(cell, -uTilde(cell) * vol / timeStep);
+        }
+        else if (localSolidCells_.isInSet(cell))
+            eqn.addSource(cell, (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+    }
+
+    return eqn;
 }
 
 FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, Scalar timeStep) const
@@ -745,13 +713,12 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const Vec
         Vector2D f = Vector2D(0., 0.);
 
         for(const Cell &c: ibObj->cells())
-            f -= fib(c) * c.volume();
+            f -= rho * fib(c) * c.volume();
 
-        f = Vector2D(grid_->comm().sum(f.x), grid_->comm().sum(f.y));
+        f = grid_->comm().sum(f);
+        f += (ibObj->rho - rho) * g * ibObj->shape().area();
 
-        f += ibObj->rho * g * ibObj->shape().area();
-
-        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), rho * f));
+        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), f));
     }
 }
 

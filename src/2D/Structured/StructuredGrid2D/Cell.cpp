@@ -22,6 +22,5 @@ Cell::Cell(const StructuredGrid2D &grid, Label i, Label j, Label gid)
 void Cell::initStencils()
 {
     for(auto zeta: Coordinates::DIRECTIONS)
-        if(_grid.maxInc(*this, zeta) > 0)
-            _interiorFaceStencils.push_back(InteriorFaceStencil(*this, zeta));
+        _faceStencils.push_back(InteriorFaceStencil(*this, zeta));
 }

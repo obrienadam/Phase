@@ -1,0 +1,83 @@
+; Boundary conditions for the 2D channel
+
+Boundaries
+{
+  u
+  {
+    x-
+    {
+      type symmetry
+      value (0,0)
+    }
+
+    x+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+
+    y-
+    {
+      type fixed
+      value (0,1)
+    }
+
+    y+
+    {
+      type normal_gradient
+      value (0,0)
+    }
+  }
+
+  p
+  {
+    x-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    x+
+    {
+      type fixed
+      value 0
+    }
+
+    y-
+    {
+      type normal_gradient
+      value 0
+    }
+
+    y+
+    {
+      type fixed
+      value 0
+    }
+  }
+}
+
+ImmersedBoundaries
+{
+  Ball
+  {
+    geometry
+    {
+      type circle
+      center (0,2.4)
+      radius 0.5
+    }
+
+    u
+    {
+      type fixed
+      value (0,0)
+    }
+
+    p
+    {
+      type normal_gradient
+      value 0
+    }
+  }
+}

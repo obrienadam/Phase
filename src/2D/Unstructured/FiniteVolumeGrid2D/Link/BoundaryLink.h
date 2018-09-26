@@ -18,7 +18,15 @@ public:
     const Vector2D &rFaceVec() const
     { return rFaceVec_; }
 
+    const Vector2D &rf() const
+    { return rFaceVec_; }
+
     const Vector2D &outwardNorm() const
+    { return outwardNorm_; }
+
+    Vector2D polarOutwardNorm() const;
+
+    const Vector2D &sf() const
     { return outwardNorm_; }
 
 protected:

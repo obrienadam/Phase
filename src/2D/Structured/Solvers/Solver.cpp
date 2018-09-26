@@ -30,3 +30,17 @@ VectorField& Solver::addField(const std::string &name)
     auto insert = _vectorFields.insert(std::make_shared<VectorField>(name, _grid, true, true));
     return *(*insert.first);
 }
+
+template<>
+Field<Scalar> &Solver::addField(const std::string &name, const Input &input)
+{
+    auto insert = _scalarFields.insert(std::make_shared<ScalarField>(name, _grid, input, true, true));
+    return *(*insert.first);
+}
+
+template<>
+Field<Vector2D> &Solver::addField(const std::string &name, const Input &input)
+{
+    auto insert = _vectorFields.insert(std::make_shared<VectorField>(name, _grid, input, true, true));
+    return *(*insert.first);
+}

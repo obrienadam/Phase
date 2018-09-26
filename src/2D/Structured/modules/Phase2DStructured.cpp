@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     RunControl runControl;
 
-    runControl.run(cl, input, *solver, postProcessing);
+    //runControl.run(cl, input, *solver, postProcessing);
 
     Communicator::finalize();
 

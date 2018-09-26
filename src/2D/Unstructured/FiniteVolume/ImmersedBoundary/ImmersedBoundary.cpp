@@ -8,6 +8,8 @@
 
 #include "ImmersedBoundary.h"
 
+std::vector<std::shared_ptr<const ImmersedBoundaryObject>> ImmersedBoundary::_query;
+
 ImmersedBoundary::ImmersedBoundary(const Input &input,
                                    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                    const std::shared_ptr<CellGroup> &domainCells)
@@ -139,7 +141,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
             {
                 motion = std::make_shared<SolidBodyMotion>(
                             ibObj,
-                            ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)")
+                            ibObjectInput.second.get<std::string>("motion.velocity", "(0,0)"),
+                            (bool)ibObjectInput.second.get_child_optional("motion.axis"),
+                            ibObjectInput.second.get<std::string>("motion.axis", "(0,1)")
                             );
             }
             else if(motionType == "motionProfile" || motionType == "motion-profile")
@@ -230,6 +234,16 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Poin
             return ibObj;
 
     return nullptr;
+}
+
+const std::vector<std::shared_ptr<const ImmersedBoundaryObject> > &ImmersedBoundary::findAllIbObjs(const Point2D &pt) const
+{
+    _query.clear();
+    std::copy_if(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(_query),
+                 [&pt](const std::shared_ptr<const ImmersedBoundaryObject> &ibObj)
+    { return ibObj->isInIb(pt); });
+
+    return _query;
 }
 
 std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(const Point2D &pt) const
@@ -330,12 +344,14 @@ void ImmersedBoundary::applyCollisionForce(bool add)
     if(collisionModel_)
         for (auto ibObjP: ibObjs_)
         {
+            //- Collisions with particles
             for (auto ibObjQ: ibObjs_)
                 if(add)
                     ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
                 else
                     ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
 
+            //- Collisions with domain boundaries
             if(add)
                 ibObjP->addForce(collisionModel_->force(*ibObjP, *grid_));
             else

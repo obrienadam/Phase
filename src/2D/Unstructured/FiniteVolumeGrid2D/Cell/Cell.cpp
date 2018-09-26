@@ -2,18 +2,19 @@
 #include "System/Exception.h"
 #include "FiniteVolumeGrid2D/FiniteVolumeGrid2D.h"
 
+#include "FiniteVolume/Discretization/Axisymmetric.h"
 #include "Cell.h"
 
 Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
-        :
-        grid_(grid),
-        nodeIds_(nodeIds)
+    :
+      grid_(grid)
 {
-    std::vector<Point2D> vertices;
-    vertices.reserve(nodeIds.size());
+    nodes_.reserve(nodeIds.size());
+    for(Label id: nodeIds)
+        nodes_.emplace_back(grid.nodes()[id]);
 
-    for (Label id: nodeIds_)
-        vertices.push_back(grid.nodes()[id]);
+    std::vector<Point2D> vertices(nodes_.size());
+    std::transform(nodes_.begin(), nodes_.end(), vertices.begin(), [](const Point2D &vtx) { return vtx; });
 
     cellShape_ = Polygon(vertices.begin(), vertices.end());
 
@@ -29,25 +30,41 @@ Cell::Cell(const std::vector<Label> &nodeIds, const FiniteVolumeGrid2D &grid)
 
 Scalar Cell::polarVolume() const
 {
+//    Scalar volume = 0.;
+
+//    for (const InteriorLink &nb: interiorLinks_)
+//        volume += dot(nb.face().centroid(), nb.face().polarOutwardNorm(centroid_));
+
+//    for (const BoundaryLink &bd: boundaryLinks_)
+//        volume += dot(bd.face().centroid(), bd.face().polarOutwardNorm(centroid_));
+
+    //    Scalar r1, r2, z1, z2;
+
+    //    auto box = shape().boundingBox();
+    //    r1 = box.min_corner().x;
+    //    r2 = box.max_corner().x;
+    //    z1 = box.min_corner().y;
+    //    z2 = box.max_corner().y;
+
+    //    Scalar tstVol = (r2*r2 - r1*r1) * (z2 - z1) / 2.;
+
+    //    std::cout << volume / 3. << " = " << tstVol << "\n";
+    // std::cout << volume / 3. << " = " << centroid_.x * volume_ << "\n";
+
+    // return volume / 3.;
+    //- Per radian
+    return centroid_.x * volume_;
+}
+
+Scalar Cell::polarVolume(const Vector2D &zaxis) const
+{
     Scalar volume = 0.;
 
     for (const InteriorLink &nb: interiorLinks_)
-        volume += dot(nb.face().centroid(), nb.face().polarOutwardNorm(centroid_));
+        volume += dot(axi::map(nb.face().centroid(), zaxis), nb.face().polarOutwardNorm(centroid_, zaxis));
 
     for (const BoundaryLink &bd: boundaryLinks_)
-        volume += dot(bd.face().centroid(), bd.face().polarOutwardNorm(centroid_));
-
-//    Scalar r1, r2, z1, z2;
-//
-//    auto box = shape().boundingBox();
-//    r1 = box.min_corner().x;
-//    r2 = box.max_corner().x;
-//    z1 = box.min_corner().y;
-//    z2 = box.max_corner().y;
-//
-//    Scalar tstVol = M_PI * (r2*r2 - r1*r1) * (z2 - z1) / (2 * M_PI);
-//
-//    std::cout << volume / 3. << " = " << tstVol << "\n";
+        volume += dot(axi::map(bd.face().centroid(), zaxis), bd.face().polarOutwardNorm(centroid_, zaxis));
 
     return volume / 3.;
 }
@@ -82,25 +99,13 @@ const Cell &Cell::faceNeighbour(const Node &lNode, const Node &rNode) const
         const Face &face = nb.face();
 
         if ((lNode.id() == face.lNode().id() && rNode.id() == face.rNode().id()) ||
-            (lNode.id() == face.rNode().id() && rNode.id() == face.lNode().id()))
+                (lNode.id() == face.rNode().id() && rNode.id() == face.lNode().id()))
         {
             return nb.cell();
         }
     }
 
     throw Exception("Cell", "faceNeighbour", "nodes do not belong to this cell.");
-}
-
-const std::vector<Ref<const Node> > Cell::nodes() const
-{
-    std:: vector<Ref<const Node>> nodes;
-    nodes.reserve(nodeIds_.size());
-
-    std::transform(nodeIds_.begin(), nodeIds_.end(), std::back_inserter(nodes), [this](Label id) {
-        return std::cref(grid_.nodes()[id]);
-    });
-
-    return nodes;
 }
 
 bool Cell::isInCell(const Point2D &point) const
@@ -114,10 +119,8 @@ bool Cell::isInCell(const Point2D &point) const
 bool cellsShareFace(const Cell &cellA, const Cell &cellB)
 {
     for (const InteriorLink &nb: cellA.neighbours())
-    {
         if (nb.cell().id() == cellB.id())
             return true;
-    }
 
     return false;
 }

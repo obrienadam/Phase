@@ -1,3 +1,5 @@
+#include "System/Exception.h"
+
 #include "Field.h"
 
 template<class T>
@@ -17,6 +19,40 @@ Field<T>::Field(const std::string &name,
 
     _recvBuffers.resize(_grid->comm().nProcs());
     _sendBuffers.resize(_grid->comm().nProcs());
+}
+
+template<class T>
+Field<T>::Field(const std::string &name,
+                const std::shared_ptr<const StructuredGrid2D> &grid,
+                const Input &input,
+                bool cellField,
+                bool faceField)
+    :
+      Field(name, grid, cellField, faceField)
+{
+    auto bcinput = input.boundaryInput().get_child_optional("Boundaries." + _name);
+
+    if(!bcinput)
+        throw Exception("Field<T>", "Field", "Missing boundary info for field \"" + _name + "\".");
+
+    std::unordered_map<std::string, Coordinates::Direction> pmap = {
+        {"x+", Coordinates::I_POS},
+        {"x-", Coordinates::I_NEG},
+        {"y+", Coordinates::J_POS},
+        {"y-", Coordinates::J_NEG}
+    };
+
+    std::unordered_map<std::string, BoundaryCondition::Type> bcmap = {
+        {"fixed", BoundaryCondition::FIXED},
+        {"normal_gradient", BoundaryCondition::ZERO_GRADIENT}
+    };
+
+
+    for(const std::string &pname: {"x+", "x-", "y+", "y-"})
+    {
+        auto type = bcinput.get().get<std::string>(pname);
+        _bctypes.emplace(pmap.at(pname), bcmap.at(type));
+    }
 }
 
 template<class T>

@@ -45,6 +45,10 @@ public:
 
     void setSolidCells(const CellGroup &solidCells);
 
+    bool addIbCell(const Cell &cell);
+
+    bool addSolidCell(const Cell &cell);
+
     void clear();
 
     //- Geometry related methods
@@ -107,7 +111,10 @@ public:
     void setMotion(const std::shared_ptr<Motion> &motion)
     { _motion = motion; }
 
-    std::shared_ptr<Motion> motion()
+    std::shared_ptr<Motion> &motion()
+    { return _motion; }
+
+    std::shared_ptr<const Motion> motion() const
     { return _motion; }
 
     bool isMoving() const

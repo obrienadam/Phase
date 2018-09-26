@@ -112,6 +112,8 @@ public:
 
     void setBoundaryFaces(BoundaryType bType, const std::function<T(const Face &face)> &fcn);
 
+    void interpolateNodes();
+
     //- Field info
     bool hasFaces() const
     { return !faces_.empty(); }
@@ -176,13 +178,13 @@ public:
     void clearHistory();
 
     FiniteVolumeField &oldField(int i)
-    { return previousTimeSteps_[i]->second; }
+    { return *previousTimeSteps_[i].second; }
 
     const FiniteVolumeField &oldField(int i) const
-    { return previousTimeSteps_[i]->second; }
+    { return *previousTimeSteps_[i].second; }
 
     Scalar oldTimeStep(int i) const
-    { return previousTimeSteps_[i]->first; }
+    { return previousTimeSteps_[i].first; }
 
     const FiniteVolumeField &prevIteration() const
     { return *previousIteration_; }
@@ -230,7 +232,7 @@ protected:
     std::vector<T> faces_, nodes_;
 
     //- Field history
-    std::vector<std::shared_ptr<PreviousField>> previousTimeSteps_;
+    std::deque<std::pair<Scalar, std::shared_ptr<FiniteVolumeField<T>>>> previousTimeSteps_;
 
     std::shared_ptr<FiniteVolumeField<T>> previousIteration_;
 

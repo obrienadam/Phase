@@ -31,6 +31,8 @@ public:
 
     Vector2D polarOutwardNorm(const Point2D& point) const;
 
+    Vector2D polarOutwardNorm(const Point2D &point, const Vector2D &zaxis) const;
+
     const Vector2D &tan() const
     { return tangent_; }
 
@@ -50,19 +52,21 @@ public:
     bool isBoundary() const
     { return type_ == BOUNDARY; }
 
-    const Node &lNode() const;
+    const Node &lNode() const
+    { return nodes_.first; }
 
-    const Node &rNode() const;
+    const Node &rNode() const
+    { return nodes_.second; }
 
-    const Cell &lCell() const;
+    const Cell &lCell() const
+    { return cells_[0]; }
 
-    const Cell &rCell() const;
+    const Cell &rCell() const
+    { return cells_[1]; }
 
     Scalar volumeWeight() const;
 
     Scalar distanceWeight() const;
-
-    std::vector<Ref<const Cell>> cells() const;
 
     void addCell(const Cell &cell);
 
@@ -83,9 +87,9 @@ private:
 
     Label id_;
 
-    std::pair<Label, Label> nodeIds_;
+    std::pair<Ref<const Node>, Ref<const Node>> nodes_;
 
-    std::vector<Label> cellIds_;
+    std::vector<Ref<const Cell>> cells_;
 
     const FiniteVolumeGrid2D &grid_;
 };

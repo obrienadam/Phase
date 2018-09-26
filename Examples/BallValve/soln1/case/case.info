@@ -1,0 +1,59 @@
+; Test case for the axisymetric ball valve
+
+CaseName BallValve
+
+Solver
+{
+	type "fractional step axisymmetric direct-forcing"
+	timeStep 2e-3
+	maxTime 20
+	maxCo 1
+	zaxis (0,1)
+}
+
+LinearAlgebra
+{
+  uEqn
+  {
+    lib belos
+    solver bicgstab
+    tolerance 1e-12
+    preconditioner DIAGONAL
+  }
+
+  fibEqn
+  {
+    lib eigen
+  }
+
+  pEqn
+  {
+    lib eigen
+  }
+}
+
+Properties
+{
+	rho 1
+	mu 1e-1
+	g (0,0)
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 200
+	nCellsY 400
+
+	; Rectilinear parameters
+	width 3.6
+	height 7.2
+}
+
+Viewer
+{
+	type tecplot
+	integerFields proc,cellStatus
+	vectorFields u,gradP
+	scalarFields p,pCorr,m
+}

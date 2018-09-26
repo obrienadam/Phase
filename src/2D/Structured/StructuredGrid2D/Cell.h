@@ -6,6 +6,7 @@
 #include "System/StaticVector.h"
 
 #include "InteriorFaceStencil.h"
+#include "BoundaryFaceStencil.h"
 
 class StructuredGrid2D;
 class Face;
@@ -48,12 +49,12 @@ public:
     //- Stencils
     void initStencils();
 
-    const std::vector<InteriorFaceStencil> &interiorFaceStencils() const
-    { return _interiorFaceStencils; }
+    const std::vector<InteriorFaceStencil> &faceStencils() const
+    { return _faceStencils; }
 
 protected:
 
-    std::vector<InteriorFaceStencil> _interiorFaceStencils;
+    std::vector<InteriorFaceStencil> _faceStencils;
 
     Box _shape;
 

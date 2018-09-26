@@ -1,6 +1,8 @@
 #ifndef PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_LEAST_SQUARES_QUADRATIC_STENCIL_H
 #define PHASE_DIRECT_FORCING_IMMERSED_BOUNDARY_LEAST_SQUARES_QUADRATIC_STENCIL_H
 
+#include "System/StaticVector.h"
+
 #include "DirectForcingImmersedBoundary.h"
 
 class DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil
@@ -10,6 +12,9 @@ public:
     class CompatPoint
     {
     public:
+
+        CompatPoint()
+        {}
 
         CompatPoint(const Cell &cell, const ImmersedBoundaryObject &ibObj)
             : _cell(&cell), _ibObj(&ibObj), _pt(ibObj.nearestIntersect(cell.centroid()))
@@ -30,6 +35,9 @@ public:
         const Point2D &pt() const
         { return _pt; }
 
+        Vector2D ns() const
+        { return _ibObj->nearestEdgeUnitNormal(_pt); }
+
     private:
 
         const Cell *_cell;
@@ -45,22 +53,35 @@ public:
     Size nReconstructionPoints() const
     { return _cells.size() + _faces.size() + _compatPts.size(); }
 
-    const std::vector<const Cell*> &cells() const
+    const StaticVector<const Cell*, 8> &cells() const
     { return _cells; }
 
-//    const std::vector<const Face*> &faces() const
-//    { return _faces; }
+    const StaticVector<const Face*, 8> &faces() const
+    { return _faces; }
 
-    const std::vector<CompatPoint> &compatPts() const
+    const StaticVector<CompatPoint, 8> &compatPts() const
     { return _compatPts; }
+
+    //
+    Matrix interpolationCoeffs(const Point2D &x) const;
 
 protected:
 
-    std::vector<const Cell*> _cells;
+    static std::vector<std::vector<const ImmersedBoundaryObject*>> _ibObjSets;
 
-    std::vector<const Face*> _faces;
+    static Matrix _A, _b;
 
-    std::vector<CompatPoint> _compatPts;
+    Matrix linearInterpolationCoeffs(const Point2D &x) const;
+
+    Matrix quadraticInterpolationCoeffs(const Point2D &x) const;
+
+    Matrix subgridInterpolationCoeffs(const Point2D &x) const;
+
+    StaticVector<const Cell*, 8> _cells;
+
+    StaticVector<const Face*, 8> _faces;
+
+    StaticVector<CompatPoint, 8> _compatPts;
 };
 
 #endif

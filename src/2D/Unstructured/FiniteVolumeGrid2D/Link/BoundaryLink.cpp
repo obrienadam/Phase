@@ -23,3 +23,8 @@ const Face &BoundaryLink::face() const
 {
     return face_;
 }
+
+Vector2D BoundaryLink::polarOutwardNorm() const
+{
+    return face_.polarOutwardNorm(self_.centroid());
+}

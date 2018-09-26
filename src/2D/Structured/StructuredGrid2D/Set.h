@@ -20,7 +20,7 @@ public:
 
     //- insertion/deletion
 
-    void add(const T &item);
+    bool add(const T &item);
 
     template<class InputIterator>
     void add(InputIterator first, InputIterator last);

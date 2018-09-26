@@ -1,4 +1,4 @@
-#include <unordered_map>
+#include "System/Exception.h"
 
 #include "StructuredGrid2D.h"
 
@@ -10,11 +10,11 @@ StructuredGrid2D::StructuredGrid2D()
     _recvBuffers.resize(_comm->nProcs());
 }
 
-StructuredGrid2D::StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly)
+StructuredGrid2D::StructuredGrid2D(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nBufferCells)
     :
       StructuredGrid2D()
 {
-    init(nCellsI, nCellsJ, std::make_pair(0., lx), std::make_pair(0., ly));
+    init(nCellsI, nCellsJ, lx, ly, nBufferCells);
 }
 
 StructuredGrid2D::StructuredGrid2D(const Input &input)
@@ -23,7 +23,8 @@ StructuredGrid2D::StructuredGrid2D(const Input &input)
           input.caseInput().get<Size>("Grid.nCellsX"),
           input.caseInput().get<Size>("Grid.nCellsY"),
           input.caseInput().get<Scalar>("Grid.width"),
-          input.caseInput().get<Scalar>("Grid.height")
+          input.caseInput().get<Scalar>("Grid.height"),
+          input.caseInput().get<int>("Grid.nBufferCells", 2)
           )
 {
 
@@ -37,7 +38,7 @@ void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, std::pair<Scalar, Scalar
     _yb = yb;
 
     Scalar dx = (_xb.second - _xb.first) / _nCellsI;
-    Scalar dy = (_xb.second - _xb.first) / _nCellsJ;
+    Scalar dy = (_yb.second - _yb.first) / _nCellsJ;
 
     _nodes.clear();
 
@@ -55,13 +56,17 @@ void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, std::pair<Scalar, Scalar
 
     for(int j = 0; j < _nCellsJ; ++j)
         for(int i = 0; i < nNodesI(); ++i)
+        {
             _ifaces.push_back(Face(*this, Coordinates::I, i, j));
+        }
 
     _jfaces.clear();
 
     for(int i = 0; i < _nCellsI; ++i)
         for(int j = 0; j < nNodesJ(); ++j)
+        {
             _jfaces.push_back(Face(*this, Coordinates::J, i, j));
+        }
 
     _faces.clear();
     for(const Face &f: _ifaces)
@@ -74,113 +79,60 @@ void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, std::pair<Scalar, Scalar
     _ownership.resize(_cells.size(), _comm->rank());
 }
 
-void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nBufferCells)
+void StructuredGrid2D::init(Size nCellsI, Size nCellsJ, Scalar lx, Scalar ly, int nbuff)
 {
-    Size nBlocks[2] = {2, 2};
-    Size localBlock[2] = {_comm->rank() % nBlocks[0], _comm->rank() / nBlocks[0]};
+    auto dim = computeBlockDims(false);
 
-    //- map global cell ids to the owning proc
+    _comm->printf("Grid partitioning dimensions (%d,%d).\n", (int)dim[0], (int)dim[1]);
+
     std::vector<int> ownership(nCellsI * nCellsJ);
+    std::array<Size, 2> irange = {0, 0}, jrange = {0, 0};
+    std::array<Size, 2> irangeLocal = {0, 0}, jrangeLocal = {0, 0};
 
-    auto getGlobalId = [nCellsI](Label i, Label j){ return j * nCellsI + i; };
+    Size qi = nCellsI / dim[0];
+    Size ri = nCellsI % dim[0];
+    Size qj = nCellsJ / dim[1];
+    Size rj = nCellsJ % dim[1];
 
-    std::vector<Size> nLocalCellsI = _comm->allGather(nCellsI / nBlocks[0] + (nCellsI % nBlocks[0] > localBlock[0] ? 1 : 0));
-    std::vector<Size> nLocalCellsJ = _comm->allGather(nCellsJ / nBlocks[1] + (nCellsJ % nBlocks[1] > localBlock[1] ? 1 : 0));
-
-    for(auto blockJ = 0; blockJ < nBlocks[1]; ++blockJ)
-        for(auto blockI = 0; blockI < nBlocks[0]; ++blockI)
+    for(auto blockJ = 0, proc = 0; blockJ < dim[1]; ++blockJ)
+        for(auto blockI = 0; blockI < dim[0]; ++blockI, ++proc)
         {
-            int proc = blockJ * nBlocks[0] + blockI;
+            irange[0] = blockI * qi + std::min(ri, (Size)blockI);
+            irange[1] = irange[0] + qi + (ri > blockI ? 1 : 0);
+            jrange[0] = blockJ * qj + std::min(rj, (Size)blockJ);
+            jrange[1] = jrange[0] + qj + (rj > blockJ ? 1 : 0);
 
-            std::pair<Label, Label> irange = std::make_pair(
-                        std::accumulate(nLocalCellsI.begin(), nLocalCellsI.begin() + proc, 0),
-                        std::accumulate(nLocalCellsI.begin(), nLocalCellsI.begin() + proc + 1, 0)
-                        );
+            for(auto j = jrange[0]; j < jrange[1]; ++j)
+                for(auto i = irange[0]; i < irange[1]; ++i)
+                    ownership[j * nCellsI + i] = proc;
 
-            std::pair<Label, Label> jrange = std::make_pair(
-                        std::accumulate(nLocalCellsJ.begin(), nLocalCellsJ.begin() + proc, 0),
-                        std::accumulate(nLocalCellsJ.begin(), nLocalCellsJ.begin() + proc + 1, 0)
-                        );
-
-            for(int j = jrange.first; j < jrange.second; ++j)
-                for(int i = irange.first; i < irange.second; ++i)
-                    ownership[getGlobalId(i, j)] = proc;
+            if(proc == _comm->rank())
+            {
+                irangeLocal[0] = std::max((int)irange[0] - nbuff, 0);
+                irangeLocal[1] = std::min((int)irange[1] + nbuff, (int)nCellsI);
+                jrangeLocal[0] = std::max((int)jrange[0] - nbuff, 0);
+                jrangeLocal[1] = std::min((int)jrange[1] + nbuff, (int)nCellsJ);
+            }
         }
 
-    Size ilower = std::accumulate(nLocalCellsI.begin(), nLocalCellsI.begin() + _comm->rank(), 0);
-    Size iupper = ilower + nLocalCellsI[_comm->rank()];
+    std::vector<int> localOwnership;
+    std::vector<Label> localGlobalIds;
 
-    Size jlower = std::accumulate(nLocalCellsJ.begin(), nLocalCellsJ.begin() + _comm->rank(), 0);
-    Size jupper = jlower + nLocalCellsJ[_comm->rank()];
-
-    ilower -= ilower > nBufferCells ? nBufferCells : ilower;
-    iupper += nCellsI > iupper + nBufferCells ? nBufferCells : (nCellsI - iupper);
-
-    jlower -= jlower > nBufferCells ? nBufferCells : jlower;
-    jupper += nCellsJ > jupper + nBufferCells ? nBufferCells : (nCellsJ - jupper);
+    for(auto j = jrangeLocal[0]; j < jrangeLocal[1]; ++j)
+        for(auto i = irangeLocal[0]; i < irangeLocal[1]; ++i)
+        {
+            localGlobalIds.emplace_back(j * nCellsI + i);
+            localOwnership.emplace_back(ownership[localGlobalIds.back()]);
+        }
 
     Scalar dx = lx / nCellsI;
     Scalar dy = ly / nCellsJ;
 
-    _nCellsI = iupper - ilower;
-    _nCellsJ = jupper - jlower;
-    _xb = std::make_pair(ilower * dx, iupper * dx);
-    _yb = std::make_pair(jlower * dy, jupper * dy);
+    auto xb = std::make_pair(dx * irangeLocal[0], dx * irangeLocal[1]);
+    auto yb = std::make_pair(dy * jrangeLocal[0], dy * jrangeLocal[1]);
 
-    init(_nCellsI, _nCellsJ, _xb, _yb);
-
-    _ownership.clear();
-    for(Cell &cell: _cells)
-    {
-        Label iglobal = cell.i() + ilower;
-        Label jglobal = cell.j() + jlower;
-
-        cell.setgid(getGlobalId(iglobal, jglobal));
-
-        _ownership.push_back(ownership[cell.gid()]);
-
-        if(_ownership.back() != _comm->rank())
-        {
-            _localCells.remove(cell);
-            _recvBuffers[_ownership.back()].add(cell);
-        }
-    }
-
-    std::unordered_map<Label, Label> globalToLocalIdMap;
-    for(const Cell &cell: _cells)
-        globalToLocalIdMap[cell.gid()] = cell.lid();
-
-    //- Send the correct recv order to neighbouring procs
-    std::vector<std::vector<Label>> recvOrders(_comm->nProcs());
-    for(int proc = 0; proc < _comm->nProcs(); ++proc)
-    {
-        recvOrders[proc].resize(_recvBuffers[proc].size());
-
-        std::transform(_recvBuffers[proc].begin(),
-                       _recvBuffers[proc].end(),
-                       recvOrders[proc].begin(),
-                       [](const Cell &c) { return c.gid(); });
-
-        _comm->isend(proc, recvOrders[proc], _comm->rank());
-    }
-
-    //- Initialize the send buffers
-    std::vector<Label> sendOrder;
-    for(int proc = 0; proc < _comm->nProcs(); ++proc)
-    {
-        //- Get the global ids
-        sendOrder.resize(_comm->probeSize<Label>(proc, proc));
-        _comm->recv(proc, sendOrder, proc);
-
-        //- map global ids to local ids
-        std::transform(sendOrder.begin(),
-                       sendOrder.end(),
-                       sendOrder.begin(),
-                       [&globalToLocalIdMap](Label gid) { return globalToLocalIdMap.at(gid); });
-
-        for(Label lid: sendOrder)
-            _sendBuffers[proc].add(_cells[lid]);
-    }
+    init(irangeLocal[1] - irangeLocal[0], jrangeLocal[1] - jrangeLocal[0], xb, yb);
+    initParallel(localOwnership, localGlobalIds);
 }
 
 const Cell &StructuredGrid2D::cell(const Cell &cell, Coordinates::Direction dir, int offset) const
@@ -241,4 +193,97 @@ Size StructuredGrid2D::maxInc(const Cell &cell, Coordinates::Direction dir) cons
     case Coordinates::J_NEG:
         return cell.j();
     }
+}
+
+std::array<Size, 2> StructuredGrid2D::computeBlockDims(bool stripPartitioning) const
+{
+    if(stripPartitioning)
+        return std::array<Size, 2>({(Size)_comm->nProcs(), 1});
+
+    Size i = 2, num = _comm->nProcs();
+
+    std::deque<Size> factors(1, 1);
+
+    while(i <= num)
+    {
+        if(num % i)
+            ++i;
+        else
+        {
+            factors.emplace_front(i);
+            num /= i;
+        }
+    }
+
+    while(factors.size() > 2)
+    {
+        std::sort(factors.begin(), factors.end());
+        factors[1] *= factors[0];
+        factors.pop_front();
+    }
+
+    std::array<Size, 2> result;
+    result[0] = factors[0];
+    result[1] = factors[1];
+    return result;
+}
+
+void StructuredGrid2D::initParallel(const std::vector<int> &ownership, const std::vector<Label> &gids)
+{
+    if(ownership.size() != _cells.size() || gids.size() != _cells.size())
+        throw Exception("StructuredGrid2D", "initParallel", "invalid partitioning.");
+
+    _ownership = ownership;
+
+    _sendBuffers.clear();
+    _recvBuffers.clear();
+    _sendBuffers.resize(_comm->nProcs());
+    _recvBuffers.resize(_comm->nProcs());
+
+    _globalToLocalIdMap.clear();
+    _globalToLocalIdMap.reserve(gids.size());
+
+    for(auto i = 0; i < _cells.size(); ++i)
+    {
+        _cells[i].setgid(gids[i]);
+        auto insert = _globalToLocalIdMap.emplace(_cells[i].gid(), _cells[i].lid());
+
+        if(!insert.second)
+            throw Exception("StructuredGrid2D", "initParallel", "duplicate global id.");
+
+        if(_ownership[i] >= _comm->nProcs())
+            throw Exception("StructuredGrid2D",
+                            "initParallel",
+                            "proc " + std::to_string(_ownership[i]) + " is greater than the max comm rank.");
+        else if(_ownership[i] != _comm->rank())
+        {
+            _localCells.remove(_cells[i]);
+            _recvBuffers[_ownership[i]].add(_cells[i]);
+        }
+    }
+
+    std::vector<std::vector<Label>> recvOrders(_comm->nProcs());
+    for(auto proc = 0; proc < _comm->nProcs(); ++proc)
+    {
+        for(const Cell &c: recvBuffer(proc))
+            recvOrders[proc].emplace_back(c.gid());
+
+        _comm->isend(proc, recvOrders[proc], _comm->rank());
+    }
+
+    std::vector<std::vector<Label>> sendOrders(_comm->nProcs());
+    for(auto proc = 0; proc < _comm->nProcs(); ++proc)
+    {
+        sendOrders[proc].resize(_comm->probeSize<Label>(proc, proc));
+        _comm->recv(proc, sendOrders[proc], proc);
+    }
+
+    _comm->waitAll();
+
+    for(int proc = 0; proc < _comm->nProcs(); ++proc)
+        for(Label gid: sendOrders[proc])
+        {
+            Label lid = _globalToLocalIdMap.at(gid);
+            _sendBuffers[proc].add(_cells[lid]);
+        }
 }

@@ -38,3 +38,8 @@ Scalar InteriorLink::distanceSqrWeight() const
     Scalar l2 = (face_.centroid() - cell_.centroid()).magSqr();
     return l2 / (l1 + l2);
 }
+
+Vector2D InteriorLink::polarOutwardNorm() const
+{
+    return face_.polarOutwardNorm(self_.centroid());
+}

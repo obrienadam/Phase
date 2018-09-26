@@ -20,13 +20,13 @@ void ScalarGradient::computeFaces()
     for (const Face &face: grid_->interiorFaces())
     {
         Vector2D rc = face.rCell().centroid() - face.lCell().centroid();
-        gradPhi(face) = (phi_(face.rCell()) - phi_(face.lCell())) * rc / dot(rc, rc);
+        gradPhi(face) = (phi_(face.rCell()) - phi_(face.lCell())) * rc / rc.magSqr();
     }
 
     for (const Face &face: grid_->boundaryFaces())
     {
         Vector2D rf = face.centroid() - face.lCell().centroid();
-        gradPhi(face) = (phi_(face) - phi_(face.lCell())) * rf / dot(rf, rf);
+        gradPhi(face) = (phi_(face) - phi_(face.lCell())) * rf / rf.magSqr();
     }
 }
 
@@ -129,34 +129,48 @@ void ScalarGradient::computeAxisymmetric(const CellGroup &cells,
                                          Method method)
 {
     computeFaces();
-    std::fill(this->begin(), this->end(), Vector2D(0., 0.));
-    VectorFiniteVolumeField &gradPhi = *this;
+    fill(Vector2D(0., 0.), cells);
 
-    switch (method)
+    for(const Cell &cell: cells)
     {
-        case FACE_TO_CELL:
-            for (const Cell &cell: cells)
-            {
-                Vector2D sum(0., 0.), tmp(0., 0.);
+        auto &v = (*this)(cell);
 
-                for (const InteriorLink &nb: cell.neighbours())
-                {
-                    Vector2D sf = nb.face().polarOutwardNorm(cell.centroid()).abs();
-                    tmp += pointwise(gradPhi(nb.face()), sf);
-                    sum += sf;
-                }
+        for(const InteriorLink &nb: cell.neighbours())
+            v += phi_(nb.face()) * nb.polarOutwardNorm();
 
-                for (const InteriorLink &bd: cell.neighbours())
-                {
-                    Vector2D sf = bd.face().polarOutwardNorm(cell.centroid()).abs();
-                    tmp += pointwise(gradPhi(bd.face()), sf);
-                    sum += sf;
-                }
+        for(const BoundaryLink &bd: cell.boundaries())
+            v += phi_(bd.face()) * bd.polarOutwardNorm();
 
-                gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
-            }
-            break;
-        case GREEN_GAUSS_CELL:
+        v -= phi_(cell) * Vector2D(cell.volume(), 0.);
+
+        v /= cell.polarVolume();
+    }
+
+//    switch (method)
+//    {
+//        case FACE_TO_CELL:
+//            for (const Cell &cell: cells)
+//            {
+//                Vector2D sum(0., 0.), tmp(0., 0.);
+
+//                for (const InteriorLink &nb: cell.neighbours())
+//                {
+//                    Vector2D sf = nb.face().polarOutwardNorm(cell.centroid()).abs();
+//                    tmp += pointwise(gradPhi(nb.face()), sf);
+//                    sum += sf;
+//                }
+
+//                for (const InteriorLink &bd: cell.neighbours())
+//                {
+//                    Vector2D sf = bd.face().polarOutwardNorm(cell.centroid()).abs();
+//                    tmp += pointwise(gradPhi(bd.face()), sf);
+//                    sum += sf;
+//                }
+
+//                gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
+//            }
+//            break;
+//        case GREEN_GAUSS_CELL:
 //            for (const Cell &cell: cells)
 //            {
 //                for (const InteriorLink &nb: cell.neighbours())
@@ -171,6 +185,6 @@ void ScalarGradient::computeAxisymmetric(const CellGroup &cells,
 //
 //                gradPhi(cell) /= cell.polarVolume();
 //            }
-            break;
-    }
+//            break;
+//    }
 }

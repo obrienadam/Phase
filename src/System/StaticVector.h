@@ -16,7 +16,17 @@ public:
 
     typedef typename std::array<T, N>::const_reverse_iterator const_reverse_iterator;
 
-    StaticVector() : _size(0) {}
+    StaticVector(std::size_t size = 0) : _size(size) {}
+
+    StaticVector(std::size_t size, const T &val) : _size(size)
+    { std::fill_n(_data.begin(), _size, val); }
+
+    //- Operators
+    T& operator[](std::size_t i)
+    { return _data[i]; }
+
+    const T& operator [](std::size_t i) const
+    { return _data[i]; }
 
     void push_back(const T& val)
     { *(_data.begin() + _size++) = val; }
@@ -53,6 +63,12 @@ public:
     { return _data.begin(); }
 
     iterator end()
+    { return _data.begin() + _size; }
+
+    const_iterator begin() const
+    { return _data.begin(); }
+
+    const_iterator end() const
     { return _data.begin() + _size; }
 
     reverse_iterator rbegin()

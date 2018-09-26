@@ -1,7 +1,7 @@
 #ifndef PHASE_TIME_DERIVATIVE_H
 #define PHASE_TIME_DERIVATIVE_H
 
-#include "FiniteVolumeEquation.h"
+#include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 
 namespace fv
 {
@@ -9,11 +9,12 @@ namespace fv
     FiniteVolumeEquation<T> ddt(Scalar rho, FiniteVolumeField<T>& field, Scalar timeStep)
     {
         FiniteVolumeEquation<T> eqn(field);
+        const FiniteVolumeField<T> &field0 = field.oldField(0);
 
         for (const Cell &cell: field.cells())
         {
             eqn.add(cell, cell, rho * cell.volume() / timeStep);
-            eqn.addSource(cell, -rho * cell.volume() * field(cell) / timeStep);
+            eqn.addSource(cell, -rho * cell.volume() * field0(cell) / timeStep);
         }
 
         return eqn;
@@ -23,13 +24,14 @@ namespace fv
     FiniteVolumeEquation<T> ddt(const ScalarFiniteVolumeField &rho, FiniteVolumeField<T> &field, Scalar timeStep)
     {
         const ScalarFiniteVolumeField &rho0 = rho.oldField(0);
+        const FiniteVolumeField<T> &field0 = field.oldField(0);
 
         FiniteVolumeEquation<T> eqn(field);
 
         for (const Cell &cell: field.cells())
         {
             eqn.add(cell, cell, rho(cell) * cell.volume() / timeStep);
-            eqn.addSource(cell, -rho0(cell) * cell.volume() * field(cell) / timeStep);
+            eqn.addSource(cell, -rho0(cell) * cell.volume() * field0(cell) / timeStep);
         }
 
         return eqn;
@@ -39,11 +41,12 @@ namespace fv
     FiniteVolumeEquation<T> ddt(FiniteVolumeField<T> &field, Scalar timeStep)
     {
         FiniteVolumeEquation<T> eqn(field);
+        const FiniteVolumeField<T> &field0 = field.oldField(0);
 
         for (const Cell &cell: field.cells())
         {
             eqn.add(cell, cell, cell.volume() / timeStep);
-            eqn.addSource(cell, -cell.volume() * field(cell) / timeStep);
+            eqn.addSource(cell, -cell.volume() * field0(cell) / timeStep);
         }
 
         return eqn;
@@ -53,11 +56,12 @@ namespace fv
     FiniteVolumeEquation<T> ddt(FiniteVolumeField<T> &field, Scalar timeStep, const CellGroup &cells)
     {
         FiniteVolumeEquation<T> eqn(field);
+        const FiniteVolumeField<T> &field0 = field.oldField(0);
 
         for (const Cell &cell: cells)
         {
             eqn.add(cell, cell, cell.volume() / timeStep);
-            eqn.addSource(cell, -cell.volume() * field(cell) / timeStep);
+            eqn.addSource(cell, -cell.volume() * field0(cell) / timeStep);
         }
 
         return eqn;

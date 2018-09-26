@@ -5,6 +5,12 @@
 #include <vector>
 #include <numeric>
 
+#include "2D/Geometry/Vector2D.h"
+#include "2D/Geometry/Tensor2D.h"
+
+#include "3D/Geometry/Point3D.h"
+#include "3D/Geometry/Tensor3D.h"
+
 class Communicator
 {
 public:
@@ -146,6 +152,14 @@ public:
     unsigned long sum(unsigned long val) const;
 
     double sum(double val) const;
+
+    Vector2D sum(const Vector2D &val) const;
+
+    Tensor2D sum(const Tensor2D &val) const;
+
+    Vector3D sum(const Vector3D &val) const;
+
+    Tensor3D sum(const Tensor3D &val) const;
 
     int min(int val) const;
 

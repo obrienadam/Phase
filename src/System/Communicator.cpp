@@ -23,8 +23,8 @@ void Communicator::finalize()
 }
 
 Communicator::Communicator(MPI_Comm comm)
-        :
-        comm_(comm)
+    :
+      comm_(comm)
 {
 
 }
@@ -120,6 +120,34 @@ double Communicator::sum(double val) const
 {
     double result;
     MPI_Allreduce(&val, &result, 1, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+Vector2D Communicator::sum(const Vector2D &val) const
+{
+    Vector2D result;
+    MPI_Allreduce(&val, &result, 2, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+Tensor2D Communicator::sum(const Tensor2D &val) const
+{
+    Tensor2D result;
+    MPI_Allreduce(&val, &result, 4, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+Vector3D Communicator::sum(const Vector3D &val) const
+{
+    Vector3D result;
+    MPI_Allreduce(&val, &result, 3, MPI_DOUBLE, MPI_SUM, comm_);
+    return result;
+}
+
+Tensor3D Communicator::sum(const Tensor3D &val) const
+{
+    Tensor3D result;
+    MPI_Allreduce(&val, &result, 9, MPI_DOUBLE, MPI_SUM, comm_);
     return result;
 }
 

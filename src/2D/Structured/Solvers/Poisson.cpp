@@ -5,7 +5,7 @@
 Poisson::Poisson(const Input &input, const std::shared_ptr<StructuredGrid2D> &grid)
     :
       Solver(input, grid),
-      _phi(addField<Scalar>("phi")),
+      _phi(addField<Scalar>("phi", input)),
       _phiEqn("phiEqn", _phi)
 {
     _gamma = input.caseInput().get<Scalar>("Properties.gamma", 1.);

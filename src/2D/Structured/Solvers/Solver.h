@@ -55,6 +55,9 @@ public:
     template<class T>
     Field<T> &addField(const std::string &name);
 
+    template<class T>
+    Field<T> &addField(const std::string &name, const Input &input);
+
 protected:
 
     struct Hash

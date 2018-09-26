@@ -3,7 +3,7 @@
 
 #include "FractionalStepDFIB.h"
 
-#include "Unstructured/FiniteVolume/Multiphase/CelesteImmersedBoundary.h"
+class CelesteImmersedBoundary;
 
 class FractionalStepDirectForcingMultiphase: public FractionalStepDFIB
 {

@@ -5,12 +5,12 @@
 #include "FiniteVolumeGrid2D.h"
 
 FiniteVolumeGrid2D::FiniteVolumeGrid2D()
-        :
-        interiorFaces_("InteriorFaces"),
-        boundaryFaces_("BoundaryFaces"),
-        localCells_("LocalCells"),
-        globalCells_("GlobalCells"),
-        comm_(std::make_shared<Communicator>())
+    :
+      interiorFaces_("InteriorFaces"),
+      boundaryFaces_("BoundaryFaces"),
+      localCells_("LocalCells"),
+      globalCells_("GlobalCells"),
+      comm_(std::make_shared<Communicator>())
 {
 
 }
@@ -19,8 +19,8 @@ FiniteVolumeGrid2D::FiniteVolumeGrid2D(const std::vector<Point2D> &nodes,
                                        const std::vector<Label> &cptr,
                                        const std::vector<Label> &cind,
                                        const Point2D &origin)
-        :
-        FiniteVolumeGrid2D()
+    :
+      FiniteVolumeGrid2D()
 {
     init(nodes, cptr, cind, origin);
 }
@@ -35,6 +35,7 @@ void FiniteVolumeGrid2D::init(const std::vector<Point2D> &nodes,
     for (const Point2D &node: nodes)
         nodes_.push_back(Node(node + origin, *this));
 
+    cells_.reserve(cptr.size() - 1); // very important, can break without reserve
     for (int i = 0; i < cptr.size() - 1; ++i)
         createCell(std::vector<Label>(cind.begin() + cptr[i], cind.begin() + cptr[i + 1]));
 
@@ -77,10 +78,10 @@ std::string FiniteVolumeGrid2D::info() const
     return "Finite volume grid info:\n"
            "------------------------\n"
            "Number of nodes: " + to_string(nodes_.size()) + "\n" +
-           "Number of cells total: " + to_string(cells_.size()) + "\n" +
-           "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n" +
-           "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n" +
-           "Number of faces total: " + to_string(faces_.size()) + "\n";
+            "Number of cells total: " + to_string(cells_.size()) + "\n" +
+            "Number of interior faces: " + to_string(interiorFaces_.size()) + "\n" +
+            "Number of boundary faces: " + to_string(boundaryFaces_.size()) + "\n" +
+            "Number of faces total: " + to_string(faces_.size()) + "\n";
 }
 
 //- Create grid entities
@@ -230,6 +231,7 @@ std::vector<Ref<const Node>> FiniteVolumeGrid2D::findNearestNodes(const Point2D 
 std::vector<int> FiniteVolumeGrid2D::eptr() const
 {
     std::vector<int> eptr(1, 0);
+    eptr.reserve(cells_.size() + 1);
 
     std::transform(cells_.begin(), cells_.end(), std::back_inserter(eptr), [](const Cell &cell)
     { return cell.nodes().size(); });
@@ -242,9 +244,11 @@ std::vector<int> FiniteVolumeGrid2D::eptr() const
 std::vector<int> FiniteVolumeGrid2D::eind() const
 {
     std::vector<int> eind;
+    eind.reserve(4 * cells_.size());
 
     for (const Cell &cell: cells_)
-        eind.insert(eind.end(), cell.nodeIds().begin(), cell.nodeIds().end());
+        std::transform(cell.nodes().begin(), cell.nodes().end(), std::back_inserter(eind),
+                       [](const Node &node) { return node.id(); });
 
     return eind;
 }
@@ -451,12 +455,12 @@ void FiniteVolumeGrid2D::init()
                     cell.addDiagonalLink(kCell);
             }
 
-//    //- Initialize the patch registry
-//    patchRegistry_.clear();
-//
-//    for (const auto &entry: patches_)
-//        for (const Face &face: entry.second)
-//            patchRegistry_[face.id()] = std::cref(entry.second);
+    //    //- Initialize the patch registry
+    //    patchRegistry_.clear();
+    //
+    //    for (const auto &entry: patches_)
+    //        for (const Face &face: entry.second)
+    //            patchRegistry_[face.id()] = std::cref(entry.second);
 
     //- Init the local and global cell groups
     localCells_.clear();

@@ -15,6 +15,8 @@ public:
 
     void zero();
 
+    void setIdentity(Size m);
+
     void init(const Scalar *begin, const Scalar *end);
 
     Size m() const
@@ -54,6 +56,8 @@ public:
 
     Matrix &invert();
 
+    Matrix &pinvert();
+
     Scalar norm(char type = 'I') const;
 
     Scalar cond(char type = 'I') const;
@@ -73,6 +77,8 @@ public:
     { return vals_.end(); }
 
 private:
+
+    static Matrix _tmp;
 
     Size m_, n_;
 

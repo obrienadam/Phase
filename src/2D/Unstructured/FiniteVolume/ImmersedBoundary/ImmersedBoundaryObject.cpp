@@ -29,6 +29,20 @@ void ImmersedBoundaryObject::setSolidCells(const CellGroup &solidCells)
     _solidCells = solidCells;
 }
 
+bool ImmersedBoundaryObject::addIbCell(const Cell &cell)
+{
+    if(_cells.add(cell))
+        return _ibCells.add(cell);
+    return false;
+}
+
+bool ImmersedBoundaryObject::addSolidCell(const Cell &cell)
+{
+    if(_cells.add(cell))
+        return _solidCells.add(cell);
+    return false;
+}
+
 void ImmersedBoundaryObject::clear()
 {
     _cells.clear();

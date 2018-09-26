@@ -40,6 +40,7 @@ Grid
 	; Rectilinear parameters
 	width 0.8
 	height 0.4
+        origin (0.1,0.1)
 }
 
 Viewer
