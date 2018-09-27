@@ -11,10 +11,11 @@ FractionalStepAxisymmetricDFIB::FractionalStepAxisymmetricDFIB(const Input &inpu
                                                                const std::shared_ptr<const FiniteVolumeGrid2D> &grid)
     :
       FractionalStepAxisymmetric(input, grid),
-      fib_(*addField<Vector2D>("fib", fluid_)),
-      fibEqn_(input, fib_, "fibEqn")
+      fib_(*addField<Vector2D>("fb", fluid_)),
+      fibEqn_(input, fib_, "fbEqn")
 {
     ib_ = std::make_shared<DirectForcingImmersedBoundary>(input, grid, fluid_);
+    addField<int>(ib_->cellStatus());
 
     for(auto &ibObj: *ib_)
     {
@@ -27,11 +28,7 @@ FractionalStepAxisymmetricDFIB::FractionalStepAxisymmetricDFIB(const Input &inpu
 
 Scalar FractionalStepAxisymmetricDFIB::solve(Scalar timeStep)
 {
-    grid_->comm().printf("Updating IB forces and positions...\n");
-    //ib_->applyHydrodynamicForce(rho_, mu_, u_, rho_ * p_, g_);
-    //ib_->applyHydrodynamicForce(rho_, fib_, g_);
-    //ib_->applyCollisionForce(true);
-
+    grid_->comm().printf("Updating IB positions...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
@@ -44,6 +41,11 @@ Scalar FractionalStepAxisymmetricDFIB::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     return 0.;
+}
+
+std::shared_ptr<const ImmersedBoundary> FractionalStepAxisymmetricDFIB::ib() const
+{
+    return ib_;
 }
 
 Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
@@ -61,15 +63,17 @@ Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
     u_.savePreviousIteration();
     uEqn_.solve();
 
-    fib_.fill(Vector2D(0., 0.), *fluid_);
     for(const Cell &c: *fluid_)
-    {
-        fib_(c) += (u_(c) - u_.prevIteration()(c)) / timeStep;
         u_(c) += timeStep * gradP_(c);
-    }
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();
+
+    fib_.fill(Vector2D(0., 0.), *fluid_);
+
+    for(const Cell &c: *fluid_)
+        fib_(c) += (u_(c) - u_.prevIteration()(c)) / timeStep;
+
 
     return error;
 }

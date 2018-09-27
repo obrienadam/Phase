@@ -126,7 +126,7 @@ double Communicator::sum(double val) const
 Vector2D Communicator::sum(const Vector2D &val) const
 {
     Vector2D result;
-    MPI_Allreduce(&val, &result, 2, MPI_DOUBLE, MPI_SUM, comm_);
+    MPI_Allreduce(&val.x, &result.x, 2, MPI_DOUBLE, MPI_SUM, comm_);
     return result;
 }
 

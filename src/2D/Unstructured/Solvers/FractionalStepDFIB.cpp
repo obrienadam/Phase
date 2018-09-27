@@ -30,7 +30,7 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     grid_->comm().printf("Updating IB forces and positions...\n");
     //ib_->applyHydrodynamicForce(rho_, mu_, u_, rho_ * p_, g_);
     ib_->applyHydrodynamicForce(rho_, fb_, g_);
-    ib_->applyCollisionForce(true);
+    //ib_->applyCollisionForce(true);
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
@@ -52,7 +52,7 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
             f -= rho_ * fb_(c) * c.volume();
         }
 
-        f = Vector2D(grid_->comm().val(f.x), grid_->comm().val(f.y));
+        f = grid_->comm().sum(f);
 
         if(grid_->comm().isMainProc())
         {
@@ -81,8 +81,8 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 2);
 
     //- explicit predictor
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::div2e(u_, u_, 0.5)
-             == fv::divSigma(mu_ / rho_, p_, u_, 0.));
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.)
+             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_);
@@ -92,8 +92,9 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     //    grid_->sendMessages(fb_);
 
     //- semi-implicit corrector
-    uEqn_ == fv::divSigma(mu_ / rho_, p_, u_, 0.5) - fv::divSigma(mu_ / rho_, p_, u_, 0.)
+    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
             + ib_->velocityBcs(u_, u_, timeStep);
+
     u_.savePreviousIteration();
     error = uEqn_.solve();
 
@@ -107,8 +108,7 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     grid_->sendMessages(fb_);
 
     for(const Cell &c: u_.cells())
-        for(const InteriorLink &nb: c.neighbours())
-            u_(c) += timeStep / c.volume() * p_(nb.face()) * nb.sf();
+        u_(c) += timeStep * gradP_(c);
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();

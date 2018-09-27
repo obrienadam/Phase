@@ -13,6 +13,8 @@ public:
 
     virtual Scalar solve(Scalar timeStep) override;
 
+    virtual std::shared_ptr<const ImmersedBoundary> ib() const override;
+
 protected:
 
     virtual Scalar solveUEqn(Scalar timeStep) override;

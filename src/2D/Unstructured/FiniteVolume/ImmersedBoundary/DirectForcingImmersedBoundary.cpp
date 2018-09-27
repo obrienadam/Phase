@@ -717,8 +717,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho, const Vec
 
         f = grid_->comm().sum(f);
         f += (ibObj->rho - rho) * g * ibObj->shape().area();
-
-        ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), f));
+        ibObj->applyForce(f);
     }
 }
 

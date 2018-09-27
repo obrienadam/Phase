@@ -14,11 +14,11 @@ FiniteVolumeEquation<T> div(const VectorFiniteVolumeField &u,
     const VectorFiniteVolumeField &u0 = u.oldField(0);
     const FiniteVolumeField<T> &phi0 = phi.oldField(0);
 
-    for (const Cell &cell: phi.grid()->cells())
+    for (const Cell &cell: phi.cells())
     {
         for (const InteriorLink &nb: cell.neighbours())
         {
-            Vector2D sf = nb.face().polarOutwardNorm(cell.centroid());
+            Vector2D sf = nb.polarOutwardNorm();
 
             Scalar flux = theta * dot(u(nb.face()), sf);
             Scalar flux0 = (1. - theta) * dot(u0(nb.face()), sf);
@@ -31,7 +31,7 @@ FiniteVolumeEquation<T> div(const VectorFiniteVolumeField &u,
 
         for (const BoundaryLink &bd: cell.boundaries())
         {
-            Vector2D sf = bd.face().polarOutwardNorm(cell.centroid());
+            Vector2D sf = bd.polarOutwardNorm();
             Scalar flux = theta * dot(u(bd.face()), sf);
             Scalar flux0 = (1. - theta) * dot(u0(bd.face()), sf);
 

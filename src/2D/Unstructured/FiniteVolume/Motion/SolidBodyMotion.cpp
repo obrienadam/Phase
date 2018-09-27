@@ -28,7 +28,9 @@ void SolidBodyMotion::update(Scalar timeStep)
 
     //- Update translational motion
     Vector2D acc0 = acc_;
-    force_ = constrainMotion_ ? ibObj->force() : dot(ibObj->force(), motionAxis_) * motionAxis_;
+
+    force_ = constrainMotion_ ? dot(ibObj->force(), motionAxis_) * motionAxis_ : ibObj->force();
+
     acc_ = force_ / ibObj->mass();
 
     Vector2D v0 = vel_;

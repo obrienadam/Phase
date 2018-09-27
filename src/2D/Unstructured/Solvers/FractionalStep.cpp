@@ -119,23 +119,8 @@ void FractionalStep::correctVelocity(Scalar timeStep)
 
     grid_->sendMessages(u_); //- Necessary
 
-    for (const Face &face: grid_->interiorFaces())
+    for (const Face &face: grid_->faces())
         u_(face) -= timeStep * gradP_(face);
-
-    for (const FaceGroup &patch: grid_->patches())
-        switch (u_.boundaryType(patch))
-        {
-        case VectorFiniteVolumeField::FIXED:
-            break;
-        case VectorFiniteVolumeField::NORMAL_GRADIENT:
-            for (const Face &face: patch)
-                u_(face) -= timeStep * gradP_(face);
-            break;
-        case VectorFiniteVolumeField::SYMMETRY:
-            for (const Face &face: patch)
-                u_(face) = u_(face.lCell()) - dot(u_(face.lCell()), face.norm()) * face.norm() / face.norm().magSqr();
-            break;
-        }
 }
 
 Scalar FractionalStep::maxDivergenceError()
