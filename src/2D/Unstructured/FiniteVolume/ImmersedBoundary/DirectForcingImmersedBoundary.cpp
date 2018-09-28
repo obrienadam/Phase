@@ -325,6 +325,54 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const 
     return u;
 }
 
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(u, 10);
+
+    for(const Cell& cell: grid_->localCells())
+    {
+        if(localIbCells_.isInSet(cell))
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+            auto beta = st.interpolationCoeffs(cell.centroid());
+            Scalar vol = cell.polarVolume();
+            int i = 0;
+            for(const Cell *cellPtr: st.cells())
+                eqn.add(cell, *cellPtr, rho(cell) * beta(0, i++) * vol / timeStep);
+
+            for(const auto &cmpt: st.compatPts())
+                eqn.addSource(cell, rho(cell) * beta(0, i++) * cmpt.velocity() * vol / timeStep);
+
+            for(const Face *facePtr: st.faces())
+                switch(u.boundaryType(*facePtr))
+                {
+                case VectorFiniteVolumeField::FIXED:
+                    eqn.addSource(cell, rho(cell) * beta(0, i++) * u(*facePtr) * vol / timeStep);
+                    break;
+                case VectorFiniteVolumeField::SYMMETRY:
+                {
+                    Vector2D n = facePtr->norm().unitVec();
+                    Vector2D t = n.tangentVec();
+                    Tensor2D tmp = outer(t, t);
+                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * tmp * vol / timeStep);
+                    break;
+                }
+                case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * vol / timeStep);
+                    break;
+                default:
+                    throw Exception("DirectForcingImmersedBoundary", "polarVelocityBcs", "grid boundary type not recognized.");
+                }
+
+            eqn.addSource(cell, -rho(cell) * uTilde(cell) * vol / timeStep);
+        }
+        else if (localSolidCells_.isInSet(cell))
+            eqn.addSource(cell, rho(cell) * (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+    }
+
+    return eqn;
+}
+
 void DirectForcingImmersedBoundary::applyHydrodynamicForce(Scalar rho,
                                                            Scalar mu,
                                                            const VectorFiniteVolumeField &u,

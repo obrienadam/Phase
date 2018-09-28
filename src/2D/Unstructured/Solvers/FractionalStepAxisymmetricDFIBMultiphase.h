@@ -9,7 +9,15 @@ public:
 
     FractionalStepAxisymmetricDFIBMultiphase(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
+    virtual void initialize() override;
+
+    virtual Scalar solve(Scalar timeStep) override;
+
 protected:
+
+    virtual Scalar solveGammaEqn(Scalar timeStep);
+
+    void updateProperties(Scalar timeStep);
 
     virtual Scalar solveUEqn(Scalar timeStep) override;
 
@@ -22,6 +30,10 @@ protected:
     Scalar rho1_, rho2_, mu1_, mu2_;
 
     ScalarFiniteVolumeField &gamma_, &rho_, &mu_;
+
+    VectorFiniteVolumeField &rhoU_, &fst_, &sg_;
+
+    ScalarGradient &gradGamma_;
 
     FiniteVolumeEquation<Scalar> gammaEqn_;
 };

@@ -20,4 +20,12 @@ void Input::parseInputFile()
     read_info(caseDirectory + "/postProcessing.info", postProcessingInput_);
 }
 
+boost::property_tree::ptree Input::read(const std::string &filename) const
+{
+    using namespace boost::property_tree;
+    ptree pt;
+    read_info(filename, pt);
+    return pt;
+}
+
 //- Private methods

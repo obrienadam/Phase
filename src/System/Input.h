@@ -27,6 +27,8 @@ public:
     const boost::property_tree::ptree &postProcessingInput() const
     { return postProcessingInput_; }
 
+    boost::property_tree::ptree read(const std::string &filename) const;
+
 private:
 
     boost::property_tree::ptree caseInput_;

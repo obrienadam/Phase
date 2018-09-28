@@ -21,7 +21,7 @@ LinearAlgebra
     preconditioner DIAGONAL
   }
 
-  fibEqn
+  fbEqn
   {
     lib eigen
   }

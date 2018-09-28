@@ -1,5 +1,4 @@
 #include <fstream>
-#include <boost/property_tree/info_parser.hpp>
 
 #include "FiniteVolume/Motion/TranslatingMotion.h"
 #include "FiniteVolume/Motion/OscillatingMotion.h"
@@ -166,10 +165,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
     if(ibInput)
     {
         std::string filename = ibInput.get().get<std::string>("filename");
-
-
-        boost::property_tree::ptree ptree;
-        boost::property_tree::read_info(filename, ptree);
+        boost::property_tree::ptree ptree = input.read(filename);
 
         for(const auto &ibObjInput: ptree)
         {

@@ -57,7 +57,7 @@ Scalar FractionalStepAxisymmetric::solvePEqn(Scalar timeStep)
     Scalar error = pEqn_.solve();
 
     grid_->sendMessages(p_);
-    p_.interpolateFaces();
+    p_.interpolateFaces(ScalarFiniteVolumeField::DISTANCE);
     gradP_.computeAxisymmetric(*fluid_);
 
     return error;

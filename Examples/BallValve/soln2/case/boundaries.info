@@ -12,7 +12,7 @@ Boundaries
 
     x+
     {
-      type normal_gradient
+      type symmetry
       value (0,0)
     }
 
@@ -39,7 +39,7 @@ Boundaries
 
     x+
     {
-      type fixed
+      type normal_gradient
       value 0
     }
 

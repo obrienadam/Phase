@@ -64,16 +64,15 @@ Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
     uEqn_.solve();
 
     for(const Cell &c: *fluid_)
+        fib_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+
+    grid_->sendMessages(fib_);
+
+    for(const Cell &c: *fluid_)
         u_(c) += timeStep * gradP_(c);
 
     grid_->sendMessages(u_);
     u_.interpolateFaces();
-
-    fib_.fill(Vector2D(0., 0.), *fluid_);
-
-    for(const Cell &c: *fluid_)
-        fib_(c) += (u_(c) - u_.prevIteration()(c)) / timeStep;
-
 
     return error;
 }
@@ -104,10 +103,11 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
                 Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
                 fw = (ibObj->rho - rho_) * vol * g_;
             }
+
+
+            std::cout << "Cd = " << 2. * fh.y / (rho_ * M_PI * std::pow(circ.radius(), 2)) << "\n";
         }
 
         ibObj->applyForce(fh + fw);
     }
-
-
 }

@@ -19,6 +19,19 @@ CelesteImmersedBoundary::CelesteImmersedBoundary(const Input &input,
                     "ImmersedBoundaries." + ibObj->name() + ".gamma.contactAngle",
                     90.) * M_PI / 180.;
     }
+
+    auto ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaryGeometryFile");
+
+    if(ibInput)
+    {
+        std::string filename = ibInput.get().get<std::string>("filename");
+        auto ptree = input.read(filename);
+
+        Scalar theta = ibInput.get().get<Scalar>("fields.gamma.contactAngle", 90.) * M_PI / 180.;
+
+        for(const auto &ibObjInput: ptree)
+            ibContactAngles_[ibObjInput.first] =  theta;
+    }
 }
 
 Scalar CelesteImmersedBoundary::theta(const ImmersedBoundaryObject &ibObj) const

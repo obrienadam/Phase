@@ -5,8 +5,8 @@
 #include "TrilinosBelosSparseMatrixSolver.h"
 
 TrilinosBelosSparseMatrixSolver::TrilinosBelosSparseMatrixSolver(const Communicator &comm)
-        :
-        TrilinosSparseMatrixSolver(comm)
+    :
+      TrilinosSparseMatrixSolver(comm)
 {
     typedef Belos::SolverFactory<Scalar, TpetraMultiVector, TpetraOperator> SolverFactory;
 
