@@ -21,8 +21,23 @@ public:
 
         void init();
 
-        const CellLink &link() const
-        { return *link_; }
+        bool isValid() const
+        { return ibObj_ && cellA_ && cellB_; }
+
+        const Cell &cellA() const
+        { return *cellA_; }
+
+        const Cell &cellB() const
+        { return *cellB_; }
+
+        Scalar theta() const
+        { return gamma_; }
+
+        Scalar alpha() const
+        { return gamma_; }
+
+        Scalar gamma() const
+        { return gamma_; }
 
         const StaticPolyLine2D<3>& cl() const
         { return cl_; }
@@ -33,12 +48,9 @@ public:
         Vector2D tcl() const
         { return (cl_[2] - cl_[0]).unitVec(); }
 
-        Scalar gamma() const
-        { return gamma_; }
-
         template<class T>
         T interpolate(const FiniteVolumeField<T> &field) const
-        { return link_->linearInterpolate(field, cl_[2]); }
+        { return alpha_ * field(*cellA_) + (1. - alpha_) * field(*cellB_); }
 
     protected:
 
@@ -46,23 +58,21 @@ public:
 
         static std::unordered_set<Label> cellIdSet_;
 
-        void init(const Ray2D &r, const ScalarFiniteVolumeField &gamma);
+        void init(const ScalarFiniteVolumeField &gamma);
 
         void init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma);
 
-        std::pair<StaticPolyLine2D<3>, const CellLink*> findIntersectingCellLink(const Ray2D &r, const ImmersedBoundaryObject &ibObj);
+        void findStencilCells(const Ray2D &r, int maxSearches = std::numeric_limits<int>::infinity());
 
-        const ImmersedBoundaryObject &ibObj_;
+        const ImmersedBoundaryObject *ibObj_;
 
-        const CellLink* link_;
+        const Cell *cellA_, *cellB_;
 
-        Scalar theta_;
-
-        Scalar gamma_;
+        Scalar theta_, alpha_, gamma_;
 
         StaticPolyLine2D<3> cl_;
 
-        Vector2D ncl_;
+        Vector2D ns_, ncl_;
     };
 
     CelesteImmersedBoundary(const Input &input,

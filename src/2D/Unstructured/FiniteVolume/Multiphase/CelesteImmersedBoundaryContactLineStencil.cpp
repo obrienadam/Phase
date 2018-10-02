@@ -11,95 +11,92 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBo
                                                                 Scalar theta,
                                                                 const ScalarFiniteVolumeField &gamma)
     :
-      ibObj_(ibObj),
-      link_(nullptr),
+      ibObj_(&ibObj),
+      cellA_(nullptr),
+      cellB_(nullptr),
       theta_(theta)
 {
-    Vector2D ns = -ibObj_.nearestEdgeUnitNormal(pt);
+    cl_[0] = pt;
+    ns_ = -ibObj_->nearestEdgeUnitNormal(cl_[0]);
 
     if(theta_ == M_PI_2)
-        init(Ray2D(pt, ns), gamma);
+        init(gamma);
     else
-        init(Ray2D(pt, ns.rotate(M_PI_2 - theta)), Ray2D(pt, theta_ - M_PI_2), gamma);
+        init(Ray2D(pt, ns_.rotate(M_PI_2 - theta_)), Ray2D(pt, ns_.rotate(theta_ - M_PI_2)), gamma);
 }
 
-void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r, const ScalarFiniteVolumeField &gamma)
+void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeField &gamma)
 {
-    auto l = findIntersectingCellLink(r, ibObj_);
+    findStencilCells(Ray2D(cl_[0], ns_), 500);
 
-    if(!l.second)
-        return;
+    if(!isValid())
+        throw Exception("CelesteImmersedBoundary::ContactLineStencil", "init", "failed to find any suitable stencil.");
 
-    cl_ = l.first;
-    link_ = l.second;
+    gamma_ = interpolate(gamma);
 
-    gamma_ = link_->linearInterpolate(gamma, l.first[2]);
+    Vector2D nl = (cellB_->centroid() - cellA_->centroid()).unitVec();
+    nl = gamma(*cellA_) >= gamma(*cellB_) ? nl : -nl;
 
-    Vector2D nl = link_->rc().unitVec();
-    nl = gamma(link_->self()) >= gamma(link_->cell()) ? nl : -nl;
-
-    Vector2D ncl =r.r().rotate(M_PI_2);
-    ncl_ = (dot(ncl, nl) * ncl).unitVec();
+    ncl_ = ns_.rotate(M_PI_2);
+    ncl_ = (dot(ncl_, nl) * ncl_).unitVec();
 }
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)
 {
-    auto l1 = findIntersectingCellLink(r1, ibObj_);
-    auto l2 = findIntersectingCellLink(r2, ibObj_);
+    findStencilCells(r1, 500);
+    ContactLineStencil c1 = *this;
 
-    if(!l1.second || !l2.second)
+    findStencilCells(r2, 500);
+    ContactLineStencil c2 = *this;
+
+    if(c1.isValid() && c2.isValid())
     {
-        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
-                        "ContactLineStencil",
-                        "no gridline intersection found.");
-    }
+        Scalar g1 = c1.interpolate(gamma);
+        Scalar g2 = c2.interpolate(gamma);
 
-    Scalar g1 = l1.second->linearInterpolate(gamma, l1.first[2]);
-    Scalar g2 = l2.second->linearInterpolate(gamma, l2.first[2]);
-
-    if(theta_ < M_PI_2 && g1 > g2 || theta_ > M_PI_2 && g1 < g2)
-    {
-        link_ = l1.second;
-        cl_ = l1.first;
-        ncl_ = -ibObj_.nearestEdgeUnitNormal(cl_[1]).rotate(-theta_);
-        gamma_ = g1;
+        if(theta_ < M_PI_2 && g1 > g2 || theta_ > M_PI_2 && g1 < g2)
+        {
+            *this = c1;
+            gamma_ = g1;
+            //ncl_ = -ibObj_->nearestEdgeUnitNormal(cl_[1]).rotate(-theta_);
+            ncl_ = ns_.rotate(-theta_);
+        }
+        else
+        {
+            *this = c2;
+            gamma_ = g2;
+            //ncl_ = -ibObj_->nearestEdgeUnitNormal(cl_[1]).rotate(theta_);
+            ncl_ = ns_.rotate(theta_);
+        }
     }
     else
-    {
-        link_ = l2.second;
-        cl_ = l2.first;
-        ncl_ = -ibObj_.nearestEdgeUnitNormal(cl_[1]).rotate(theta_);
-        gamma_ = g2;
-    }
-
-    //    Scalar dg = gamma(link_->cell()) - gamma(link_->self());
-    //    if(dot(dg * link_->rCellVec(), ncl_) > 0.)
-    //        ncl_ = -ncl_;
+        init(gamma);
 }
 
-std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
-                                                                                                                       const ImmersedBoundaryObject &ibObj)
+void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &r,
+                                                                   int maxSearches)
 {
-    auto intersections = ibObj.shape().intersections(r);
+    auto intersections = ibObj_->shape().intersections(r);
 
-    if(intersections.size() < 1)
-        intersections.push_back(ibObj.nearestIntersect(r.x0()));
+    if(intersections.empty())
+        intersections.emplace_back(r.x0());
 
-    //    if(intersections.size() != 1)
-    //        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
-    //                        "findIntersectingCellLink",
-    //                        "contact line does not intersect boundary.");
+    if(intersections.empty())
+        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+                        "findStencilCells",
+                        "contact line does not intersect boundary.");
 
     Vector2D bp = intersections.front();
 
-    cellQueue_.push(std::cref(ibObj.ibCells().nearestItem(bp)));
+    cellQueue_.push(std::cref(ibObj_->ibCells().nearestItem(bp)));
     cellIdSet_.insert(cellQueue_.back().get().id());
 
-    const CellLink *link = nullptr;
     Scalar minDistSqr;
-    StaticPolyLine2D<3> cl;
-
     bool addToQueue = true;
+    bool foundIntersection = false;
+
+    cellA_ = nullptr;
+    cellB_ = nullptr;
 
     while(!cellQueue_.empty())
     {
@@ -114,7 +111,7 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
                 cellIdSet_.insert(nb.cell().id());
             }
 
-            if(ibObj.isInIb(cell) || ibObj.isInIb(nb.cell()))
+            if(ibObj_->isInIb(cell) || ibObj_->isInIb(nb.cell()))
                 continue;
 
             LineSegment2D ln = LineSegment2D(cell.centroid(), nb.cell().centroid());
@@ -124,11 +121,15 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
             {
                 Scalar distSqr = (xc.first - r.x0()).magSqr();
 
-                if(!link || distSqr < minDistSqr)
+                if(!foundIntersection || distSqr < minDistSqr)
                 {
+                    foundIntersection = true;
                     minDistSqr = distSqr;
-                    link = &nb;
-                    cl = {
+
+                    cellA_ = &nb.self();
+                    cellB_ = &nb.cell();
+
+                    cl_ = {
                         r.x0(),
                         bp,
                         xc.first
@@ -137,10 +138,15 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
             }
         }
 
-        addToQueue = !link;
+        addToQueue = !foundIntersection && cellIdSet_.size() < maxSearches;
+    }
+
+    if(foundIntersection)
+    {
+        Scalar l1 = (cl_[2] - cellA_->centroid()).mag();
+        Scalar l2 = (cl_[2] - cellB_->centroid()).mag();
+        alpha_ = l2 / (l1 + l2);
     }
 
     cellIdSet_.clear();
-
-    return std::make_pair(cl, link);
 }

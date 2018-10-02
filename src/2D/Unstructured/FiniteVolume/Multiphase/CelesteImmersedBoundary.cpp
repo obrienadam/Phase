@@ -88,11 +88,11 @@ FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFinit
                                           theta,
                                           gamma);
 
-                    Scalar alpha = st.link().alpha(st.cl()[2]);
+                    Scalar alpha = st.alpha();
 
                     //- Add a source
-                    eqn.add(cell, st.link().self(), alpha * cell.volume() / timeStep);
-                    eqn.add(cell, st.link().cell(), (1. - alpha) * cell.volume() / timeStep);
+                    eqn.add(cell, st.cellA(), alpha * cell.volume() / timeStep);
+                    eqn.add(cell, st.cellB(), (1. - alpha) * cell.volume() / timeStep);
                     eqn.add(cell, cell, -cell.volume() / timeStep);
                 }
             }

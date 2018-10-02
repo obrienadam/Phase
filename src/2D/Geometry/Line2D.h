@@ -1,5 +1,5 @@
-#ifndef LINE_2D_H
-#define LINE_2D_H
+#ifndef PHASE_LINE_2D_H
+#define PHASE_LINE_2D_H
 
 #include "Vector2D.h"
 #include "Point2D.h"
