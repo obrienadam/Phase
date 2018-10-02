@@ -13,7 +13,7 @@ class FiniteVolumeField : public Field<T>
 public:
     enum BoundaryType
     {
-        FIXED, NORMAL_GRADIENT, SYMMETRY, OUTFLOW
+        FIXED, NORMAL_GRADIENT, SYMMETRY, OUTFLOW, PARTIAL_SLIP
     };
 
     enum InterpolationType
@@ -94,6 +94,10 @@ public:
                     const FiniteVolumeField<Scalar> &faceWeight,
                     const CellGroup &cells);
 
+    void faceToCellAxisymmetric(const CellGroup &cells);
+
+    void faceToCellAxisymmetric(const FiniteVolumeField<Scalar> &cw, const FiniteVolumeField<Scalar> &fw, const CellGroup &cells);
+
     //- Boundaries
     void copyBoundaryTypes(const FiniteVolumeField &other);
 
@@ -103,10 +107,12 @@ public:
 
     T boundaryRefValue(const FaceGroup &patch) const;
 
+    T boundaryRefValue(const Face &face) const;
+
     template<class TFunc>
     void interpolateFaces(const TFunc &alpha);
 
-    void interpolateFaces(InterpolationType type = VOLUME);
+    void interpolateFaces(InterpolationType type = DISTANCE);
 
     void setBoundaryFaces();
 
@@ -189,6 +195,10 @@ public:
     const FiniteVolumeField &prevIteration() const
     { return *previousIteration_; }
 
+    //- Parallel
+
+    void sendMessages();
+
     //- Operators
 
     FiniteVolumeField &operator+=(const FiniteVolumeField &rhs);
@@ -214,6 +224,9 @@ public:
 protected:
 
     typedef std::pair<Scalar, FiniteVolumeField<T>> PreviousField;
+
+    //- Parallel
+    static std::vector<std::vector<T>> sendBuffers_, recvBuffers_;
 
     void setBoundaryTypes(const Input &input);
 

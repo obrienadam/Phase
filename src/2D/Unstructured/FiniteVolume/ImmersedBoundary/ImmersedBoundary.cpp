@@ -165,9 +165,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
     if(ibInput)
     {
         std::string filename = ibInput.get().get<std::string>("filename");
-        boost::property_tree::ptree ptree = input.read(filename);
 
-        for(const auto &ibObjInput: ptree)
+        for(const auto &ibObjInput: input.read(filename))
         {
             std::string name = ibObjInput.first;
             auto ibObj = std::make_shared<ImmersedBoundaryObject>(name);

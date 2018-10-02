@@ -43,6 +43,18 @@ FiniteVolumeEquation<Vector2D> laplacian(Scalar gamma, VectorFiniteVolumeField &
             }
                 break;
 
+            case VectorFiniteVolumeField::PARTIAL_SLIP:
+            {
+                Vector2D tw = bd.outwardNorm().tangentVec().unitVec();
+                Scalar lambda = phi.boundaryRefValue(bd.face()).x;
+
+                Scalar a = lambda != 0. ? lambda * coeff / (lambda * coeff - 1.) : 0.;
+
+                eqn.add(cell, cell, theta * -coeff);
+                eqn.add(cell, cell, theta * a * coeff * outer(tw, tw));
+                eqn.addSource(cell, (1. - theta) * coeff * (a * dot(phi0(cell), tw) * tw - phi0(cell)));
+            }
+
             default:
                 throw Exception("fv", "laplacian<Vector2D>", "unrecognized or unspecified boundary type.");
             }

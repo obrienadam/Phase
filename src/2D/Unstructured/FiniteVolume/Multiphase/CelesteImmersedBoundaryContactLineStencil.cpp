@@ -16,10 +16,30 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBo
       theta_(theta)
 {
     Vector2D ns = -ibObj_.nearestEdgeUnitNormal(pt);
-    Ray2D r1 = Ray2D(pt, ns.rotate(M_PI_2 - theta_));
-    Ray2D r2 = Ray2D(pt, ns.rotate(theta_ - M_PI_2));
 
-    init(r1, r2, gamma);
+    if(theta_ == M_PI_2)
+        init(Ray2D(pt, ns), gamma);
+    else
+        init(Ray2D(pt, ns.rotate(M_PI_2 - theta)), Ray2D(pt, theta_ - M_PI_2), gamma);
+}
+
+void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r, const ScalarFiniteVolumeField &gamma)
+{
+    auto l = findIntersectingCellLink(r, ibObj_);
+
+    if(!l.second)
+        return;
+
+    cl_ = l.first;
+    link_ = l.second;
+
+    gamma_ = link_->linearInterpolate(gamma, l.first[2]);
+
+    Vector2D nl = link_->rc().unitVec();
+    nl = gamma(link_->self()) >= gamma(link_->cell()) ? nl : -nl;
+
+    Vector2D ncl =r.r().rotate(M_PI_2);
+    ncl_ = (dot(ncl, nl) * ncl).unitVec();
 }
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)
@@ -52,9 +72,9 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
         gamma_ = g2;
     }
 
-//    Scalar dg = gamma(link_->cell()) - gamma(link_->self());
-//    if(dot(dg * link_->rCellVec(), ncl_) > 0.)
-//        ncl_ = -ncl_;
+    //    Scalar dg = gamma(link_->cell()) - gamma(link_->self());
+    //    if(dot(dg * link_->rCellVec(), ncl_) > 0.)
+    //        ncl_ = -ncl_;
 }
 
 std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::ContactLineStencil::findIntersectingCellLink(const Ray2D &r,
@@ -65,10 +85,10 @@ std::pair<StaticPolyLine2D<3>, const CellLink *> CelesteImmersedBoundary::Contac
     if(intersections.size() < 1)
         intersections.push_back(ibObj.nearestIntersect(r.x0()));
 
-//    if(intersections.size() != 1)
-//        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
-//                        "findIntersectingCellLink",
-//                        "contact line does not intersect boundary.");
+    //    if(intersections.size() != 1)
+    //        throw Exception("CelesteImmersedBoundary::ContactLineStencil",
+    //                        "findIntersectingCellLink",
+    //                        "contact line does not intersect boundary.");
 
     Vector2D bp = intersections.front();
 

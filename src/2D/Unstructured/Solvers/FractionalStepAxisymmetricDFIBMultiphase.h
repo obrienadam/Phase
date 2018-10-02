@@ -1,6 +1,8 @@
 #ifndef PHASE_FRACTIONAL_STEP_AXISYMMETRIC_DFIB_MULTIPHASE_H
 #define PHASE_FRACTIONAL_STEP_AXISYMMETRIC_DFIB_MULTIPHASE_H
 
+#include "FiniteVolume/Multiphase/CelesteAxisymmetricImmersedBoundary.h"
+
 #include "FractionalStepAxisymmetricDFIB.h"
 
 class FractionalStepAxisymmetricDFIBMultiphase: public FractionalStepAxisymmetricDFIB
@@ -29,11 +31,13 @@ protected:
 
     Scalar rho1_, rho2_, mu1_, mu2_;
 
-    ScalarFiniteVolumeField &gamma_, &rho_, &mu_;
+    ScalarFiniteVolumeField &gamma_, &gammaSrc_, &rho_, &mu_;
 
-    VectorFiniteVolumeField &rhoU_, &fst_, &sg_;
+    VectorFiniteVolumeField &rhoU_, &sg_;
 
-    ScalarGradient &gradGamma_;
+    ScalarGradient &gradGamma_, &gradRho_;
+
+    CelesteAxisymmetricImmersedBoundary fst_;
 
     FiniteVolumeEquation<Scalar> gammaEqn_;
 };

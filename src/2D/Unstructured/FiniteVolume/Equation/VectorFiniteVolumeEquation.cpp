@@ -37,6 +37,13 @@ void FiniteVolumeEquation<Vector2D>::add(const Cell &cell, const Cell &nb, Scala
 }
 
 template<>
+void FiniteVolumeEquation<Vector2D>::scale(const Cell &cell, Scalar val)
+{
+    CrsEquation::scaleRow(field_.indexMap()->local(cell, 0), val);
+    CrsEquation::scaleRow(field_.indexMap()->local(cell, 1), val);
+}
+
+template<>
 template<>
 void FiniteVolumeEquation<Vector2D>::add(const Cell &cell, const Cell &nb, const Vector2D &val)
 {
@@ -71,18 +78,6 @@ void FiniteVolumeEquation<Vector2D>::add(const Cell &cell, const Cell &nb, const
     addCoeff(field_.indexMap()->local(cell, 1),
              field_.indexMap()->global(nb, 1),
              val.yy);
-}
-
-template<>
-void FiniteVolumeEquation<Vector2D>::addCoupling(const Cell &cell, const Cell &nb, const Vector2D &val)
-{
-    addCoeff(field_.indexMap()->local(cell, 0),
-             field_.indexMap()->global(nb, 1),
-             val.y);
-
-    addCoeff(field_.indexMap()->local(cell, 1),
-             field_.indexMap()->global(nb, 0),
-             val.x);
 }
 
 template<>
@@ -187,4 +182,14 @@ template<>
 Size FiniteVolumeEquation<Vector2D>::getRank() const
 {
     return 2 * field_.grid()->localCells().size();
+}
+
+//- Functions
+template<>
+FiniteVolumeEquation<Vector2D> operator * (const ScalarFiniteVolumeField &lhs, FiniteVolumeEquation<Vector2D> rhs)
+{
+    for(const Cell &cell: lhs.cells())
+        rhs.scale(cell, lhs(cell));
+
+    return rhs;
 }

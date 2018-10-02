@@ -45,6 +45,8 @@ public:
 
     void setCoeff(Index localRow, Index globalCol, Scalar val);
 
+    void scaleRow(Index localRow, Scalar val);
+
     void addRhs(Index localRow, Scalar val)
     { rhs_(localRow) += val; }
 

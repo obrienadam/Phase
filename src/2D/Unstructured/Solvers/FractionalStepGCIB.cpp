@@ -48,7 +48,8 @@ Scalar FractionalStepGCIB::solvePEqn(Scalar timeStep)
     pEqn_ = (fv::laplacian(timeStep / rho_, p_) + ib_.bcs(p_) == src::div(u_));
 
     Scalar error = pEqn_.solve();
-    grid_->sendMessages(p_);
+    p_.sendMessages();
+    p_.setBoundaryFaces();
 
     //- Gradient
     p_.setBoundaryFaces();

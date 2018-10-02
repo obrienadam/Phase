@@ -22,7 +22,7 @@ public:
 
     void computeAxisymmetric(const CellGroup &cells);
 
-    void computeAxisymmetric(const ScalarFiniteVolumeField &w, const CellGroup &cells);
+    void computeAxisymmetric(const ScalarFiniteVolumeField &cw, const ScalarFiniteVolumeField &fw, const CellGroup &cells);
 
 private:
 

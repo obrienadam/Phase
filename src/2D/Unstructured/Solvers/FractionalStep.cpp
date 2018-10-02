@@ -11,6 +11,7 @@ FractionalStep::FractionalStep(const Input &input, const std::shared_ptr<const F
       fluid_(std::make_shared<CellGroup>("fluid")),
       u_(*addField<Vector2D>(input, "u", fluid_)),
       p_(*addField<Scalar>(input, "p", fluid_)),
+      co_(*addField<Scalar>(input, "co", fluid_)),
       gradP_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(p_, fluid_)))),
       gradU_(*std::static_pointer_cast<JacobianField>(addField<Tensor2D>(std::make_shared<JacobianField>(u_, fluid_)))),
       uEqn_(input, u_, "uEqn"),
@@ -62,6 +63,7 @@ Scalar FractionalStep::maxCourantNumber(Scalar timeStep) const
             co += std::max(dot(u_(bd.face()), bd.outwardNorm()), 0.);
 
         co *= timeStep / cell.volume();
+        co_(cell) = co;
         maxCo = std::max(co, maxCo);
     }
 
@@ -104,9 +106,9 @@ Scalar FractionalStep::solvePEqn(Scalar timeStep)
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p_);
+    p_.setBoundaryFaces();
 
     //- Gradient
-    p_.setBoundaryFaces();
     gradP_.compute(*fluid_);
 
     return error;

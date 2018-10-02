@@ -39,6 +39,7 @@ Scalar FractionalStepELIB::solvePEqn(Scalar timeStep)
 
     Scalar error = pEqn_.solve();
     grid_->sendMessages(p_);
+    p_.setBoundaryFaces();
 
     //- Gradient
     p_.setBoundaryFaces();

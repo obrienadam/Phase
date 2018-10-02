@@ -25,11 +25,9 @@ CelesteImmersedBoundary::CelesteImmersedBoundary(const Input &input,
     if(ibInput)
     {
         std::string filename = ibInput.get().get<std::string>("filename");
-        auto ptree = input.read(filename);
-
         Scalar theta = ibInput.get().get<Scalar>("fields.gamma.contactAngle", 90.) * M_PI / 180.;
 
-        for(const auto &ibObjInput: ptree)
+        for(const auto &ibObjInput: input.read(filename))
             ibContactAngles_[ibObjInput.first] =  theta;
     }
 }
@@ -58,6 +56,16 @@ void CelesteImmersedBoundary::computeContactLineExtension(ScalarFiniteVolumeFiel
                     gamma(cell) = st.gamma();
                 }
             }
+}
+
+CelesteImmersedBoundary::ContactLineStencil CelesteImmersedBoundary::contactLineStencil(const Point2D &xc, const ScalarFiniteVolumeField &gamma) const
+{
+    auto ibObj = ib_.lock()->ibObj(xc);
+
+    if(!ibObj)
+        throw Exception("CelesteImmersedBoundary", "contactLineStencil", "no suitable ib found.");
+
+    return ContactLineStencil(*ibObj, xc, theta(*ibObj), gamma);
 }
 
 FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const

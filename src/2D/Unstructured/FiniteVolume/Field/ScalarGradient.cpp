@@ -130,39 +130,61 @@ void ScalarGradient::computeAxisymmetric(const CellGroup &cells)
     computeFaces();
     fill(Vector2D(0., 0.), cells);
 
-    for(const Cell &cell: cells)
+    auto &gradPhi = *this;
+
+    for (const Cell &cell: cells)
     {
-        auto &v = (*this)(cell);
+        Vector2D sum(0., 0.), tmp(0., 0.);
 
-        for(const InteriorLink &nb: cell.neighbours())
-            v += phi_(nb.face()) * nb.polarOutwardNorm();
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            Vector2D sf = nb.polarOutwardNorm().abs();
+            tmp += pointwise(gradPhi(nb.face()), sf);
+            sum += sf;
+        }
 
-        for(const BoundaryLink &bd: cell.boundaries())
-            v += phi_(bd.face()) * bd.polarOutwardNorm();
+        for (const InteriorLink &bd: cell.neighbours())
+        {
+            Vector2D sf = bd.polarOutwardNorm().abs();
+            tmp += pointwise(gradPhi(bd.face()), sf);
+            sum += sf;
+        }
 
-        v -= phi_(cell) * Vector2D(cell.volume(), 0.);
+        //sum += Vector2D(std::abs(cell.volume()), 0.);
 
-        v /= cell.polarVolume();
+        gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }
 }
 
-void ScalarGradient::computeAxisymmetric(const ScalarFiniteVolumeField &w, const CellGroup &cells)
+void ScalarGradient::computeAxisymmetric(const ScalarFiniteVolumeField &cw,
+                                         const ScalarFiniteVolumeField &fw,
+                                         const CellGroup &cells)
 {
     computeFaces();
     fill(Vector2D(0., 0.), cells);
 
-    for(const Cell &cell: cells)
+    auto &gradPhi = *this;
+
+    for (const Cell &cell: cells)
     {
-        auto &v = (*this)(cell);
+        Vector2D sum(0., 0.), tmp(0., 0.);
 
-        for(const InteriorLink &nb: cell.neighbours())
-            v += phi_(nb.face()) / w(nb.face()) * nb.polarOutwardNorm();
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            Vector2D sf = nb.polarOutwardNorm().abs();
+            tmp += pointwise(gradPhi(nb.face()) / fw(nb.face()), sf);
+            sum += sf;
+        }
 
-        for(const BoundaryLink &bd: cell.boundaries())
-            v += phi_(bd.face()) / w(bd.face()) * bd.polarOutwardNorm();
+        for (const InteriorLink &bd: cell.neighbours())
+        {
+            Vector2D sf = bd.polarOutwardNorm().abs();
+            tmp += pointwise(gradPhi(bd.face()) / fw(bd.face()), sf);
+            sum += sf;
+        }
 
-        v -= phi_(cell) / w(cell) * Vector2D(cell.volume(), 0.);
+        //sum += Vector2D(std::abs(cell.volume()), 0.);
 
-        v *= w(cell) / cell.polarVolume();
+        gradPhi(cell) = cw(cell) * Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }
 }

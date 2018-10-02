@@ -178,6 +178,14 @@ void CrsEquation::setCoeff(Index localRow, Index globalCol, Scalar val)
                    rowPtr_.begin() + localRow + 1, [](Index i) { return i + 1; });
 }
 
+void CrsEquation::scaleRow(Index localRow, Scalar val)
+{
+    for(auto j = rowPtr_[localRow]; j < rowPtr_[localRow + 1]; ++j)
+        vals_[j] *= val;
+
+    rhs_(localRow) *= val;
+}
+
 Scalar CrsEquation::coeff(Index localRow, Index globalCol) const
 {
     for(auto j = rowPtr_[localRow]; j < rowPtr_[localRow + 1]; ++j)

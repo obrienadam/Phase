@@ -41,7 +41,7 @@ Scalar FractionalStepBoussinesq::solveUEqn(Scalar timeStep)
     for (const Cell &cell: grid_->localCells())
         u_(cell) += timeStep / rho_ * gradP_(cell);
 
-    grid_->sendMessages(u_);
+    u_.sendMessages();
     u_.interpolateFaces();
 
     return error;
@@ -56,7 +56,7 @@ Scalar FractionalStepBoussinesq::solveTEqn(Scalar timeStep)
 
     Scalar error = TEqn_.solve();
 
-    grid_->sendMessages(T);
+    T.sendMessages();
     T.interpolateFaces();
 
     return error;

@@ -7,10 +7,21 @@ SurfaceTensionForce::SmoothingKernel::SmoothingKernel(const Cell &cell, Scalar e
       type_(type)
 {
     kCells_ = cell_.grid().globalCells().itemsWithin(Circle(cell_.centroid(), eps));
+    setAxisymmetric(false);
+}
+
+void SurfaceTensionForce::SmoothingKernel::setAxisymmetric(bool axisymmetric)
+{
+    axisymmetric_ = axisymmetric;
 
     A_ = 0.;
-    for(const Cell &kCell: kCells_)
-        A_ += kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.volume();
+
+    if(axisymmetric_)
+        for(const Cell &kCell: kCells_)
+            A_ += kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.polarVolume();
+    else
+        for(const Cell &kCell: kCells_)
+            A_ += kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.volume();
 
     A_ = 1. / A_;
 }
@@ -19,8 +30,12 @@ Scalar SurfaceTensionForce::SmoothingKernel::eval(const ScalarFiniteVolumeField 
 {
     Scalar phiTilde = 0.;
 
-    for(const Cell &kCell: kCells_)
-        phiTilde += phi(kCell) * kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.volume();
+    if(axisymmetric_)
+        for(const Cell &kCell: kCells_)
+            phiTilde += phi(kCell) * kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.polarVolume();
+    else
+        for(const Cell &kCell: kCells_)
+            phiTilde += phi(kCell) * kernel(kCell.centroid() - cell_.centroid(), type_) * kCell.volume();
 
     return A_ * phiTilde;
 }

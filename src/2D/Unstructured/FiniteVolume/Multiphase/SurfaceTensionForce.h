@@ -16,6 +16,8 @@ public:
 
         SmoothingKernel(const Cell& cell, Scalar eps, Type type = POW_8);
 
+        void setAxisymmetric(bool axisymmetric);
+
         const Cell &cell() const
         { return cell_; }
 
@@ -30,6 +32,8 @@ public:
         { return x < eps_ ?  eps_ * (1. + std::cos(M_PI * x / eps_)) : 0.; }
 
         Scalar kernel(Vector2D dx, Type type) const;
+
+        bool axisymmetric_ = false;
 
         Type type_;
 
@@ -75,6 +79,8 @@ public:
     virtual void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
     virtual void computeInterfaceNormals();
+
+    void setAxisymmetric(bool axisymmetric);
 
     void smoothGammaField(const ScalarFiniteVolumeField &gamma);
 

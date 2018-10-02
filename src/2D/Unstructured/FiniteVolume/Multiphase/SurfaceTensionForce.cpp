@@ -19,6 +19,7 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     kernelType_ = getKernelType(input.caseInput().get<std::string>("Solver.kernelType", "pow8"));
+    eps_ = input.caseInput().get<Scalar>("Solver.eps", eps_);
 
     for(const Cell &cell: *fluid_)
         kernels_.push_back(SmoothingKernel(cell, kernelWidth_, kernelType_));
@@ -67,6 +68,12 @@ void SurfaceTensionForce::computeInterfaceNormals()
     }
 
     grid_->sendMessages(n);
+}
+
+void SurfaceTensionForce::setAxisymmetric(bool axisymmetric)
+{
+    for(auto &k: kernels_)
+        k.setAxisymmetric(axisymmetric);
 }
 
 Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const

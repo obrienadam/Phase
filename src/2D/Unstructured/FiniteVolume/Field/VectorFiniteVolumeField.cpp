@@ -58,6 +58,60 @@ void VectorFiniteVolumeField::faceToCell(const FiniteVolumeField<Scalar> &cellWe
     }
 }
 
+template<>
+void VectorFiniteVolumeField::faceToCellAxisymmetric(const CellGroup &cells)
+{
+    auto &self = *this;
+
+    for (const Cell &cell: cells)
+    {
+        Vector2D sumSf(0., 0.), tmp(0., 0.);
+
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            Vector2D sf = nb.polarOutwardNorm().abs();
+            tmp += pointwise(self(nb.face()), sf);
+            sumSf += sf;
+        }
+
+        for (const BoundaryLink &bd: cell.boundaries())
+        {
+            Vector2D sf = bd.polarOutwardNorm().abs();
+            tmp += pointwise(self(bd.face()), sf);
+            sumSf += sf;
+        }
+
+        self(cell) = Vector2D(tmp.x / sumSf.x, tmp.y / sumSf.y);
+    }
+}
+
+template<>
+void VectorFiniteVolumeField::faceToCellAxisymmetric(const FiniteVolumeField<Scalar> &cw, const FiniteVolumeField<Scalar> &fw, const CellGroup &cells)
+{
+    auto &self = *this;
+
+    for (const Cell &cell: cells)
+    {
+        Vector2D sumSf(0., 0.), tmp(0., 0.);
+
+        for (const InteriorLink &nb: cell.neighbours())
+        {
+            Vector2D sf = nb.polarOutwardNorm().abs();
+            tmp += pointwise(self(nb.face()), sf) / fw(nb.face());
+            sumSf += sf;
+        }
+
+        for (const BoundaryLink &bd: cell.boundaries())
+        {
+            Vector2D sf = bd.polarOutwardNorm().abs();
+            tmp += pointwise(self(bd.face()), sf) / fw(bd.face());
+            sumSf += sf;
+        }
+
+        self(cell) = cw(cell) * Vector2D(tmp.x / sumSf.x, tmp.y / sumSf.y);
+    }
+}
+
 //- Protected methods
 
 template<>

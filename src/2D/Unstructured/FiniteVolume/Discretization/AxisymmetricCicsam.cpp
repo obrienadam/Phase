@@ -106,12 +106,12 @@ void axi::cicsam::computeMomentumFlux(Scalar rho1,
         Scalar b = faceInterpolationWeights[f.id()];
         Scalar gf = (1. - b) * gamma(d) + b * gamma(a);
 
-        rhoU(f) = ((1. - gf) * rho1 + gf * rho2) * u(f);
+        rhoU(f) = (rho1 + clamp(gf, 0., 1.) * (rho2 - rho1)) * u(f);
     }
 
     for(const Face &f: rhoU.grid()->boundaryFaces())
     {
         Scalar gf = gamma(f);
-        rhoU(f) = ((1. - gf) * rho1 + gf * rho2) * u(f);
+        rhoU(f) = (rho1 + clamp(gf, 0., 1.) * (rho2 - rho1)) * u(f);
     }
 }

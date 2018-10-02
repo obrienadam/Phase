@@ -6,6 +6,15 @@
 
 #include "FiniteVolume/Field/FiniteVolumeField.h"
 
+//- Static
+
+//- Parallel
+template<class T>
+std::vector<std::vector<T>> FiniteVolumeField<T>::sendBuffers_;
+
+template<class T>
+std::vector<std::vector<T>> FiniteVolumeField<T>::recvBuffers_;
+
 //- Constructors
 
 template<class T>
@@ -109,6 +118,12 @@ template<class T>
 T FiniteVolumeField<T>::boundaryRefValue(const FaceGroup &patch) const
 {
     return patchBoundaries_.find(patch.name())->second.second;
+}
+
+template<class T>
+T FiniteVolumeField<T>::boundaryRefValue(const Face &face) const
+{
+    return boundaryRefValue(grid_->patch(face));
 }
 
 template<class T>
@@ -227,120 +242,150 @@ void FiniteVolumeField<T>::clearHistory()
     previousTimeSteps_.clear();
 }
 
+//- Parallel
+
+template<class T>
+void FiniteVolumeField<T>::sendMessages()
+{
+    sendBuffers_.resize(grid_->comm().nProcs());
+    recvBuffers_.resize(grid_->comm().nProcs());
+
+    //- Post recvs
+    for(int proc = 0; proc < grid_->comm().nProcs(); ++proc)
+    {
+        if(proc == grid_->comm().rank())
+            continue;
+
+        recvBuffers_[proc].resize(grid_->bufferGroups()[proc].size());
+        grid_->comm().irecv(proc, recvBuffers_[proc], proc);
+    }
+
+    //- Post sends
+    for(int proc = 0; proc < grid_->comm().nProcs(); ++proc)
+    {
+        if(proc == grid_->comm().rank())
+            continue;
+
+        const CellSet &sendCells = grid_->sendGroups()[proc];
+
+        sendBuffers_[proc].resize(sendCells.size());
+        std::transform(sendCells.begin(), sendCells.end(), sendBuffers_[proc].begin(),
+                       [this](const Cell &c) { return (*this)(c); });
+
+        grid_->comm().isend(proc, sendBuffers_[proc], grid_->comm().rank());
+    }
+
+    //- Sync
+    grid_->comm().waitAll();
+
+    //- Unload recv buffers
+    for(int proc = 0; proc < grid_->comm().nProcs(); ++proc)
+    {
+        if(proc == grid_->comm().rank())
+            continue;
+
+        const std::vector<T> &buff = recvBuffers_[proc];
+
+        int i = 0;
+        for(const Cell &c: grid_->bufferGroups()[proc])
+            (*this)(c) = buff[i++];
+    }
+}
+
 //- Operators
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator+=(const FiniteVolumeField &rhs)
 {
-    auto &self = *this;
-
-    for (const Cell &cell: grid_->cells())
-        self(cell) += rhs(cell);
-
-    if (!faces_.empty() && rhs.hasFaces())
-        for (const Face &face: grid_->faces())
-            self(face) += rhs(face);
-
-    if (!nodes_.empty() && rhs.hasNodes())
-        for (const Node &node: grid_->nodes())
-            self(node) += rhs(node);
-
-    return self;
+    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), std::plus<T>());
+    std::transform(faces_.begin(), faces_.end(), rhs.faces().begin(), faces_.begin(), std::plus<T>());
+    std::transform(nodes_.begin(), nodes_.end(), rhs.nodes().begin(), nodes_.begin(), std::plus<T>());
+    return *this;
 }
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator-=(const FiniteVolumeField &rhs)
 {
-    auto &self = *this;
-
-    for (const Cell &cell: grid_->cells())
-        self(cell) -= rhs(cell);
-
-    if (!faces_.empty() && rhs.hasFaces())
-        for (const Face &face: grid_->faces())
-            self(face) -= rhs(face);
-
-    if (!nodes_.empty() && rhs.hasNodes())
-        for (const Node &node: grid_->nodes())
-            self(node) -= rhs(node);
-
-    return self;
+    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), std::minus<T>());
+    std::transform(faces_.begin(), faces_.end(), rhs.faces().begin(), faces_.begin(), std::minus<T>());
+    std::transform(nodes_.begin(), nodes_.end(), rhs.nodes().begin(), nodes_.begin(), std::minus<T>());
+    return *this;
 }
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator*=(const FiniteVolumeField<Scalar> &rhs)
 {
-    auto &self = *this;
+    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), [](const T &lhs, Scalar rhs)
+    {
+        return lhs * rhs;
+    });
+    std::transform(faces_.begin(), faces_.end(), rhs.faces().begin(), faces_.begin(), [](const T &lhs, Scalar rhs)
+    {
+        return lhs * rhs;
+    });
+    std::transform(nodes_.begin(), nodes_.end(), rhs.nodes().begin(), nodes_.begin(), [](const T &lhs, const Scalar rhs)
+    {
+        return lhs * rhs;
+    });
 
-    for (const Cell &cell: grid_->cells())
-        self(cell) *= rhs(cell);
-
-    if (!faces_.empty() && rhs.hasFaces())
-        for (const Face &face: grid_->faces())
-            self(face) *= rhs(face);
-
-    if (!nodes_.empty() && rhs.hasNodes())
-        for (const Node &node: grid_->nodes())
-            self(node) *= rhs(node);
-
-    return self;
+    return *this;
 }
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(const FiniteVolumeField<Scalar> &rhs)
 {
-    auto &self = *this;
+    std::transform(this->begin(), this->end(), rhs.begin(), this->begin(), [](const T &lhs, Scalar rhs)
+    {
+        return lhs / rhs;
+    });
+    std::transform(faces_.begin(), faces_.end(), rhs.faces().begin(), faces_.begin(), [](const T &lhs, Scalar rhs)
+    {
+        return lhs / rhs;
+    });
+    std::transform(nodes_.begin(), nodes_.end(), rhs.nodes().begin(), nodes_.begin(), [](const T &lhs, Scalar rhs)
+    {
+        return lhs / rhs;
+    });
 
-    for (const Cell &cell: grid_->cells())
-        self(cell) /= rhs(cell);
-
-    if (hasFaces() && rhs.hasFaces())
-        for (const Face &face: grid_->faces())
-            self(face) /= rhs(face);
-
-    if (hasNodes() && rhs.hasNodes())
-        for (const Node &node: grid_->nodes())
-            self(node) /= rhs(node);
-
-    return self;
+    return *this;
 }
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator*=(Scalar rhs)
 {
-    auto &self = *this;
+    std::transform(this->begin(), this->end(), this->begin(), [rhs](const T &lhs)
+    {
+        return lhs * rhs;
+    });
+    std::transform(faces_.begin(), faces_.end(), faces_.begin(), [rhs](const T &lhs)
+    {
+        return lhs * rhs;
+    });
+    std::transform(nodes_.begin(), nodes_.end(), nodes_.begin(), [rhs](const T &lhs)
+    {
+        return lhs * rhs;
+    });
 
-    for (const Cell &cell: grid_->cells())
-        self(cell) *= rhs;
-
-    if (!faces_.empty())
-        for (const Face &face: grid_->faces())
-            self(face) *= rhs;
-
-    if (!nodes_.empty())
-        for (const Node &node: grid_->nodes())
-            self(node) *= rhs;
-
-    return self;
+    return *this;
 }
 
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::operator/=(Scalar rhs)
 {
-    auto &self = *this;
+    std::transform(this->begin(), this->end(), this->begin(), [rhs](const T &lhs)
+    {
+        return lhs / rhs;
+    });
+    std::transform(faces_.begin(), faces_.end(), faces_.begin(), [rhs](const T &lhs)
+    {
+        return lhs / rhs;
+    });
+    std::transform(nodes_.begin(), nodes_.end(), nodes_.begin(), [rhs](const T &lhs)
+    {
+        return lhs / rhs;
+    });
 
-    for (const Cell &cell: grid_->cells())
-        self(cell) /= rhs;
-
-    if (!faces_.empty())
-        for (const Face &face: grid_->faces())
-            self(face) /= rhs;
-
-    if (!nodes_.empty())
-        for (const Node &node: grid_->nodes())
-            self(node) /= rhs;
-
-    return self;
+    return *this;
 }
 
 template<class T>
@@ -394,6 +439,8 @@ void FiniteVolumeField<T>::setBoundaryTypes(const Input &input)
             boundaryType = SYMMETRY;
         else if (typeStr == "outflow")
             boundaryType = OUTFLOW;
+        else if (typeStr == "partial_slip")
+            boundaryType = PARTIAL_SLIP;
         else
             throw Exception("FiniteVolumeField<T>", "setBoundaryTypes", "invalid boundary type \"" + typeStr + "\".");
 

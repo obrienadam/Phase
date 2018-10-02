@@ -46,6 +46,8 @@ public:
 
         static std::unordered_set<Label> cellIdSet_;
 
+        void init(const Ray2D &r, const ScalarFiniteVolumeField &gamma);
+
         void init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma);
 
         std::pair<StaticPolyLine2D<3>, const CellLink*> findIntersectingCellLink(const Ray2D &r, const ImmersedBoundaryObject &ibObj);
@@ -71,6 +73,8 @@ public:
     Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
     void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
+
+    ContactLineStencil contactLineStencil(const Point2D &xc, const ScalarFiniteVolumeField &gamma) const;
 
     FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
 

@@ -29,6 +29,12 @@ void FiniteVolumeEquation<Scalar>::addSource(const Cell &cell, Scalar val)
 }
 
 template<>
+void FiniteVolumeEquation<Scalar>::scale(const Cell &cell, Scalar val)
+{
+    CrsEquation::scaleRow(field_.indexMap()->local(cell, 0), val);
+}
+
+template<>
 void FiniteVolumeEquation<Scalar>::setSource(const Cell &cell, Scalar val)
 {
     setRhs(field_.indexMap()->local(cell, 0), val);

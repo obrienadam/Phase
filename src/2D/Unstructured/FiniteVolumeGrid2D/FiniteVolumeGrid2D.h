@@ -81,6 +81,9 @@ public:
 
     CellGroup globalCellGroup(const CellGroup &localGroup) const;
 
+    const std::vector<CellGroup> &sendGroups() const
+    { return sendCellGroups_; }
+
     const std::vector<CellGroup> &bufferGroups() const
     { return bufferCellGroups_; }
 

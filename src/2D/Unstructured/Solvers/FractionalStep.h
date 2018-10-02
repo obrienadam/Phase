@@ -41,7 +41,7 @@ protected:
 
     VectorFiniteVolumeField &u_;
 
-    ScalarFiniteVolumeField &p_;
+    ScalarFiniteVolumeField &p_, &co_;
 
     ScalarGradient &gradP_;
 

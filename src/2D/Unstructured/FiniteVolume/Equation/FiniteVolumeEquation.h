@@ -46,6 +46,8 @@ public:
 
     void add(const Cell &cell, const Cell &nb, Scalar val);
 
+    void scale(const Cell &cell, Scalar val);
+
     template<class T2>
     void set(const Cell &cell, const Cell &nb, const T2 &val);
 
@@ -64,8 +66,6 @@ public:
 
     void add(const Cell &cell, const std::vector<Ref<const Cell>> &nbs, const std::valarray<Scalar> &vals)
     {add(cell, nbs.begin(), nbs.end(), std::begin(vals));}
-
-    void addCoupling(const Cell &cell, const Cell &nb, const T &val);
 
     T get(const Cell &cell, const Cell &nb);
 
@@ -104,6 +104,9 @@ protected:
 
     FiniteVolumeField<T> &field_;
 };
+
+template<class T>
+FiniteVolumeEquation<T> operator * (const ScalarFiniteVolumeField &lhs, FiniteVolumeEquation<T> rhs);
 
 #include "FiniteVolumeEquation.tpp"
 

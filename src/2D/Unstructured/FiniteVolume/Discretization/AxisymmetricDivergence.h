@@ -20,31 +20,31 @@ FiniteVolumeEquation<T> div(const VectorFiniteVolumeField &u,
         {
             Vector2D sf = nb.polarOutwardNorm();
 
-            Scalar flux = theta * dot(u(nb.face()), sf);
-            Scalar flux0 = (1. - theta) * dot(u0(nb.face()), sf);
+            Scalar flux = dot(u(nb.face()), sf);
+            Scalar flux0 = dot(u0(nb.face()), sf);
 
-            eqn.add(cell, cell, std::max(flux, 0.));
-            eqn.add(cell, nb.cell(), std::min(flux, 0.));
-            eqn.addSource(cell, std::max(flux0, 0.) * phi0(cell));
-            eqn.addSource(cell, std::min(flux0, 0.) * phi0(nb.cell()));
+            eqn.add(cell, cell, std::max(flux, 0.) * theta);
+            eqn.add(cell, nb.cell(), std::min(flux, 0.) * theta);
+            eqn.addSource(cell, (std::max(flux0, 0.) * phi0(cell)
+                                 + std::min(flux0, 0.) * phi0(nb.cell())) * (1. - theta));
         }
 
         for (const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D sf = bd.polarOutwardNorm();
-            Scalar flux = theta * dot(u(bd.face()), sf);
-            Scalar flux0 = (1. - theta) * dot(u0(bd.face()), sf);
+            Scalar flux = dot(u(bd.face()), sf);
+            Scalar flux0 = dot(u0(bd.face()), sf);
 
             switch (phi.boundaryType(bd.face()))
             {
             case FiniteVolumeField<T>::FIXED:
-                eqn.addSource(cell, flux * phi(bd.face()));
-                eqn.addSource(cell, flux0 * phi0(bd.face()));
+                eqn.addSource(cell, flux * phi(bd.face()) * theta);
+                eqn.addSource(cell, flux0 * phi0(bd.face()) * (1. - theta));
                 break;
 
             case FiniteVolumeField<T>::NORMAL_GRADIENT:
-                eqn.add(cell, cell, flux);
-                eqn.addSource(cell, flux0 * phi0(bd.face()));
+                eqn.add(cell, cell, flux * theta);
+                eqn.addSource(cell, flux0 * phi0(bd.face()) * (1. - theta));
                 break;
 
             case FiniteVolumeField<T>::SYMMETRY:

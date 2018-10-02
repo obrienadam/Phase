@@ -69,15 +69,14 @@ void cicsam::computeMomentumFlux(Scalar rho1,
     rhoU.computeInteriorFaces([rho1, rho2, &u, &gamma, &faceInterpolationWeights](const Face &f) {
         Scalar flux = dot(u(f), f.outwardNorm());
         const Cell &d = flux > 0. ? f.lCell() : f.rCell();
-        const Cell &a = flux > 0. ? f.rCell() : f.lCell();
+        const Cell &a = flux <= 0. ? f.lCell() : f.rCell();
         Scalar b = faceInterpolationWeights[f.id()];
         Scalar g = (1. - b) * gamma(d) + b * gamma(a);
-        return ((1. - g) * rho1 + g * rho2) * u(f);
+        return (rho1 + clamp(g, 0., 1.) * (rho2 - rho1)) * u(f);
     });
 
     rhoU.computeBoundaryFaces([rho1, rho2, &u, &gamma](const Face &f) {
-        Scalar g = gamma(f);
-        return ((1. - g) * rho1 + g * rho2) * u(f);
+        return (rho1 + clamp(gamma(f), 0., 1.) * (rho2 - rho1)) * u(f);
     });
 }
 
