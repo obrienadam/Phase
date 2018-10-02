@@ -324,7 +324,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                                );
 
                 // check if contact line exists between two points
-                if(g1 < 0.5 == g2 <= 0.5)
+                if(g1 < 0.5 == g2 <= 0.5 || i == 0)
                     continue;
 
                 //- Interpolate along an arc
@@ -334,6 +334,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
                 // construct new contact line at point to find capillary force
                 auto cl = CelesteImmersedBoundary::ContactLineStencil(*ibObj, pt, fst_.theta(*ibObj), gamma_);
+
                 fc += 2. * M_PI * pt.x * fst_.sigma() * cl.tcl();
             }
 
