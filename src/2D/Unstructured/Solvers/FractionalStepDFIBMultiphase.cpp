@@ -144,12 +144,12 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     u_.sendMessages();
 
     //- Compute forcing term
-    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
-    fbEqn_.solve();
-    grid_->sendMessages(fb_);
+//    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
+//    fbEqn_.solve();
+//    grid_->sendMessages(fb_);
 
     //- Semi-implicit corrector
-    uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.) + src::src(fb_);
+    uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.) + ib_->velocityBcs(rho_, u_, u_, timeStep);
     error = uEqn_.solve();
 
     for(const Cell& c: *fluid_)
@@ -228,8 +228,6 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
         sg_(face) = dot(g_, -face.centroid()) * gradRho_(face);
 
     sg_.faceToCell(rho_, rho_, *fluid_);
-
-    //- Must be communicated for proper momentum interpolation
     sg_.sendMessages();
 
     //- Update viscosity from kinematic viscosity

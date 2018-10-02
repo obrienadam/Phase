@@ -131,7 +131,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension force
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_.fst()->faceToCellAxisymmetric(rho_, rho_, *fluid_);
-    fst_.fst()->fill(Vector2D(0., 0.), ib_->localIbCells());
     fst_.fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_.fst()->sendMessages();
 }

@@ -43,7 +43,7 @@ public:
 
     FiniteVolumeEquation<Vector2D> polarVelocityBcs(VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const;
 
-    FiniteVolumeEquation<Vector2D> velocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, Scalar timeStep) const;
+    FiniteVolumeEquation<Vector2D> velocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const;
 
     FiniteVolumeEquation<Vector2D> polarVelocityBcs(const ScalarFiniteVolumeField &rho, VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const;
 

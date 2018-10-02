@@ -12,9 +12,13 @@ public:
                                         const std::shared_ptr<CellGroup> &fluidCells,
                                         const std::weak_ptr<const ImmersedBoundary> &ib);
 
+
+
 protected:
 
     virtual void computeCurvature() override;
+
+    std::shared_ptr<VectorFiniteVolumeField> kappaRZ_;
 };
 
 #endif

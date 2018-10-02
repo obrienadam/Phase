@@ -43,11 +43,15 @@ protected:
 
         virtual Scalar div(const VectorFiniteVolumeField& u) const;
 
+        virtual Scalar axiDiv(const VectorFiniteVolumeField &u) const;
+
         virtual Scalar kappa(const VectorFiniteVolumeField& n) const;
 
     protected:
 
         virtual void initMatrix();
+
+        static Matrix b_;
 
         const Cell* cellPtr_ = nullptr;
 
