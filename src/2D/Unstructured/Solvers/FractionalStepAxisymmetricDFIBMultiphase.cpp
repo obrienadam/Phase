@@ -58,7 +58,7 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-    //computeIbForces(timeStep);
+    computeIbForces(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -127,6 +127,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     });
 
     sg_.faceToCellAxisymmetric(rho_, rho_, *fluid_);
+    sg_.sendMessages();
 
     //- Update the surface tension force
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
