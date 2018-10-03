@@ -48,21 +48,23 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
         }
     }
 
-    if(nReconstructionPoints() >= 6)
-        return;
+//    if(nReconstructionPoints() >= 6)
+//        return;
 
     int ndg = 0;
     for(const CellLink &nb: cell.diagonals())
     {
-        if(!ib.globalSolidCells().isInSet(nb.cell()))
+        auto ibObj = ib.ibObj(nb.cell().centroid());
+
+        if(!ibObj)
         {
             _cells.push_back(&nb.cell());
             ndg++;
         }
     }
 
-    if(nReconstructionPoints() >= 6)
-        return;
+//    if(nReconstructionPoints() >= 6)
+//        return;
 
     for(auto it = _cells.end() - ndg; it != _cells.end(); ++it)
     {

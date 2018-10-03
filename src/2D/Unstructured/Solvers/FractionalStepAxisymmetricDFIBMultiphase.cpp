@@ -248,11 +248,26 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
     {
         Vector2D fh(0., 0.);
 
-        for(const Cell &c: ibObj->solidCells())
-            fh -= fib_(c) * c.polarVolume() * 2. * M_PI;
+        for(const Cell &c: ibObj->cells())
+        {
+            Vector2D DuDt = (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) / timeStep;
 
-        for(const Cell &c: ibObj->ibCells())
-            fh -= fib_(c) * c.polarVolume() * 2. * M_PI;
+            for(const InteriorLink &nb: c.neighbours())
+            {
+                const Face &f = nb.face();
+                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), nb.polarOutwardNorm()) / c.polarVolume();
+                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), nb.polarOutwardNorm()) / c.polarVolume();
+            }
+
+            for(const BoundaryLink &bd: c.boundaries())
+            {
+                const Face &f = bd.face();
+                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), bd.polarOutwardNorm()) / c.polarVolume();
+                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), bd.polarOutwardNorm()) / c.polarVolume();
+            }
+
+            fh -= (fib_(c) + sg_(c) + (*fst_.fst())(c) - DuDt) * 2. * M_PI * c.polarVolume();
+        }
 
         fh = grid_->comm().sum(fh);
 
@@ -320,11 +335,14 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 //- Find the buoyancy
                 Scalar r = circ.radius();
                 fb -= Vector2D(0.,
-                               M_PI*r * r*(-rgh1*th1*std::cos(2*th1) + rgh1*th2*std::cos(2*th1) + rgh1*std::sin(2*th1)/2 - rgh1*std::sin(2*th2)/2 + rgh2*th1*std::cos(2*th2) - rgh2*th2*std::cos(2*th2) - rgh2*std::sin(2*th1)/2 + rgh2*std::sin(2*th2)/2)/(2*(th1 - th2))
+                               M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
+                                               + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
+                                               + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
+                                               - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
                                );
 
                 // check if contact line exists between two points
-                if(g1 < 0.5 == g2 <= 0.5 || i == 0)
+                if(g1 < 0.5 == g2 <= 0.5)
                     continue;
 
                 //- Interpolate along an arc
@@ -335,13 +353,14 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 // construct new contact line at point to find capillary force
                 auto cl = CelesteImmersedBoundary::ContactLineStencil(*ibObj, pt, fst_.theta(*ibObj), gamma_);
 
-                fc += 2. * M_PI * pt.x * fst_.sigma() * cl.tcl();
+                if(cl.isValid())
+                    fc += 2. * M_PI * pt.x * fst_.sigma() * cl.tcl();
             }
 
             if(circ.centroid().x == 0.)
             {
                 Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
-                fw = (ibObj->rho - FractionalStep::rho_) * vol * g_;
+                fw = ibObj->rho * vol * g_;
             }
 
             if(grid_->comm().isMainProc())

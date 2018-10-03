@@ -53,7 +53,8 @@ void CelesteImmersedBoundary::computeContactLineExtension(ScalarFiniteVolumeFiel
                                           ibContactAngles_.find(ibObj->name())->second,
                                           gamma);
 
-                    gamma(cell) = st.gamma();
+                    if(st.isValid())
+                        gamma(cell) = st.gamma();
                 }
             }
 }
@@ -66,39 +67,6 @@ CelesteImmersedBoundary::ContactLineStencil CelesteImmersedBoundary::contactLine
         throw Exception("CelesteImmersedBoundary", "contactLineStencil", "no suitable ib found.");
 
     return ContactLineStencil(*ibObj, xc, theta(*ibObj), gamma);
-}
-
-FiniteVolumeEquation<Scalar> CelesteImmersedBoundary::contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const
-{
-    FiniteVolumeEquation<Scalar> eqn(gamma, 7);
-
-    for(const std::shared_ptr<ImmersedBoundaryObject> &ibObj: *ib_.lock())
-        for(const Cell& cell: ibObj->cells())
-        {
-            Scalar theta = ibContactAngles_.find(ibObj->name())->second;
-
-            if(ibObj->isInIb(cell.centroid()))
-            {
-                Scalar distSqr = (ibObj->nearestIntersect(cell.centroid()) - cell.centroid()).magSqr();
-
-                if(distSqr <= kernelWidth_ * kernelWidth_)
-                {
-                    ContactLineStencil st(*ibObj,
-                                          cell.centroid(),
-                                          theta,
-                                          gamma);
-
-                    Scalar alpha = st.alpha();
-
-                    //- Add a source
-                    eqn.add(cell, st.cellA(), alpha * cell.volume() / timeStep);
-                    eqn.add(cell, st.cellB(), (1. - alpha) * cell.volume() / timeStep);
-                    eqn.add(cell, cell, -cell.volume() / timeStep);
-                }
-            }
-        }
-
-    return eqn;
 }
 
 void CelesteImmersedBoundary::appyFluidForces(const ScalarFiniteVolumeField &rho,

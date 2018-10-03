@@ -22,13 +22,16 @@ public:
         void init();
 
         bool isValid() const
-        { return ibObj_ && cellA_ && cellB_; }
+        { return ibObj_ && ((cellA_ && cellB_) || (cellA_ && face_)); }
 
         const Cell &cellA() const
         { return *cellA_; }
 
         const Cell &cellB() const
         { return *cellB_; }
+
+        const Face &face() const
+        { return *face_; }
 
         Scalar theta() const
         { return gamma_; }
@@ -50,7 +53,7 @@ public:
 
         template<class T>
         T interpolate(const FiniteVolumeField<T> &field) const
-        { return alpha_ * field(*cellA_) + (1. - alpha_) * field(*cellB_); }
+        { return cellB_ ? alpha_ * field(*cellA_) + (1. - alpha_) * field(*cellB_) : alpha_ * field(*cellA_) + (1. - alpha_) * field(*face_); }
 
     protected:
 
@@ -67,6 +70,8 @@ public:
         const ImmersedBoundaryObject *ibObj_;
 
         const Cell *cellA_, *cellB_;
+
+        const Face *face_;
 
         Scalar theta_, alpha_, gamma_;
 
@@ -85,8 +90,6 @@ public:
     void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
 
     ContactLineStencil contactLineStencil(const Point2D &xc, const ScalarFiniteVolumeField &gamma) const;
-
-    FiniteVolumeEquation<Scalar> contactLineBcs(ScalarFiniteVolumeField &gamma, Scalar timeStep) const;
 
     void appyFluidForces(const ScalarFiniteVolumeField &rho,
                          const ScalarFiniteVolumeField &mu,
