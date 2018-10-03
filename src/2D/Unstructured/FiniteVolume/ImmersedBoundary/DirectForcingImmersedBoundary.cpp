@@ -32,13 +32,13 @@ void DirectForcingImmersedBoundary::updateCells()
                         ibObj->addIbCell(nb.cell());
     }
 
-    globalIbCells_ = grid_->globalCellGroup(localIbCells_);
-    globalSolidCells_ = grid_->globalCellGroup(localSolidCells_);
+//    globalIbCells_ = grid_->globalCellGroup(localIbCells_);
+//    globalSolidCells_ = grid_->globalCellGroup(localSolidCells_);
 
     cellStatus_->fill(FLUID_CELLS, *domainCells_);
-    cellStatus_->fill(IB_CELLS, globalIbCells_);
-    cellStatus_->fill(SOLID_CELLS, globalSolidCells_);
-    //cellStatus_->sendMessages();
+    cellStatus_->fill(IB_CELLS, localIbCells_);
+    cellStatus_->fill(SOLID_CELLS, localSolidCells_);
+    cellStatus_->sendMessages();
 }
 
 FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm(const VectorFiniteVolumeField &u,

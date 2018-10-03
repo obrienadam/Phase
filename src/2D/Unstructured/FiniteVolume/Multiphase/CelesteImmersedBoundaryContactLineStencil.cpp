@@ -28,7 +28,7 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBo
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeField &gamma)
 {
-    findStencilCells(Ray2D(cl_[0], ns_), 500);
+    findStencilCells(Ray2D(cl_[0], ns_), 5000);
 
     if(!isValid())
     {
@@ -63,10 +63,10 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeF
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)
 {
-    findStencilCells(r1, 500);
+    findStencilCells(r1, 5000);
     ContactLineStencil c1 = *this;
 
-    findStencilCells(r2, 500);
+    findStencilCells(r2, 5000);
     ContactLineStencil c2 = *this;
 
     if(c1.isValid() && c2.isValid())
@@ -109,7 +109,7 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
     Vector2D bp = intersections.front();
 
     cellQueue_.push(std::cref(ibObj_->ibCells().nearestItem(bp)));
-    cellIdSet_.insert(cellQueue_.back().get().id());
+    cellIdSet_.emplace(cellQueue_.back().get().id());
 
     Scalar minDistSqr;
     bool addToQueue = true;
@@ -128,7 +128,7 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
             if(cellIdSet_.find(nb.cell().id()) == cellIdSet_.end() && addToQueue) // don't add to queue if a result has been found
             {
                 cellQueue_.push(std::cref(nb.cell()));
-                cellIdSet_.insert(nb.cell().id());
+                cellIdSet_.emplace(nb.cell().id());
             }
 
             if(ibObj_->isInIb(cell) || ibObj_->isInIb(nb.cell()))

@@ -68,20 +68,20 @@ public:
     const CellGroup &localIbCells() const
     { return localIbCells_; }
 
-    const CellGroup &globalIbCells() const
-    { return globalIbCells_; }
-
     const CellGroup &localSolidCells() const
     { return localSolidCells_; }
 
-    const CellGroup &globalSolidCells() const
-    { return globalSolidCells_; }
+//    const CellGroup &globalIbCells() const
+//    { return globalIbCells_; }
+
+//    const CellGroup &globalSolidCells() const
+//    { return globalSolidCells_; }
 
 private:
 
-    CellGroup localIbCells_, globalIbCells_;
+    CellGroup localIbCells_, localSolidCells_;
 
-    CellGroup localSolidCells_, globalSolidCells_;
+    CellGroup globalIbCells_, globalSolidCells_;
 };
 
 

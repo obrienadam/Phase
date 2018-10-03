@@ -134,10 +134,8 @@ CellGroup FiniteVolumeGrid2D::globalCellGroup(const CellGroup &localGroup) const
     CellGroup globalGroup(localGroup);
     std::vector<int> isInGlobalGroup(cells_.size());
 
-    std::transform(cells_.begin(), cells_.end(), isInGlobalGroup.begin(), [&globalGroup](const Cell &cell) -> int
-    {
-        return (int) globalGroup.isInSet(cell);
-    });
+    for(const Cell &c: cells_)
+        isInGlobalGroup[c.id()] = (int)localGroup.isInSet(c);
 
     sendMessages(isInGlobalGroup);
 

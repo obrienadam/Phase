@@ -232,13 +232,15 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
     {
         ContactLine() = default;
 
-        ContactLine(const Point2D &pt, Scalar gamma, const Vector2D &n, const Vector2D &t)
+        ContactLine(const Point2D &pt, Scalar gamma, const Vector2D &n = Vector2D(0., 0.), const Vector2D &t = Vector2D(0., 0.))
             :
               pt(pt), gamma(gamma), n(n), t(t)
         {}
 
         Point2D pt;
+
         Scalar gamma;
+
         Vector2D n, t;
     };
 
@@ -302,26 +304,8 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             std::sort(tmp.begin(), tmp.end(), [&ibObj](const ContactLine &lhs, const ContactLine &rhs)
             { return (lhs.pt - ibObj->shape().centroid()).angle() < (rhs.pt - ibObj->shape().centroid()).angle(); });
 
-
-            //- Extend to axis
-
-            tmp.emplace(tmp.begin(),
-                        circ.centroid() - Vector2D(0., circ.radius()),
-                        tmp.front().gamma,
-                        tmp.front().n,
-                        tmp.front().t);
-
-            tmp.emplace(tmp.end(),
-                        circ.centroid() + Vector2D(0., circ.radius()),
-                        tmp.back().gamma,
-                        tmp.back().n,
-                        tmp.back().t);
-
-            for(int i = 0; i < tmp.size() - 1; ++i)
+            auto buoyancyForce = [this, &circ](const ContactLine &cl1, const ContactLine &cl2)
             {
-                const auto &cl1 = tmp[i];
-                const auto &cl2 = tmp[(i + 1) % tmp.size()];
-
                 Scalar g1 = cl1.gamma;
                 Scalar g2 = cl2.gamma;
 
@@ -334,12 +318,31 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
                 //- Find the buoyancy
                 Scalar r = circ.radius();
-                fb -= Vector2D(0.,
-                               M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
-                                               + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
-                                               + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
-                                               - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
-                               );
+                return -Vector2D(0.,
+                                 M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
+                                                 + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
+                                                 + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
+                                                 - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
+                                 );
+            };
+
+            for(int i = 0; i < tmp.size() - 1; ++i)
+            {
+                const auto &cl1 = tmp[i];
+                const auto &cl2 = tmp[(i + 1) % tmp.size()];
+
+                if(i == 0)
+                    fb += buoyancyForce(ContactLine(ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), cl1.gamma), cl1);
+
+                if(i == tmp.size() - 2)
+                    fb += buoyancyForce(cl2, ContactLine(ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), cl2.gamma));
+
+                fb += buoyancyForce(cl1, cl2);
+
+                Scalar g1 = cl1.gamma;
+                Scalar g2 = cl2.gamma;
+                Scalar th1 = (cl1.pt - circ.centroid()).angle();
+                Scalar th2 = (cl2.pt - circ.centroid()).angle();
 
                 // check if contact line exists between two points
                 if(g1 < 0.5 == g2 <= 0.5)
