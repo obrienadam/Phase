@@ -338,6 +338,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                     fb += buoyancyForce(cl2, ContactLine(ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), cl2.gamma));
 
                 fb += buoyancyForce(cl1, cl2);
+                continue;
 
                 Scalar g1 = cl1.gamma;
                 Scalar g2 = cl2.gamma;

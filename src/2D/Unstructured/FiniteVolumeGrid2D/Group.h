@@ -64,6 +64,12 @@ public:
 
     std::vector<Ref<const T> > nearestItems(const Point2D &pt, size_t k) const;
 
+    template<class Container>
+    void nearestItems(const Point2D &pt, std::size_t k, Container &c) const
+    {
+        std::copy(rTree_.qbegin(boost::geometry::index::nearest(pt, k)), rTree_.qend(), std::back_inserter(c));
+    }
+
     const T &nearestItem(const Point2D &pt) const;
 
     //- Misc
