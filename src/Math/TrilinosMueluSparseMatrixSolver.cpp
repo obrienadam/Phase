@@ -34,7 +34,6 @@ Scalar TrilinosMueluSparseMatrixSolver::solve()
 
     linearProblem_->setProblem(x_, b_);
     linearProblem_->setLeftPrec(precon_);
-
     solver_->solve();
 
     return error();

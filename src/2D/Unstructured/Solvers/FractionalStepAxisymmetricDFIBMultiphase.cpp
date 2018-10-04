@@ -252,23 +252,23 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
         for(const Cell &c: ibObj->cells())
         {
-            Vector2D DuDt = (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) / timeStep;
+//            Vector2D DuDt = (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) / timeStep;
 
-            for(const InteriorLink &nb: c.neighbours())
-            {
-                const Face &f = nb.face();
-                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), nb.polarOutwardNorm()) / c.polarVolume();
-                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), nb.polarOutwardNorm()) / c.polarVolume();
-            }
+//            for(const InteriorLink &nb: c.neighbours())
+//            {
+//                const Face &f = nb.face();
+//                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), nb.polarOutwardNorm()) / c.polarVolume();
+//                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), nb.polarOutwardNorm()) / c.polarVolume();
+//            }
 
-            for(const BoundaryLink &bd: c.boundaries())
-            {
-                const Face &f = bd.face();
-                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), bd.polarOutwardNorm()) / c.polarVolume();
-                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), bd.polarOutwardNorm()) / c.polarVolume();
-            }
+//            for(const BoundaryLink &bd: c.boundaries())
+//            {
+//                const Face &f = bd.face();
+//                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), bd.polarOutwardNorm()) / c.polarVolume();
+//                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), bd.polarOutwardNorm()) / c.polarVolume();
+//            }
 
-            fh -= (fib_(c) + sg_(c) + (*fst_.fst())(c) - DuDt) * 2. * M_PI * c.polarVolume();
+            fh -= fib_(c) * 2. * M_PI * c.polarVolume();
         }
 
         fh = grid_->comm().sum(fh);
@@ -338,7 +338,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                     fb += buoyancyForce(cl2, ContactLine(ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), cl2.gamma));
 
                 fb += buoyancyForce(cl1, cl2);
-                continue;
 
                 Scalar g1 = cl1.gamma;
                 Scalar g2 = cl2.gamma;
