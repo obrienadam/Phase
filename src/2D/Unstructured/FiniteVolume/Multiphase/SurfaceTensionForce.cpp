@@ -47,6 +47,8 @@ void SurfaceTensionForce::computeInterfaceNormals()
     for (const Cell &cell: *fluid_)
         n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
+    n.sendMessages();
+
     //- Boundary faces set from contact line orientation
     for (const FaceGroup &patch: n.grid()->patches())
     {
@@ -69,8 +71,6 @@ void SurfaceTensionForce::computeInterfaceNormals()
                 n(face) = ns * std::cos(theta) + ts * std::sin(theta);
         }
     }
-
-    n.sendMessages();
 }
 
 void SurfaceTensionForce::setAxisymmetric(bool axisymmetric)

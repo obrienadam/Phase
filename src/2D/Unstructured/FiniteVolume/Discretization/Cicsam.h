@@ -27,23 +27,10 @@ FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
                                  Scalar theta,
                                  const CellGroup &cells);
 
-FiniteVolumeEquation<Scalar> div2e(const VectorFiniteVolumeField &u,
-                                   ScalarFiniteVolumeField &gamma,
-                                   const std::vector<Scalar> &faceInterpolationWeights0,
-                                   const std::vector<Scalar> &faceInterpolationWeights1,
-                                   Scalar theta,
-                                   const CellGroup &cells);
-
 FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
                                  ScalarFiniteVolumeField &gamma,
                                  const std::vector<Scalar> &faceInterpolationWeights,
                                  Scalar theta);
-
-FiniteVolumeEquation<Scalar> div2e(const VectorFiniteVolumeField &u,
-                                   ScalarFiniteVolumeField &gamma,
-                                   const std::vector<Scalar> &faceInterpolationWeights0,
-                                   const std::vector<Scalar> &faceInterpolationWeights1,
-                                   Scalar theta);
 }
 
 #endif

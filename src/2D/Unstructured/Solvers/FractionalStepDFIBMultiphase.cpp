@@ -102,20 +102,24 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
 
     Scalar error = gammaEqn_.solve();
+    //    gamma_.sendMessages();
+
+    //    //- Corrector
+    gamma_.savePreviousIteration();
+    fst_->computeContactLineExtension(gamma_);
+
+    for(const Cell &c: *fluid_)
+        gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
+
+    for(const Cell &c: *fluid_)
+        if(std::isnan(gammaSrc_(c)))
+            std::cout << c.id() << "\n";
+
+    gammaEqn_ == cicsam::div(u_, gamma_, beta, 0.5) - cicsam::div(u_, gamma_, beta, 0.) + src::src(gammaSrc_);
+
+    error = gammaEqn_.solve();
     gamma_.sendMessages();
-
-    //- Corrector
-//    gamma_.savePreviousIteration();
-//    fst_->computeContactLineExtension(gamma_);
-
-//    for(const Cell &c: *fluid_)
-//        gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
-
-//    gammaEqn_ == cicsam::div(u_, gamma_, beta, 0.5) - cicsam::div(u_, gamma_, beta, 0.) + src::src(gammaSrc_);
-
-//    gammaEqn_.solve();
-//    gamma_.sendMessages();
-//    gamma_.interpolateFaces();
+    gamma_.interpolateFaces();
 
     //- Compute exact fluxes used for gamma advection
     rhoU_.savePreviousTimeStep(timeStep, 2);
@@ -142,11 +146,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 
     Scalar error = uEqn_.solve();
     u_.sendMessages();
-
-    //- Compute forcing term
-//    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
-//    fbEqn_.solve();
-//    grid_->sendMessages(fb_);
 
     //- Semi-implicit corrector
     uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.) + ib_->velocityBcs(rho_, u_, u_, timeStep);

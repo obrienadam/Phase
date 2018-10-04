@@ -109,14 +109,6 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
                         "findStencilCells",
                         "contact line does not intersect boundary.");
 
-    Vector2D bp = intersections.front();
-
-    for(const Cell &c: ibObj_->cells().nearestItems(bp, 9))
-    {
-        cellQueue_.emplace(c);
-        cellIdSet_.emplace(c.id());
-    }
-
     Scalar minDistSqr;
     bool addToQueue = true;
     bool foundIntersection = false;
@@ -124,6 +116,10 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
     cellA_ = nullptr;
     cellB_ = nullptr;
     face_ = nullptr;
+
+    Vector2D bp = intersections.front();
+    cellQueue_.emplace(ibObj_->cells().nearestItem(bp));
+    cellIdSet_.emplace(cellQueue_.back().get().id());
 
     while(!cellQueue_.empty())
     {

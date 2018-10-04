@@ -168,7 +168,7 @@ std::vector<Ref<const T> > Group<T>::nearestItems(const Point2D &pt, size_t k) c
 template<class T>
 const T &Group<T>::nearestItem(const Point2D &pt) const
 {
-    return nearestItems(pt, 1)[0];
+    return *(rTree_.qbegin(boost::geometry::index::nearest(pt, 1)));
 }
 
 template<class T>

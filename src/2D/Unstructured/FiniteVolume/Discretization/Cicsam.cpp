@@ -120,66 +120,7 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
 
             case ScalarFiniteVolumeField::NORMAL_GRADIENT:
                 eqn.add(cell, cell, theta * flux);
-                eqn.addSource(cell, (1. - theta) * flux * gamma0(bd.face()));
-                break;
-
-            case ScalarFiniteVolumeField::SYMMETRY:
-                break;
-
-            default:
-                throw Exception("cicsam", "div", "unrecognized or unspecified boundary type.");
-            }
-        }
-    }
-
-    return eqn;
-}
-
-FiniteVolumeEquation<Scalar> cicsam::div2e(const VectorFiniteVolumeField &u,
-                                           ScalarFiniteVolumeField &gamma,
-                                           const std::vector<Scalar> &faceInterpolationWeights0,
-                                           const std::vector<Scalar> &faceInterpolationWeights1,
-                                           Scalar theta,
-                                           const CellGroup &cells)
-{
-    FiniteVolumeEquation<Scalar> eqn(gamma);
-
-    for (const Cell &cell: cells)
-    {
-        for (const InteriorLink &nb: cell.neighbours())
-        {
-            Scalar flux0 = dot(u(nb.face()), nb.outwardNorm());
-            Scalar flux1 = dot(u.oldField(0)(nb.face()), nb.outwardNorm());
-
-            const Cell &donor0 = flux0 > 0. ? cell : nb.cell();
-            const Cell &acceptor0 = flux0 > 0. ? nb.cell() : cell;
-            const Cell &donor1 = flux1 > 0. ? cell : nb.cell();
-            const Cell &acceptor1 = flux1 > 0. ? nb.cell() : cell;
-
-            //- Note, this weight is only an approximation of the correct implicit weight
-            Scalar b0 = faceInterpolationWeights0[nb.face().id()];
-            Scalar b1 = faceInterpolationWeights1[nb.face().id()];
-
-            Scalar gammaF0 = (1. - b0) * gamma(donor0) + b0 * gamma(acceptor0);
-            eqn.addSource(cell, theta * flux0 * gammaF0);
-
-            Scalar gammaF1 = (1. - b1) * gamma.oldField(0)(donor1) + b1 * gamma.oldField(0)(acceptor1);
-
-            eqn.addSource(cell, (1 - theta) * flux1 * gammaF1);
-        }
-
-        for (const BoundaryLink &bd: cell.boundaries())
-        {
-            Scalar flux = dot(u(bd.face()), bd.outwardNorm());
-            switch (gamma.boundaryType(bd.face()))
-            {
-            case ScalarFiniteVolumeField::FIXED:
-                eqn.addSource(cell, flux * gamma(bd.face()));
-                break;
-
-            case ScalarFiniteVolumeField::NORMAL_GRADIENT:
-                eqn.add(cell, cell, theta * flux);
-                eqn.addSource(cell, (1. - theta) * flux * gamma(bd.face()));
+                eqn.addSource(cell, (1. - theta) * flux * gamma0(cell));
                 break;
 
             case ScalarFiniteVolumeField::SYMMETRY:
@@ -200,13 +141,4 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
                                          Scalar theta)
 {
     return div(u, gamma, faceInterpolationWeights, theta, gamma.cells());
-}
-
-FiniteVolumeEquation<Scalar> cicsam::div2e(const VectorFiniteVolumeField &u,
-                                           ScalarFiniteVolumeField &gamma,
-                                           const std::vector<Scalar> &faceInterpolationWeights0,
-                                           const std::vector<Scalar> &faceInterpolationWeights1,
-                                           Scalar theta)
-{
-    return div2e(u, gamma, faceInterpolationWeights0, faceInterpolationWeights1, theta, gamma.cells());
 }
