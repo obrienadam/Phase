@@ -27,8 +27,8 @@ std::vector<Scalar> cicsam::faceInterpolationWeights(const VectorFiniteVolumeFie
     {
         Vector2D sf = face.outwardNorm(face.lCell().centroid());
         Scalar flux = dot(u(face), sf);
-        const Cell &donor = flux >= 0. ? face.lCell() : face.rCell();
-        const Cell &acceptor = flux >= 0. ? face.rCell() : face.lCell();
+        const Cell &donor = flux > 0. ? face.lCell() : face.rCell();
+        const Cell &acceptor = flux <= 0. ? face.lCell() : face.rCell();
         //const Cell &upwind = gamma.grid()->globalCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
 
         Vector2D rc = acceptor.centroid() - donor.centroid();
@@ -96,7 +96,7 @@ FiniteVolumeEquation<Scalar> cicsam::div(const VectorFiniteVolumeField &u,
             Scalar flux = dot(u(nb.face()), nb.outwardNorm());
 
             const Cell &donor = flux > 0. ? cell : nb.cell();
-            const Cell &acceptor = flux > 0. ? nb.cell() : cell;
+            const Cell &acceptor = flux <= 0. ? cell : nb.cell();
 
             //- Note, this weight is only an approximation of the correct implicit weight
             Scalar b = faceInterpolationWeights[nb.face().id()];

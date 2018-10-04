@@ -59,6 +59,9 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeF
 
     ncl_ = ns_.rotate(M_PI_2);
     ncl_ = (dot(ncl_, nl) * ncl_).unitVec();
+
+    if(std::isnan(ncl_.x) || std::isnan(ncl_.y))
+        ncl_ = ns_.rotate(M_PI_2);
 }
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)

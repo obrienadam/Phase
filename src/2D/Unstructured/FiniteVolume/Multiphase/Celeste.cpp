@@ -63,7 +63,7 @@ void Celeste::computeCurvature()
         if (gradGammaTilde(cell).magSqr() > 0.)
             kappa(cell) = kappaStencils_[cell.id()].kappa(n);
 
-    kappa.grid()->sendMessages(kappa);
+    kappa.sendMessages();
 
     for (const Face &face: kappa.grid()->interiorFaces())
     {

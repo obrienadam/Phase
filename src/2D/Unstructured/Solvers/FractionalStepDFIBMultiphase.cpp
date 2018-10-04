@@ -105,17 +105,17 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     gamma_.sendMessages();
 
     //- Corrector
-    gamma_.savePreviousIteration();
-    fst_->computeContactLineExtension(gamma_);
+//    gamma_.savePreviousIteration();
+//    fst_->computeContactLineExtension(gamma_);
 
-    for(const Cell &c: *fluid_)
-        gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
+//    for(const Cell &c: *fluid_)
+//        gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
 
-    gammaEqn_ == cicsam::div(u_, gamma_, beta, 0.5) - cicsam::div(u_, gamma_, beta, 0.) + src::src(gammaSrc_);
+//    gammaEqn_ == cicsam::div(u_, gamma_, beta, 0.5) - cicsam::div(u_, gamma_, beta, 0.) + src::src(gammaSrc_);
 
-    gammaEqn_.solve();
-    gamma_.sendMessages();
-    gamma_.interpolateFaces();
+//    gammaEqn_.solve();
+//    gamma_.sendMessages();
+//    gamma_.interpolateFaces();
 
     //- Compute exact fluxes used for gamma advection
     rhoU_.savePreviousTimeStep(timeStep, 2);
@@ -248,6 +248,9 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
 
     //- Must be communicated for proper momentum interpolation
     fst_->fst()->sendMessages();
+
+    //for(const Cell &c: *fluid_)
+    //    std::cout << (*fst_->gradGammaTilde())(c) << " " << (*fst_->n())(c) << " " << (*fst_->kappa())(c) << " " << (*fst_->fst())(c) << "\n";
 }
 
 void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)

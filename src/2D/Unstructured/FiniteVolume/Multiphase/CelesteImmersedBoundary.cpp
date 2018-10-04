@@ -371,9 +371,12 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
             Vector2D ns = -face.outwardNorm(face.lCell().centroid()).unitVec();
             Vector2D ts = (n(face.lCell()) - dot(n(face.lCell()), ns) * ns).unitVec();
 
-            n(face) = ns * std::cos(theta) + ts * std::sin(theta);
+            if(std::isnan(ts.x) || std::isnan(ts.y))
+                n(face) = n(face.lCell());
+            else
+                n(face) = ns * std::cos(theta) + ts * std::sin(theta);
         }
     }
 
-    grid_->sendMessages(n);
+    n.sendMessages();
 }
