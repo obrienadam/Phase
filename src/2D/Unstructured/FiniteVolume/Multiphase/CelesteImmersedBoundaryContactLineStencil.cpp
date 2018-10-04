@@ -28,14 +28,15 @@ CelesteImmersedBoundary::ContactLineStencil::ContactLineStencil(const ImmersedBo
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeField &gamma)
 {
-    findStencilCells(Ray2D(cl_[0], ns_), 5000);
+    findStencilCells(Ray2D(cl_[0], ns_));
 
     if(!isValid())
     {
         std::ostringstream os;
 
-        os << "failed to find any suitable stencil." << "\n"
-           << " Start point = " << cl_[0] << ", ns = "  << ns_ << ".";
+        os << "Failed to find any suitable stencil." << "\n"
+           << "Start point = " << cl_[0] << ", ns = "  << ns_ << ".\n"
+           << "Cells searched = " << cellIdSet_.size() << ".";
 
         throw Exception("CelesteImmersedBoundary::ContactLineStencil",
                         "init",
@@ -66,10 +67,10 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeF
 
 void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma)
 {
-    findStencilCells(r1, 5000);
+    findStencilCells(r1);
     ContactLineStencil c1 = *this;
 
-    findStencilCells(r2, 5000);
+    findStencilCells(r2);
     ContactLineStencil c2 = *this;
 
     if(c1.isValid() && c2.isValid())
@@ -96,8 +97,7 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
         init(gamma);
 }
 
-void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &r,
-                                                                   int maxSearches)
+void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &r)
 {
     auto intersections = ibObj_->shape().intersections(r);
 
@@ -110,7 +110,6 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
                         "contact line does not intersect boundary.");
 
     Scalar minDistSqr;
-    bool addToQueue = true;
     bool foundIntersection = false;
 
     cellA_ = nullptr;
@@ -119,6 +118,7 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
 
     Vector2D bp = intersections.front();
     cellQueue_.emplace(ibObj_->cells().nearestItem(bp));
+    cellIdSet_.clear();
     cellIdSet_.emplace(cellQueue_.back().get().id());
 
     while(!cellQueue_.empty())
@@ -128,9 +128,9 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
 
         for(const CellLink &nb: cell.cellLinks())
         {
-            if(cellIdSet_.find(nb.cell().id()) == cellIdSet_.end() && addToQueue) // don't add to queue if a result has been found
+            if(cellIdSet_.find(nb.cell().id()) == cellIdSet_.end() && !foundIntersection) // don't add to queue if a result has been found
             {
-                cellQueue_.push(std::cref(nb.cell()));
+                cellQueue_.emplace(nb.cell());
                 cellIdSet_.emplace(nb.cell().id());
             }
 
@@ -191,8 +191,6 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
                 }
             }
         }
-
-        addToQueue = !foundIntersection && cellIdSet_.size() < maxSearches;
     }
 
     if(foundIntersection)
@@ -210,6 +208,4 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
             alpha_ = l2 / (l1 + l2);
         }
     }
-
-    cellIdSet_.clear();
 }

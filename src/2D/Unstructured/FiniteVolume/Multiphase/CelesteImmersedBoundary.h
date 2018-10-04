@@ -65,7 +65,7 @@ public:
 
         void init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma);
 
-        void findStencilCells(const Ray2D &r, int maxSearches = std::numeric_limits<int>::infinity());
+        void findStencilCells(const Ray2D &r);
 
         const ImmersedBoundaryObject *ibObj_;
 
