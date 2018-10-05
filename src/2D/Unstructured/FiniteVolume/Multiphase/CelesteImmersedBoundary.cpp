@@ -69,13 +69,36 @@ CelesteImmersedBoundary::ContactLineStencil CelesteImmersedBoundary::contactLine
     return ContactLineStencil(*ibObj, xc, theta(*ibObj), gamma);
 }
 
-void CelesteImmersedBoundary::appyFluidForces(const ScalarFiniteVolumeField &rho,
-                                              const ScalarFiniteVolumeField &mu,
-                                              const VectorFiniteVolumeField &u,
-                                              const ScalarFiniteVolumeField &p,
-                                              const ScalarFiniteVolumeField &gamma,
-                                              const Vector2D &g,
-                                              DirectForcingImmersedBoundary &ib) const
+void CelesteImmersedBoundary::computeContactLineStencils(const ScalarFiniteVolumeField &gamma)
+{
+    contactLineExtensionCells_.clear();
+    contactLineStencils_.clear();
+
+    for(const std::shared_ptr<ImmersedBoundaryObject> &ibObj: *ib_.lock())
+        for(const Cell& cell: ibObj->cells())
+            if(ibObj->isInIb(cell.centroid()))
+            {
+                Scalar distSqr = (ibObj->nearestIntersect(cell.centroid()) - cell.centroid()).magSqr();
+
+                if(distSqr <= kernelWidth_ * kernelWidth_)
+                {
+                    contactLineStencils_.emplace_back(*ibObj,
+                                                      cell.centroid(),
+                                                      ibContactAngles_.find(ibObj->name())->second,
+                                                      gamma);
+
+                    contactLineExtensionCells_.add(cell);
+                }
+            }
+}
+
+void CelesteImmersedBoundary::applyFluidForces(const ScalarFiniteVolumeField &rho,
+                                               const ScalarFiniteVolumeField &mu,
+                                               const VectorFiniteVolumeField &u,
+                                               const ScalarFiniteVolumeField &p,
+                                               const ScalarFiniteVolumeField &gamma,
+                                               const Vector2D &g,
+                                               DirectForcingImmersedBoundary &ib) const
 {
     struct Stress
     {
@@ -326,6 +349,106 @@ void CelesteImmersedBoundary::appyFluidForces(const ScalarFiniteVolumeField &rho
         }
 
         ibObj->applyForce(grid_->comm().broadcast(grid_->comm().mainProcNo(), force));
+    }
+}
+
+void CelesteImmersedBoundary::applyFluidForces(const ScalarFiniteVolumeField &rho, const VectorFiniteVolumeField &fb, const ScalarFiniteVolumeField &gamma, const Vector2D &g, DirectForcingImmersedBoundary &ib) const
+{
+    struct Stress
+    {
+        Point2D pt;
+        Scalar th;
+        Scalar rho, gamma;
+        Vector2D tcl;
+    };
+
+    std::vector<Stress> stresses;
+
+    for(auto &ibObj: ib)
+    {
+        Vector2D fh(0., 0.);
+
+        for(const Cell &c: ibObj->cells())
+            fh -= fb(c) * c.volume();
+
+        fh = grid_->comm().sum(fh);
+
+        stresses.clear();
+        stresses.reserve(ibObj->ibCells().size());
+
+        for(const Cell &c: ibObj->ibCells())
+        {
+            Point2D bp = ibObj->nearestIntersect(c.centroid());
+            Scalar th = (bp - ibObj->shape().centroid()).angle();
+            auto cl = ContactLineStencil(*ibObj, bp, theta(*ibObj), gamma);
+            stresses.push_back(Stress{bp, th, cl.interpolate(rho), cl.gamma(), cl.tcl()});
+        }
+
+        stresses = grid_->comm().allGatherv(stresses);
+
+        std::sort(stresses.begin(), stresses.end(), [&ibObj](const Stress &lhs, const Stress &rhs)
+        { return lhs.th < rhs.th; });
+
+        //- integrate the stresses
+        Vector2D fb(0., 0.), fc(0., 0.);
+        switch(ibObj->shape().type())
+        {
+        case Shape2D::CIRCLE:
+        {
+            const Circle &circle = static_cast<const Circle&>(ibObj->shape());
+            Scalar r = circle.radius();
+            Scalar theta = this->theta(*ibObj);
+
+            for(auto i = 0; i < stresses.size() - 1; ++i)
+            {
+                const auto &stA = stresses[i];
+                const auto &stB = stresses[(i + 1) % stresses.size()];
+
+                Scalar thA = stA.th;
+                Scalar thB = stB.th;
+                thB = thB < thA ? thB + 2. * M_PI : thB;
+
+                Scalar pA = stA.rho * dot(g, stA.pt);
+                Scalar pB = stB.rho * dot(g, stB.pt);
+
+                fb += r * Vector2D(
+                            pA*thA*sin(thA) - pA*thB*sin(thA) + pA*cos(thA) - pA*cos(thB) - pB*thA*sin(thB) + pB*thB*sin(thB) - pB*cos(thA) + pB*cos(thB),
+                            -pA*thA*cos(thA) + pA*thB*cos(thA) + pA*sin(thA) - pA*sin(thB) + pB*thA*cos(thB) - pB*thB*cos(thB) - pB*sin(thA) + pB*sin(thB)
+                            ) / (thA - thB);
+
+                Scalar gA = stA.gamma;
+                Scalar gB = stB.gamma;
+
+                if(gA < 0.5 != gB <= 0.5)
+                {
+                    Scalar alpha = (0.5 - gB) / (gA - gB);
+                    Scalar phi = alpha * thA + (1. - alpha) * thB;
+
+                    Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
+                    Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
+
+                    fc += sigma_ * (dot(t1, stA.tcl) > dot(t2, stB.tcl) ? t1 : t2);
+                }
+            }
+
+            break;
+        }
+        default:
+            throw Exception("CelesteImmersedBoundary", "applyFluidForces", "shape type not supported.");
+        }
+
+        Vector2D fw = ibObj->rho * ibObj->shape().area() * g;
+
+        if(grid_->comm().isMainProc())
+        {
+            std::cout << "Hydrodynamic force = " << fh << "\n"
+                      << "Buoyancy force = " << fb << "\n"
+                      << "Capillary force = " << fc << "\n"
+                      << "Weight = " << fw << "\n"
+                      << "Net force = " << fh + fb + fc + fw << "\n";
+        }
+
+        ibObj->applyForce(fh + fb + fc + fw);
     }
 }
 

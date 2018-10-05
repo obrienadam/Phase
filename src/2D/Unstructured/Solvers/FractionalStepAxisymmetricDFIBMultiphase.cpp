@@ -119,7 +119,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     });
 
     //- Update the gravitational source term
-    //- Update the gravitational source term
     gradRho_.computeFaces();
 
     sg_.computeFaces([this](const Face &face) {
@@ -251,25 +250,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         Vector2D fh(0., 0.);
 
         for(const Cell &c: ibObj->cells())
-        {
-            //            Vector2D DuDt = (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) / timeStep;
-
-            //            for(const InteriorLink &nb: c.neighbours())
-            //            {
-            //                const Face &f = nb.face();
-            //                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), nb.polarOutwardNorm()) / c.polarVolume();
-            //                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), nb.polarOutwardNorm()) / c.polarVolume();
-            //            }
-
-            //            for(const BoundaryLink &bd: c.boundaries())
-            //            {
-            //                const Face &f = bd.face();
-            //                DuDt += 0.5 * dot(outer(rhoU_.oldField(0)(f), u_.oldField(0)(f)), bd.polarOutwardNorm()) / c.polarVolume();
-            //                DuDt += 0.5 * dot(outer(rhoU_.oldField(1)(f), u_.oldField(1)(f)), bd.polarOutwardNorm()) / c.polarVolume();
-            //            }
-
             fh -= fib_(c) * 2. * M_PI * c.polarVolume();
-        }
 
         fh = grid_->comm().sum(fh);
 

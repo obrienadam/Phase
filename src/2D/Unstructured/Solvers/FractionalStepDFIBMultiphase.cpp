@@ -87,7 +87,8 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 
     grid_->comm().printf("Computing IB forces...\n");
-    fst_->appyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
+    //fst_->appyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
+    fst_->applyFluidForces(rho_, fb_, gamma_, g_, *ib_);
     ib_->applyCollisionForce(true);
 
     return 0;
@@ -148,12 +149,17 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     u_.sendMessages();
 
     //- Semi-implicit corrector
+    u_.savePreviousIteration();
     uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.) + ib_->velocityBcs(rho_, u_, u_, timeStep);
     error = uEqn_.solve();
 
     for(const Cell& c: *fluid_)
+    {
+        fb_(c) = rho_(c) * (u_(c) - u_.prevIteration()(c)) / timeStep;
         u_(c) += timeStep / rho_(c) * gradP_(c);
+    }
 
+    fb_.sendMessages();
     u_.sendMessages();
 
     for (const Face &f: grid_->interiorFaces())

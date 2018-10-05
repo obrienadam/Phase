@@ -51,7 +51,7 @@ void ScalarGradient::compute(const CellGroup &group, Method method)
                 sum += sf;
             }
 
-            for (const InteriorLink &bd: cell.neighbours())
+            for (const BoundaryLink &bd: cell.boundaries())
             {
                 Vector2D sf = bd.outwardNorm().abs();
                 tmp += pointwise(gradPhi(bd.face()), sf);
@@ -143,14 +143,12 @@ void ScalarGradient::computeAxisymmetric(const CellGroup &cells)
             sum += sf;
         }
 
-        for (const InteriorLink &bd: cell.neighbours())
+        for (const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D sf = bd.polarOutwardNorm().abs();
             tmp += pointwise(gradPhi(bd.face()), sf);
             sum += sf;
         }
-
-        //sum += Vector2D(std::abs(cell.volume()), 0.);
 
         gradPhi(cell) = Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }
@@ -176,14 +174,12 @@ void ScalarGradient::computeAxisymmetric(const ScalarFiniteVolumeField &cw,
             sum += sf;
         }
 
-        for (const InteriorLink &bd: cell.neighbours())
+        for (const BoundaryLink &bd: cell.boundaries())
         {
             Vector2D sf = bd.polarOutwardNorm().abs();
             tmp += pointwise(gradPhi(bd.face()) / fw(bd.face()), sf);
             sum += sf;
         }
-
-        //sum += Vector2D(std::abs(cell.volume()), 0.);
 
         gradPhi(cell) = cw(cell) * Vector2D(tmp.x / sum.x, tmp.y / sum.y);
     }

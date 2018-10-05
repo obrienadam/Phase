@@ -70,8 +70,20 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
     findStencilCells(r1);
     ContactLineStencil c1 = *this;
 
+    if(!c1.isValid())
+    {
+        findStencilCells(Ray2D(cl_[0], ns_));
+        c1 = *this;
+    }
+
     findStencilCells(r2);
     ContactLineStencil c2 = *this;
+
+    if(!c2.isValid())
+    {
+        findStencilCells(Ray2D(cl_[0], ns_));
+        c2 = *this;
+    }
 
     if(c1.isValid() && c2.isValid())
     {
@@ -82,19 +94,21 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
         {
             *this = c1;
             gamma_ = g1;
-            //ncl_ = -ibObj_->nearestEdgeUnitNormal(cl_[1]).rotate(-theta_);
             ncl_ = ns_.rotate(-theta_);
         }
         else
         {
             *this = c2;
             gamma_ = g2;
-            //ncl_ = -ibObj_->nearestEdgeUnitNormal(cl_[1]).rotate(theta_);
             ncl_ = ns_.rotate(theta_);
         }
     }
     else
+    {
+        std::cout << "Warning, failed to find valid contact line stencil on proc " << gamma.grid()->comm().rank()
+                  << ". Initiating normal stencil stencil...\n";
         init(gamma);
+    }
 }
 
 void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &r)
@@ -120,6 +134,8 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
     cellQueue_.emplace(ibObj_->cells().nearestItem(bp));
     cellIdSet_.clear();
     cellIdSet_.emplace(cellQueue_.back().get().id());
+
+    int searches = 0;
 
     while(!cellQueue_.empty())
     {
@@ -191,6 +207,9 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
                 }
             }
         }
+
+        if(++searches > 144)
+            break;
     }
 
     if(foundIntersection)

@@ -91,13 +91,21 @@ public:
 
     ContactLineStencil contactLineStencil(const Point2D &xc, const ScalarFiniteVolumeField &gamma) const;
 
-    void appyFluidForces(const ScalarFiniteVolumeField &rho,
+    void computeContactLineStencils(const ScalarFiniteVolumeField &gamma);
+
+    void applyFluidForces(const ScalarFiniteVolumeField &rho,
                          const ScalarFiniteVolumeField &mu,
                          const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField &p,
                          const ScalarFiniteVolumeField &gamma,
                          const Vector2D &g,
                          DirectForcingImmersedBoundary &ib) const;
+
+    void applyFluidForces(const ScalarFiniteVolumeField &rho,
+                          const VectorFiniteVolumeField &fb,
+                          const ScalarFiniteVolumeField &gamma,
+                          const Vector2D &g,
+                          DirectForcingImmersedBoundary &ib) const;
 
 protected:
 
@@ -107,7 +115,9 @@ protected:
 
     std::unordered_map<std::string, Scalar> ibContactAngles_;
 
-    std::unordered_map<std::string, CellGroup> contactLineExensionCells_;
+    CellGroup contactLineExtensionCells_;
+
+    std::vector<ContactLineStencil> contactLineStencils_;
 };
 
 #endif
