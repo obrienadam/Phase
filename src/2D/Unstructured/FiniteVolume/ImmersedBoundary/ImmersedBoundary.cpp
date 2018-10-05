@@ -222,6 +222,15 @@ CellGroup ImmersedBoundary::solidCells() const
     return solidCellGroup;
 }
 
+std::shared_ptr<ImmersedBoundaryObject> &ImmersedBoundary::ibObj(const Point2D &pt)
+{
+    for (const auto &ibObj: ibObjs_)
+        if (ibObj->isInIb(pt))
+            return ibObj;
+
+    return nullptr;
+}
+
 std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Point2D &pt) const
 {
     for (const auto &ibObj: ibObjs_)

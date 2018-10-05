@@ -36,6 +36,8 @@ public:
     CellGroup solidCells() const;
 
     //- Immersed boundary object access
+    std::shared_ptr<ImmersedBoundaryObject> &ibObj(const Point2D &pt);
+
     std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D &pt) const;
 
     const std::vector<std::shared_ptr<const ImmersedBoundaryObject>> &findAllIbObjs(const Point2D &pt) const;

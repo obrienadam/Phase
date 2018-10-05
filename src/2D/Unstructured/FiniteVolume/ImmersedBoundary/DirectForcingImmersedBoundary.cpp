@@ -17,27 +17,38 @@ void DirectForcingImmersedBoundary::updateCells()
     localIbCells_.clear();
     localSolidCells_.clear();
 
+    cellStatus_->fill(FLUID_CELLS);
+
     for(auto &ibObj: ibObjs_)
     {
         ibObj->clear();
 
         for(const Cell &c: ibObj->cellsWithin(*domainCells_))
-            if(localSolidCells_.add(c))
-                ibObj->addSolidCell(c);
-
-        for(const Cell &c: ibObj->solidCells())
-            for(const CellLink &nb: c.neighbours())
-                if(domainCells_->isInSet(nb.cell()))
-                    if(!ibObj->isInIb(nb.cell().centroid()) && !this->ibObj(nb.cell().centroid()) && localIbCells_.add(nb.cell()))
-                        ibObj->addIbCell(nb.cell());
+        {
+            (*cellStatus_)(c) = SOLID_CELLS;
+            ibObj->addSolidCell(c);
+            localSolidCells_.add(c);
+        }
     }
 
-//    globalIbCells_ = grid_->globalCellGroup(localIbCells_);
-//    globalSolidCells_ = grid_->globalCellGroup(localSolidCells_);
+    cellStatus_->sendMessages();
 
-    cellStatus_->fill(FLUID_CELLS, *domainCells_);
-    cellStatus_->fill(IB_CELLS, localIbCells_);
-    cellStatus_->fill(SOLID_CELLS, localSolidCells_);
+    for(const Cell &c: *domainCells_)
+    {
+        if((*cellStatus_)(c) == SOLID_CELLS)
+            continue;
+
+        for(const CellLink &nb: c.neighbours())
+            if((*cellStatus_)(nb.cell()) == SOLID_CELLS)
+            {
+                auto ibObj = this->ibObj(nb.cell().centroid());
+                (*cellStatus_)(c) = IB_CELLS;
+                ibObj->addIbCell(c);
+                localIbCells_.add(c);
+                break;
+            }
+    }
+
     cellStatus_->sendMessages();
 }
 
