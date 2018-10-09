@@ -229,9 +229,12 @@ FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousTimeStep(Scalar timeStep
 template<class T>
 FiniteVolumeField<T> &FiniteVolumeField<T>::savePreviousIteration()
 {
-    previousIteration_ = std::make_shared<FiniteVolumeField<T>>(*this);
-    previousIteration_->clearHistory();
+    if(previousIteration_)
+        *previousIteration_ = *this;
+    else
+        previousIteration_ = std::make_shared<FiniteVolumeField<T>>(*this);
 
+    previousIteration_->clearHistory();
     return *previousIteration_;
 }
 

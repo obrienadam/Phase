@@ -1,8 +1,8 @@
 #include "Divergence.h"
 
 FiniteVolumeEquation<Vector2D> fv::div(const VectorFiniteVolumeField &phiU,
-                           const JacobianField &gradU,
-                           VectorFiniteVolumeField &u)
+                                       const JacobianField &gradU,
+                                       VectorFiniteVolumeField &u)
 {
     FiniteVolumeEquation<Vector2D> eqn(u);
 
@@ -30,20 +30,20 @@ FiniteVolumeEquation<Vector2D> fv::div(const VectorFiniteVolumeField &phiU,
 
             switch (u.boundaryType(bd.face()))
             {
-                case VectorFiniteVolumeField::FIXED:
-                    eqn.addSource(cell, flux * u(bd.face()));
-                    break;
+            case VectorFiniteVolumeField::FIXED:
+                eqn.addSource(cell, flux * u(bd.face()));
+                break;
 
-                case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                    eqn.add(cell, cell, flux);
-                    eqn.addSource(cell, flux * dot(gradU(cell), bd.rFaceVec()));
-                    break;
+            case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                eqn.add(cell, cell, flux);
+                eqn.addSource(cell, flux * dot(gradU(cell), bd.rFaceVec()));
+                break;
 
-                case VectorFiniteVolumeField::SYMMETRY:
-                    break;
+            case VectorFiniteVolumeField::SYMMETRY:
+                break;
 
-                default:
-                    throw Exception("fv", "div", "unrecognized or unspecified boundary type.");
+            default:
+                throw Exception("fv", "div", "unrecognized or unspecified boundary type.");
             }
         }
     }

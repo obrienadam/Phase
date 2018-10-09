@@ -21,7 +21,7 @@ SolidBodyMotion::SolidBodyMotion(std::weak_ptr<const ImmersedBoundaryObject> ibO
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
 }
-
+#include <iostream>
 void SolidBodyMotion::update(Scalar timeStep)
 {
     auto ibObj = ibObj_.lock();

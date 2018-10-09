@@ -399,7 +399,7 @@ void CelesteImmersedBoundary::applyFluidForces(const ScalarFiniteVolumeField &rh
             Scalar r = circle.radius();
             Scalar theta = this->theta(*ibObj);
 
-            for(auto i = 0; i < stresses.size() - 1; ++i)
+            for(auto i = 0; i < stresses.size(); ++i)
             {
                 const auto &stA = stresses[i];
                 const auto &stB = stresses[(i + 1) % stresses.size()];
@@ -411,7 +411,7 @@ void CelesteImmersedBoundary::applyFluidForces(const ScalarFiniteVolumeField &rh
                 Scalar pA = stA.rho * dot(g, stA.pt);
                 Scalar pB = stB.rho * dot(g, stB.pt);
 
-                fb += r * Vector2D(
+                fb -= r * Vector2D(
                             pA*thA*sin(thA) - pA*thB*sin(thA) + pA*cos(thA) - pA*cos(thB) - pB*thA*sin(thB) + pB*thB*sin(thB) - pB*cos(thA) + pB*cos(thB),
                             -pA*thA*cos(thA) + pA*thB*cos(thA) + pA*sin(thA) - pA*sin(thB) + pB*thA*cos(thB) - pB*thB*cos(thB) - pB*sin(thA) + pB*sin(thB)
                             ) / (thA - thB);
@@ -448,7 +448,7 @@ void CelesteImmersedBoundary::applyFluidForces(const ScalarFiniteVolumeField &rh
                       << "Net force = " << fh + fb + fc + fw << "\n";
         }
 
-        ibObj->applyForce(fh + fb + fc + fw);
+        ibObj->applyForce(fh + fc + fw);
     }
 }
 

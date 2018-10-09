@@ -16,15 +16,19 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObjP, const Immer
     {
         const Circle &c1 = static_cast<const Circle &>(ibObjP.shape());
         const Circle &c2 = static_cast<const Circle &>(ibObjQ.shape());
+
         const Vector2D &xp = c1.centroid();
         const Vector2D &xq = c2.centroid();
+
         Scalar r1 = c1.radius();
         Scalar r2 = c2.radius();
 
         Scalar d = (xp - xq).mag();
 
-        return d > r1 + r2 + range_ ? Vector2D(0., 0.) : (xp - xq) / eps_ * pow(r1 + r2 + range_ - d, 2);
+        return d > r1 + r2 + range_ ? Vector2D(0., 0.) : (xp - xq) / eps_ * std::pow(r1 + r2 + range_ - d, 2);
     }
+    else
+        throw Exception("CollisionModel", "force", "unsupported shape type.");
 }
 
 Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid) const

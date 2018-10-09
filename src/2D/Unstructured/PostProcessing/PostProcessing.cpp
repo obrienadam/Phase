@@ -55,6 +55,6 @@ void PostProcessing::compute(Scalar time, bool force)
 {
     PostProcessingInterface::compute(time, force);
 
-    if (++iter_ % fileWriteFrequency_ == 0 || force)
+    if (iter_++ % fileWriteFrequency_ == 0 || force)
         viewer_.write(time);
 }

@@ -26,6 +26,12 @@ protected:
 
     void correctVelocity(Scalar timeStep);
 
+    void computeIbForces(Scalar timeStep);
+
+    void computeIbForces2(Scalar timeStep);
+
+    void computeFieldExtenstions(Scalar timeStep);
+
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
 
     ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_;

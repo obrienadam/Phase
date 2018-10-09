@@ -325,7 +325,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const 
             eqn.addSource(cell, -rho(cell) * uTilde(cell) * cell.volume() / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, rho(cell) * (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+            eqn.addSource(cell, rho(cell) * (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
     }
 
     return eqn;
