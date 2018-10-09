@@ -350,16 +350,18 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 Scalar theta = fst_.theta(*ibObj);
 
                 // check if contact line exists between two points
-                if(g1 < 0.5 != g2 <= 0.5)
+                if(g1 <= 0.5 != g2 < 0.5)
                 {
                     Scalar alpha = (0.5 - g2) / (g1 - g2);
                     Scalar th = alpha * th1 + (1. - alpha) * th2;
 
-                    Vector2D t1 = Vector2D(std::cos(th - M_PI_2 + theta), std::sin(th - M_PI_2 + theta));
-                    Vector2D t2 = Vector2D(std::cos(th + M_PI_2 - theta), std::sin(th + M_PI_2 - theta));
+                    // Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
+                    // Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
 
+                    Vector2D tcl = cl1.t.rotate(th - th1);
                     Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
-                    fc += 2. * M_PI * pt.x * fst_.sigma() * (dot(t1, cl1.t) > dot(t2, cl2.t) ? t1 : t2);
+
+                    fc += 2. * M_PI * pt.x * fst_.sigma() * tcl;
                 }
             }
 

@@ -422,15 +422,17 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
                 Scalar sigma = fst_->sigma();
 
                 //- sharp method
-                if(gA < 0.5 != gB <= 0.5)
+                if(gA <= 0.5 != gB < 0.5)
                 {
                     Scalar alpha = (0.5 - gB) / (gA - gB);
                     Scalar phi = alpha * tA + (1. - alpha) * tB;
 
-                    Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
-                    Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
+                    // Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
+                    // Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
 
-                    fc += sigma * (dot(t1, stA.tcl) > dot(t2, stB.tcl) ? t1 : t2);
+                    Vector2D tcl = stA.tcl.rotate(phi - tA);
+
+                    fc += sigma * tcl;
                 }
             }
         }
