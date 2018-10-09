@@ -7,8 +7,6 @@
 
 #include "ImmersedBoundary.h"
 
-std::vector<std::shared_ptr<const ImmersedBoundaryObject>> ImmersedBoundary::_query;
-
 ImmersedBoundary::ImmersedBoundary(const Input &input,
                                    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                    const std::shared_ptr<CellGroup> &domainCells)
@@ -240,14 +238,24 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Poin
     return nullptr;
 }
 
+std::shared_ptr<ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Cell &cell)
+{
+    return ibObj(cell.centroid());
+}
+
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Cell &cell) const
+{
+    return ibObj(cell.centroid());
+}
+
 const std::vector<std::shared_ptr<const ImmersedBoundaryObject> > &ImmersedBoundary::findAllIbObjs(const Point2D &pt) const
 {
-    _query.clear();
-    std::copy_if(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(_query),
-                 [&pt](const std::shared_ptr<const ImmersedBoundaryObject> &ibObj)
-    { return ibObj->isInIb(pt); });
+    query_.clear();
 
-    return _query;
+    std::copy_if(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(query_),
+                 [&pt](const std::shared_ptr<ImmersedBoundaryObject> &ibObj) { return ibObj->isInIb(pt); });
+
+    return query_;
 }
 
 std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObj(const Point2D &pt) const
@@ -348,18 +356,25 @@ void ImmersedBoundary::applyCollisionForce(bool add)
     if(collisionModel_)
         for (auto ibObjP: ibObjs_)
         {
+            Vector2D fc(0., 0.);
+
             //- Collisions with particles
             for (auto ibObjQ: ibObjs_)
-                if(add)
-                    ibObjP->addForce(collisionModel_->force(*ibObjP, *ibObjQ));
-                else
-                    ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
+                fc += collisionModel_->force(*ibObjP, *ibObjQ);
+
+            if(grid_->comm().isMainProc())
+                std::cout << "Collision force = " << fc << std::endl;
+
+            if(add)
+                ibObjP->addForce(fc);
+            else
+                ibObjP->applyForce(fc);
 
             //- Collisions with domain boundaries
-//            if(add)
-//                ibObjP->addForce(collisionModel_->force(*ibObjP, *grid_));
-//            else
-//                ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
+            //            if(add)
+            //                ibObjP->addForce(collisionModel_->force(*ibObjP, *grid_));
+            //            else
+            //                ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
         }
 }
 

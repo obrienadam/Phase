@@ -56,9 +56,9 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)
     solveGammaEqn(timeStep);
     updateProperties(timeStep);
     solveUEqn(timeStep);
+    computeIbForces(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-    computeIbForces(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -229,14 +229,9 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 {
     struct ContactLine
     {
-        ContactLine() = default;
-
-        ContactLine(const Point2D &pt, Scalar gamma, const Vector2D &n = Vector2D(0., 0.), const Vector2D &t = Vector2D(0., 0.))
-            :
-              pt(pt), gamma(gamma), n(n), t(t)
-        {}
-
         Point2D pt;
+
+        Scalar beta;
 
         Scalar gamma;
 
@@ -250,7 +245,32 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         Vector2D fh(0., 0.);
 
         for(const Cell &c: ibObj->cells())
-            fh -= fib_(c) * 2. * M_PI * c.polarVolume();
+        {
+            Vector2D mf(0., 0.);
+
+            mf += (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) * c.polarVolume() / timeStep;
+
+            for(const InteriorLink &nb: c.neighbours())
+            {
+                Scalar flux0 = dot(rhoU_.oldField(0)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                Scalar flux1 = dot(rhoU_.oldField(1)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
+            }
+
+            for(const BoundaryLink &bd: c.boundaries())
+            {
+                Scalar flux0 = dot(rhoU_.oldField(0)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                Scalar flux1 = dot(rhoU_.oldField(1)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
+            }
+
+            fh += 2. * M_PI * mf;
+            fh -= 2. * M_PI * sg_(c) * c.polarVolume();
+            fh -= 2. * M_PI * (*fst_.fst())(c) * c.polarVolume();
+            fh -= 2. * M_PI * fib_(c) * c.polarVolume();
+        }
 
         fh = grid_->comm().sum(fh);
 
@@ -268,22 +288,24 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             {
                 bool computeCl = false;
 
-                for(const CellLink &nb: c.neighbours())
+                for(const CellLink &nb: c.cellLinks())
                     if(!ib_->ibObj(nb.cell().centroid()))
                         computeCl = true;
 
                 if(!computeCl)
                     continue;
 
-                auto st = fst_.contactLineStencil(c.centroid(), gamma_);
+                auto st = CelesteAxisymmetricImmersedBoundary::ContactLineStencil(*ibObj, c.centroid(), fst_.theta(*ibObj), gamma_);
+                Scalar beta = (st.cl()[1] - ibObj->shape().centroid()).angle();
 
-                tmp.emplace_back(st.cl()[1], st.gamma(), st.ncl(), st.tcl());
+
+                tmp.emplace_back(ContactLine{st.cl()[1], beta, st.gamma(), st.ncl(), st.tcl()});
             }
 
             tmp = grid_->comm().allGatherv(tmp);
 
             std::sort(tmp.begin(), tmp.end(), [&ibObj](const ContactLine &lhs, const ContactLine &rhs)
-            { return (lhs.pt - ibObj->shape().centroid()).angle() < (rhs.pt - ibObj->shape().centroid()).angle(); });
+            { return lhs.beta < rhs.beta; });
 
             auto buoyancyForce = [this, &circ](const ContactLine &cl1, const ContactLine &cl2)
             {
@@ -294,8 +316,8 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 Scalar th2 = (cl2.pt - circ.centroid()).angle();
                 th2 = th2 < th1 ? th2 + 2. * M_PI : th2;
 
-                Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt, g_);
-                Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt, g_);
+                Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt - circ.centroid(), g_);
+                Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt - circ.centroid(), g_);
 
                 //- Find the buoyancy
                 Scalar r = circ.radius();
@@ -307,16 +329,17 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                                  );
             };
 
+            //- Assumes the sphere is centered on the axis
             for(int i = 0; i < tmp.size() - 1; ++i)
             {
                 const auto &cl1 = tmp[i];
                 const auto &cl2 = tmp[(i + 1) % tmp.size()];
 
                 if(i == 0)
-                    fb += buoyancyForce(ContactLine(ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), cl1.gamma), cl1);
+                    fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
 
                 if(i == tmp.size() - 2)
-                    fb += buoyancyForce(cl2, ContactLine(ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), cl2.gamma));
+                    fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
 
                 fb += buoyancyForce(cl1, cl2);
 
@@ -324,18 +347,20 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 Scalar g2 = cl2.gamma;
                 Scalar th1 = (cl1.pt - circ.centroid()).angle();
                 Scalar th2 = (cl2.pt - circ.centroid()).angle();
+                Scalar theta = fst_.theta(*ibObj);
 
                 // check if contact line exists between two points
-                if(g1 < 0.5 == g2 <= 0.5)
-                    continue;
+                if(g1 < 0.5 != g2 <= 0.5)
+                {
+                    Scalar alpha = (0.5 - g2) / (g1 - g2);
+                    Scalar th = alpha * th1 + (1. - alpha) * th2;
 
-                //- Interpolate along an arc
-                Scalar alpha = (0.5 - g1) / (g2 - g1);
-                Scalar th = th1 + alpha * (th2 - th1);
-                Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
+                    Vector2D t1 = Vector2D(std::cos(th - M_PI_2 + theta), std::sin(th - M_PI_2 + theta));
+                    Vector2D t2 = Vector2D(std::cos(th + M_PI_2 - theta), std::sin(th + M_PI_2 - theta));
 
-                Vector2D tcl = ((cl1.t + cl2.t) / 2.).unitVec();
-                fc += 2. * M_PI * pt.x * fst_.sigma() * tcl;
+                    Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
+                    fc += 2. * M_PI * pt.x * fst_.sigma() * (dot(t1, cl1.t) > dot(t2, cl2.t) ? t1 : t2);
+                }
             }
 
             if(circ.centroid().x == 0.)
@@ -357,4 +382,49 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
         ibObj->applyForce(fh + fw + fc + fb);
     }
+}
+
+void FractionalStepAxisymmetricDFIBMultiphase::computeFieldExtenstions(Scalar timeStep)
+{
+    auto extend = [](const ImmersedBoundaryObject &ibObj, const Cell &c)
+    {
+        for(const CellLink &nb: c.neighbours())
+            if(!ibObj.isInIb(nb.cell().centroid()))
+                return true;
+
+        for(const CellLink &nb: c.diagonals())
+            if(!ibObj.isInIb(nb.cell().centroid()))
+                return true;
+
+        return false;
+    };
+
+    for(const auto &ibObj: *ib_)
+        for(const Cell &c: ibObj->solidCells())
+        {
+            if(extend(*ibObj, c))
+            {
+                Point2D bp = ibObj->nearestIntersect(c.centroid());
+                Vector2D ns = ibObj->nearestEdgeUnitNormal(c.centroid());
+
+                CelesteImmersedBoundary::ContactLineStencil cl(*ibObj, c.centroid(), fst_.theta(*ibObj), gamma_);
+                CelesteImmersedBoundary::ContactLineStencil stn(*ibObj, c.centroid(), M_PI_2, gamma_);
+
+
+                Scalar ubn = dot(ibObj->velocity(bp), ns);
+                Scalar abn = dot(ibObj->acceleration(bp), ns);
+                Scalar rhob = cl.interpolate(rho_);
+                Scalar dRho = (rho_(c) - rhob) / (c.centroid() - bp).mag();
+                Scalar pb = stn.interpolate(p_);
+                Scalar dP = -(2 * ubn * ubn * dRho + rhob * abn);
+
+                if(!std::isnan(dP))
+                {
+                    p_(c) = pb + dP * (c.centroid() - bp).mag();
+                }
+            }
+        }
+
+    gradP_.computeAxisymmetric(rho_, rho_, *fluid_);
+    gradP_.sendMessages();
 }

@@ -24,11 +24,11 @@ void DirectForcingImmersedBoundary::updateCells()
         ibObj->clear();
 
         for(const Cell &c: ibObj->cellsWithin(*domainCells_))
-        {
-            (*cellStatus_)(c) = SOLID_CELLS;
-            ibObj->addSolidCell(c);
-            localSolidCells_.add(c);
-        }
+            if(localSolidCells_.add(c))
+            {
+                ibObj->addSolidCell(c);
+                (*cellStatus_)(c) = SOLID_CELLS;
+            }
     }
 
     cellStatus_->sendMessages();
@@ -39,14 +39,17 @@ void DirectForcingImmersedBoundary::updateCells()
             continue;
 
         for(const CellLink &nb: c.neighbours())
+        {
             if((*cellStatus_)(nb.cell()) == SOLID_CELLS)
             {
-                auto ibObj = this->ibObj(nb.cell().centroid());
-                (*cellStatus_)(c) = IB_CELLS;
-                ibObj->addIbCell(c);
-                localIbCells_.add(c);
+                if(localIbCells_.add(c))
+                {
+                    ibObj(nb.cell())->addIbCell(c);
+                    (*cellStatus_)(c) = IB_CELLS;
+                }
                 break;
             }
+        }
     }
 
     cellStatus_->sendMessages();
@@ -58,7 +61,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
 {
     FiniteVolumeEquation<Vector2D> eqn(fib, 12);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -101,7 +104,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
         else if (localSolidCells_.isInSet(cell))
         {
             eqn.set(cell, cell, -1.);
-            eqn.setSource(cell, (ibObj(cell.centroid())->velocity(cell.centroid()) - u(cell)) / timeStep);
+            eqn.setSource(cell, (ibObj(cell)->velocity(cell.centroid()) - u(cell)) / timeStep);
         }
         else
         {
@@ -120,7 +123,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
 {
     FiniteVolumeEquation<Vector2D> eqn(fib);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -168,7 +171,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
         else if (localSolidCells_.isInSet(cell))
         {
             eqn.set(cell, cell, -timeStep / rho(cell));
-            eqn.setSource(cell, ibObj(cell.centroid())->velocity(cell.centroid()) - u(cell));
+            eqn.setSource(cell, ibObj(cell)->velocity(cell.centroid()) - u(cell));
         }
         else
         {
@@ -186,7 +189,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(Vector
 {
     FiniteVolumeEquation<Vector2D> eqn(u, 10);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -224,7 +227,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(Vector
             eqn.addSource(cell, -uTilde(cell) * cell.volume() / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
+            eqn.addSource(cell, (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
     }
 
     return eqn;
@@ -236,7 +239,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(V
 {
     FiniteVolumeEquation<Vector2D> eqn(u, 10);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -274,7 +277,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(V
             eqn.addSource(cell, -uTilde(cell) * vol / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+            eqn.addSource(cell, (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
     }
 
     return eqn;
@@ -287,7 +290,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const 
 {
     FiniteVolumeEquation<Vector2D> eqn(u, 10);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -325,7 +328,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const 
             eqn.addSource(cell, -rho(cell) * uTilde(cell) * cell.volume() / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, rho(cell) * (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
+            eqn.addSource(cell, rho(cell) * (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
     }
 
     return eqn;
@@ -338,7 +341,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(c
 {
     FiniteVolumeEquation<Vector2D> eqn(u, 10);
 
-    for(const Cell& cell: grid_->localCells())
+    for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
@@ -376,7 +379,7 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(c
             eqn.addSource(cell, -rho(cell) * uTilde(cell) * vol / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, rho(cell) * (ibObj(cell.centroid())->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+            eqn.addSource(cell, rho(cell) * (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
     }
 
     return eqn;

@@ -29,6 +29,8 @@ protected:
 
     virtual void computeIbForces(Scalar timeStep) override;
 
+    virtual void computeFieldExtenstions(Scalar timeStep);
+
     Scalar rho1_, rho2_, mu1_, mu2_;
 
     ScalarFiniteVolumeField &gamma_, &gammaSrc_, &rho_, &mu_;

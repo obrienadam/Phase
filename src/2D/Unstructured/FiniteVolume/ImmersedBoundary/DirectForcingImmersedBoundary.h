@@ -18,7 +18,7 @@ public:
                                   const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                   const std::shared_ptr<CellGroup> &domainCells);
 
-    void updateCells();
+    void updateCells() override;
 
     FiniteVolumeEquation<Vector2D> computeForcingTerm(const VectorFiniteVolumeField &u,
                                                       Scalar timeStep,
@@ -71,11 +71,11 @@ public:
     const CellGroup &localSolidCells() const
     { return localSolidCells_; }
 
-//    const CellGroup &globalIbCells() const
-//    { return globalIbCells_; }
+    //    const CellGroup &globalIbCells() const
+    //    { return globalIbCells_; }
 
-//    const CellGroup &globalSolidCells() const
-//    { return globalSolidCells_; }
+    //    const CellGroup &globalSolidCells() const
+    //    { return globalSolidCells_; }
 
 private:
 

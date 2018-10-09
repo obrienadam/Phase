@@ -208,7 +208,7 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
             }
         }
 
-        if(++searches > 144)
+        if(++searches > 400)
             break;
     }
 

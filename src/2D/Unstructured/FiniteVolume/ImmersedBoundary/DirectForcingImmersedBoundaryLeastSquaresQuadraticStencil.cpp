@@ -12,7 +12,7 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
     _ibObjSets[0].clear();
     for(const CellLink &nb: cell.neighbours())
     {
-        auto ibObj = ib.ibObj(nb.cell().centroid());
+        auto ibObj = ib.ibObj(nb.cell());
 
         if(ibObj && std::find(_ibObjSets[0].begin(), _ibObjSets[0].end(), ibObj.get()) == _ibObjSets[0].end())
         {
@@ -37,7 +37,7 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
 
         for(const CellLink &nb: cell->neighbours())
         {
-            auto ibObj = ib.ibObj(nb.cell().centroid());
+            auto ibObj = ib.ibObj(nb.cell());
 
             if(ibObj && std::find(_ibObjSets[0].begin(), _ibObjSets[0].end(), ibObj.get()) != _ibObjSets[0].end()
                     && std::find(_ibObjSets[1].begin(), _ibObjSets[1].end(), ibObj.get()) == _ibObjSets[1].end())
@@ -54,7 +54,7 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
     int ndg = 0;
     for(const CellLink &nb: cell.diagonals())
     {
-        auto ibObj = ib.ibObj(nb.cell().centroid());
+        auto ibObj = ib.ibObj(nb.cell());
 
         if(!ibObj)
         {
@@ -72,7 +72,7 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
 
         for(const CellLink &nb: (*it)->neighbours())
         {
-            auto ibObj = ib.ibObj(nb.cell().centroid());
+            auto ibObj = ib.ibObj(nb.cell());
             if(std::find(_ibObjSets[0].begin(), _ibObjSets[0].end(), ibObj.get()) != _ibObjSets[0].end()
                     && std::find(_ibObjSets[1].begin(), _ibObjSets[1].end(), ibObj.get()) == _ibObjSets[1].end())
             {

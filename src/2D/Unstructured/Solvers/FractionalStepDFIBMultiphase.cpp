@@ -133,8 +133,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
     const auto &fst = *fst_->fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
-    gradP_.savePreviousIteration();
-    gradP_.sendMessages();
 
     //- Explicit predictor
     u_.savePreviousTimeStep(timeStep, 2);
@@ -396,23 +394,6 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
         std::sort(stresses.begin(), stresses.end(), [](const Stress &lhs, const Stress &rhs)
         { return lhs.phi < rhs.phi; });
 
-        if(grid_->comm().isMainProc())
-        {
-            std::ofstream fout;
-            fout.open("data_" + ibObj->name() + ".txt");
-            fout << "r,theta,rho,rgh\n";
-
-            const Circle &circ = static_cast<const Circle&>(ibObj->shape());
-
-            for(int i = 0; i < stresses.size(); ++i)
-            {
-                fout << circ.radius() << "," << stresses[i].phi << "," << stresses[i].rho
-                     << "," << stresses[i].rgh << "\n";
-            }
-
-            fout.close();
-        }
-
         Vector2D fb(0., 0.), fc(0., 0.);
 
         if(ibObj->shape().type() == Shape2D::CIRCLE)
@@ -527,6 +508,8 @@ void FractionalStepDirectForcingMultiphase::computeFieldExtenstions(Scalar timeS
                 Scalar abn = dot(ibObj->acceleration(bp), ns);
                 Scalar rhob = cl.interpolate(rho_);
                 Scalar dRho = (rho_(c) - rhob) / (c.centroid() - bp).mag();
+
+                // Convert to static pressure first
                 Scalar pb = stn.interpolate(p_);
                 Scalar dP = -(2 * ubn * ubn * dRho + rhob * abn);
 
@@ -537,6 +520,7 @@ void FractionalStepDirectForcingMultiphase::computeFieldExtenstions(Scalar timeS
             }
         }
 
+    gradP_.computeFaces();
     gradP_.faceToCell(rho_, rho_, *fluid_);
     gradP_.sendMessages();
 }

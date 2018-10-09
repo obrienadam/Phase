@@ -36,9 +36,13 @@ public:
     CellGroup solidCells() const;
 
     //- Immersed boundary object access
-    std::shared_ptr<ImmersedBoundaryObject> ibObj(const Point2D &pt);
+    virtual std::shared_ptr<ImmersedBoundaryObject> ibObj(const Point2D &pt);
 
-    std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D &pt) const;
+    virtual std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Point2D &pt) const;
+
+    virtual std::shared_ptr<ImmersedBoundaryObject> ibObj(const Cell &cell);
+
+    virtual std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Cell &cell) const;
 
     const std::vector<std::shared_ptr<const ImmersedBoundaryObject>> &findAllIbObjs(const Point2D &pt) const;
 
@@ -98,7 +102,7 @@ protected:
     static std::shared_ptr<ImmersedBoundaryObject> createIbObj(const std::string &name,
                                                                const std::unordered_map<std::string, std::string> &properties);
 
-    static std::vector<std::shared_ptr<const ImmersedBoundaryObject>> _query;
+    mutable std::vector<std::shared_ptr<const ImmersedBoundaryObject>> query_;
 
     void setCellStatus();
 
