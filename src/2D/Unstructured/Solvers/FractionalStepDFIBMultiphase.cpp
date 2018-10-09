@@ -73,19 +73,16 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Updating physical properties...\n");
     updateProperties(timeStep);
 
-    grid_->comm().printf("Solving momentum and pressure equations...\n");
+    grid_->comm().printf("Solving momentum equation...\n");
     solveUEqn(timeStep);
 
     grid_->comm().printf("Computing IB forces...\n");
     computeIbForces2(timeStep);
     ib_->applyCollisionForce(true);
 
+    grid_->comm().printf("Solving pressure equation and correcting velocities...\n");
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-
-
-    //fst_->applyFluidForces(rho_, mu_, u_, p_, gamma_, g_, *ib_);
-    //fst_->applyFluidForces(rho_, fb_, gamma_, g_, *ib_);
 
     grid_->comm().printf("Performing field extensions...\n");
     computeFieldExtenstions(timeStep);
@@ -137,8 +134,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     const auto &fst = *fst_->fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
     gradP_.savePreviousIteration();
-    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     gradP_.sendMessages();
 
     //- Explicit predictor
@@ -152,11 +147,14 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     //- Semi-implicit corrector
     u_.savePreviousIteration();
     uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.)
-            + ib_->velocityBcs(rho_, u_, u_, timeStep) + src::src(gradP_);
+            + ib_->velocityBcs(rho_, u_, u_, timeStep);
     error = uEqn_.solve();
 
     for(const Cell& c: *fluid_)
+    {
         fb_(c) = rho_(c) * (u_(c) - u_.prevIteration()(c)) / timeStep;
+        u_(c) += timeStep / rho_(c) * gradP_(c);
+    }
 
     fb_.sendMessages();
     u_.sendMessages();
