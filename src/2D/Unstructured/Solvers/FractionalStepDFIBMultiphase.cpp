@@ -361,7 +361,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
     struct Stress
     {
         Point2D pt;
-        Scalar phi, rho, rgh;
+        Scalar beta, rho, rgh;
         Scalar gamma;
         Vector2D ncl, tcl;
     };
@@ -373,10 +373,26 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
         stresses.clear();
         stresses.reserve(ibObj->ibCells().size());
 
-        for(const Cell &c: ibObj->ibCells())
+        auto computeStress = [&ibObj](const Cell &c)
         {
+            for(const CellLink &nb: c.neighbours())
+                if(!ibObj->isInIb(nb.cell().centroid()))
+                    return true;
+
+            for(const CellLink &nb: c.diagonals())
+                if(!ibObj->isInIb(nb.cell().centroid()))
+                    return true;
+
+            return false;
+        };
+
+        for(const Cell &c: ibObj->solidCells())
+        {
+            if(!computeStress(c))
+                continue;
+
             Point2D pt = ibObj->nearestIntersect(c.centroid());
-            Scalar phi = (pt - ibObj->shape().centroid()).angle();
+            Scalar beta = (pt - ibObj->shape().centroid()).angle();
 
             CelesteImmersedBoundary::ContactLineStencil st1(*ibObj, pt, fst_->theta(*ibObj), gamma_);
 
@@ -386,13 +402,13 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
             Vector2D ncl = st1.ncl();
             Vector2D tcl = st1.tcl();
 
-            stresses.push_back(Stress{pt, phi, rho, rgh, gamma, ncl, tcl});
+            stresses.push_back(Stress{pt, beta, rho, rgh, gamma, ncl, tcl});
         }
 
         stresses = grid_->comm().allGatherv(stresses);
 
         std::sort(stresses.begin(), stresses.end(), [](const Stress &lhs, const Stress &rhs)
-        { return lhs.phi < rhs.phi; });
+        { return lhs.beta < rhs.beta; });
 
         Vector2D fb(0., 0.), fc(0., 0.);
 
@@ -406,8 +422,9 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
                 const Stress &stA = stresses[i];
                 const Stress &stB = stresses[(i + 1) % stresses.size()];
 
-                Scalar tA = stA.phi;
-                Scalar tB = stB.phi;
+                Scalar tA = stA.beta;
+                Scalar tB = stB.beta < tA ? stB.beta + 2. * M_PI : stB.beta;
+
                 Scalar pA = stA.rgh;
                 Scalar pB = stB.rgh;
 
@@ -418,20 +435,14 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
 
                 Scalar gA = stA.gamma;
                 Scalar gB = stB.gamma;
-                Scalar theta = fst_->theta(*ibObj);
                 Scalar sigma = fst_->sigma();
 
                 //- sharp method
                 if(gA <= 0.5 != gB < 0.5)
                 {
                     Scalar alpha = (0.5 - gB) / (gA - gB);
-                    Scalar phi = alpha * tA + (1. - alpha) * tB;
-
-                    // Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
-                    // Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
-
-                    Vector2D tcl = stA.tcl.rotate(phi - tA);
-
+                    Scalar t = alpha * tA + (1. - alpha) * tB;
+                    Vector2D tcl = alpha < 0.5 ? stA.tcl.rotate(t - tA) : stB.tcl.rotate(t - tB);
                     fc += sigma * tcl;
                 }
             }

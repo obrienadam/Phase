@@ -235,7 +235,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
         Scalar gamma;
 
-        Vector2D n, t;
+        Vector2D ncl, tcl;
     };
 
     std::vector<ContactLine> tmp;
@@ -243,18 +243,15 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
     for(auto &ibObj: *ib_)
     {
         Vector2D fh(0., 0.);
-
         for(const Cell &c: ibObj->cells())
         {
-            Vector2D mf(0., 0.);
-
-            mf += (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) * c.polarVolume() / timeStep;
+            fh += (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) * c.polarVolume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
                 Scalar flux0 = dot(rhoU_.oldField(0)(nb.face()), nb.polarOutwardNorm()) / 2.;
                 Scalar flux1 = dot(rhoU_.oldField(1)(nb.face()), nb.polarOutwardNorm()) / 2.;
-                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
@@ -262,17 +259,16 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             {
                 Scalar flux0 = dot(rhoU_.oldField(0)(bd.face()), bd.polarOutwardNorm()) / 2.;
                 Scalar flux1 = dot(rhoU_.oldField(1)(bd.face()), bd.polarOutwardNorm()) / 2.;
-                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh += 2. * M_PI * mf;
-            fh -= 2. * M_PI * sg_(c) * c.polarVolume();
-            fh -= 2. * M_PI * (*fst_.fst())(c) * c.polarVolume();
-            fh -= 2. * M_PI * fib_(c) * c.polarVolume();
+            fh -= sg_(c) * c.polarVolume();
+            fh -= (*fst_.fst())(c) * c.polarVolume();
+            fh -= fib_(c) * c.polarVolume();
         }
 
-        fh = grid_->comm().sum(fh);
+        fh = grid_->comm().sum(2. * M_PI * fh);
 
         Vector2D fc(0., 0.), fb(0., 0.), fw(0., 0.);
 
@@ -284,21 +280,26 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             tmp.clear();
             tmp.reserve(ibObj->solidCells().size() + 2);
 
+            auto computeStress = [&ibObj](const Cell &c)
+            {
+                for(const CellLink &nb: c.neighbours())
+                    if(!ibObj->isInIb(nb.cell().centroid()))
+                        return true;
+
+                for(const CellLink &nb: c.diagonals())
+                    if(!ibObj->isInIb(nb.cell().centroid()))
+                        return true;
+
+                return false;
+            };
+
             for(const Cell &c: ibObj->solidCells())
             {
-                bool computeCl = false;
-
-                for(const CellLink &nb: c.cellLinks())
-                    if(!ib_->ibObj(nb.cell().centroid()))
-                        computeCl = true;
-
-                if(!computeCl)
+                if(!computeStress(c))
                     continue;
 
                 auto st = CelesteAxisymmetricImmersedBoundary::ContactLineStencil(*ibObj, c.centroid(), fst_.theta(*ibObj), gamma_);
                 Scalar beta = (st.cl()[1] - ibObj->shape().centroid()).angle();
-
-
                 tmp.emplace_back(ContactLine{st.cl()[1], beta, st.gamma(), st.ncl(), st.tcl()});
             }
 
@@ -312,9 +313,8 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 Scalar g1 = cl1.gamma;
                 Scalar g2 = cl2.gamma;
 
-                Scalar th1 = (cl1.pt - circ.centroid()).angle();
-                Scalar th2 = (cl2.pt - circ.centroid()).angle();
-                th2 = th2 < th1 ? th2 + 2. * M_PI : th2;
+                Scalar th1 = cl1.beta;
+                Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
 
                 Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt - circ.centroid(), g_);
                 Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt - circ.centroid(), g_);
@@ -345,40 +345,32 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
                 Scalar g1 = cl1.gamma;
                 Scalar g2 = cl2.gamma;
-                Scalar th1 = (cl1.pt - circ.centroid()).angle();
-                Scalar th2 = (cl2.pt - circ.centroid()).angle();
-                Scalar theta = fst_.theta(*ibObj);
+                Scalar th1 = cl1.beta;
+                Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
 
                 // check if contact line exists between two points
+                //- sharp method
                 if(g1 <= 0.5 != g2 < 0.5)
                 {
                     Scalar alpha = (0.5 - g2) / (g1 - g2);
                     Scalar th = alpha * th1 + (1. - alpha) * th2;
+                    Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(th - th1) : cl2.tcl.rotate(th - th2);
 
-                    // Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
-                    // Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
-
-                    Vector2D tcl = cl1.t.rotate(th - th1);
                     Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
-
                     fc += 2. * M_PI * pt.x * fst_.sigma() * tcl;
                 }
             }
 
-            if(circ.centroid().x == 0.)
-            {
-                Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
-                fw = ibObj->rho * vol * g_;
-            }
+            Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
+            fw = ibObj->rho * vol * g_;
 
             if(grid_->comm().isMainProc())
             {
-                Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
-
                 std::cout << "Hydro force = " << fh << "\n"
-                          << "Weight = " << fw + FractionalStep::rho_ * vol * g_ << "\n"
+                          << "Weight = " << fw << "\n"
                           << "Capillary force = " << fc << "\n"
-                          << "Buoyancy force = " << fb << " == " << FractionalStep::rho_ * vol * g_ << "\n";
+                          << "Buoyancy force = " << fb << "\n"
+                          << "Net force = " << fh + fw + fc + fb << "\n";
             }
         }
 
