@@ -53,12 +53,17 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
+    grid_->comm().printf("Solving gamma equation and updating properties...\n");
     solveGammaEqn(timeStep);
     updateProperties(timeStep);
+
+    grid_->comm().printf("Solving momentum and pressure equation and correting velocity...\n");
     solveUEqn(timeStep);
-    computeIbForces(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
+
+    grid_->comm().printf("Computing IB forces...\n");
+    computeIbForces(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -263,8 +268,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= sg_(c) * c.polarVolume();
-            fh -= (*fst_.fst())(c) * c.polarVolume();
             fh -= fib_(c) * c.polarVolume();
         }
 

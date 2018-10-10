@@ -1,62 +1,82 @@
 import math
 
-import numpy as np
-from scipy.integrate import solve_ivp
-
 import matplotlib.pyplot as plt
 
-
-class Func:
-    def __init__(self, lx, ly, nc, eps=1e-4, s=1e-2):
-        self.lx = lx
-        self.ly = ly
-        self.nc = nc
-        self.eps = eps
-        self.s = s
-
-    def f_wall(self, xc, yc, rc):
-        return 0, 0
-
-    def f_collision(self, xc_p, yc_p, rc_p, xc_q, yc_q, rc_q):
-        return 0, 0
-
-    def __call__(self, t, y):
-        xc = y[:self.nc // 6]
-        yc = y[self.nc // 6:self.nc // 3]
-        vxc = y[self.nc // 3:self.nc // 2]
-        vyc = y[self.nc // 2:2 * self.nc // 3]
-        rc = y[2 * self.nc // 3:5 * self.nc // 6]
-        dr = y[5 * self.nc // 6:]
-
-        fxc = np.zeros_like(xc)
-        fyc = np.zeros_like(yc)
-
-        for i, xc_p, yc_p, rc_p in zip(range(self.nc), xc, yc, rc):
-            fw = self.f_wall(xc, yc, rc)
-
-            fxc[i] += fw[0]
-            fyc[i] += fw[1]
-
-            for j, xc_q, yc_q, rc_q in zip(range(self.nc, xc, yc, rc)):
-                if i == j:
-                    continue
-
-                fc = self.f_collision(xc_p, yc_p, rc_p, xc_q, yc_q, rc_q)
-
-                fxc[i] += fc[0]
-                fyc[i] += fc[1]
-
-        return vxc, vyc, fxc, fyc, dr, np.zeros_like(rc)
-
+from shapes import *
+from solver import *
 
 if __name__ == '__main__':
     lx = 2
     ly = 1
-    nc = 36
+    n = 50
+    vf_target = 0.4
+    offsets = (0.5, 0)
 
-    f = Func(lx, ly, nc)
+    domain = Box(np.array([0, 0]), np.array([lx, ly]))
+    r = np.random.normal(0.1, 0.02, n)
 
-    x = np.random.rand(nc) * lx
-    y = np.random.rand(nc) * ly
+    nx = math.ceil(math.sqrt(lx / ly * n))
+    ny = math.ceil(math.sqrt(ly / lx * n))
 
-    solve_ivp(f.__call__, (0, 5), np.zeros(6 * nc))
+    print(nx, ny)
+
+    x = np.linspace(lx / nx / 2, lx - lx / nx / 2, nx)
+    y = np.linspace(ly / ny / 2, ly - ly / ny / 2, ny)
+    x, y = np.meshgrid(x, y, indexing='ij')
+    x = x.flatten()[:n]
+    y = y.flatten()[:n]
+
+    cylinders = [Cylinder(r, np.array([x, y])) for r, x, y in zip(r, x, y)]
+
+    vf = np.sum([c.area() for c in cylinders]) / (lx * ly)
+    ratio = (vf_target / vf) ** 0.5
+
+    for c in cylinders:
+        c.r *= ratio
+
+    solver = Solver(cylinders, domain, eps=1e-2, damping=0.1)
+
+    fig, ax = plt.subplots()
+
+    for c in cylinders:
+        c = plt.Circle((c.x[0], c.x[1]), c.r, color='red')
+        ax.add_artist(c)
+
+    plt.xlim(0, lx)
+    plt.ylim(0, ly)
+    plt.show()
+
+    r = solver.solve()
+
+    vx = r[:, :n]
+    vy = r[:, n:2 * n]
+    x = r[:, 2 * n:3 * n]
+    y = r[:, 3 * n:]
+
+    fig, ax = plt.subplots()
+
+    for c in cylinders:
+        c = plt.Circle((c.x[0], c.x[1]), c.r, color='blue')
+        ax.add_artist(c)
+
+    plt.xlim(0, lx)
+    plt.ylim(0, ly)
+    plt.show()
+
+    print(r.shape)
+
+    with open('cylinders.info', 'w') as f:
+        for i, c in enumerate(cylinders):
+            if c.x[0] > 0 and c.x[0] < lx and c.x[1] > 0 and c.x[1] < ly:
+                f.write(
+                    'Cylinder{}\n'.format(i) +
+                    '{\n' +
+                    '  geometry\n' +
+                    '  {\n' +
+                    '    center ({},{})\n'.format(c.x[0] + offsets[0], c.x[1] + offsets[1]) +
+                    '    radius {}\n'.format(c.r) +
+                    '  }\n'
+                    '}\n\n'
+                )
+            else:
+                print('Cylinder out of bounds, not writing')

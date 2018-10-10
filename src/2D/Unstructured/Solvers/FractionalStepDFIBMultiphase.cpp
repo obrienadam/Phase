@@ -76,13 +76,13 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     grid_->comm().printf("Solving momentum equation...\n");
     solveUEqn(timeStep);
 
-    grid_->comm().printf("Computing IB forces...\n");
-    computeIbForces2(timeStep);
-    ib_->applyCollisionForce(true);
-
     grid_->comm().printf("Solving pressure equation and correcting velocities...\n");
     solvePEqn(timeStep);
     correctVelocity(timeStep);
+
+    grid_->comm().printf("Computing IB forces...\n");
+    computeIbForces2(timeStep);
+    ib_->applyCollisionForce(true);
 
     grid_->comm().printf("Performing field extensions...\n");
     computeFieldExtenstions(timeStep);
@@ -261,101 +261,6 @@ void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)
         u_(face) -= timeStep / rho_(face) * gradP_(face);
 }
 
-void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
-{
-    struct Stress
-    {
-        Point2D pt;
-        Scalar phi;
-        Scalar rho, p, gamma;
-        Vector2D ncl, tcl;
-    };
-
-    std::vector<Stress> stresses;
-
-    for(auto &ibObj: *ib_)
-    {
-        stresses.clear();
-        stresses.reserve(ibObj->ibCells().size());
-
-        for(const Cell &c: ibObj->ibCells())
-        {
-            Point2D pt = ibObj->nearestIntersect(c.centroid());
-            Scalar phi = (pt - ibObj->shape().centroid()).angle();
-
-            CelesteImmersedBoundary::ContactLineStencil st1(*ibObj, pt, fst_->theta(*ibObj), gamma_);
-            CelesteImmersedBoundary::ContactLineStencil st2(*ibObj, pt, M_PI_2, gamma_);
-
-            Scalar rho = st1.interpolate(rho_);
-            Scalar p = st2.interpolate(p_) + rho * dot(g_, pt - ibObj->shape().centroid());
-            Scalar gamma = st1.gamma();
-            Vector2D ncl = st1.ncl();
-            Vector2D tcl = st1.tcl();
-
-            stresses.push_back(Stress{pt, phi, rho, p, gamma, ncl, tcl});
-        }
-
-        stresses = grid_->comm().allGatherv(stresses);
-
-        std::sort(stresses.begin(), stresses.end(), [](const Stress &lhs, const Stress &rhs)
-        { return lhs.phi < rhs.phi; });
-
-        Vector2D fh(0., 0.), fc(0., 0.);
-        if(ibObj->shape().type() == Shape2D::CIRCLE)
-        {
-            const Circle &circ = static_cast<const Circle&>(ibObj->shape());
-            Scalar r = circ.radius();
-
-            for(auto i = 0; i < stresses.size(); ++i)
-            {
-                const Stress &stA = stresses[i];
-                const Stress &stB = stresses[(i + 1) % stresses.size()];
-
-                Scalar tA = stA.phi;
-                Scalar tB = stB.phi;
-                Scalar pA = stA.p;
-                Scalar pB = stB.p;
-
-                while(tB < tA)
-                    tB += 2 * M_PI;
-
-                fh += r * Vector2D(
-                            pA*tA*sin(tA) - pA*tB*sin(tA) + pA*cos(tA) - pA*cos(tB) - pB*tA*sin(tB) + pB*tB*sin(tB) - pB*cos(tA) + pB*cos(tB),
-                            -pA*tA*cos(tA) + pA*tB*cos(tA) + pA*sin(tA) - pA*sin(tB) + pB*tA*cos(tB) - pB*tB*cos(tB) - pB*sin(tA) + pB*sin(tB)
-                            ) / (tA - tB);
-
-                Scalar gA = stA.gamma;
-                Scalar gB = stB.gamma;
-                Scalar theta = fst_->theta(*ibObj);
-                Scalar sigma = fst_->sigma();
-
-                //- sharp method
-                if(gA < 0.5 != gB <= 0.5)
-                {
-                    Scalar alpha = (0.5 - gB) / (gA - gB);
-                    Scalar phi = alpha * tA + (1. - alpha) * tB;
-
-                    Vector2D t1 = Vector2D(std::cos(phi - M_PI_2 + theta), std::sin(phi - M_PI_2 + theta));
-                    Vector2D t2 = Vector2D(std::cos(phi + M_PI_2 - theta), std::sin(phi + M_PI_2 - theta));
-
-                    fc += sigma * (dot(t1, stA.tcl) > dot(t2, stB.tcl) ? t1 : t2);
-                }
-            }
-        }
-
-        Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
-
-        if(grid_->comm().isMainProc())
-            std::cout << "Hydrodynamic force = " << fh << "\n"
-                      << "Capillary force = " << fc << "\n"
-                      << "Weight = " << fw << "\n"
-                      << "Net = " << fh + fc + fw << "\n";
-
-
-        ibObj->applyForce(fh + fc + fw);
-    }
-}
-
 void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
 {
     struct Stress
@@ -469,8 +374,6 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= sg_(c) * c.volume();
-            fh -= (*fst_->fst())(c) * c.volume();
             fh -= fb_(c) * c.volume();
         }
 
