@@ -356,14 +356,15 @@ void ImmersedBoundary::applyCollisionForce(bool add)
     if(collisionModel_)
         for (auto ibObjP: ibObjs_)
         {
+            //- Dont compute if no motion
+            if(!ibObjP->motion())
+                continue;
+
             Vector2D fc(0., 0.);
 
             //- Collisions with particles
             for (auto ibObjQ: ibObjs_)
                 fc += collisionModel_->force(*ibObjP, *ibObjQ);
-
-            if(grid_->comm().isMainProc())
-                std::cout << "Collision force = " << fc << std::endl;
 
             if(add)
                 ibObjP->addForce(fc);

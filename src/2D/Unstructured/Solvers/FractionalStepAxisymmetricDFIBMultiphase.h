@@ -17,6 +17,17 @@ public:
 
 protected:
 
+    struct ContactLine
+    {
+        Point2D pt;
+
+        Scalar beta;
+
+        Scalar gamma;
+
+        Vector2D ncl, tcl;
+    };
+
     virtual Scalar solveGammaEqn(Scalar timeStep);
 
     void updateProperties(Scalar timeStep);
@@ -35,13 +46,15 @@ protected:
 
     ScalarFiniteVolumeField &gamma_, &gammaSrc_, &rho_, &mu_;
 
-    VectorFiniteVolumeField &rhoU_, &sg_;
+    VectorFiniteVolumeField &sg_;
 
     ScalarGradient &gradGamma_, &gradRho_;
 
     CelesteAxisymmetricImmersedBoundary fst_;
 
     FiniteVolumeEquation<Scalar> gammaEqn_;
+
+    std::vector<ContactLine> contactLines_;
 };
 
 #endif

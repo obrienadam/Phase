@@ -35,6 +35,10 @@ public:
     Vector2D tangentVec() const
     { return Vector2D(-y, x); }
 
+    Vector2D normalComponent(const Vector2D &norm) const;
+
+    Vector2D tangentialComponent(const Vector2D &norm) const;
+
     Scalar angle() const;
 
     Scalar angle(const Vector2D &other) const;

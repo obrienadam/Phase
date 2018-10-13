@@ -48,18 +48,11 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeF
     Vector2D nl;
 
     if(cellA_ && cellB_)
-    {
-        nl = (cellB_->centroid() - cellA_->centroid()).unitVec();
-        nl = gamma(*cellA_) >= gamma(*cellB_) ? nl : -nl;
-    }
+        nl = (gamma(*cellA_) - gamma(*cellB_)) * (cellB_->centroid() - cellA_->centroid());
     else if(cellA_ && face_)
-    {
-        nl = (face_->centroid() - cellA_->centroid()).unitVec();
-        nl = gamma(*cellA_) >= gamma(*face_) ? nl : -nl;
-    }
+        nl = (gamma(*cellA_) - gamma(*face_)) * (face_->centroid() - cellA_->centroid());
 
-    ncl_ = ns_.rotate(M_PI_2);
-    ncl_ = (dot(ncl_, nl) * ncl_).unitVec();
+    ncl_ = nl.tangentialComponent(ns_).unitVec();
 
     if(std::isnan(ncl_.x) || std::isnan(ncl_.y))
         ncl_ = ns_.rotate(M_PI_2);
@@ -90,7 +83,9 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
         Scalar g1 = c1.interpolate(gamma);
         Scalar g2 = c2.interpolate(gamma);
 
-        if(theta_ < M_PI_2 && g1 > g2 || theta_ > M_PI_2 && g1 < g2)
+        if(g1 == g2)
+            init(gamma);
+        else if(theta_ < M_PI_2 && g1 > g2 || theta_ > M_PI_2 && g1 < g2)
         {
             *this = c1;
             gamma_ = g1;

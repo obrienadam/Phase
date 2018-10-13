@@ -2,7 +2,7 @@
 #include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
 #include "FiniteVolume/Discretization/TimeDerivative.h"
 #include "FiniteVolume/Discretization/Divergence.h"
-#include "FiniteVolume/Discretization/SecondOrderExplicitDivergence.h"
+#include "FiniteVolume/Discretization/ExplicitDivergence.h"
 #include "FiniteVolume/Discretization/Laplacian.h"
 #include "FiniteVolume/Discretization/Source.h"
 #include "FiniteVolume/Discretization/StressTensor.h"
@@ -34,33 +34,9 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
-    //    grid_->comm().printf("Zeroing pressure gradient at forcing points...\n");
-    //    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    //    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
-    //    grid_->sendMessages(gradP_);
-
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-
-    for(const auto& ibObj: *ib_)
-    {
-        Vector2D f(0., 0.);
-
-        for(const Cell &c: ibObj->cells())
-        {
-            f -= rho_ * fb_(c) * c.volume();
-        }
-
-        f = grid_->comm().sum(f);
-
-        if(grid_->comm().isMainProc())
-        {
-            std::cout << "IB Object \"" << ibObj->name() << "\":\n"
-                      << "Force method 1: " << ibObj->force() << "\n"
-                      << "Force method 2: " << f << "\n";
-        }
-    }
 
     //    grid_->comm().printf("Peforming field extension...\n");
     //    solveExtEqns();
@@ -81,15 +57,11 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 2);
 
     //- explicit predictor
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::div(u_, u_, 0.)
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
              == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
 
     Scalar error = uEqn_.solve();
     grid_->sendMessages(u_);
-
-    //    fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
-    //    fbEqn_.solve();
-    //    grid_->sendMessages(fb_);
 
     //- semi-implicit corrector
     uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)

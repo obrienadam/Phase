@@ -2,6 +2,7 @@
 #include "FiniteVolume/Motion/SolidBodyMotion.h"
 #include "FiniteVolume/Discretization/AxisymmetricTimeDerivative.h"
 #include "FiniteVolume/Discretization/AxisymmetricDivergence.h"
+#include "FiniteVolume/Discretization/AxisymmetricExplicitDivergence.h"
 #include "FiniteVolume/Discretization/AxisymmetricStressTensor.h"
 #include "FiniteVolume/Discretization/AxisymmetricSource.h"
 
@@ -51,7 +52,7 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepAxisymmetricDFIB::ib() con
 Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (axi::ddt(u_, timeStep) + axi::div(u_, u_, 0.)
+    uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 0.5)
              == axi::divSigma(mu_ / rho_, p_, u_, 0.));
 
     Scalar error = uEqn_.solve();

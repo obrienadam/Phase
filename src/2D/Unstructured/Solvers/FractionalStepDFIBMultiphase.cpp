@@ -4,7 +4,7 @@
 #include "FiniteVolume/Multiphase/CelesteImmersedBoundary.h"
 #include "FiniteVolume/Discretization/TimeDerivative.h"
 #include "FiniteVolume/Discretization/Divergence.h"
-#include "FiniteVolume/Discretization/SecondOrderExplicitDivergence.h"
+#include "FiniteVolume/Discretization/ExplicitDivergence.h"
 #include "FiniteVolume/Discretization/Laplacian.h"
 #include "FiniteVolume/Discretization/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -19,7 +19,6 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
       mu_(*addField<Scalar>("mu", fluid_)),
       gammaSrc_(*addField<Scalar>("gammaSrc", fluid_)),
       sg_(*addField<Vector2D>("sg", fluid_)),
-      rhoU_(grid_, "rhoU", Vector2D(0., 0.), true, false, fluid_),
       gradGamma_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma_, fluid_)))),
       gradRho_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(rho_, fluid_)))),
       fst_(std::make_shared<CelesteImmersedBoundary>(input, grid_, fluid_, ib_)),
@@ -62,7 +61,6 @@ void FractionalStepDirectForcingMultiphase::initialize()
 Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
 {
     //- Perform field extension
-
     grid_->comm().printf("Updating IB positions and cell categories...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
@@ -81,11 +79,11 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     correctVelocity(timeStep);
 
     grid_->comm().printf("Computing IB forces...\n");
-    computeIbForces2(timeStep);
+    computeIbForces(timeStep);
     ib_->applyCollisionForce(true);
 
-    grid_->comm().printf("Performing field extensions...\n");
-    computeFieldExtenstions(timeStep);
+    //    grid_->comm().printf("Performing field extensions...\n");
+    //    computeFieldExtenstions(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -117,11 +115,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     gamma_.sendMessages();
     gamma_.interpolateFaces();
 
-    //- Compute exact fluxes used for gamma advection
-    rhoU_.savePreviousTimeStep(timeStep, 2);
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_.oldField(0));
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(1));
-
     //- Update the gradient
     gradGamma_.compute(*fluid_);
     gradGamma_.sendMessages();
@@ -136,7 +129,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 
     //- Explicit predictor
     u_.savePreviousTimeStep(timeStep, 2);
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div2e(rhoU_, u_, 0.5)
+    uEqn_ = (rho_ * fv::ddt(u_, timeStep) + rho_ * fv::dive(u_, u_, 0.5)
              == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
@@ -186,7 +179,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
             break;
         case VectorFiniteVolumeField::SYMMETRY:
             for (const Face &f: patch)
-                u_(f) = u_(f.lCell()) - dot(u_(f.lCell()), f.norm()) * f.norm() / f.norm().magSqr();
+                u_(f) = u_(f.lCell()).tangentialComponent(f.norm());
             break;
         }
 
@@ -228,6 +221,7 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
         sg_(face) = -dot(g_, face.centroid()) * gradRho_(face);
 
     sg_.faceToCell(rho_, rho_, *fluid_);
+    sg_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     sg_.sendMessages();
 
     //- Update viscosity from kinematic viscosity
@@ -244,9 +238,7 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_->computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_->fst()->faceToCell(rho_, rho_, *fluid_);
-    fst_->fst()->fill(Vector2D(0., 0.), ib_->solidCells());
-
-    //- Must be communicated for proper momentum interpolation
+    fst_->fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_->fst()->sendMessages();
 }
 
@@ -261,22 +253,11 @@ void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)
         u_(face) -= timeStep / rho_(face) * gradP_(face);
 }
 
-void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
+void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
 {
-    struct Stress
-    {
-        Point2D pt;
-        Scalar beta, rho, rgh;
-        Scalar gamma;
-        Vector2D ncl, tcl;
-    };
-
-    std::vector<Stress> stresses;
-
     for(auto &ibObj: *ib_)
     {
-        stresses.clear();
-        stresses.reserve(ibObj->ibCells().size());
+        contactLines_.clear();
 
         auto computeStress = [&ibObj](const Cell &c)
         {
@@ -307,12 +288,12 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
             Vector2D ncl = st1.ncl();
             Vector2D tcl = st1.tcl();
 
-            stresses.push_back(Stress{pt, beta, rho, rgh, gamma, ncl, tcl});
+            contactLines_.push_back(ContactLine{pt, beta, rho, rgh, gamma, ncl, tcl});
         }
 
-        stresses = grid_->comm().allGatherv(stresses);
+        contactLines_ = grid_->comm().allGatherv(contactLines_);
 
-        std::sort(stresses.begin(), stresses.end(), [](const Stress &lhs, const Stress &rhs)
+        std::sort(contactLines_.begin(), contactLines_.end(), [](const ContactLine &lhs, const ContactLine &rhs)
         { return lhs.beta < rhs.beta; });
 
         Vector2D fb(0., 0.), fc(0., 0.);
@@ -322,10 +303,10 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
             const Circle &circ = static_cast<const Circle&>(ibObj->shape());
             Scalar r = circ.radius();
 
-            for(auto i = 0; i < stresses.size(); ++i)
+            for(auto i = 0; i < contactLines_.size(); ++i)
             {
-                const Stress &stA = stresses[i];
-                const Stress &stB = stresses[(i + 1) % stresses.size()];
+                const ContactLine &stA = contactLines_[i];
+                const ContactLine &stB = contactLines_[(i + 1) % contactLines_.size()];
 
                 Scalar tA = stA.beta;
                 Scalar tB = stB.beta < tA ? stB.beta + 2. * M_PI : stB.beta;
@@ -353,23 +334,24 @@ void FractionalStepDirectForcingMultiphase::computeIbForces2(Scalar timeStep)
             }
         }
 
+        //- Compute the hydro force from the ib force
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) * c.volume() / timeStep;
+            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
-                Scalar flux0 = dot(rhoU_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
-                Scalar flux1 = dot(rhoU_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
+                Scalar flux0 = rho_(c) * dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
+                Scalar flux1 = rho_(c) * dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
             for(const BoundaryLink &bd: c.boundaries())
             {
-                Scalar flux0 = dot(rhoU_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
-                Scalar flux1 = dot(rhoU_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
+                Scalar flux0 = rho_(c) * dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
+                Scalar flux1 = rho_(c) * dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }

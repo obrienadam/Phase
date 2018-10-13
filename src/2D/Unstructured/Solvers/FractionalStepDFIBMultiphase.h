@@ -16,6 +16,18 @@ public:
 
 protected:
 
+    //- This class is used to communicate contact line info
+    struct ContactLine
+    {
+        Point2D pt;
+
+        Scalar beta, rho, rgh;
+
+        Scalar gamma;
+
+        Vector2D ncl, tcl;
+    };
+
     Scalar solveGammaEqn(Scalar timeStep);
 
     Scalar solveUEqn(Scalar timeStep) override;
@@ -28,21 +40,21 @@ protected:
 
     void computeIbForces(Scalar timeStep);
 
-    void computeIbForces2(Scalar timeStep);
-
     void computeFieldExtenstions(Scalar timeStep);
 
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
 
     ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_;
 
-    VectorFiniteVolumeField &sg_, rhoU_;
+    VectorFiniteVolumeField &sg_;
 
     ScalarGradient &gradGamma_, &gradRho_;
 
     std::shared_ptr<CelesteImmersedBoundary> fst_;
 
     FiniteVolumeEquation<Scalar> gammaEqn_;
+
+    std::vector<ContactLine> contactLines_;
 };
 
 #endif

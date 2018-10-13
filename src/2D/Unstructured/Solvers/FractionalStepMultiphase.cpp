@@ -1,7 +1,7 @@
 #include "Math/Algorithm.h"
 #include "FiniteVolume/Discretization/TimeDerivative.h"
 #include "FiniteVolume/Discretization/Divergence.h"
-#include "FiniteVolume/Discretization/SecondOrderExplicitDivergence.h"
+#include "FiniteVolume/Discretization/ExplicitDivergence.h"
 #include "FiniteVolume/Discretization/Laplacian.h"
 #include "FiniteVolume/Discretization/Source.h"
 #include "FiniteVolume/Discretization/Cicsam.h"
@@ -91,21 +91,21 @@ Scalar FractionalStepMultiphase::solveGammaEqn(Scalar timeStep)
     gradGamma_.sendMessages();
 
     //- Must be the exact momentum flux used to calculate gamma
-    rhoU_.savePreviousTimeStep(timeStep, 1);
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_);
-    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(0));
+    rhoU_.savePreviousTimeStep(timeStep, 2);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_.oldField(0));
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(1));
 
     return error;
 }
 
 Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
 {
-    u_.savePreviousTimeStep(timeStep, 1);
+    u_.savePreviousTimeStep(timeStep, 2);
     const auto &fst = *fst_.fst();
 
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
-    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::div(rhoU_, u_, 0.5)
+    uEqn_ = (rho_ * fv::ddt(u_, timeStep) + rho_ * fv::dive(u_, u_, 0.5)
              == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
@@ -138,10 +138,7 @@ Scalar FractionalStepMultiphase::solveUEqn(Scalar timeStep)
             break;
         case VectorFiniteVolumeField::SYMMETRY:
             for (const Face &f: patch)
-            {
-                Vector2D tw = f.norm().tangentVec();
-                u_(f) = dot(u_(f.lCell()), tw) * tw / tw.magSqr();
-            }
+                u_(f) = u_(f.lCell()).tangentialComponent(f.norm());
             break;
         }
 

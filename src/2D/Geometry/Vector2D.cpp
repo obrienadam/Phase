@@ -28,6 +28,16 @@ Vector2D Vector2D::unitVec() const
     return *this / mag();
 }
 
+Vector2D Vector2D::normalComponent(const Vector2D &norm) const
+{
+    return dot(*this, norm) / norm.magSqr() * norm;
+}
+
+Vector2D Vector2D::tangentialComponent(const Vector2D &norm) const
+{
+    return *this - normalComponent(norm);
+}
+
 Scalar Vector2D::angle() const
 {
     return std::atan2(y, x);

@@ -8,11 +8,11 @@ from solver import *
 if __name__ == '__main__':
     lx = 2
     ly = 1
-    n = 50
+    n = 72
     vf_target = 0.4
     offsets = (0.5, 0)
 
-    domain = Box(np.array([0, 0]), np.array([lx, ly]))
+    domain = Box(Point2D(0, 0), Point2D(lx, ly))
     r = np.random.normal(0.1, 0.02, n)
 
     nx = math.ceil(math.sqrt(lx / ly * n))
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     x = x.flatten()[:n]
     y = y.flatten()[:n]
 
-    cylinders = [Cylinder(r, np.array([x, y])) for r, x, y in zip(r, x, y)]
+    cylinders = [Cylinder(r, Point2D(x, y)) for r, x, y in zip(r, x, y)]
 
     vf = np.sum([c.area() for c in cylinders]) / (lx * ly)
     ratio = (vf_target / vf) ** 0.5
@@ -34,12 +34,12 @@ if __name__ == '__main__':
     for c in cylinders:
         c.r *= ratio
 
-    solver = Solver(cylinders, domain, eps=1e-2, damping=0.1)
+    solver = Solver(cylinders, domain, eps=2.5e-3, damping=0.01, s=0.05)
 
     fig, ax = plt.subplots()
 
     for c in cylinders:
-        c = plt.Circle((c.x[0], c.x[1]), c.r, color='red')
+        c = plt.Circle((c.xc.x, c.xc.y), c.r, color='red')
         ax.add_artist(c)
 
     plt.xlim(0, lx)
@@ -56,24 +56,28 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
 
     for c in cylinders:
-        c = plt.Circle((c.x[0], c.x[1]), c.r, color='blue')
+        c = plt.Circle((c.xc.x, c.xc.y), c.r, color='blue')
         ax.add_artist(c)
 
     plt.xlim(0, lx)
     plt.ylim(0, ly)
     plt.show()
 
-    print(r.shape)
+    sum = 0.
+    for c in cylinders:
+        sum += 2. * c.r
+
+    print('mean diameter =', sum / len(cylinders))
 
     with open('cylinders.info', 'w') as f:
         for i, c in enumerate(cylinders):
-            if c.x[0] > 0 and c.x[0] < lx and c.x[1] > 0 and c.x[1] < ly:
+            if c.xc.x > 0 and c.xc.x < lx and c.xc.y > 0 and c.xc.y < ly:
                 f.write(
                     'Cylinder{}\n'.format(i) +
                     '{\n' +
                     '  geometry\n' +
                     '  {\n' +
-                    '    center ({},{})\n'.format(c.x[0] + offsets[0], c.x[1] + offsets[1]) +
+                    '    center ({},{})\n'.format(c.xc.x + offsets[0], c.xc.y + offsets[1]) +
                     '    radius {}\n'.format(c.r) +
                     '  }\n'
                     '}\n\n'

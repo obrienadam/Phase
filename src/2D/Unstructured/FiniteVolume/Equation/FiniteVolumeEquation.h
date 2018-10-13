@@ -106,7 +106,7 @@ protected:
 };
 
 template<class T>
-FiniteVolumeEquation<T> operator * (const ScalarFiniteVolumeField &lhs, FiniteVolumeEquation<T> rhs);
+FiniteVolumeEquation<T> operator *(const ScalarFiniteVolumeField &lhs, FiniteVolumeEquation<T> rhs);
 
 #include "FiniteVolumeEquation.tpp"
 
