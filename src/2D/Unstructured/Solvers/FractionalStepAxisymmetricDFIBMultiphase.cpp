@@ -143,7 +143,7 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
     const VectorFiniteVolumeField &fst = *fst_.fst();
 
     u_.savePreviousTimeStep(timeStep, 2);
-    uEqn_ = (rho_ * axi::ddt(rho_, u_, timeStep) + rho_ * axi::dive(u_, u_, 0.5)
+    uEqn_ = (rho_ * axi::ddt(u_, timeStep) + rho_ * axi::dive(u_, u_, 0.5)
              == axi::laplacian(mu_, u_, 0.) + axi::src::src(sg_ + fst - gradP_));
 
     uEqn_.solve();

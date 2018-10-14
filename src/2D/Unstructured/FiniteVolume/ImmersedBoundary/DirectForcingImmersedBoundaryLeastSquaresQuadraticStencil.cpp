@@ -53,6 +53,13 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
                 _ibObjSets[1].emplace_back(ibObj.get());
             }
         }
+
+        for(const BoundaryLink &bd: stCell->boundaries())
+        {
+            auto ibObj = ib.ibObj(bd.face().centroid());
+            if(!ibObj)
+                _faces.push_back(&bd.face());
+        }
     }
 
     if(nReconstructionPoints() < 2)
