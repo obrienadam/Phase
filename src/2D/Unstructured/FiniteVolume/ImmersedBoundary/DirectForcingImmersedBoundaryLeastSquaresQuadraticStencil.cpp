@@ -23,60 +23,33 @@ DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::LeastSquaresQuadrat
             _cells.push_back(&nb.cell());
     }
 
+    for(const CellLink &nb: cell.diagonals())
+    {
+        auto ibObj = ib.ibObj(nb.cell());
+
+        if(!ibObj)
+            _cells.push_back(&nb.cell());
+    }
+
     for(const BoundaryLink &bd: cell.boundaries())
     {
         auto ibObj = ib.ibObj(bd.face().centroid());
-
         if(!ibObj)
             _faces.push_back(&bd.face());
     }
 
-    for(const Cell *cell: _cells)
+    for(const Cell *stCell: _cells)
     {
         _ibObjSets[1].clear();
 
-        for(const CellLink &nb: cell->neighbours())
+        for(const CellLink &nb: stCell->neighbours())
         {
             auto ibObj = ib.ibObj(nb.cell());
 
             if(ibObj && std::find(_ibObjSets[0].begin(), _ibObjSets[0].end(), ibObj.get()) != _ibObjSets[0].end()
                     && std::find(_ibObjSets[1].begin(), _ibObjSets[1].end(), ibObj.get()) == _ibObjSets[1].end())
             {
-                _compatPts.push_back(CompatPoint(*cell, *ibObj));
-                _ibObjSets[1].emplace_back(ibObj.get());
-            }
-        }
-    }
-
-//    if(nReconstructionPoints() >= 6)
-//        return;
-
-    int ndg = 0;
-    for(const CellLink &nb: cell.diagonals())
-    {
-        auto ibObj = ib.ibObj(nb.cell());
-
-        if(!ibObj)
-        {
-            _cells.push_back(&nb.cell());
-            ndg++;
-        }
-    }
-
-//    if(nReconstructionPoints() >= 6)
-//        return;
-
-    for(auto it = _cells.end() - ndg; it != _cells.end(); ++it)
-    {
-        _ibObjSets[1].clear();
-
-        for(const CellLink &nb: (*it)->neighbours())
-        {
-            auto ibObj = ib.ibObj(nb.cell());
-            if(std::find(_ibObjSets[0].begin(), _ibObjSets[0].end(), ibObj.get()) != _ibObjSets[0].end()
-                    && std::find(_ibObjSets[1].begin(), _ibObjSets[1].end(), ibObj.get()) == _ibObjSets[1].end())
-            {
-                _compatPts.push_back(CompatPoint(*(*it), *ibObj));
+                _compatPts.push_back(CompatPoint(*stCell, *ibObj));
                 _ibObjSets[1].emplace_back(ibObj.get());
             }
         }
@@ -126,8 +99,9 @@ Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::linearInterp
 
     _b.resize(1, 3);
     _b.setRow(0, {x.x, x.y, 1.});
+    _A.pinvert();
 
-    return _b * pseudoInverse(_A);
+    return _b * _A;
 }
 
 Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::quadraticInterpolationCoeffs(const Point2D &x) const
@@ -155,7 +129,6 @@ Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::quadraticInt
 
     _b.resize(1, 6);
     _b.setRow(0, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-
     _A.pinvert();
 
     return _b * _A;

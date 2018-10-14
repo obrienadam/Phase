@@ -38,9 +38,6 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    //    grid_->comm().printf("Peforming field extension...\n");
-    //    solveExtEqns();
-
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
 

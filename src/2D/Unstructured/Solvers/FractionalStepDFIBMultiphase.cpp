@@ -55,6 +55,7 @@ void FractionalStepDirectForcingMultiphase::initialize()
 
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
+    gradGamma_.sendMessages();
     updateProperties(0.);
 }
 
@@ -105,6 +106,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     //- Corrector
     gamma_.savePreviousIteration();
     fst_->computeContactLineExtension(gamma_);
+    gamma_.sendMessages();
 
     for(const Cell &c: *fluid_)
         gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
@@ -139,6 +141,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     u_.savePreviousIteration();
     uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.)
             + ib_->velocityBcs(rho_, u_, u_, timeStep);
+
     error = uEqn_.solve();
 
     for(const Cell& c: *fluid_)
@@ -259,7 +262,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
     {
         contactLines_.clear();
 
-        auto computeStress = [&ibObj](const Cell &c)
+        auto computeContactLine = [&ibObj](const Cell &c)
         {
             for(const CellLink &nb: c.neighbours())
                 if(!ibObj->isInIb(nb.cell().centroid()))
@@ -274,7 +277,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
 
         for(const Cell &c: ibObj->solidCells())
         {
-            if(!computeStress(c))
+            if(!computeContactLine(c))
                 continue;
 
             Point2D pt = ibObj->nearestIntersect(c.centroid());

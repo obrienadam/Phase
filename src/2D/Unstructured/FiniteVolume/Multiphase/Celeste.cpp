@@ -49,19 +49,36 @@ void Celeste::computeGradGammaTilde(const ScalarFiniteVolumeField &gamma)
     gradGammaTilde.fill(Vector2D(0., 0.));
     for (const Cell &cell: *fluid_)
         gradGammaTilde(cell) = gradGammaTildeStencils_[cell.id()].grad(gammaTilde);
+
+    gradGammaTilde.sendMessages();
 }
 
 void Celeste::computeCurvature()
 {
-    kappa_->fill(0.);
-
     auto &n = *n_;
     auto &kappa = *kappa_;
-    const auto &gradGammaTilde = *gradGammaTilde_;
+
+    auto validCurvature = [&n](const Cell &cell)
+    {
+        if(n(cell).magSqr() == 0.)
+            return false;
+
+        for(const CellLink &nb: cell.neighbours())
+            if(n(nb.cell()).magSqr() == 0.)
+                return false;
+
+        for(const CellLink &nb: cell.diagonals())
+            if(n(nb.cell()).magSqr() == 0.)
+                return false;
+
+        return true;
+    };
 
     for (const Cell &cell: kappa.cells())
-        if (gradGammaTilde(cell).magSqr() > 0.)
+        if (validCurvature(cell))
             kappa(cell) = kappaStencils_[cell.id()].kappa(n);
+        else
+            kappa(cell) = 0.;
 
     kappa.sendMessages();
 

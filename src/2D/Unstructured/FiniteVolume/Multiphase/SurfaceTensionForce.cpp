@@ -93,7 +93,7 @@ void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
     for(const auto &k: kernels_)
         gammaTilde(k.cell()) = k.eval(gamma);
 
-    grid_->sendMessages(gammaTilde);
+    gammaTilde.sendMessages();
     gammaTilde.setBoundaryFaces();
 }
 

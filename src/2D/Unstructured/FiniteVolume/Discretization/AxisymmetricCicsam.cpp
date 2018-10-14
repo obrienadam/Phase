@@ -27,6 +27,9 @@ std::vector<Scalar> axi::cicsam::faceInterpolationWeights(const VectorFiniteVolu
 
         Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
+        if(std::isnan(gammaDTilde))
+            gammaDTilde = 0.;
+
         Scalar coD = 0.; //- Cell courant number
         for (const InteriorLink &nb: d.neighbours())
             coD += std::max(dot(u(nb.face()), nb.polarOutwardNorm()) / d.polarVolume() * timeStep, 0.);
@@ -39,8 +42,11 @@ std::vector<Scalar> axi::cicsam::faceInterpolationWeights(const VectorFiniteVolu
         Scalar gammaFTilde = psiF * ::cicsam::hc(gammaDTilde, coD) + (1. - psiF) * ::cicsam::uq(gammaDTilde, coD);
         Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
 
+        if(std::isnan(betaFace))
+            betaFace = 0.;
+
         //- If stencil cannot be computed, default to upwind
-        beta[face.id()] = std::isnan(betaFace) ? 0. : clamp(betaFace, 0., 1.);
+        beta[face.id()] = betaFace;
     }
 
     return beta;

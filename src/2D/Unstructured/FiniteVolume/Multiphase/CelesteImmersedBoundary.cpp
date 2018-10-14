@@ -460,8 +460,6 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
     for (const Cell &cell: n.grid()->cells())
         n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
 
-    n.sendMessages();
-
     //- Override the ib cells in the contact line region only
     for(const auto &ibObj: *ib_.lock())
         for(const Cell& cell: ibObj->cells())
@@ -479,6 +477,8 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
                     n(cell) = st.ncl();
                 }
             }
+
+    n.sendMessages();
 
     //- Boundary faces set from contact line orientation
     for (const FaceGroup &patch: n.grid()->patches())

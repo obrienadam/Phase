@@ -5,23 +5,37 @@ CelesteAxisymmetricImmersedBoundary::CelesteAxisymmetricImmersedBoundary(const I
                                                                          const std::shared_ptr<CellGroup> &fluidCells,
                                                                          const std::weak_ptr<const ImmersedBoundary> &ib)
     :
-      CelesteImmersedBoundary(input, grid, fluidCells, ib),
-      kappaRZ_(std::make_shared<VectorFiniteVolumeField>(grid, "kappaRZ", 0., true, false, fluidCells))
+      CelesteImmersedBoundary(input, grid, fluidCells, ib)
 {
 
 }
 
 void CelesteAxisymmetricImmersedBoundary::computeCurvature()
 {
-    kappa_->fill(0.);
-    kappaRZ_->fill(Vector2D(0., 0.));
-
     auto &n = *n_;
     auto &kappa = *kappa_;
 
+    auto validCurvature = [&n](const Cell &c)
+    {
+        if(n(c).magSqr() == 0.)
+            return false;
+
+        for(const CellLink &nb: c.neighbours())
+            if(n(nb.cell()).magSqr() == 0.)
+                return false;
+
+        for(const CellLink &nb: c.diagonals())
+            if(n(nb.cell()).magSqr() == 0.)
+                return false;
+
+        return true;
+    };
+
     for (const Cell &cell: kappa.cells())
-        if (n(cell).magSqr() > 1. - 2. * eps_ + eps_ * eps_ && n(cell).magSqr() < 1. + 2. * eps_ + eps_ * eps_)
+        if (validCurvature(cell))
             kappa(cell) = kappaStencils_[cell.id()].axiDiv(n);
+        else
+            kappa(cell) = 0.;
 
     kappa.sendMessages();
 

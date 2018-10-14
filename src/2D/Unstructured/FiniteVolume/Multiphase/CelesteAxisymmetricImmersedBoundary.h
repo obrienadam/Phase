@@ -18,7 +18,6 @@ protected:
 
     virtual void computeCurvature() override;
 
-    std::shared_ptr<VectorFiniteVolumeField> kappaRZ_;
 };
 
 #endif

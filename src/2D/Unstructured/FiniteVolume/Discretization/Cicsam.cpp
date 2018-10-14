@@ -29,16 +29,16 @@ std::vector<Scalar> cicsam::faceInterpolationWeights(const VectorFiniteVolumeFie
         Scalar flux = dot(u(face), sf);
         const Cell &donor = flux > 0. ? face.lCell() : face.rCell();
         const Cell &acceptor = flux <= 0. ? face.lCell() : face.rCell();
-        //const Cell &upwind = gamma.grid()->globalCells().nearestItem(2. * donor.centroid() - acceptor.centroid());
 
         Vector2D rc = acceptor.centroid() - donor.centroid();
 
         Scalar gammaD = clamp(gamma(donor), 0., 1.);
         Scalar gammaA = clamp(gamma(acceptor), 0., 1.);
         Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
-        // Scalar gammaU = clamp(gamma(upwind), 0., 1.);
-
         Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
+
+        if(std::isnan(gammaDTilde))
+            gammaDTilde = 0.;
 
         Scalar coD = 0.; //- Cell courant number
         for (const InteriorLink &nb: donor.neighbours())
@@ -52,8 +52,10 @@ std::vector<Scalar> cicsam::faceInterpolationWeights(const VectorFiniteVolumeFie
         Scalar gammaFTilde = psiF * hc(gammaDTilde, coD) + (1. - psiF) * uq(gammaDTilde, coD);
         Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
 
-        //- If stencil cannot be computed, default to upwind
-        beta[face.id()] = std::isnan(betaFace) ? 0. : clamp(betaFace, 0., 1.);
+        if(std::isnan(betaFace))
+            betaFace = 0.;
+
+        beta[face.id()] = betaFace;
     }
 
     return beta;

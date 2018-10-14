@@ -180,8 +180,10 @@ void CrsEquation::setCoeff(Index localRow, Index globalCol, Scalar val)
 
 void CrsEquation::scaleRow(Index localRow, Scalar val)
 {
-    for(auto j = rowPtr_[localRow]; j < rowPtr_[localRow + 1]; ++j)
-        vals_[j] *= val;
+    std::for_each(vals_.begin() + rowPtr_[localRow],
+                  vals_.begin() + rowPtr_[localRow + 1],
+            [val](Scalar &coeff) { coeff *= val; }
+    );
 
     rhs_(localRow) *= val;
 }
