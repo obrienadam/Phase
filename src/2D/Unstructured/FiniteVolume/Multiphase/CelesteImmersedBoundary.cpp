@@ -32,6 +32,19 @@ CelesteImmersedBoundary::CelesteImmersedBoundary(const Input &input,
     }
 }
 
+void CelesteImmersedBoundary::computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma)
+{
+    Celeste::computeFaceInterfaceForces(gamma, gradGamma);
+    auto ib = ib_.lock();
+    for(const Face &f: gamma.grid()->interiorFaces())
+        if(ib->ibObj(f.lCell()) || ib->ibObj(f.rCell()))
+            (*fst_)(f) = Vector2D(0., 0.);
+
+    for(const Face &f: gamma.grid()->boundaryFaces())
+        if(ib->ibObj(f.centroid()))
+            (*fst_)(f) = Vector2D(0., 0.);
+}
+
 Scalar CelesteImmersedBoundary::theta(const ImmersedBoundaryObject &ibObj) const
 {
     auto it = ibContactAngles_.find(ibObj.name());

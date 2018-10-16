@@ -140,7 +140,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     //- Semi-implicit corrector
     u_.savePreviousIteration();
     uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.)
-            + ib_->velocityBcs(rho_, u_, u_, timeStep);
+            + rho_ * ib_->velocityBcs(u_, u_, timeStep);
 
     error = uEqn_.solve();
 
@@ -159,12 +159,9 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        if(ib_->ibObj(f.lCell().centroid()) || ib_->ibObj(f.rCell().centroid()))
-            u_(f) = g * u_(l) + (1. - g) * u_(r);
-        else
-            u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
-                    + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
-                    + timeStep / rho_(f) * (fst(f) + sg_(f));
+        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
+                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
+                + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())
@@ -224,7 +221,7 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
         sg_(face) = -dot(g_, face.centroid()) * gradRho_(face);
 
     sg_.faceToCell(rho_, rho_, *fluid_);
-    sg_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    //sg_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     sg_.sendMessages();
 
     //- Update viscosity from kinematic viscosity
@@ -241,7 +238,6 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_->computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_->fst()->faceToCell(rho_, rho_, *fluid_);
-    fst_->fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_->fst()->sendMessages();
 }
 
@@ -338,16 +334,16 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
         }
 
         //- Compute the hydro force from the ib force
-        Vector2D fh(0., 0.);
+        Vector2D fh(0., 0.), mf(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
+            mf += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
                 Scalar flux0 = rho_(c) * dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
                 Scalar flux1 = rho_(c) * dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
-                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
@@ -355,20 +351,23 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
             {
                 Scalar flux0 = rho_(c) * dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
                 Scalar flux1 = rho_(c) * dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
-                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
             fh -= fb_(c) * c.volume();
         }
 
+        mf = grid_->comm().sum(mf);
         fh = grid_->comm().sum(fh);
 
         Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
 
         if(grid_->comm().isMainProc())
             std::cout << "Buoyancy force = " << fb << "\n"
-                      << "Hydrodynamic force = " << fh << "\n"
+                      << "Hydrodynamic force = " << fh - mf << "\n"
+                      << "Net IB force = " << fh << "\n"
+                      << "Net fluid mass = " << mf << "\n"
                       << "Capillary force = " << fc << "\n"
                       << "Weight = " << fw << "\n"
                       << "Net = " << fh + fb + fc + fw << "\n";

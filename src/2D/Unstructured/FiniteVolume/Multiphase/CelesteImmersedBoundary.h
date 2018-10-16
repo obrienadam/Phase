@@ -85,6 +85,8 @@ public:
                             const std::shared_ptr<CellGroup> &fluidCells,
                             const std::weak_ptr<const ImmersedBoundary> &ib);
 
+    virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) override;
+
     Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
     void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;

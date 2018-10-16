@@ -126,13 +126,11 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     });
 
     sg_.faceToCellAxisymmetric(rho_, rho_, *fluid_);
-    sg_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     sg_.sendMessages();
 
     //- Update the surface tension force
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_.fst()->faceToCellAxisymmetric(rho_, rho_, *fluid_);
-    fst_.fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_.fst()->sendMessages();
 }
 
@@ -170,12 +168,9 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        if(ib_->ibObj(f.lCell().centroid()) || ib_->ibObj(f.rCell().centroid()))
-            u_(f) = g * u_(l) + (1. - g) * u_(r);
-        else
-            u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
-                    + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
-                    + timeStep / rho_(f) * (fst(f) + sg_(f));
+        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
+                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
+                + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())

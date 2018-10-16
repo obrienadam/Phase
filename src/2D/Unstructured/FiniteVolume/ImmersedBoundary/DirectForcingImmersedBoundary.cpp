@@ -299,27 +299,27 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const 
 
             int i = 0;
             for(const Cell *cellPtr: st.cells())
-                eqn.add(cell, *cellPtr, rho(cell) * beta(0, i++) * cell.volume() / timeStep);
+                eqn.add(cell, *cellPtr, beta(0, i++) * rho(cell) * cell.volume() / timeStep);
 
             for(const auto &cmpt: st.compatPts())
-                eqn.addSource(cell, rho(cell) * beta(0, i++) * cmpt.velocity() * cell.volume() / timeStep);
+                eqn.addSource(cell, beta(0, i++) * rho(cell) * cmpt.velocity() * cell.volume() / timeStep);
 
             for(const Face *facePtr: st.faces())
                 switch(u.boundaryType(*facePtr))
                 {
                 case VectorFiniteVolumeField::FIXED:
-                    eqn.addSource(cell, rho(cell) * beta(0, i++) * u(*facePtr) * cell.volume() / timeStep);
+                    eqn.addSource(cell, beta(0, i++) * rho(cell) * u(*facePtr) * cell.volume() / timeStep);
                     break;
                 case VectorFiniteVolumeField::SYMMETRY:
                 {
                     Vector2D n = facePtr->norm().unitVec();
                     Vector2D t = n.tangentVec();
                     Tensor2D tmp = outer(t, t);
-                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * tmp * cell.volume() / timeStep);
+                    eqn.add(cell, cell, beta(0, i++) * rho(cell) * tmp * cell.volume() / timeStep);
                     break;
                 }
                 case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * cell.volume() / timeStep);
+                    eqn.add(cell, cell, beta(0, i++) * rho(cell) * cell.volume() / timeStep);
                     break;
                 default:
                     throw Exception("DirectForcingImmersedBoundary", "polarVelocityBcs", "grid boundary type not recognized.");

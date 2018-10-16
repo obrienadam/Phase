@@ -39,10 +39,10 @@ void CelesteAxisymmetricImmersedBoundary::computeCurvature()
 
     kappa.sendMessages();
 
+    auto ib = ib_.lock();
     for (const Face &face: kappa.grid()->interiorFaces())
-    {
+    {   
         //- According to Afkhami 2007
-
         if(kappa(face.lCell()) != 0. && kappa(face.rCell()) != 0.)
         {
             Scalar g = face.distanceWeight();
