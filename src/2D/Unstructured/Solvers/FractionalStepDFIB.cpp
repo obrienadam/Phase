@@ -28,15 +28,15 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     //    //solveExtEqns();
 
     grid_->comm().printf("Updating IB forces and positions...\n");
-    //ib_->applyHydrodynamicForce(rho_, mu_, u_, rho_ * p_, g_);
-    ib_->applyHydrodynamicForce(rho_, fb_, g_);
-    //ib_->applyCollisionForce(true);
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
+
+    computIbForce(timeStep);
+    ib_->applyCollisionForce(true);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -58,9 +58,12 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
              == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(u_);
+    u_.sendMessages();
 
     //- semi-implicit corrector
+    //    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
+    //            + ib_->velocityBcs(u_, u_, timeStep);
+
     uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
             + ib_->velocityBcs(u_, u_, timeStep);
 
@@ -74,15 +77,61 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     for(const Cell &c: ib_->localSolidCells())
         fb_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
 
-    grid_->sendMessages(fb_);
+    fb_.sendMessages();
 
     for(const Cell &c: u_.cells())
         u_(c) += timeStep * gradP_(c);
 
-    grid_->sendMessages(u_);
+    u_.sendMessages();
     u_.interpolateFaces();
 
     return error;
+}
+
+void FractionalStepDFIB::computIbForce(Scalar timeStep)
+{
+    for(auto &ibObj: *ib_)
+    {
+        //- Compute the hydro force from the ib force
+        Vector2D fh(0., 0.);
+        for(const Cell &c: ibObj->cells())
+        {
+            fh += rho_ * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
+
+            for(const InteriorLink &nb: c.neighbours())
+            {
+                Scalar flux0 = rho_ * dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
+                Scalar flux1 = rho_ * dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
+            }
+
+            for(const BoundaryLink &bd: c.boundaries())
+            {
+                Scalar flux0 = rho_ * dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
+                Scalar flux1 = rho_ * dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
+            }
+
+            fh -= rho_ * fb_(c) * c.volume();
+        }
+
+        fh = grid_->comm().sum(fh);
+
+        Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
+        Vector2D fb = -rho_ * ibObj->shape().area() * g_;
+
+        if(grid_->comm().isMainProc())
+            std::cout << "Buoyancy force = " << fb << "\n"
+                      << "Hydrodynamic force = " << fh << "\n"
+                      << "Net IB force = " << fh << "\n"
+                      << "Weight = " << fw << "\n"
+                      << "Net = " << fh + fb + fw << "\n";
+
+
+        ibObj->applyForce(fh + fb + fw);
+    }
 }
 
 void FractionalStepDFIB::solveExtEqns()

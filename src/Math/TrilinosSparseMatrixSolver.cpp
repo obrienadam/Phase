@@ -44,7 +44,7 @@ void TrilinosSparseMatrixSolver::setRank(int rowRank, int colRank)
         xData_ = x_->getData(0);
     }
 
-    mat_ = rcp(new TpetraCrsMatrix(rangeMap, 13, pftype_));
+    mat_ = rcp(new TpetraCrsMatrix(rangeMap, 20, pftype_));
 }
 
 void TrilinosSparseMatrixSolver::set(const CoefficientList &eqn)

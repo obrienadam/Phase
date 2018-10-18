@@ -65,6 +65,10 @@ public:
     //
     Matrix interpolationCoeffs(const Point2D &x) const;
 
+    Matrix continuityConstrainedInterpolationCoeffs(const Point2D &pt) const;
+
+    Matrix polarQuadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const;
+
 protected:
 
     static std::vector<std::vector<const ImmersedBoundaryObject*>> _ibObjSets;
@@ -76,6 +80,8 @@ protected:
     Matrix quadraticInterpolationCoeffs(const Point2D &x) const;
 
     Matrix subgridInterpolationCoeffs(const Point2D &x) const;
+
+    Matrix quadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const;
 
     StaticVector<const Cell*, 8> _cells;
 

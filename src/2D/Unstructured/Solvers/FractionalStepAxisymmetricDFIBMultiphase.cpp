@@ -148,7 +148,7 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
     u_.sendMessages();
 
     uEqn_ == axi::laplacian(mu_, u_, 0.5) - axi::laplacian(mu_, u_, 0.)
-            + ib_->polarVelocityBcs(rho_, u_, u_, timeStep);
+            + rho_ * ib_->polarVelocityBcs(u_, u_, timeStep);
 
     u_.savePreviousIteration();
     uEqn_.solve();
@@ -223,7 +223,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += (rho_(c) * u_(c) - rho_.oldField(0)(c) * u_.oldField(0)(c)) * c.polarVolume() / timeStep;
+            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {

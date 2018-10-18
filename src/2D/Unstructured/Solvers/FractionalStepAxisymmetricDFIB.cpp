@@ -4,6 +4,7 @@
 #include "FiniteVolume/Discretization/AxisymmetricDivergence.h"
 #include "FiniteVolume/Discretization/AxisymmetricExplicitDivergence.h"
 #include "FiniteVolume/Discretization/AxisymmetricStressTensor.h"
+#include "FiniteVolume/Discretization/AxisymmetricLaplacian.h"
 #include "FiniteVolume/Discretization/AxisymmetricSource.h"
 
 #include "FractionalStepAxisymmetricDFIB.h"
@@ -53,26 +54,25 @@ Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 1);
     uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 0.5)
-             == axi::divSigma(mu_ / rho_, p_, u_, 0.));
+             == axi::laplacian(mu_ / rho_, u_, 0.) - axi::src::src(gradP_));
 
     Scalar error = uEqn_.solve();
-    grid_->sendMessages(u_);
+    u_.sendMessages();
 
-    uEqn_ == axi::divSigma(mu_ / rho_, p_, u_, 0.5) - axi::divSigma(mu_ / rho_, p_, u_, 0.)
+    uEqn_ == axi::laplacian(mu_ / rho_, u_, 0.5) - axi::laplacian(mu_ / rho_, u_, 0.)
             + ib_->polarVelocityBcs(u_, u_, timeStep);
 
     u_.savePreviousIteration();
     uEqn_.solve();
 
     for(const Cell &c: *fluid_)
-        fib_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
-
-    grid_->sendMessages(fib_);
-
-    for(const Cell &c: *fluid_)
+    {
         u_(c) += timeStep * gradP_(c);
+        fib_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+    }
 
-    grid_->sendMessages(u_);
+    fib_.sendMessages();
+    u_.sendMessages();
     u_.interpolateFaces();
 
     return error;
@@ -84,13 +84,30 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
     {
         Vector2D fh(0., 0.);
 
-        for(const Cell &c: ibObj->solidCells())
-            fh -= rho_ * fib_(c) * c.polarVolume() * 2. * M_PI;
+        for(const Cell &c: ibObj->cells())
+        {
+            fh += rho_ * (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
 
-        for(const Cell &c: ibObj->ibCells())
-            fh -= rho_ * fib_(c) * c.polarVolume() * 2. * M_PI;
+            for(const InteriorLink &nb: c.neighbours())
+            {
+                Scalar flux0 = rho_ * dot(u_.oldField(0)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                Scalar flux1 = rho_ * dot(u_.oldField(1)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
+            }
 
-        fh = grid_->comm().sum(fh);
+            for(const BoundaryLink &bd: c.boundaries())
+            {
+                Scalar flux0 = rho_ * dot(u_.oldField(0)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                Scalar flux1 = rho_ * dot(u_.oldField(1)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                        + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
+            }
+
+            fh -= rho_ * fib_(c) * c.polarVolume();
+        }
+
+        fh = grid_->comm().sum(2. * M_PI * fh);
 
         Vector2D fw(0., 0.);
 

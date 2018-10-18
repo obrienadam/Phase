@@ -233,6 +233,68 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(Vector
     return eqn;
 }
 
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::continuityVelocityBcs(VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(u, 20);
+
+    for(const Cell& cell: u.cells())
+    {
+        if(localIbCells_.isInSet(cell))
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+            auto beta = st.continuityConstrainedInterpolationCoeffs(cell.centroid());
+
+            //std::cout << beta.m() << " " << beta.n() << std::endl;
+
+            int i = 0;
+            for(const Cell *cellPtr: st.cells())
+            {
+                eqn.add(cell, *cellPtr, Tensor2D(beta(0, i), beta(0, i + 1),
+                                                 beta(1, i), beta(1, i + 1)) * cell.volume() / timeStep);
+                i += 2;
+            }
+
+            for(const auto &cmpt: st.compatPts())
+            {
+                eqn.addSource(cell, dot(Tensor2D(beta(0, i), beta(0, i + 1),
+                                                 beta(1, i), beta(1, i + 1)), cmpt.velocity()) * cell.volume() / timeStep);
+
+                i += 2;
+            }
+
+            for(const Face *facePtr: st.faces())
+                switch(u.boundaryType(*facePtr))
+                {
+                case VectorFiniteVolumeField::FIXED:
+                    eqn.addSource(cell, dot(Tensor2D(beta(0, i), beta(0, i + 1),
+                                                     beta(1, i), beta(1, i + 1)), u(*facePtr)) * cell.volume() / timeStep);
+                    break;
+                    //                case VectorFiniteVolumeField::SYMMETRY:
+                    //                {
+                    //                    Vector2D n = facePtr->norm().unitVec();
+                    //                    Vector2D t = n.tangentVec();
+                    //                    Tensor2D tmp = outer(t, t);
+                    //                    eqn.add(cell, cell, beta(0, i++) * tmp * cell.volume() / timeStep);
+                    //                    break;
+                    //                }
+                    //                case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                    //                    eqn.add(cell, cell, beta(0, i++) * cell.volume() / timeStep);
+                    //                    break;
+                default:
+                    throw Exception("DirectForcingImmersedBoundary", "velocityBcs", "grid boundary type not recognized.");
+
+                    i += 2;
+                }
+
+            eqn.addSource(cell, -uTilde(cell) * cell.volume() / timeStep);
+        }
+        else if (localSolidCells_.isInSet(cell))
+            eqn.addSource(cell, (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
+    }
+
+    return eqn;
+}
+
 FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(VectorFiniteVolumeField &u,
                                                                                const VectorFiniteVolumeField &uTilde,
                                                                                Scalar timeStep) const
@@ -283,103 +345,61 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(V
     return eqn;
 }
 
-FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(const ScalarFiniteVolumeField &rho,
-                                                                          VectorFiniteVolumeField &u,
-                                                                          const VectorFiniteVolumeField &uTilde,
-                                                                          Scalar timeStep) const
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::continuityPolarVelocityBcs(VectorFiniteVolumeField &u, const VectorFiniteVolumeField &uTilde, Scalar timeStep) const
 {
-    FiniteVolumeEquation<Vector2D> eqn(u, 10);
+    FiniteVolumeEquation<Vector2D> eqn(u, 20);
 
     for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
             auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
-            auto beta = st.interpolationCoeffs(cell.centroid());
+            auto beta = st.polarQuadraticContinuityConstrainedInterpolationCoeffs(cell.centroid());
 
             int i = 0;
             for(const Cell *cellPtr: st.cells())
-                eqn.add(cell, *cellPtr, beta(0, i++) * rho(cell) * cell.volume() / timeStep);
+            {
+                eqn.add(cell, *cellPtr, Tensor2D(beta(0, i), beta(0, i + 1),
+                                                 beta(1, i), beta(1, i + 1)) * cell.polarVolume() / timeStep);
+                i += 2;
+            }
 
             for(const auto &cmpt: st.compatPts())
-                eqn.addSource(cell, beta(0, i++) * rho(cell) * cmpt.velocity() * cell.volume() / timeStep);
+            {
+                eqn.addSource(cell, dot(Tensor2D(beta(0, i), beta(0, i + 1),
+                                                 beta(1, i), beta(1, i + 1)), cmpt.velocity()) * cell.polarVolume() / timeStep);
+
+                i += 2;
+            }
 
             for(const Face *facePtr: st.faces())
                 switch(u.boundaryType(*facePtr))
                 {
                 case VectorFiniteVolumeField::FIXED:
-                    eqn.addSource(cell, beta(0, i++) * rho(cell) * u(*facePtr) * cell.volume() / timeStep);
+                    eqn.addSource(cell, dot(Tensor2D(beta(0, i), beta(0, i + 1),
+                                                     beta(1, i), beta(1, i + 1)), u(*facePtr)) * cell.polarVolume() / timeStep);
                     break;
-                case VectorFiniteVolumeField::SYMMETRY:
-                {
-                    Vector2D n = facePtr->norm().unitVec();
-                    Vector2D t = n.tangentVec();
-                    Tensor2D tmp = outer(t, t);
-                    eqn.add(cell, cell, beta(0, i++) * rho(cell) * tmp * cell.volume() / timeStep);
-                    break;
-                }
-                case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                    eqn.add(cell, cell, beta(0, i++) * rho(cell) * cell.volume() / timeStep);
-                    break;
+                    //                case VectorFiniteVolumeField::SYMMETRY:
+                    //                {
+                    //                    Vector2D n = facePtr->norm().unitVec();
+                    //                    Vector2D t = n.tangentVec();
+                    //                    Tensor2D tmp = outer(t, t);
+                    //                    eqn.add(cell, cell, beta(0, i++) * tmp * cell.volume() / timeStep);
+                    //                    break;
+                    //                }
+                    //                case VectorFiniteVolumeField::NORMAL_GRADIENT:
+                    //                    eqn.add(cell, cell, beta(0, i++) * cell.volume() / timeStep);
+                    //                    break;
                 default:
-                    throw Exception("DirectForcingImmersedBoundary", "polarVelocityBcs", "grid boundary type not recognized.");
+                    throw Exception("DirectForcingImmersedBoundary", "velocityBcs", "grid boundary type not recognized.");
+
+                    i += 2;
                 }
 
-            eqn.addSource(cell, -rho(cell) * uTilde(cell) * cell.volume() / timeStep);
+            eqn.addSource(cell, -uTilde(cell) * cell.polarVolume() / timeStep);
         }
         else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, rho(cell) * (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.volume() / timeStep);
-    }
-
-    return eqn;
-}
-
-FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::polarVelocityBcs(const ScalarFiniteVolumeField &rho,
-                                                                               VectorFiniteVolumeField &u,
-                                                                               const VectorFiniteVolumeField &uTilde,
-                                                                               Scalar timeStep) const
-{
-    FiniteVolumeEquation<Vector2D> eqn(u, 10);
-
-    for(const Cell& cell: u.cells())
-    {
-        if(localIbCells_.isInSet(cell))
-        {
-            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
-            auto beta = st.interpolationCoeffs(cell.centroid());
-            Scalar vol = cell.polarVolume();
-            int i = 0;
-            for(const Cell *cellPtr: st.cells())
-                eqn.add(cell, *cellPtr, rho(cell) * beta(0, i++) * vol / timeStep);
-
-            for(const auto &cmpt: st.compatPts())
-                eqn.addSource(cell, rho(cell) * beta(0, i++) * cmpt.velocity() * vol / timeStep);
-
-            for(const Face *facePtr: st.faces())
-                switch(u.boundaryType(*facePtr))
-                {
-                case VectorFiniteVolumeField::FIXED:
-                    eqn.addSource(cell, rho(cell) * beta(0, i++) * u(*facePtr) * vol / timeStep);
-                    break;
-                case VectorFiniteVolumeField::SYMMETRY:
-                {
-                    Vector2D n = facePtr->norm().unitVec();
-                    Vector2D t = n.tangentVec();
-                    Tensor2D tmp = outer(t, t);
-                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * tmp * vol / timeStep);
-                    break;
-                }
-                case VectorFiniteVolumeField::NORMAL_GRADIENT:
-                    eqn.add(cell, cell, rho(cell) * beta(0, i++) * vol / timeStep);
-                    break;
-                default:
-                    throw Exception("DirectForcingImmersedBoundary", "polarVelocityBcs", "grid boundary type not recognized.");
-                }
-
-            eqn.addSource(cell, -rho(cell) * uTilde(cell) * vol / timeStep);
-        }
-        else if (localSolidCells_.isInSet(cell))
-            eqn.addSource(cell, rho(cell) * (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
+            eqn.addSource(cell, (ibObj(cell)->velocity(cell.centroid()) - uTilde(cell)) * cell.polarVolume() / timeStep);
     }
 
     return eqn;

@@ -106,6 +106,7 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     //- Corrector
     gamma_.savePreviousIteration();
     fst_->computeContactLineExtension(gamma_);
+
     gamma_.sendMessages();
 
     for(const Cell &c: *fluid_)
@@ -334,16 +335,16 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
         }
 
         //- Compute the hydro force from the ib force
-        Vector2D fh(0., 0.), mf(0., 0.);
+        Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            mf += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
+            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
                 Scalar flux0 = rho_(c) * dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
                 Scalar flux1 = rho_(c) * dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
-                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
@@ -351,23 +352,21 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
             {
                 Scalar flux0 = rho_(c) * dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
                 Scalar flux1 = rho_(c) * dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
-                mf += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
+                fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
             fh -= fb_(c) * c.volume();
         }
 
-        mf = grid_->comm().sum(mf);
         fh = grid_->comm().sum(fh);
 
         Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
 
         if(grid_->comm().isMainProc())
             std::cout << "Buoyancy force = " << fb << "\n"
-                      << "Hydrodynamic force = " << fh - mf << "\n"
+                      << "Hydrodynamic force = " << fh << "\n"
                       << "Net IB force = " << fh << "\n"
-                      << "Net fluid mass = " << mf << "\n"
                       << "Capillary force = " << fc << "\n"
                       << "Weight = " << fw << "\n"
                       << "Net = " << fh + fb + fc + fw << "\n";

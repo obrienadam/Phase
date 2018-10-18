@@ -81,6 +81,11 @@ Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::interpolatio
         return subgridInterpolationCoeffs(x);
 }
 
+Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::continuityConstrainedInterpolationCoeffs(const Point2D &pt) const
+{
+    return quadraticContinuityConstrainedInterpolationCoeffs(pt);
+}
+
 Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::linearInterpolationCoeffs(const Point2D &x) const
 {
     _A.resize(nReconstructionPoints(), 3);
@@ -152,4 +157,81 @@ Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::subgridInter
     Scalar g = l2 / (l1 + l2);
 
     return Matrix(1, 2, {g, 1. - g});
+}
+
+Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::quadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const
+{
+    _A.resize(2 * nReconstructionPoints() + 1, 12);
+
+    int i = 0;
+    for(const Cell *cell: _cells)
+    {
+        const Point2D &x = cell->centroid();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    for(const CompatPoint &cpt: _compatPts)
+    {
+        const Point2D &x = cpt.pt();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    for(const Face *face: _faces)
+    {
+        const Point2D &x = face->centroid();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    _A.setRow(i, {2 * x.x, 0., x.y, 1., 0., 0.,
+                  0., 2 * x.y, x.x, 0., 1., 0.});
+
+    _b.resize(2, 12);
+    _b.setRow(0, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+    _b.setRow(1, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    _A.pinvert();
+
+    return _b * _A;
+}
+
+Matrix DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil::polarQuadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const
+{
+    _A.resize(2 * nReconstructionPoints() + 1, 12);
+
+    int i = 0;
+    for(const Cell *cell: _cells)
+    {
+        const Point2D &x = cell->centroid();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    for(const CompatPoint &cpt: _compatPts)
+    {
+        const Point2D &x = cpt.pt();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    for(const Face *face: _faces)
+    {
+        const Point2D &x = face->centroid();
+        _A.setRow(i++, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+        _A.setRow(i++, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    }
+
+    Scalar r = x.x;
+    Scalar z = x.y;
+
+    _A.setRow(i, {3. * r * r / r, z * z / r, 2. * r * z / r, 2. * r / r, z / r, 1. / r,
+                  0., 2 * z, r, 0., 1., 0.});
+
+    _b.resize(2, 12);
+    _b.setRow(0, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1., 0., 0., 0., 0., 0., 0.});
+    _b.setRow(1, {0., 0., 0., 0., 0., 0., x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
+    _A.pinvert();
+
+    return _b * _A;
 }

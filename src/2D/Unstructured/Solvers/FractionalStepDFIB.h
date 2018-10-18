@@ -20,6 +20,8 @@ protected:
 
     virtual Scalar solveUEqn(Scalar timeStep) override;
 
+    void computIbForce(Scalar timeStep);
+
     VectorFiniteVolumeField &fb_;
 
     FiniteVolumeEquation<Vector2D> fbEqn_;
