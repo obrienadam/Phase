@@ -220,6 +220,9 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 {
     for(auto &ibObj: *ib_)
     {
+        if(ibObj->shape().type() != Shape2D::CIRCLE || ibObj->shape().centroid().x != 0.)
+            throw Exception("FractionalStepAxisymmetricDFIBMultiphase", "computeIbForces", "oncly circles centered at r = 0 supported.");
+
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
@@ -248,108 +251,107 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
         Vector2D fc(0., 0.), fb(0., 0.), fw(0., 0.);
 
-        if(ibObj->shape().type() == Shape2D::CIRCLE && ibObj->shape().centroid().x == 0.)
+        contactLines_.clear();
+
+        auto computeStress = [&ibObj](const Cell &c)
         {
-            //- Assume spherical
-            const Circle &circ = static_cast<const Circle&>(ibObj->shape());
+            for(const CellLink &nb: c.neighbours())
+                if(!ibObj->isInIb(nb.cell().centroid()))
+                    return true;
 
-            contactLines_.clear();
+            for(const CellLink &nb: c.diagonals())
+                if(!ibObj->isInIb(nb.cell().centroid()))
+                    return true;
 
-            auto computeStress = [&ibObj](const Cell &c)
+            return false;
+        };
+
+        for(const Cell &c: ibObj->solidCells())
+        {
+            if(!computeStress(c))
+                continue;
+
+            auto st = CelesteAxisymmetricImmersedBoundary::ContactLineStencil(*ibObj, c.centroid(), fst_.theta(*ibObj), gamma_);
+            Scalar beta = (st.cl()[1] - ibObj->shape().centroid()).angle();
+            contactLines_.emplace_back(ContactLine{st.cl()[1], beta, st.gamma(), st.ncl(), st.tcl()});
+        }
+
+        contactLines_ = grid_->comm().allGatherv(contactLines_);
+
+        std::sort(contactLines_.begin(), contactLines_.end(), [&ibObj](const ContactLine &lhs, const ContactLine &rhs)
+        { return lhs.beta < rhs.beta; });
+
+        //- Assume spherical
+        const Circle &circ = static_cast<const Circle&>(ibObj->shape());
+
+        auto buoyancyForce = [this, &circ](const ContactLine &cl1, const ContactLine &cl2)
+        {
+            Scalar g1 = cl1.gamma;
+            Scalar g2 = cl2.gamma;
+
+            Scalar th1 = cl1.beta;
+            Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
+
+            Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt - circ.centroid(), g_);
+            Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt - circ.centroid(), g_);
+
+            //- Find the buoyancy
+            Scalar r = circ.radius();
+            return -Vector2D(0.,
+                             M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
+                                             + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
+                                             + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
+                                             - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
+                             );
+        };
+
+        //- Assumes the sphere is centered on the axis
+        for(int i = 0; i < contactLines_.size() - 1; ++i)
+        {
+            const auto &cl1 = contactLines_[i];
+            const auto &cl2 = contactLines_[(i + 1) % contactLines_.size()];
+
+            if(i == 0)
+                fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
+
+            if(i == contactLines_.size() - 2)
+                fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
+
+            fb += buoyancyForce(cl1, cl2);
+
+            Scalar g1 = cl1.gamma;
+            Scalar g2 = cl2.gamma;
+            Scalar th1 = cl1.beta;
+            Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
+
+
+            // check if contact line exists between two points
+            //- sharp method
+            if(g1 <= 0.5 != g2 < 0.5)
             {
-                for(const CellLink &nb: c.neighbours())
-                    if(!ibObj->isInIb(nb.cell().centroid()))
-                        return true;
+                Scalar alpha = (0.5 - g2) / (g1 - g2);
+                Scalar th = alpha * th1 + (1. - alpha) * th2;
+                Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(th - th1) : cl2.tcl.rotate(th - th2);
+                Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
+                Scalar r = pt.x;
 
-                for(const CellLink &nb: c.diagonals())
-                    if(!ibObj->isInIb(nb.cell().centroid()))
-                        return true;
-
-                return false;
-            };
-
-            for(const Cell &c: ibObj->solidCells())
-            {
-                if(!computeStress(c))
-                    continue;
-
-                auto st = CelesteAxisymmetricImmersedBoundary::ContactLineStencil(*ibObj, c.centroid(), fst_.theta(*ibObj), gamma_);
-                Scalar beta = (st.cl()[1] - ibObj->shape().centroid()).angle();
-                contactLines_.emplace_back(ContactLine{st.cl()[1], beta, st.gamma(), st.ncl(), st.tcl()});
-            }
-
-            contactLines_ = grid_->comm().allGatherv(contactLines_);
-
-            std::sort(contactLines_.begin(), contactLines_.end(), [&ibObj](const ContactLine &lhs, const ContactLine &rhs)
-            { return lhs.beta < rhs.beta; });
-
-            auto buoyancyForce = [this, &circ](const ContactLine &cl1, const ContactLine &cl2)
-            {
-                Scalar g1 = cl1.gamma;
-                Scalar g2 = cl2.gamma;
-
-                Scalar th1 = cl1.beta;
-                Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
-
-                Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt - circ.centroid(), g_);
-                Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt - circ.centroid(), g_);
-
-                //- Find the buoyancy
-                Scalar r = circ.radius();
-                return -Vector2D(0.,
-                                 M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
-                                                 + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
-                                                 + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
-                                                 - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
-                                 );
-            };
-
-            //- Assumes the sphere is centered on the axis
-            for(int i = 0; i < contactLines_.size() - 1; ++i)
-            {
-                const auto &cl1 = contactLines_[i];
-                const auto &cl2 = contactLines_[(i + 1) % contactLines_.size()];
-
-                if(i == 0)
-                    fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
-
-                if(i == contactLines_.size() - 2)
-                    fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
-
-                fb += buoyancyForce(cl1, cl2);
-
-                Scalar g1 = cl1.gamma;
-                Scalar g2 = cl2.gamma;
-                Scalar th1 = cl1.beta;
-                Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
-
-                // check if contact line exists between two points
-                //- sharp method
-                if(g1 <= 0.5 != g2 < 0.5)
-                {
-                    Scalar alpha = (0.5 - g2) / (g1 - g2);
-                    Scalar th = alpha * th1 + (1. - alpha) * th2;
-                    Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(th - th1) : cl2.tcl.rotate(th - th2);
-
-                    Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
-                    fc += 2. * M_PI * pt.x * fst_.sigma() * tcl;
-                }
-            }
-
-            Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
-            fw = ibObj->rho * vol * g_;
-
-            if(grid_->comm().isMainProc())
-            {
-                std::cout << "Hydro force = " << fh << "\n"
-                          << "Weight = " << fw << "\n"
-                          << "Capillary force = " << fc << "\n"
-                          << "Buoyancy force = " << fb << "\n"
-                          << "Net force = " << fh + fw + fc + fb << "\n";
+                fc += fst_.sigma() * 2. * M_PI * r * tcl;
             }
         }
 
-        ibObj->applyForce(fh + fw + fc + fb);
+        Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
+
+        fw = ibObj->rho * vol * g_;
+        if(grid_->comm().isMainProc())
+        {
+            std::cout << "Hydro force = " << fh << "\n"
+                      << "Weight = " << fw << "\n"
+                      << "Capillary force = " << fc << "\n"
+                      << "Buoyancy force = " << fb << "\n"
+                      << "Net force = " << fh + fw + fc + fb << "\n";
+        }
+
+        ibObj->applyForce((fh + fw + fc + fb) * ibObj->mass() / (ibObj->rho * vol));
     }
 }
 

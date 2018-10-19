@@ -21,7 +21,7 @@ SolidBodyMotion::SolidBodyMotion(std::weak_ptr<const ImmersedBoundaryObject> ibO
     force_ = Vector2D(0., 0.);
     torque_ = 0.;
 }
-#include <iostream>
+
 void SolidBodyMotion::update(Scalar timeStep)
 {
     auto ibObj = ibObj_.lock();
@@ -38,13 +38,13 @@ void SolidBodyMotion::update(Scalar timeStep)
     pos_ += timeStep * (vel_ + v0) / 2.;
 
     //- Update rotational motion
-    Scalar alpha0 = alpha_;
-    torque_ = ibObj->torque();
-    alpha_ = torque_ / ibObj->momentOfInertia();
+//    Scalar alpha0 = alpha_;
+//    torque_ = ibObj->torque();
+//    alpha_ = torque_ / ibObj->momentOfInertia();
 
-    Scalar omega0 = omega_, theta0 = theta_;
-    omega_ += timeStep * (alpha_ + alpha0) / 2.;
-    theta_ = std::fmod(theta_ + timeStep / 2. * (omega_ + omega0), 2. * M_PI);
+//    Scalar omega0 = omega_, theta0 = theta_;
+//    omega_ += timeStep * (alpha_ + alpha0) / 2.;
+//    theta_ = std::fmod(theta_ + timeStep / 2. * (omega_ + omega0), 2. * M_PI);
 }
 
 void SolidBodyMotion::setMotionConstraint(const Vector2D &axis)

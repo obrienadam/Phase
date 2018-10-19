@@ -82,6 +82,9 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
 {
     for(auto &ibObj: *ib_)
     {
+        if(ibObj->shape().type() != Shape2D::CIRCLE || ibObj->shape().centroid().x != 0.)
+            throw Exception("FractionalStepAxisymmetricDFIB", "computeIbForces", "oncly circles centered at r = 0 supported.");
+
         Vector2D fh(0., 0.);
 
         for(const Cell &c: ibObj->cells())
@@ -109,23 +112,13 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
 
         fh = grid_->comm().sum(2. * M_PI * rho_ * fh);
 
-        Vector2D fw(0., 0.);
+        //- Assume spherical
+        const Circle &circ = static_cast<const Circle&>(ibObj->shape());
+        Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
+        Vector2D fw = (ibObj->rho - rho_) * vol * g_;
 
-        if(ibObj->shape().type() == Shape2D::CIRCLE)
-        {
-            //- Assume spherical
-            const Circle &circ = static_cast<const Circle&>(ibObj->shape());
+        // std::cout << "Cd = " << 2. * fh.y / (rho_ * M_PI * std::pow(circ.radius(), 2)) << "\n";
 
-            if(circ.centroid().x == 0.)
-            {
-                Scalar vol = 4. / 3. * M_PI * std::pow(circ.radius(), 3);
-                fw = (ibObj->rho - rho_) * vol * g_;
-            }
-
-
-            // std::cout << "Cd = " << 2. * fh.y / (rho_ * M_PI * std::pow(circ.radius(), 2)) << "\n";
-        }
-
-        ibObj->applyForce(fh + fw);
+        ibObj->applyForce((fh + fw) * ibObj->mass() / (ibObj->rho * vol));
     }
 }
