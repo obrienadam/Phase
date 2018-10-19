@@ -52,23 +52,23 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepAxisymmetricDFIB::ib() con
 
 Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
 {
-    u_.savePreviousTimeStep(timeStep, 1);
-    uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 0.5)
+    u_.savePreviousTimeStep(timeStep, 2);
+    uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 1.5)
              == axi::laplacian(mu_ / rho_, u_, 0.) - axi::src::src(gradP_));
 
-    Scalar error = uEqn_.solve();
+    uEqn_.solve();
     u_.sendMessages();
 
     uEqn_ == axi::laplacian(mu_ / rho_, u_, 0.5) - axi::laplacian(mu_ / rho_, u_, 0.)
             + ib_->polarVelocityBcs(u_, u_, timeStep);
 
     u_.savePreviousIteration();
-    uEqn_.solve();
+    Scalar error = uEqn_.solve();
 
     for(const Cell &c: *fluid_)
     {
-        u_(c) += timeStep * gradP_(c);
         fib_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+        u_(c) += timeStep * gradP_(c);
     }
 
     fib_.sendMessages();
@@ -86,28 +86,28 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
 
         for(const Cell &c: ibObj->cells())
         {
-            fh += rho_ * (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
+            fh += (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
-                Scalar flux0 = rho_ * dot(u_.oldField(0)(nb.face()), nb.polarOutwardNorm()) / 2.;
-                Scalar flux1 = rho_ * dot(u_.oldField(1)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                Scalar flux0 = dot(u_.oldField(0)(nb.face()), nb.polarOutwardNorm()) / 2.;
+                Scalar flux1 = dot(u_.oldField(1)(nb.face()), nb.polarOutwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
             for(const BoundaryLink &bd: c.boundaries())
             {
-                Scalar flux0 = rho_ * dot(u_.oldField(0)(bd.face()), bd.polarOutwardNorm()) / 2.;
-                Scalar flux1 = rho_ * dot(u_.oldField(1)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                Scalar flux0 = dot(u_.oldField(0)(bd.face()), bd.polarOutwardNorm()) / 2.;
+                Scalar flux1 = dot(u_.oldField(1)(bd.face()), bd.polarOutwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_ * fib_(c) * c.polarVolume();
+            fh -= fib_(c) * c.polarVolume();
         }
 
-        fh = grid_->comm().sum(2. * M_PI * fh);
+        fh = grid_->comm().sum(2. * M_PI * rho_ * fh);
 
         Vector2D fw(0., 0.);
 
@@ -123,7 +123,7 @@ void FractionalStepAxisymmetricDFIB::computeIbForces(Scalar timeStep)
             }
 
 
-            std::cout << "Cd = " << 2. * fh.y / (rho_ * M_PI * std::pow(circ.radius(), 2)) << "\n";
+            // std::cout << "Cd = " << 2. * fh.y / (rho_ * M_PI * std::pow(circ.radius(), 2)) << "\n";
         }
 
         ibObj->applyForce(fh + fw);

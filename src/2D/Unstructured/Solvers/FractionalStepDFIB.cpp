@@ -96,28 +96,28 @@ void FractionalStepDFIB::computIbForce(Scalar timeStep)
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += rho_ * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
+            fh += (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
-                Scalar flux0 = rho_ * dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
-                Scalar flux1 = rho_ * dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
+                Scalar flux0 = dot(u_.oldField(0)(nb.face()), nb.outwardNorm()) / 2.;
+                Scalar flux1 = dot(u_.oldField(1)(nb.face()), nb.outwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(nb.cell())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(nb.cell());
             }
 
             for(const BoundaryLink &bd: c.boundaries())
             {
-                Scalar flux0 = rho_ * dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
-                Scalar flux1 = rho_ * dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
+                Scalar flux0 = dot(u_.oldField(0)(bd.face()), bd.outwardNorm()) / 2.;
+                Scalar flux1 = dot(u_.oldField(1)(bd.face()), bd.outwardNorm()) / 2.;
                 fh += std::max(flux0, 0.) * u_.oldField(0)(c) + std::min(flux0, 0.) * u_.oldField(0)(bd.face())
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_ * fb_(c) * c.volume();
+            fh -= fb_(c) * c.volume();
         }
 
-        fh = grid_->comm().sum(fh);
+        fh = grid_->comm().sum(rho_ * fh);
 
         Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
         Vector2D fb = -rho_ * ibObj->shape().area() * g_;

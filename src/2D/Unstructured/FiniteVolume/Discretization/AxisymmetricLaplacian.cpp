@@ -130,9 +130,9 @@ FiniteVolumeEquation<Vector2D> axi::laplacian(Scalar gamma,
         }
 
         //- Non-polar volume since we just want the rz face
-        Scalar r = cell.centroid().x;
-        eqn.add(cell, cell, -gamma * cell.volume() / r * Vector2D(theta, 0.));
-        eqn.addSource(cell, -gamma * cell.volume() * u0(cell).x / r * Vector2D(1. - theta, 0.));
+        //Scalar r = cell.centroid().x;
+        //eqn.add(cell, cell, -gamma * cell.volume() / r * Vector2D(theta, 0.));
+        //eqn.addSource(cell, -gamma * cell.volume() * u0(cell).x / r * Vector2D(1. - theta, 0.));
     }
 
     return eqn;
@@ -192,9 +192,9 @@ FiniteVolumeEquation<Vector2D> axi::laplacian(const ScalarFiniteVolumeField &gam
         }
 
         //- Non-polar volume since we just want the rz face
-        Scalar r = cell.centroid().x;
-        eqn.add(cell, cell, -gamma(cell) * cell.volume() / r * Vector2D(theta, 0.));
-        eqn.addSource(cell, -gamma0(cell) * cell.volume() * u0(cell).x / r * Vector2D(1. - theta, 0.));
+//        Scalar r = cell.centroid().x;
+//        eqn.add(cell, cell, -gamma(cell) * cell.volume() / r * Vector2D(theta, 0.));
+//        eqn.addSource(cell, -gamma0(cell) * cell.volume() * u0(cell).x / r * Vector2D(1. - theta, 0.));
     }
 
     return eqn;

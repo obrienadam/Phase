@@ -90,9 +90,8 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
                 {
                     Vector2D n = facePtr->norm().unitVec();
                     Vector2D t = n.tangentVec();
-                    Tensor2D tmp = outer(t, t);
-                    eqn.add(cell, cell, beta(0, i) * timeStep * tmp);
-                    eqn.addSource(cell, beta(0, i++) * u(cell));
+                    eqn.add(cell, cell, beta(0, i) * timeStep * outer(t, t));
+                    eqn.addSource(cell, beta(0, i++) * dot(u(cell), t) * t);
                     break;
                 }
                 default:
