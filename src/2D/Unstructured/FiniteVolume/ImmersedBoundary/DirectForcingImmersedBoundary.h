@@ -24,15 +24,6 @@ public:
                                                       Scalar timeStep,
                                                       VectorFiniteVolumeField &fib) const;
 
-    void computePolarForcingTerm(const VectorFiniteVolumeField &u,
-                                 Scalar timeStep,
-                                 VectorFiniteVolumeField &fib) const;
-
-    FiniteVolumeEquation<Vector2D> computeForcingTerm(const ScalarFiniteVolumeField &rho,
-                                                      const VectorFiniteVolumeField &u,
-                                                      Scalar timeStep,
-                                                      VectorFiniteVolumeField &fib) const;
-
     virtual FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &phi) const
     { return FiniteVolumeEquation<Scalar>(phi); }
 

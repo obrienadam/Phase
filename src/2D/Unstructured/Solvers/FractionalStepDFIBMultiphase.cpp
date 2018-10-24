@@ -130,28 +130,20 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     const auto &fst = *fst_->fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
 
-    //- Explicit predictor
     u_.savePreviousTimeStep(timeStep, 2);
     uEqn_ = (rho_ * fv::ddt(u_, timeStep) + rho_ * fv::dive(u_, u_, 0.5)
-             == fv::laplacian(mu_, u_, 0.) + src::src(fst + sg_ - gradP_));
+             == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
     u_.sendMessages();
 
-    //- Semi-implicit corrector
-    u_.savePreviousIteration();
-    uEqn_ == fv::laplacian(mu_, u_, 0.5) - fv::laplacian(mu_, u_, 0.)
-            + rho_ * ib_->velocityBcs(u_, u_, timeStep);
-
-    error = uEqn_.solve();
+    fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
+    fbEqn_.solve();
+    fb_.sendMessages();
 
     for(const Cell& c: *fluid_)
-    {
-        fb_(c) = rho_(c) * (u_(c) - u_.prevIteration()(c)) / timeStep;
-        u_(c) += timeStep / rho_(c) * gradP_(c);
-    }
+        u_(c) += timeStep * (fb_(c) + gradP_(c) / rho_(c));
 
-    fb_.sendMessages();
     u_.sendMessages();
 
     for (const Face &f: grid_->interiorFaces())
@@ -356,7 +348,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= fb_(c) * c.volume();
+            fh -= rho_(c) * fb_(c) * c.volume();
         }
 
         fh = grid_->comm().sum(fh);

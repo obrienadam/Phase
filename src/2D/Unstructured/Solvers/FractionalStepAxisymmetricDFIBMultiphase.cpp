@@ -137,29 +137,22 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
 {
     gradP_.computeAxisymmetric(rho_, rho_.oldField(0), *fluid_);
-
     const VectorFiniteVolumeField &fst = *fst_.fst();
 
     u_.savePreviousTimeStep(timeStep, 2);
     uEqn_ = (rho_ * axi::ddt(u_, timeStep) + rho_ * axi::dive(u_, u_, 0.5)
-             == axi::laplacian(mu_, u_, 0.) + axi::src::src(sg_ + fst - gradP_));
+             == axi::laplacian(mu_, u_, 0.5) + axi::src::src(sg_ + fst - gradP_));
 
-    uEqn_.solve();
+    Scalar error = uEqn_.solve();
     u_.sendMessages();
 
-    uEqn_ == axi::laplacian(mu_, u_, 0.5) - axi::laplacian(mu_, u_, 0.)
-            + rho_ * ib_->polarVelocityBcs(u_, u_, timeStep);
-
-    u_.savePreviousIteration();
-    uEqn_.solve();
+    fibEqn_ = ib_->computeForcingTerm(u_, timeStep, fib_);
+    fibEqn_.solve();
+    fib_.sendMessages();
 
     for(const Cell &c: *fluid_)
-    {
-        fib_(c) = rho_(c) * (u_(c) - u_.prevIteration()(c)) / timeStep;
-        u_(c) += timeStep / rho_(c) * gradP_(c);
-    }
+        u_(c) += timeStep * (fib_(c) + gradP_(c) / rho_(c));
 
-    fib_.sendMessages();
     u_.sendMessages();
 
     for (const Face &f: grid_->interiorFaces())
@@ -191,6 +184,8 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
                 u_(f) = u_(f.lCell()).tangentialComponent(f.norm());
             break;
         }
+
+    return error;
 }
 
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solvePEqn(Scalar timeStep)
@@ -244,7 +239,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= fib_(c) * c.polarVolume();
+            fh -= rho_(c) * fib_(c) * c.polarVolume();
         }
 
         fh = grid_->comm().sum(2. * M_PI * fh);

@@ -54,33 +54,31 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     u_.savePreviousTimeStep(timeStep, 2);
 
     //- explicit predictor
-    uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
-             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
+    //    uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
+    //             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
 
-    Scalar error = uEqn_.solve();
-    u_.sendMessages();
+    //    Scalar error = uEqn_.solve();
+    //    u_.sendMessages();
 
     //- semi-implicit corrector
     //    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
     //            + ib_->velocityBcs(u_, u_, timeStep);
 
-    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
-            + ib_->velocityBcs(u_, u_, timeStep);
+    //    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
 
-    u_.savePreviousIteration();
-    error = uEqn_.solve();
 
-    fb_.fill(Vector2D(0., 0.), grid_->localCells());
-    for(const Cell &c: ib_->localIbCells())
-        fb_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+    uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
+             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_));
 
-    for(const Cell &c: ib_->localSolidCells())
-        fb_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+    Scalar error = uEqn_.solve();
+    u_.sendMessages();
 
+    fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
+    fbEqn_.solve();
     fb_.sendMessages();
 
     for(const Cell &c: u_.cells())
-        u_(c) += timeStep * gradP_(c);
+        u_(c) += timeStep * (fb_(c) + gradP_(c));
 
     u_.sendMessages();
     u_.interpolateFaces();
@@ -125,7 +123,6 @@ void FractionalStepDFIB::computIbForce(Scalar timeStep)
         if(grid_->comm().isMainProc())
             std::cout << "Buoyancy force = " << fb << "\n"
                       << "Hydrodynamic force = " << fh << "\n"
-                      << "Net IB force = " << fh << "\n"
                       << "Weight = " << fw << "\n"
                       << "Net = " << fh + fb + fw << "\n";
 

@@ -13,20 +13,6 @@ FiniteVolumeEquation<T> lap(Scalar gamma, Field<T> &phi)
 
     for(const Cell& cell: phi.grid()->localCells())
     {
-        for(const auto &st: cell.faceStencils())
-        {
-            if(st.isBoundary())
-            {
-                switch(phi.bctype(st.zeta()))
-                {
-
-                }
-            }
-            else
-            {
-
-            }
-        }
     }
 
     return eqn;

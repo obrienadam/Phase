@@ -60,12 +60,12 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
                                                                                  VectorFiniteVolumeField &fib) const
 {
     FiniteVolumeEquation<Vector2D> eqn(fib, 12);
-
     for(const Cell& cell: u.cells())
     {
         if(localIbCells_.isInSet(cell))
         {
             auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+
             auto beta = st.interpolationCoeffs(cell.centroid());
 
             eqn.add(cell, cell, -timeStep);
@@ -104,73 +104,6 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
         {
             eqn.set(cell, cell, -1.);
             eqn.setSource(cell, (ibObj(cell)->velocity(cell.centroid()) - u(cell)) / timeStep);
-        }
-        else
-        {
-            eqn.set(cell, cell, -1.);
-            eqn.setSource(cell, 0.);
-        }
-    }
-
-    return eqn;
-}
-
-FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm(const ScalarFiniteVolumeField &rho,
-                                                                                 const VectorFiniteVolumeField &u,
-                                                                                 Scalar timeStep,
-                                                                                 VectorFiniteVolumeField &fib) const
-{
-    FiniteVolumeEquation<Vector2D> eqn(fib);
-
-    for(const Cell& cell: u.cells())
-    {
-        if(localIbCells_.isInSet(cell))
-        {
-            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
-
-            if(st.nReconstructionPoints() < 6)
-            {
-                throw Exception("DirectForcingImmersedBoundary",
-                                "computeForcingTerm",
-                                "not enough cells to perform velocity interpolation. Cell id = "
-                                + std::to_string(cell.globalId()) + ", proc = " + std::to_string(grid_->comm().rank()));
-            }
-
-            Matrix A(st.nReconstructionPoints(), 6);
-
-            for(int i = 0; i < st.cells().size(); ++i)
-            {
-                Point2D x = st.cells()[i]->centroid();
-                A.setRow(i, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
-
-            for(int i = 0; i < st.compatPts().size(); ++i)
-            {
-                Point2D x = st.compatPts()[i].pt();
-                A.setRow(i + st.cells().size(), {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.});
-            }
-
-            Point2D x = cell.centroid();
-
-            Matrix beta = Matrix(1, 6, {x.x * x.x, x.y * x.y, x.x * x.y, x.x, x.y, 1.}) * pseudoInverse(A);
-
-            eqn.add(cell, cell, -timeStep / rho(cell));
-
-            for(int i = 0; i < st.cells().size(); ++i)
-            {
-                eqn.add(cell, *st.cells()[i], beta(0, i) * timeStep / rho(*st.cells()[i]));
-                eqn.addSource(cell, beta(0, i) * u(*st.cells()[i]));
-            }
-
-            for(int i = 0; i < st.compatPts().size(); ++i)
-                eqn.addSource(cell, beta(0, i + st.cells().size()) * st.compatPts()[i].velocity());
-
-            eqn.addSource(cell, -u(cell));
-        }
-        else if (localSolidCells_.isInSet(cell))
-        {
-            eqn.set(cell, cell, -timeStep / rho(cell));
-            eqn.setSource(cell, ibObj(cell)->velocity(cell.centroid()) - u(cell));
         }
         else
         {

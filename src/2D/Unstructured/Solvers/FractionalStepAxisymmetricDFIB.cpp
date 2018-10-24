@@ -53,25 +53,22 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepAxisymmetricDFIB::ib() con
 Scalar FractionalStepAxisymmetricDFIB::solveUEqn(Scalar timeStep)
 {
     u_.savePreviousTimeStep(timeStep, 2);
-    uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 1.5)
-             == axi::laplacian(mu_ / rho_, u_, 0.) - axi::src::src(gradP_));
+    uEqn_ = (axi::ddt(u_, timeStep) + axi::dive(u_, u_, 0.5)
+             == axi::laplacian(mu_ / rho_, u_, 0.5) - axi::src::src(gradP_));
 
-    uEqn_.solve();
+    Scalar error = uEqn_.solve();
     u_.sendMessages();
 
-    uEqn_ == axi::laplacian(mu_ / rho_, u_, 0.5) - axi::laplacian(mu_ / rho_, u_, 0.)
-            + ib_->polarVelocityBcs(u_, u_, timeStep);
-
-    u_.savePreviousIteration();
-    Scalar error = uEqn_.solve();
+    fibEqn_ = ib_->computeForcingTerm(u_, timeStep, fib_);
+    fibEqn_.solve();
+    fib_.sendMessages();
 
     for(const Cell &c: *fluid_)
     {
-        fib_(c) = (u_(c) - u_.prevIteration()(c)) / timeStep;
+        u_(c) += timeStep * fib_(c);
         u_(c) += timeStep * gradP_(c);
     }
 
-    fib_.sendMessages();
     u_.sendMessages();
     u_.interpolateFaces();
 
