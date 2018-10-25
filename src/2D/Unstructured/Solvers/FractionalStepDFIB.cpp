@@ -23,10 +23,7 @@ FractionalStepDFIB::FractionalStepDFIB(const Input &input, const std::shared_ptr
 }
 
 Scalar FractionalStepDFIB::solve(Scalar timeStep)
-{
-    //    //grid_->comm().printf("Performing field extensions...\n");
-    //    //solveExtEqns();
-
+{   
     grid_->comm().printf("Updating IB forces and positions...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
@@ -37,6 +34,9 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
 
     computIbForce(timeStep);
     ib_->applyCollisionForce(true);
+
+    grid_->comm().printf("Performing field extensions...\n");
+    solveExtEqns();
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -51,22 +51,11 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepDFIB::ib() const
 
 Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 {
+    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    gradP_.sendMessages();
+
     u_.savePreviousTimeStep(timeStep, 2);
-
-    //- explicit predictor
-    //    uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
-    //             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
-
-    //    Scalar error = uEqn_.solve();
-    //    u_.sendMessages();
-
-    //- semi-implicit corrector
-    //    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
-    //            + ib_->velocityBcs(u_, u_, timeStep);
-
-    //    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.5)
-
-
     uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
              == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_));
 
@@ -152,6 +141,7 @@ void FractionalStepDFIB::solveExtEqns()
             for(const auto &cmpt: st.compatPts())
                 eqn.addSource(c, -beta(0, i++) * cmpt.acceleration());
         }
+
         else
         {
             eqn.add(c, c, -1.);

@@ -137,6 +137,10 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
 {
     gradP_.computeAxisymmetric(rho_, rho_.oldField(0), *fluid_);
+    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    gradP_.sendMessages();
+
     const VectorFiniteVolumeField &fst = *fst_.fst();
 
     u_.savePreviousTimeStep(timeStep, 2);
