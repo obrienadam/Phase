@@ -8,6 +8,8 @@ class JacobianField: public TensorFiniteVolumeField
 {
 public:
 
+    static Tensor2D computeJacobian(const VectorFiniteVolumeField &u, const Cell &c);
+
     explicit JacobianField(const VectorFiniteVolumeField& u, const std::shared_ptr<CellGroup> &cells);
 
     void computeFaces();

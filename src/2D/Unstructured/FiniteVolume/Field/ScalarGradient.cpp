@@ -1,5 +1,32 @@
 #include "ScalarGradient.h"
 
+Vector2D ScalarGradient::computeGradient(const ScalarFiniteVolumeField &phi, const Cell &c)
+{
+    Vector2D sumSf(0., 0.);
+    Vector2D tmp(0., 0.);
+
+    for(const InteriorLink& nb: c.neighbours())
+    {
+        Vector2D rc = nb.rCellVec();
+        auto gradPhiF = (phi(nb.cell()) - phi(c)) * rc / rc.magSqr();
+
+        Vector2D sf = nb.outwardNorm().abs();
+        tmp += pointwise(gradPhiF, sf);
+        sumSf += sf;
+    }
+
+    for(const BoundaryLink& bd: c.boundaries())
+    {
+        Vector2D rf = bd.rFaceVec();
+        auto gradPhiF = (phi(bd.face()) - phi(c)) * rf / rf.magSqr();
+        Vector2D sf = bd.outwardNorm().abs();
+        tmp += pointwise(gradPhiF, sf);
+        sumSf += sf;
+    }
+
+    return Vector2D(tmp.x / sumSf.x, tmp.y / sumSf.y);
+}
+
 ScalarGradient::ScalarGradient(const ScalarFiniteVolumeField &phi, const std::shared_ptr<const CellGroup> &cells)
     :
       VectorFiniteVolumeField(phi.grid(),

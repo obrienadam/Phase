@@ -99,14 +99,12 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     //- Predictor
     gamma_.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
-
     Scalar error = gammaEqn_.solve();
     gamma_.sendMessages();
 
     //- Corrector
     gamma_.savePreviousIteration();
     fst_->computeContactLineExtension(gamma_);
-
     gamma_.sendMessages();
 
     for(const Cell &c: *fluid_)
@@ -155,9 +153,12 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
-                + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
-                + timeStep / rho_(f) * (fst(f) + sg_(f));
+        if(ib_->ibObj(l) || ib_->ibObj(r))
+            u_(f) = g * u_(l) + (1. - g) * u_(r);
+        else
+            u_(f) = g * (u_(l) - timeStep / rho_(l) * (fst(l) + sg_(l)))
+                    + (1. - g) * (u_(r) - timeStep / rho_(r) * (fst(r) + sg_(r)))
+                    + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())
@@ -234,6 +235,7 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_->computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_->fst()->faceToCell(rho_, rho_, *fluid_);
+    fst_->fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_->fst()->sendMessages();
 }
 

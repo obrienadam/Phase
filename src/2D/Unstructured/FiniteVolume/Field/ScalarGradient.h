@@ -12,6 +12,8 @@ public:
         FACE_TO_CELL, GREEN_GAUSS_CELL, GREEN_GAUSS_NODE
     };
 
+    static Vector2D computeGradient(const ScalarFiniteVolumeField &phi, const Cell &c);
+
     explicit ScalarGradient(const ScalarFiniteVolumeField &phi, const std::shared_ptr<const CellGroup> &cells);
 
     void computeFaces();

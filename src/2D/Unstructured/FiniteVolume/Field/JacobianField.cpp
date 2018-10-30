@@ -1,14 +1,52 @@
 #include "JacobianField.h"
 
+Tensor2D JacobianField::computeJacobian(const VectorFiniteVolumeField &u, const Cell &c)
+{
+    Vector2D sumSf(0., 0.);
+    Tensor2D tmp(0., 0., 0., 0.);
+
+    for(const InteriorLink& nb: c.neighbours())
+    {
+        Vector2D rc = nb.rCellVec();
+        auto jf = outer(u(nb.cell()) - u(c), rc / rc.magSqr());
+
+        Vector2D sf = nb.outwardNorm().abs();
+
+        tmp += Tensor2D(
+                    jf.xx * sf.x, jf.xy * sf.y,
+                    jf.yx * sf.x, jf.yy * sf.y
+                    );
+
+        sumSf += sf;
+    }
+
+    for(const BoundaryLink& bd: c.boundaries())
+    {
+        Vector2D rf = bd.rFaceVec();
+        auto jf = outer(u(bd.face()) - u(c), rf / rf.magSqr());
+        Vector2D sf = bd.outwardNorm().abs();
+
+        tmp += Tensor2D(
+                    jf.xx * sf.x, jf.xy * sf.y,
+                    jf.yx * sf.x, jf.yy * sf.y
+                    );
+
+        sumSf += sf;
+    }
+
+    return Tensor2D(tmp.xx / sumSf.x, tmp.xy / sumSf.y,
+                    tmp.yx / sumSf.x, tmp.yy / sumSf.y);
+}
+
 JacobianField::JacobianField(const VectorFiniteVolumeField& u, const std::shared_ptr<CellGroup> &cells)
-        :
-        TensorFiniteVolumeField(u.grid(),
-                                u.name() + "Jacobian",
-                                Tensor2D(),
-                                true,
-                                false,
-                                cells),
-        u_(u)
+    :
+      TensorFiniteVolumeField(u.grid(),
+                              u.name() + "Jacobian",
+                              Tensor2D(),
+                              true,
+                              false,
+                              cells),
+      u_(u)
 {
 
 }
@@ -43,9 +81,9 @@ void JacobianField::compute(const CellGroup& cells)
             Vector2D sf = nb.outwardNorm().abs();
 
             tmp += Tensor2D(
-                    jf.xx*sf.x, jf.xy*sf.y,
-                    jf.yx*sf.x, jf.yy*sf.y
-            );
+                        jf.xx*sf.x, jf.xy*sf.y,
+                        jf.yx*sf.x, jf.yy*sf.y
+                        );
 
             sumA += sf;
         }
@@ -56,17 +94,17 @@ void JacobianField::compute(const CellGroup& cells)
             Vector2D sf = bd.outwardNorm().abs();
 
             tmp += Tensor2D(
-                    jf.xx*sf.x, jf.xy*sf.y,
-                    jf.yx*sf.x, jf.yy*sf.y
-            );
+                        jf.xx*sf.x, jf.xy*sf.y,
+                        jf.yx*sf.x, jf.yy*sf.y
+                        );
 
             sumA += sf;
         }
 
         (*this)(cell) = Tensor2D(
-                tmp.xx/sumA.x, tmp.xy/sumA.y,
-                tmp.yx/sumA.x, tmp.yy/sumA.y
-        );
+                    tmp.xx/sumA.x, tmp.xy/sumA.y,
+                    tmp.yx/sumA.x, tmp.yy/sumA.y
+                    );
     }
 }
 
