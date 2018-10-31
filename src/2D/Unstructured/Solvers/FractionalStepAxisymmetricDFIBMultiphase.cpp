@@ -131,15 +131,15 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_.fst()->faceToCellAxisymmetric(rho_, rho_, *fluid_);
-    fst_.fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
+    //fst_.fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_.fst()->sendMessages();
 }
 
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
 {
     gradP_.computeAxisymmetric(rho_, rho_.oldField(0), *fluid_);
-    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
-    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    //gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    //gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
     gradP_.sendMessages();
 
     const VectorFiniteVolumeField &fst = *fst_.fst();
