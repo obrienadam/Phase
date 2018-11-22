@@ -1,4 +1,5 @@
 PostProcessing
 {
-  fileWriteFrequency 10
+  viewerType compactCgns
+  fileWriteFrequency 20
 }

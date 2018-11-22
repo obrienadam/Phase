@@ -1,14 +1,23 @@
 #include "PostProcessing.h"
+#include "CgnsViewer.h"
+#include "CompactCgnsViewer.h"
 #include "IbTracker.h"
 #include "ImmersedBoundaryObjectProbe.h"
 #include "ImmersedBoundaryObjectContactLineTracker.h"
 
 PostProcessing::PostProcessing(const Input &input, const Solver &solver)
-    :
-      viewer_(input, solver)
 {
     iter_ = 0;
     fileWriteFrequency_ = input.postProcessingInput().get<int>("PostProcessing.fileWriteFrequency");
+
+    std::string viewerType = input.postProcessingInput().get<std::string>("PostProcessing.viewerType", "cgns");
+
+    if(viewerType == "cgns")
+        viewer_ = std::unique_ptr<Viewer>(new CgnsViewer(input, solver));
+    else if(viewerType == "compactCgns")
+        viewer_ = std::unique_ptr<Viewer>(new CompactCgnsViewer(input, solver));
+    else
+        throw Exception("PostProcessing", "PostProcessing", "Unrecognized viewer type \"" + viewerType + "\".");
 }
 
 void PostProcessing::initIbPostProcessingObjects(const Input &input, const Solver &solver)
@@ -56,5 +65,5 @@ void PostProcessing::compute(Scalar time, bool force)
     PostProcessingInterface::compute(time, force);
 
     if (iter_++ % fileWriteFrequency_ == 0 || force)
-        viewer_.write(time);
+        viewer_->write(time);
 }

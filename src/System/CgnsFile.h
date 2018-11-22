@@ -129,6 +129,8 @@ public:
 
     int writeSolution(int bid, int zid, const std::string &solnname);
 
+    int writeNodeSolution(int bid, int zid, const std::string &solname);
+
     //- Fields
     template<class T>
     Field<T> readField(int bid, int zid, int sid, int rmin, int rmax, const std::string& fieldname);
@@ -136,9 +138,13 @@ public:
     template<class T>
     int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<T> &field);
 
+    //- Descriptors
+
     int nDescriptorNodes(int bid) const;
 
     void writeDescriptorNode(int bid, const std::string &name, const std::string &text);
+
+    int writeDescriptorNode(int bid, int zid, int sid, const std::string &name, const std::string &text);
 
 protected:
 

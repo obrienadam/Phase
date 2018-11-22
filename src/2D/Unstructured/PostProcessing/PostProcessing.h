@@ -6,7 +6,7 @@
 #include "Solvers/Solver.h"
 #include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
-#include "CgnsViewer.h"
+#include "Viewer.h"
 
 class PostProcessing : public PostProcessingInterface
 {
@@ -22,7 +22,7 @@ protected:
 
     int iter_, fileWriteFrequency_;
 
-    CgnsViewer viewer_;
+    std::unique_ptr<Viewer> viewer_;
 };
 
 

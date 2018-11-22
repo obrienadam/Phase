@@ -1,4 +1,5 @@
 PostProcessing
 {
+  viewerType cgns
   fileWriteFrequency 10
 }

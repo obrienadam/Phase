@@ -388,6 +388,13 @@ int CgnsFile::writeSolution(int bid, int zid, const std::string &solnname)
     return solid;
 }
 
+int CgnsFile::writeNodeSolution(int bid, int zid, const std::string &solname)
+{
+    int solid;
+    cg_sol_write(_fid, bid, zid, solname.c_str(), CGNS_ENUMV(Vertex), &solid);
+    return solid;
+}
+
 template<>
 CgnsFile::Field<int> CgnsFile::readField(int bid, int zid, int sid, int rmin, int rmax, const std::string &fieldname)
 {
@@ -480,5 +487,11 @@ int CgnsFile::nDescriptorNodes(int bid) const
 void CgnsFile::writeDescriptorNode(int bid, const std::string &name, const std::string &text)
 {
     cg_goto(_fid, bid, "end");
+    cg_descriptor_write(name.c_str(), text.c_str());
+}
+
+int CgnsFile::writeDescriptorNode(int bid, int zid, int sid, const std::string &name, const std::string &text)
+{
+    cg_goto(_fid, bid, "Zone_t", zid, "FlowSolution_t", sid, "end");
     cg_descriptor_write(name.c_str(), text.c_str());
 }

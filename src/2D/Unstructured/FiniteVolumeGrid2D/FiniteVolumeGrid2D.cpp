@@ -52,6 +52,8 @@ void FiniteVolumeGrid2D::reset()
     cells_.clear();
     localCells_.clear();
     globalCells_.clear();
+    cellOwnership_.clear();
+    globalIds_.clear();
 
     //- Communication zones
     sendCellGroups_.clear(); // shared pointers are used so that zones can be moveable!
@@ -468,7 +470,6 @@ void FiniteVolumeGrid2D::init()
     globalCells_.add(localCells_);
 
     cellOwnership_.resize(globalCells_.size(), comm_->rank());
-
     globalIds_.resize(globalCells_.size());
     std::iota(globalIds_.begin(), globalIds_.end(), 0);
 

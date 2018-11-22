@@ -13,7 +13,7 @@ public:
 
     CgnsViewer(const Input& input, const Solver& solver);
 
-    void write(Scalar time);
+    virtual void write(Scalar time) override;
 
 protected:
 

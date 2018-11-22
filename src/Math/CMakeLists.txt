@@ -39,7 +39,7 @@ target_link_libraries(phase_math
         phase_system
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
-        lapacke
+        #lapacke
         ${Trilinos_LIBRARIES}
         ${Trilinos_TPL_LIBRARIES})
 
