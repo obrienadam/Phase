@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
     std::vector<int> cptr(1, 0), cind;
     std::vector<cgsize_t> elements;
 
+    //- ownerhship and globalIds
+    std::vector<int> ownership, globalIds;
+
     //- Flow solution points
     std::vector<std::array<char, 32>> flowSolutionPtrs;
     std::vector<double> timeValues;
@@ -88,7 +91,9 @@ int main(int argc, char *argv[])
         }
 
         //- Get the element ownership data and ids
-        std::vector<int> ownership(sizes[1]), globalIds(sizes[1]);
+        ownership.resize(sizes[1]);
+        globalIds.resize(sizes[1]);
+
         rmin = 1;
         rmax = sizes[1];
         cg_field_read(fid, 1, 1, 1, "ProcNo", CGNS_ENUMV(Integer), &rmin, &rmax, ownership.data());
@@ -278,10 +283,12 @@ int main(int argc, char *argv[])
     cg_sol_write(fid, 1, 1, "Info", CGNS_ENUMV(CellCenter), &sid);
 
     proc = 0;
-    cgsize_t rmin = 1, rmax;
+    cgsize_t rglobal[2] = {1, 1};
 
     for(const path &p: files)
     {
+        cout << "Writing data for proc " << proc << " from file " << p << "...\n";
+
         int fid2;
         cg_open(p.c_str(), CG_MODE_READ, &fid2);
 
@@ -289,60 +296,64 @@ int main(int argc, char *argv[])
         cgsize_t sizes[3];
         cg_zone_read(fid2, 1, 1, name, sizes);
 
-        cgsize_t r[2] = {1, sizes[1]};
+        cgsize_t rlocal[2] = {1, sizes[1]};
 
-        std::vector<int> ownership(r[1]);
-        cg_field_read(fid2, 1, 1, 1, "ProcNo", CGNS_ENUMV(Integer), &r[0], &r[1], ownership.data());
+        ownership.resize(sizes[1]);
+        cg_field_read(fid2, 1, 1, 1, "ProcNo", CGNS_ENUMV(Integer), &rlocal[0], &rlocal[1], ownership.data());
 
         int ncells = count_if(ownership.begin(), ownership.end(), [proc](int p) { return p == proc; });
 
         //- Get the upper bound for all writes
-        rmax = rmin + ncells - 1;
+        rglobal[1] = rglobal[0] + ncells - 1;
 
-        //- Write all flow solution data
-        d_buffers[0].resize(r[1]);
-        d_buffers[1].resize(rmax - rmin + 1);
+        //- Write ownership data
+        i_buffers[0].resize(rlocal[1]);
+        i_buffers[1].resize(rglobal[1] - rglobal[0] + 1);
+
+        i_buffers[0] = ownership;
+        for(int i = 0, j = 0; i < ownership.size(); ++i)
+            if(ownership[i] == proc)
+                i_buffers[1][j++] = i_buffers[0][i];
+
+        int F;
+        cg_field_partial_write(fid, 1, 1, flowSolutionPtrs.size() + 1, CGNS_ENUMV(Integer), "ProcNo", &rglobal[0], &rglobal[1], i_buffers[1].data(), &F);
+
+        cg_field_read(fid2, 1, 1, 1, "GlobalID", CGNS_ENUMV(Integer), &rlocal[0], &rlocal[1], i_buffers[0].data());
+
+        for(int i = 0, j = 0; i < ownership.size(); ++i)
+            if(ownership[i] == proc)
+                i_buffers[1][j++] = i_buffers[0][i];
+
+        cg_field_partial_write(fid, 1, 1, flowSolutionPtrs.size() + 1, CGNS_ENUMV(Integer), "GlobalID", &rglobal[0], &rglobal[1], i_buffers[1].data(), &F);
+
+        //- Write flow solution data
+        d_buffers[0].resize(rlocal[1]);
+        d_buffers[1].resize(rglobal[1] - rglobal[0] + 1);
 
         for(int S = 1; S <= flowSolutionPtrs.size(); ++S)
         {
             int nfields;
-            cg_nfields(fid2, 1, 1, S, &nfields);
+            cg_nfields(fid2, 1, 1, S + 1, &nfields);
 
             for(int F = 1; F <= nfields; ++F)
             {
                 array<char, 256> name;
                 CGNS_ENUMT(DataType_t) type;
-                cg_field_info(fid2, 1, 1, S, F, &type, name.data());
-                cg_field_read(fid2, 1, 1, S, name.data(), CGNS_ENUMV(RealDouble), &r[0], &r[1], d_buffers[0].data());
+                cg_field_info(fid2, 1, 1, S + 1, F, &type, name.data());
+                cg_field_read(fid2, 1, 1, S + 1, name.data(), CGNS_ENUMV(RealDouble), &rlocal[0], &rlocal[1], d_buffers[0].data());
 
                 for(int i = 0, j = 0; i < ownership.size(); ++i)
                     if(ownership[i] == proc)
                         d_buffers[1][j++] = d_buffers[0][i];
 
                 int F2;
-                cg_field_partial_write(fid, 1, 1, S, CGNS_ENUMV(RealDouble), name.data(), &rmin, &rmax, d_buffers[1].data(), &F2);
+                cg_field_partial_write(fid, 1, 1, S, CGNS_ENUMV(RealDouble), name.data(), &rglobal[0], &rglobal[1], d_buffers[1].data(), &F2);
             }
         }
 
-//        //- Resize all buffers
-//        i_buffers[0].resize(r[1]);
-//        i_buffers[1].resize(rmax - rmin + 1);
-
-//        int F;
-//        cg_field_partial_write(fid, 1, 1, flowSolutionPtrs.size() + 1, CGNS_ENUMV(Integer), "ProcNo", &rmin, &rmax, i_buffers[1].data(), &F);
-
-//        //- Read and write the global id data
-//        cg_field_read(fid2, 1, 1, flowSolutionPtrs.size() + 1, "GlobalID", CGNS_ENUMV(Integer), &r[0], &r[1], i_buffers[0].data());
-
-//        for(int i = 0, j = 0; i < ownership.size(); ++i)
-//            if(ownership[i] == proc)
-//                i_buffers[1][j++] = i_buffers[0][i];
-
-//        cg_field_partial_write(fid, 1, 1, flowSolutionPtrs.size() + 1, CGNS_ENUMV(Integer), "GlobalID", &rmin, &rmax, i_buffers[1].data(), &F);
-
         cg_close(fid2);
 
-        rmin = rmax + 1;
+        rglobal[0] = rglobal[1] + 1;
         proc++;
     }
 
@@ -359,11 +370,7 @@ int main(int argc, char *argv[])
 
     sizes[0] = 32;
     sizes[1] = flowSolutionPtrs.size();
-    std::vector<char> tmp(32 * flowSolutionPtrs.size(), '\0');
 
-    for(int i = 0; i < flowSolutionPtrs.size(); ++i)
-        copy(flowSolutionPtrs[i].begin(), flowSolutionPtrs[i].end(), tmp.begin() + 32 * i);
-
-    cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, sizes, tmp.data());
+    cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, sizes, flowSolutionPtrs.data());
     cg_close(fid);
 }
