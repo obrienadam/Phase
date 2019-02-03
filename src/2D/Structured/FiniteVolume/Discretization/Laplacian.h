@@ -13,6 +13,15 @@ FiniteVolumeEquation<T> lap(Scalar gamma, Field<T> &phi)
 
     for(const Cell& cell: phi.grid()->localCells())
     {
+//        for(const InteriorStencil &st: cell.neighbours())
+//        {
+
+//        }
+
+//        for(const BoundaryStencil &st: cell.boundaries())
+//        {
+
+//        }
     }
 
     return eqn;

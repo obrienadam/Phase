@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     //- Collect a list of all the output files
     regex re("proc(\\d+)\\.cgns");
-    set<path, std::function<bool(const path &, const path &)>> files([re](const path &p1, const path &p2) {
+    set<path, function<bool(const path &, const path &)>> files([re](const path &p1, const path &p2) {
         smatch matches[2];
         regex_search(p1.string(), matches[0], re);
         regex_search(p2.string(), matches[1], re);
@@ -31,25 +31,36 @@ int main(int argc, char *argv[])
             files.insert(dir->path());
 
     //- global nodes and elements
-    std::vector<double> buffer, xcoords, ycoords;
-    std::vector<int> cptr(1, 0), cind;
-    std::vector<cgsize_t> elements;
+    vector<double> buffer, xcoords, ycoords;
+    vector<int> cptr(1, 0), cind;
+    vector<cgsize_t> elements;
 
     //- ownerhship and globalIds
-    std::vector<int> ownership, globalIds;
+    vector<int> ownership, globalIds;
 
     //- Flow solution points
-    std::vector<std::array<char, 32>> flowSolutionPtrs;
-    std::vector<double> timeValues;
+    vector<array<char, 32>> flowSolutionPtrs;
+    vector<double> timeValues;
+
+    //- File ids, so files don't need to be open and closed repeatedly (this seems to cause major performance issues)
+    vector<int> fids;
 
     //- Read the files
     int proc = 0, nodeIdStart = 0;
     for(const path& p: files)
     {
-        cout << "Reading file " << p << "...\n";
+        //- Do a check to make sure file corresponds to the expected proc
+        smatch match;
+        regex_search(p.string(), match, re);
+
+        if(stoi(match[1]) != proc)
+            throw runtime_error("Missing grid file for proc " + to_string(proc) + ".");
+
+        cout << "Reading file " << p.c_str() << "...\n";
 
         int fid;
         cg_open(p.c_str(), CG_MODE_READ, &fid);
+        fids.emplace_back(fid);
 
         array<char, 256> name;
         int cellDim, physDim;
@@ -57,10 +68,7 @@ int main(int argc, char *argv[])
         cg_base_read(fid, 1, name.data(), &cellDim, &physDim);
 
         if(cellDim != 2 || physDim != 2)
-        {
-            cerr << "Bad cell or physical dimension for base \"" << name.data() << "\".\n";
-            throw exception();
-        }
+            throw runtime_error(string("Bad cell or physical dimension for base \"") + name.data() + "\".");
 
         cout << "\t--Read base \"" << name.data() << "\".\n";
 
@@ -126,7 +134,7 @@ int main(int argc, char *argv[])
             if(ownership[elemNo] == proc)
             {
                 cptr.push_back(cptr.back() + npts);
-                std::for_each(elements.begin() + i, elements.begin() + i + npts, [nodeIdStart](cgsize_t &id) { id += nodeIdStart - 1; });
+                for_each(elements.begin() + i, elements.begin() + i + npts, [nodeIdStart](cgsize_t &id) { id += nodeIdStart - 1; });
                 cind.insert(cind.end(), elements.begin() + i, elements.begin() + i + npts);
             }
 
@@ -137,7 +145,6 @@ int main(int argc, char *argv[])
         int nsols;
         cg_nsols(fid, 1, 1, &nsols);
 
-        //- First section is info, the rest should be flow solutions
         bool populateFlowSolutionPointers = flowSolutionPtrs.empty();
 
         for(int S = 2; S <= nsols; ++S)
@@ -148,11 +155,9 @@ int main(int argc, char *argv[])
 
             //- Make sure is is the expected flow solution pointer
             if("FlowSolution" + to_string(S - 1) != flowSolutionPtr.data())
-            {
-                cerr << "Expected flow solution pointer \"FlowSolution" << S - 1 << "\", but received \"" << flowSolutionPtr.data() << "\".\n";
-                throw exception();
-            }
+                throw runtime_error("Expected flow solution pointer \"FlowSolution" + to_string(S - 1) + "\", but received \"" + flowSolutionPtr.data() + "\".");
 
+            //- First proc is used to deduce the number of flow solution pointers as well as the time values
             if(populateFlowSolutionPointers)
             {
                 flowSolutionPtrs.emplace_back(flowSolutionPtr);
@@ -165,13 +170,10 @@ int main(int argc, char *argv[])
             }
         }
 
-        if(nsols - 2 + 1 != flowSolutionPtrs.size())
-        {
-            cerr << "Incorrect number of flow solution pointers on proc " << proc << ".\n";
-            throw exception();
-        }
-
-        cg_close(fid);
+        if(nsols - 2 + 1 < flowSolutionPtrs.size())
+            throw runtime_error("Too few flow solution pointers on proc " + to_string(proc) + ".");
+        else if(nsols - 2 + 1 > flowSolutionPtrs.size())
+            cout << "\t*** WARNING *** Additional flow solution pointers on proc " << proc << ". Expected " << flowSolutionPtrs.size() << ", received " << nsols - 2 + 1 << ".\n";
 
         proc++;
         nodeIdStart += sizes[0];
@@ -184,10 +186,10 @@ int main(int argc, char *argv[])
 
     RTree rtree;
     for(int i = 0; i < xcoords.size(); ++i)
-        rtree.insert(std::make_pair(Node(xcoords[i], ycoords[i]), i));
+        rtree.insert(make_pair(Node(xcoords[i], ycoords[i]), i));
 
     const double tolerance = 1e-14;
-    std::vector<int> merges(rtree.size(), -1);
+    vector<int> merges(rtree.size(), -1);
 
     for(const RTree::value_type &v: rtree)
     {
@@ -207,13 +209,13 @@ int main(int argc, char *argv[])
             merges[qit->second] = v.second;
     }
 
-    cout << "Found " << merges.size() - std::count(merges.begin(), merges.end(), -1) << " duplicate nodes.\n";
+    cout << "Found " << merges.size() - count(merges.begin(), merges.end(), -1) << " duplicate nodes.\n";
 
     //- Update the element list with the merged nodes
     for(int i = 0; i < cind.size(); ++i)
         cind[i] = merges[cind[i]] != -1 ? merges[cind[i]] : cind[i];
 
-    std::vector<int> newNodeIds(merges.size());
+    vector<int> newNodeIds(merges.size());
     for(int i = 0, id = 0; i < merges.size(); ++i)
         newNodeIds[i] = merges[i] == -1 ? id++ : -1;
 
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
         cind[i] = newNodeIds[cind[i]];
 
     //- Remove duplicate coordinates
-    std::vector<double> newXcoords, newYcoords;
+    vector<double> newXcoords, newYcoords;
     for(int i = 0; i < newNodeIds.size(); ++i)
         if(newNodeIds[i] != -1)
         {
@@ -230,8 +232,8 @@ int main(int argc, char *argv[])
             newYcoords.emplace_back(ycoords[i]);
         }
 
-    xcoords = std::move(newXcoords);
-    ycoords = std::move(newYcoords);
+    xcoords = move(newXcoords);
+    ycoords = move(newYcoords);
 
     //- Create new elements data structure for writing
     elements.clear();
@@ -272,8 +274,8 @@ int main(int argc, char *argv[])
     cg_section_write(fid, bid, zid, "Elements", CGNS_ENUMV(MIXED), 1, cptr.size() - 1, 0, elements.data(), &sid);
 
     //- write all fields
-    std::vector<int> i_buffers[2];
-    std::vector<double> d_buffers[2];
+    vector<int> i_buffers[2];
+    vector<double> d_buffers[2];
 
     //- Create transient flow solution nodes
     for(const auto &flowSolutionPtr: flowSolutionPtrs)
@@ -282,15 +284,13 @@ int main(int argc, char *argv[])
     //- Create grid info solution node
     cg_sol_write(fid, 1, 1, "Info", CGNS_ENUMV(CellCenter), &sid);
 
-    proc = 0;
     cgsize_t rglobal[2] = {1, 1};
 
-    for(const path &p: files)
+    for(int proc = 0; proc < fids.size(); ++proc)
     {
-        cout << "Writing data for proc " << proc << " from file " << p << "...\n";
+        cout << "Writing data for proc " << proc << "...\n";
 
-        int fid2;
-        cg_open(p.c_str(), CG_MODE_READ, &fid2);
+        int fid2 = fids[proc];
 
         char name[256];
         cgsize_t sizes[3];
@@ -351,10 +351,9 @@ int main(int argc, char *argv[])
             }
         }
 
+        //- File is no longer needed and can be closed
         cg_close(fid2);
-
         rglobal[0] = rglobal[1] + 1;
-        proc++;
     }
 
     //- Write base iterative data
