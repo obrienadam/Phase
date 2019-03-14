@@ -127,13 +127,15 @@ public:
 
     Solution readSolution(int bid, int zid, int sid) const;
 
+    Solution readLastFlowSolution(int bid, int zid) const;
+
     int writeSolution(int bid, int zid, const std::string &solnname);
 
     int writeNodeSolution(int bid, int zid, const std::string &solname);
 
     //- Fields
     template<class T>
-    Field<T> readField(int bid, int zid, int sid, int rmin, int rmax, const std::string& fieldname);
+    Field<T> readField(int bid, int zid, int sid, int rmin, int rmax, const std::string& fieldname) const;
 
     template<class T>
     int writeField(int bid, int zid, int sid, const std::string &fieldname, const std::vector<T> &field);
@@ -145,6 +147,8 @@ public:
     void writeDescriptorNode(int bid, const std::string &name, const std::string &text);
 
     int writeDescriptorNode(int bid, int zid, int sid, const std::string &name, const std::string &text);
+
+    std::vector<std::pair<std::string, std::string>> readDescriptorNodes(int bid, int zid, int sid) const;
 
 protected:
 

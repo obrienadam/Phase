@@ -9,7 +9,7 @@
 #include <cgnslib.h>
 
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> Node;
-typedef boost::geometry::index::rtree<std::pair<Node, int>, boost::geometry::index::quadratic<16, 4>> RTree;
+typedef boost::geometry::index::rtree<std::pair<Node, size_t>, boost::geometry::index::quadratic<16, 4>> RTree;
 
 int main(int argc, char *argv[])
 {
@@ -111,12 +111,11 @@ int main(int argc, char *argv[])
         cg_ElementDataSize(fid, 1, 1, 1, &elemDataSize);
 
         elements.resize(elemDataSize);
-
         cg_elements_read(fid, 1, 1, 1, elements.data(), nullptr);
 
-        for(auto i = 0, elemNo = 0; i < elements.size(); ++elemNo)
+        for(size_t i = 0, elemNo = 0; i < elements.size(); ++elemNo)
         {
-            int npts;
+            size_t npts;
             switch(elements[i++])
             {
             case CGNS_ENUMV(TRI_3):
@@ -126,15 +125,15 @@ int main(int argc, char *argv[])
                 npts = 4;
                 break;
             default:
-                cerr << "Unrecognized element type.\n";
+                cerr << "Only TRI_3 and QUAD_4 element types are supported.\n";
                 throw exception();
             }
 
             //- Don't add elements that are not owned by this proc
             if(ownership[elemNo] == proc)
             {
-                cptr.push_back(cptr.back() + npts);
                 for_each(elements.begin() + i, elements.begin() + i + npts, [nodeIdStart](cgsize_t &id) { id += nodeIdStart - 1; });
+                cptr.emplace_back(cptr.back() + npts);
                 cind.insert(cind.end(), elements.begin() + i, elements.begin() + i + npts);
             }
 
@@ -158,10 +157,10 @@ int main(int argc, char *argv[])
                 throw runtime_error("Expected flow solution pointer \"FlowSolution" + to_string(S - 1) + "\", but received \"" + flowSolutionPtr.data() + "\".");
 
             //- First proc is used to deduce the number of flow solution pointers as well as the time values
+
             if(populateFlowSolutionPointers)
             {
                 flowSolutionPtrs.emplace_back(flowSolutionPtr);
-
                 char *text;
                 cg_goto(fid, 1, "Zone_t", 1, "FlowSolution_t", S, "end");
                 cg_descriptor_read(1, name.data(), &text);
@@ -185,16 +184,18 @@ int main(int argc, char *argv[])
          << "Merging duplicate nodes...\n";
 
     RTree rtree;
-    for(int i = 0; i < xcoords.size(); ++i)
+    for(size_t i = 0; i < xcoords.size(); ++i)
         rtree.insert(make_pair(Node(xcoords[i], ycoords[i]), i));
 
-    const double tolerance = 1e-14;
-    vector<int> merges(rtree.size(), -1);
+    const double tolerance = 1e-13;
+    vector<size_t> merges(rtree.size());
+    iota(merges.begin(), merges.end(), 0);
 
+    size_t nMerges = 0;
     for(const RTree::value_type &v: rtree)
     {
         //- Check if node is already being merged, no need to check again if found
-        if(merges[v.second] != -1)
+        if(merges[v.second] != v.second)
             continue;
 
         //- Construct search box around node
@@ -203,41 +204,39 @@ int main(int argc, char *argv[])
                     Node(v.first.get<0>() + tolerance, v.first.get<1>() + tolerance)
                     );
 
-        auto p = bgi::covered_by(box) && bgi::satisfies([&v](const RTree::value_type &vother) { return v.second != vother.second; });
-
+        auto p = bgi::covered_by(box); //- merge all nodes at this location into this node
         for(auto qit = rtree.qbegin(p); qit != rtree.qend(); ++qit)
-            merges[qit->second] = v.second;
-    }
-
-    cout << "Found " << merges.size() - count(merges.begin(), merges.end(), -1) << " duplicate nodes.\n";
-
-    //- Update the element list with the merged nodes
-    for(int i = 0; i < cind.size(); ++i)
-        cind[i] = merges[cind[i]] != -1 ? merges[cind[i]] : cind[i];
-
-    vector<int> newNodeIds(merges.size());
-    for(int i = 0, id = 0; i < merges.size(); ++i)
-        newNodeIds[i] = merges[i] == -1 ? id++ : -1;
-
-    //- Update element list again with the new node ids
-    for(int i = 0; i < cind.size(); ++i)
-        cind[i] = newNodeIds[cind[i]];
-
-    //- Remove duplicate coordinates
-    vector<double> newXcoords, newYcoords;
-    for(int i = 0; i < newNodeIds.size(); ++i)
-        if(newNodeIds[i] != -1)
         {
-            newXcoords.emplace_back(xcoords[i]);
-            newYcoords.emplace_back(ycoords[i]);
+            merges[qit->second] = v.second;
+            if(qit->second != v.second)
+                ++nMerges;
+        }
+    }
+    cout << "Merging " << nMerges << " duplicate nodes.\n";
+
+    vector<double> newXCoords, newYCoords;
+    vector<size_t> newNodeIds(merges.size());
+    for(size_t i = 0, id = 0; i < merges.size(); ++i)
+        if(merges[i] == i)
+        {
+            newXCoords.emplace_back(xcoords[i]);
+            newYCoords.emplace_back(ycoords[i]);
+            newNodeIds[i] = id++;
         }
 
-    xcoords = move(newXcoords);
-    ycoords = move(newYcoords);
+    for(size_t i = 0; i < merges.size(); ++i)
+        if(merges[i] != i)
+            newNodeIds[i] = newNodeIds[merges[i]];
+
+    xcoords = move(newXCoords);
+    ycoords = move(newYCoords);
+
+    for(size_t i = 0; i < cind.size(); ++i)
+        cind[i] = newNodeIds[cind[i]];
 
     //- Create new elements data structure for writing
     elements.clear();
-    for(int i = 0; i < cptr.size() - 1; ++i)
+    for(size_t i = 0; i < cptr.size() - 1; ++i)
     {
         switch(cptr[i + 1] - cptr[i])
         {
@@ -263,7 +262,7 @@ int main(int argc, char *argv[])
     cg_simulation_type_write(fid, 1, CGNS_ENUMV(TimeAccurate));
 
     int zid;
-    cgsize_t sizes[3] = {(cgsize_t)xcoords.size(), (cgsize_t)cptr.size() - 1, 0};
+    cgsize_t sizes[3] = {cgsize_t(xcoords.size()), cgsize_t(cptr.size() - 1), 0};
     cg_zone_write(fid, bid, "Cells", sizes, CGNS_ENUMT(Unstructured), &zid);
 
     int cid;

@@ -507,9 +507,22 @@ void Solver::setRotating(const std::string &xFunction, const std::string &yFunct
 void Solver::restartSolution(const Input &input)
 {
     using namespace std;
+    string viewerType = input.postProcessingInput().get<string>("PostProcessing.viewerType", "cgns");
+
+    if(viewerType == "cgns")
+        restartFromCgnsViewer(input);
+    else if (viewerType == "compactCgns")
+        restartFromCompactCgnsViewer(input);
+    else
+        throw Exception("Solver", "restartSolution", "Unrecognized viewer type \"" + viewerType + "\".");
+}
+
+void Solver::restartFromCgnsViewer(const Input &input)
+{
+    using namespace std;
     using namespace boost::filesystem;
 
-    std::regex re("[0-9]+\\.[0-9]+");
+    regex re("[0-9]+\\.[0-9]+");
     path path;
 
     for (directory_iterator end, dir("./solution"); dir != end; ++dir)
@@ -532,16 +545,51 @@ void Solver::restartSolution(const Input &input)
     if (!exists(path))
         throw Exception("Solver", "restartSolution", "no file \"" + path.string() + "\" needed for restart.");
 
+    startTime_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), startTime_);
     grid_->comm().printf("Restarting solution at t = %lf...\n", startTime_);
 
     CgnsFile file(path.string(), CgnsFile::READ);
+    readLatestCgnsFlowSolution(file);
+    file.close();
+}
+
+void Solver::restartFromCompactCgnsViewer(const Input &input)
+{
+    using namespace std;
+    using namespace boost::filesystem;
+
+    int proc = grid_->comm().rank();
+    path path = ("./solution") / ("proc" + to_string(proc) + ".cgns");
+    CgnsFile file(path.string(), CgnsFile::READ);
+    int sid = readLatestCgnsFlowSolution(file);
+
+    for(const auto& d: file.readDescriptorNodes(1, 1, sid))
+        if(d.first == "SolutionTime")
+        {
+            startTime_ = stod(d.second);
+            break;
+        }
+
+    startTime_ = grid_->comm().broadcast(grid_->comm().mainProcNo(), startTime_);
+    grid_->comm().printf("Restarting solution at t = %lf...\n", startTime_);
+
+    file.close();
+}
+
+int Solver::readLatestCgnsFlowSolution(const CgnsFile &file)
+{
+    using namespace std;
+    CgnsFile::Solution soln = file.readLastFlowSolution(1, 1);
+
+    if(soln.id < 1)
+        return soln.id;
 
     for (const auto &entry: scalarFields_)
     {
-        auto field = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first);
+        auto field = file.readField<Scalar>(1, 1, soln.id, 1, grid_->nCells(), entry.first);
 
         if (field.data.size() == entry.second->size())
-            std::copy(field.data.begin(), field.data.end(), entry.second->begin());
+            copy(field.data.begin(), field.data.end(), entry.second->begin());
 
         grid_->sendMessages(*entry.second);
         entry.second->interpolateFaces();
@@ -549,16 +597,16 @@ void Solver::restartSolution(const Input &input)
 
     for (const auto &entry: vectorFields_)
     {
-        auto fieldX = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first + "X");
-        auto fieldY = file.readField<Scalar>(1, 1, 1, 1, grid_->nCells(), entry.first + "Y");
+        auto fieldX = file.readField<Scalar>(1, 1, soln.id, 1, grid_->nCells(), entry.first + "X");
+        auto fieldY = file.readField<Scalar>(1, 1, soln.id, 1, grid_->nCells(), entry.first + "Y");
 
         if (fieldX.data.size() == entry.second->size()
                 && fieldY.data.size() == entry.second->size())
         {
-            std::transform(fieldX.data.begin(), fieldX.data.end(),
-                           fieldY.data.begin(),
-                           entry.second->begin(),
-                           [](Scalar x, Scalar y)
+            transform(fieldX.data.begin(), fieldX.data.end(),
+                      fieldY.data.begin(),
+                      entry.second->begin(),
+                      [](Scalar x, Scalar y)
             { return Vector2D(x, y); });
         }
 
@@ -566,5 +614,5 @@ void Solver::restartSolution(const Input &input)
         entry.second->interpolateFaces();
     }
 
-    file.close();
+    return soln.id;
 }

@@ -5,7 +5,7 @@
 #include "ImmersedBoundaryObjectProbe.h"
 #include "ImmersedBoundaryObjectContactLineTracker.h"
 
-PostProcessing::PostProcessing(const Input &input, const Solver &solver)
+PostProcessing::PostProcessing(const CommandLine &cl, const Input &input, const Solver &solver)
 {
     iter_ = 0;
     fileWriteFrequency_ = input.postProcessingInput().get<int>("PostProcessing.fileWriteFrequency");
@@ -13,9 +13,9 @@ PostProcessing::PostProcessing(const Input &input, const Solver &solver)
     std::string viewerType = input.postProcessingInput().get<std::string>("PostProcessing.viewerType", "cgns");
 
     if(viewerType == "cgns")
-        viewer_ = std::unique_ptr<Viewer>(new CgnsViewer(input, solver));
+        viewer_ = std::unique_ptr<Viewer>(new CgnsViewer(cl, input, solver));
     else if(viewerType == "compactCgns")
-        viewer_ = std::unique_ptr<Viewer>(new CompactCgnsViewer(input, solver));
+        viewer_ = std::unique_ptr<Viewer>(new CompactCgnsViewer(cl, input, solver));
     else
         throw Exception("PostProcessing", "PostProcessing", "Unrecognized viewer type \"" + viewerType + "\".");
 }

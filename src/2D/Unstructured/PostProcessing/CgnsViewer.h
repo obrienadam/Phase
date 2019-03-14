@@ -11,7 +11,7 @@ class CgnsViewer : public Viewer
 {
 public:
 
-    CgnsViewer(const Input& input, const Solver& solver);
+    CgnsViewer(const CommandLine &cl, const Input& input, const Solver& solver);
 
     virtual void write(Scalar time) override;
 

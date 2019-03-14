@@ -9,6 +9,8 @@
 #include "FiniteVolume/Field/TensorFiniteVolumeField.h"
 #include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
+class CgnsFile;
+
 class Solver : public SolverInterface
 {
 public:
@@ -105,6 +107,12 @@ protected:
 
     virtual void restartSolution(const Input &input);
 
+    virtual void restartFromCgnsViewer(const Input &input);
+
+    virtual void restartFromCompactCgnsViewer(const Input &input);
+
+    virtual int readLatestCgnsFlowSolution(const CgnsFile& file);
+
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     std::shared_ptr<IndexMap> scalarIndexMap_, vectorIndexMap_;
@@ -120,6 +128,9 @@ protected:
 
     //- Solver parameters
     Scalar startTime_, maxTimeStep_;
+
+    //- Misc
+    bool isRestart_;
 };
 
 #endif

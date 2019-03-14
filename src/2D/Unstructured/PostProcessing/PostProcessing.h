@@ -3,6 +3,7 @@
 
 #include "System/PostProcessingInterface.h"
 #include "System/Input.h"
+#include "System/CommandLine.h"
 #include "Solvers/Solver.h"
 #include "FiniteVolume/ImmersedBoundary/ImmersedBoundary.h"
 
@@ -12,7 +13,7 @@ class PostProcessing : public PostProcessingInterface
 {
 public:
 
-    PostProcessing(const Input& input, const Solver& solver);
+    PostProcessing(const CommandLine& cl, const Input& input, const Solver& solver);
 
     void initIbPostProcessingObjects(const Input &input, const Solver &solver);
 

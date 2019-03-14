@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<Solver> solver = SolverFactory::create(input, grid);
 
-    PostProcessing postProcessing(input, *solver);
+    PostProcessing postProcessing(cl, input, *solver);
     postProcessing.initIbPostProcessingObjects(input, *solver);
 
     RunControl runControl;

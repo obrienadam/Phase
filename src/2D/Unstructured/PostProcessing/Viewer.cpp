@@ -2,9 +2,10 @@
 
 #include "Viewer.h"
 
-Viewer::Viewer(const Input &input, const Solver &solver)
+Viewer::Viewer(const CommandLine &cl, const Input &input, const Solver &solver)
     :
-      solver_(solver)
+      solver_(solver),
+      isRestart_(cl.get<bool>("restart"))
 {
     using namespace std;
     using namespace boost;

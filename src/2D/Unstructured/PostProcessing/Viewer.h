@@ -2,6 +2,7 @@
 #define PHASE_VIEWER_H
 
 #include "System/Input.h"
+#include "System/CommandLine.h"
 #include "System/Communicator.h"
 #include "Solvers/Solver.h"
 
@@ -9,7 +10,7 @@ class Viewer
 {
 public:
 
-    Viewer(const Input& input, const Solver& solver);
+    Viewer(const CommandLine &cl, const Input& input, const Solver& solver);
 
     virtual void write(Scalar solutionTime) = 0;
 
@@ -20,6 +21,8 @@ protected:
     std::string filename_;
 
     std::unordered_set<std::string> integerFields_, scalarFields_, vectorFields_;
+
+    bool isRestart_;
 
 };
 

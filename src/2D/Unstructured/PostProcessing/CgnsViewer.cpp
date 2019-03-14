@@ -11,9 +11,9 @@
 
 #include "CgnsViewer.h"
 
-CgnsViewer::CgnsViewer(const Input &input, const Solver &solver)
+CgnsViewer::CgnsViewer(const CommandLine &cl, const Input &input, const Solver &solver)
     :
-      Viewer(input, solver)
+      Viewer(cl, input, solver)
 {
     boost::filesystem::path path = "solution/Proc" + std::to_string(solver.grid()->comm().rank());
     boost::filesystem::create_directories(path);

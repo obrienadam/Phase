@@ -1,4 +1,5 @@
 #include <numeric>
+#include <regex>
 
 #include <cgnslib.h>
 
@@ -21,17 +22,17 @@ int CgnsFile::open(const std::string &filename, Mode mode)
 
     switch (mode)
     {
-        case READ:
-            cg_open(filename.c_str(), CG_MODE_READ, &_fid);
-            break;
+    case READ:
+        cg_open(filename.c_str(), CG_MODE_READ, &_fid);
+        break;
 
-        case WRITE:
-            cg_open(filename.c_str(), CG_MODE_WRITE, &_fid);
-            break;
+    case WRITE:
+        cg_open(filename.c_str(), CG_MODE_WRITE, &_fid);
+        break;
 
-        case MODIFY:
-            cg_open(filename.c_str(), CG_MODE_MODIFY, &_fid);
-            break;
+    case MODIFY:
+        cg_open(filename.c_str(), CG_MODE_MODIFY, &_fid);
+        break;
     }
 
     return _fid;
@@ -153,7 +154,7 @@ int CgnsFile::createStructuredZone(int bid, const std::string &zonename,
 {
     int zid;
     cgsize_t size[] = {
-            nNodesI, nNodesJ, nCellsI, nCellsJ, 0, 0
+        nNodesI, nNodesJ, nCellsI, nCellsJ, 0, 0
     };
 
     cg_zone_write(_fid, bid, zonename.c_str(), size, CGNS_ENUMV(Structured), &zid);
@@ -168,7 +169,7 @@ int CgnsFile::createStructuredZone(int bid,
 {
     int zid;
     cgsize_t size[] = {
-            nNodesI, nNodesJ, nNodesK, nCellsI, nCellsJ, nCellsK, 0, 0, 0
+        nNodesI, nNodesJ, nNodesK, nCellsI, nCellsJ, nCellsK, 0, 0, 0
     };
 
     cg_zone_write(_fid, bid, zonename.c_str(), size, CGNS_ENUMV(Structured), &zid);
@@ -211,16 +212,16 @@ CgnsFile::Section CgnsFile::readSection(int bid, int zid, int sid) const
     {
         switch (type)
         {
-            case CGNS_ENUMV(BAR_2):
-                return 2;
-            case CGNS_ENUMV(TRI_3):
-                return 3;
-            case CGNS_ENUMV(QUAD_4):
-                return 4;
-            default:
-                throw Exception("CgnsFile",
-                                "readSection",
-                                "unsupported element type \"" + std::string(cg_ElementTypeName(type)) + "\".\n");
+        case CGNS_ENUMV(BAR_2):
+            return 2;
+        case CGNS_ENUMV(TRI_3):
+            return 3;
+        case CGNS_ENUMV(QUAD_4):
+            return 4;
+        default:
+            throw Exception("CgnsFile",
+                            "readSection",
+                            "unsupported element type \"" + std::string(cg_ElementTypeName(type)) + "\".\n");
         }
     };
 
@@ -268,17 +269,17 @@ int CgnsFile::writeMixedElementSection(int bid, int zid, const std::string &sect
 
         switch (eptr[i + 1] - eptr[i])
         {
-            case 2:
-                elements.push_back(CGNS_ENUMV(BAR_2));
-                break;
-            case 3:
-                elements.push_back(CGNS_ENUMV(TRI_3));
-                break;
-            case 4:
-                elements.push_back(CGNS_ENUMV(QUAD_4));
-                break;
-            default:
-                throw Exception("CgnsFile", "writeMixedElementSection", "bad element.");
+        case 2:
+            elements.push_back(CGNS_ENUMV(BAR_2));
+            break;
+        case 3:
+            elements.push_back(CGNS_ENUMV(TRI_3));
+            break;
+        case 4:
+            elements.push_back(CGNS_ENUMV(QUAD_4));
+            break;
+        default:
+            throw Exception("CgnsFile", "writeMixedElementSection", "bad element.");
         }
 
         elements.insert(elements.end(), eind.begin() + eptr[i], eind.begin() + eptr[i + 1]);
@@ -381,6 +382,39 @@ CgnsFile::Solution CgnsFile::readSolution(int bid, int zid, int sid) const
     return soln;
 }
 
+CgnsFile::Solution CgnsFile::readLastFlowSolution(int bid, int zid) const
+{
+    using namespace std;
+
+    char buff[256];
+    CGNS_ENUMT(GridLocation_t) location;
+
+    int nsols, maxSid = 0;
+    cg_nsols(_fid, bid, zid, &nsols);
+
+    regex re("FlowSolution([0-9]+)");
+
+    for(int sid = 1; sid <= nsols; ++sid)
+    {
+        cg_sol_info(_fid, bid, zid, sid, buff, &location);
+
+        if(regex_match(buff, re))
+        {
+            maxSid = sid;
+        }
+    }
+
+    Solution soln;
+
+    cg_sol_size(_fid, bid, zid, maxSid, &soln.dataDim, soln.dimVals);
+
+    soln.name = buff;
+    soln.location = cg_GridLocationName(location);
+    soln.id = maxSid;
+
+    return soln;
+}
+
 int CgnsFile::writeSolution(int bid, int zid, const std::string &solnname)
 {
     int solid;
@@ -396,7 +430,7 @@ int CgnsFile::writeNodeSolution(int bid, int zid, const std::string &solname)
 }
 
 template<>
-CgnsFile::Field<int> CgnsFile::readField(int bid, int zid, int sid, int rmin, int rmax, const std::string &fieldname)
+CgnsFile::Field<int> CgnsFile::readField(int bid, int zid, int sid, int rmin, int rmax, const std::string &fieldname) const
 {
     Field<int> field;
 
@@ -416,7 +450,7 @@ CgnsFile::Field<int> CgnsFile::readField(int bid, int zid, int sid, int rmin, in
 }
 
 template<>
-CgnsFile::Field<double> CgnsFile::readField(int bid, int zid, int sid, int rmin, int rmax, const std::string &fieldname)
+CgnsFile::Field<double> CgnsFile::readField(int bid, int zid, int sid, int rmin, int rmax, const std::string &fieldname) const
 {
     Field<double> field;
 
@@ -494,4 +528,25 @@ int CgnsFile::writeDescriptorNode(int bid, int zid, int sid, const std::string &
 {
     cg_goto(_fid, bid, "Zone_t", zid, "FlowSolution_t", sid, "end");
     cg_descriptor_write(name.c_str(), text.c_str());
+}
+
+std::vector<std::pair<std::string, std::string>> CgnsFile::readDescriptorNodes(int bid, int zid, int sid) const
+{
+    using namespace std;
+    int ndescriptors;
+    char name[256];
+    vector<pair<string, string>> descriptors;
+
+    cg_goto(_fid, bid, "Zone_t", zid, "FlowSolution_t", sid, "end");
+    cg_ndescriptors(&ndescriptors);
+
+    for(int d = 1; d <= ndescriptors; ++d)
+    {
+        char *text;
+        cg_descriptor_read(d, name, &text);
+        descriptors.emplace_back(name, text);
+        cg_free(text);
+    }
+
+    return descriptors;
 }

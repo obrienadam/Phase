@@ -7,7 +7,7 @@ class CompactCgnsViewer: public Viewer
 {
 public:
 
-    CompactCgnsViewer(const Input& input, const Solver& solver);
+    CompactCgnsViewer(const CommandLine &cl, const Input& input, const Solver& solver);
 
     virtual void write(Scalar time) override;
 
