@@ -30,9 +30,11 @@ void TrilinosBelosSparseMatrixSolver::setRank(int rank)
 
 Scalar TrilinosBelosSparseMatrixSolver::solve()
 {
-    comm_.printf("Ifpack2: Computing preconditioner...\n");
-    precon_->initialize();
-    precon_->compute();
+    if(!precon_->isComputed())
+    {
+        comm_.printf("Ifpack2: Computing preconditioner...\n");
+        precon_->compute();
+    }
 
     comm_.printf("Belos: Performing Krylov iterations...\n");
     linearProblem_->setProblem(x_, b_);

@@ -29,6 +29,10 @@ void CgnsUnstructuredGrid::load(const std::string &filename, const Point2D &orig
     if (base.cellDim != 2)
         throw Exception("CgnsUnstructuredGrid", "CgnsUnstructuredGrid", "cell dimension must be be 2.");
 
+    int nzones = file.nZones(1);
+    if(nzones > 1)
+        throw Exception("CgnsUnstructuredGrid", "load", "multiple zones are not currently supported.");
+
     auto zone = file.readZone(1, 1);
 
     if (zone.type != "Unstructured")

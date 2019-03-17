@@ -85,7 +85,7 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const Ray2D &r1, const Ra
 
         if(g1 == g2)
             init(gamma);
-        else if(theta_ < M_PI_2 && g1 > g2 || theta_ > M_PI_2 && g1 < g2)
+        else if((theta_ < M_PI_2 && g1 > g2) || (theta_ > M_PI_2 && g1 < g2))
         {
             *this = c1;
             gamma_ = g1;
@@ -118,7 +118,7 @@ void CelesteImmersedBoundary::ContactLineStencil::findStencilCells(const Ray2D &
                         "findStencilCells",
                         "contact line does not intersect boundary.");
 
-    Scalar minDistSqr;
+    Scalar minDistSqr = std::numeric_limits<Scalar>::max();
     bool foundIntersection = false;
 
     cellA_ = nullptr;
