@@ -35,7 +35,9 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
 {
     Vector2D fc = Vector2D(0., 0.);
 
-    if (ibObj.shape().type() == Shape2D::CIRCLE)
+    switch(ibObj.shape().type())
+    {
+    case Shape2D::CIRCLE:
     {
         const Circle &c = static_cast<const Circle &>(ibObj.shape());
         const Vector2D &xp = c.centroid();
@@ -52,6 +54,10 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
 
                 fc += (xp - xq) / eps_ * pow(r + range_ - d, 2);
             }
+        break;
+    }
+    default:
+        break;
     }
 
     return fc;

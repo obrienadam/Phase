@@ -20,6 +20,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
     if(ibInput)
         for (const auto &ibObjectInput: ibInput.get())
         {
+            if(ibObjectInput.first == "Collisions")
+                continue;
+
             grid_->comm().printf("Initializing immersed boundary object \"%s\".\n", ibObjectInput.first.c_str());
             auto ibObj = std::make_shared<ImmersedBoundaryObject>(ibObjectInput.first);
 
@@ -106,8 +109,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
             for (const auto &child: ibObjectInput.second)
             {
                 if (child.first == "geometry" || child.first == "interpolation"
-                        || child.first == "motion" || child.first == "properties"
-                        || child.first == "Collisions")
+                        || child.first == "motion" || child.first == "properties")
                     continue;
 
                 ibObj->addBoundaryCondition(child.first, child.second.get<std::string>("type"), child.second.get<std::string>("value"));
