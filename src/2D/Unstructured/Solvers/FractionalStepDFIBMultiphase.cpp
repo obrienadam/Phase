@@ -18,9 +18,7 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
       rho_(*addField<Scalar>("rho", fluid_)),
       mu_(*addField<Scalar>("mu", fluid_)),
       gammaSrc_(*addField<Scalar>("gammaSrc", fluid_)),
-      divU_(*addField<Scalar>("divU", fluid_)),
       sg_(*addField<Vector2D>("sg", fluid_)),
-      us_(*addField<Vector2D>("us", fluid_)),
       gradGamma_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma_, fluid_)))),
       gradRho_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(rho_, fluid_)))),
       fst_(std::make_shared<CelesteImmersedBoundary>(input, grid_, fluid_, ib_)),
@@ -182,23 +180,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
             break;
         }
 
-    for(const Cell &c: *fluid_)
-    {
-        us_(c) = u_(c);
-        divU_(c) = 0.;
-
-        for(const InteriorLink &nb: c.neighbours())
-            divU_(c) += dot(u_(nb.face()), nb.outwardNorm());
-
-        for(const BoundaryLink &nb: c.boundaries())
-            divU_(c) += dot(u_(nb.face()), nb.outwardNorm());
-
-        divU_(c) /= c.volume();
-    }
-
-    us_.sendMessages();
-    divU_.sendMessages();
-
     return error;
 }
 
@@ -263,8 +244,23 @@ void FractionalStepDirectForcingMultiphase::correctVelocity(Scalar timeStep)
 
     u_.sendMessages();
 
-    for (const Face &face: grid_->faces())
-        u_(face) -= timeStep / rho_(face) * gradP_(face);
+    for(const Face &f: grid_->interiorFaces())
+        u_(f) -= timeStep / rho_(f) * gradP_(f);
+
+    for (const FaceGroup &patch: grid_->patches())
+        switch (u_.boundaryType(patch))
+        {
+        case VectorFiniteVolumeField::FIXED:
+            break;
+        case VectorFiniteVolumeField::NORMAL_GRADIENT:
+            for (const Face &f: patch)
+                u_(f) -= timeStep / rho_(f) * gradP_(f);
+            break;
+        case VectorFiniteVolumeField::SYMMETRY:
+            for (const Face &f: patch)
+                u_(f) = u_(f.lCell()).tangentialComponent(f.norm());
+            break;
+        }
 }
 
 void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
@@ -310,7 +306,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
         std::sort(contactLines_.begin(), contactLines_.end(), [](const ContactLine &lhs, const ContactLine &rhs)
         { return lhs.beta < rhs.beta; });
 
-        Vector2D fb(0., 0.), fc(0., 0.);
+        Vector2D fc(0., 0.);
 
         if(ibObj->shape().type() == Shape2D::CIRCLE)
         {
@@ -325,13 +321,13 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
                 Scalar tA = stA.beta;
                 Scalar tB = stB.beta < tA ? stB.beta + 2. * M_PI : stB.beta;
 
-                Scalar pA = stA.rgh;
-                Scalar pB = stB.rgh;
+                //                Scalar pA = stA.rgh;
+                //                Scalar pB = stB.rgh;
 
-                fb += Vector2D(
-                            r*(pA*tA*sin(tA) - pA*tB*sin(tA) + pA*cos(tA) - pA*cos(tB) - pB*tA*sin(tB) + pB*tB*sin(tB) - pB*cos(tA) + pB*cos(tB))/(tA - tB),
-                            r*(-pA*tA*cos(tA) + pA*tB*cos(tA) + pA*sin(tA) - pA*sin(tB) + pB*tA*cos(tB) - pB*tB*cos(tB) - pB*sin(tA) + pB*sin(tB))/(tA - tB)
-                            );
+                //                fb += Vector2D(
+                //                            r*(pA*tA*sin(tA) - pA*tB*sin(tA) + pA*cos(tA) - pA*cos(tB) - pB*tA*sin(tB) + pB*tB*sin(tB) - pB*cos(tA) + pB*cos(tB))/(tA - tB),
+                //                            r*(-pA*tA*cos(tA) + pA*tB*cos(tA) + pA*sin(tA) - pA*sin(tB) + pB*tA*cos(tB) - pB*tB*cos(tB) - pB*sin(tA) + pB*sin(tB))/(tA - tB)
+                //                            );
 
                 Scalar gA = stA.gamma;
                 Scalar gB = stB.gamma;
@@ -370,7 +366,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_(c) * fb_(c) * c.volume();
+            fh -= rho_(c) * (fb_(c) + g_) * c.volume();
         }
 
         fh = grid_->comm().sum(fh);
@@ -378,15 +374,14 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
         Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
 
         if(grid_->comm().isMainProc())
-            std::cout << "Buoyancy force = " << fb << "\n"
-                      << "Hydrodynamic force = " << fh << "\n"
+            std::cout << "Hydrodynamic force = " << fh << "\n"
                       << "Net IB force = " << fh << "\n"
                       << "Capillary force = " << fc << "\n"
                       << "Weight = " << fw << "\n"
-                      << "Net = " << fh + fb + fc + fw << "\n";
+                      << "Net = " << fh + fc + fw << "\n";
 
 
-        ibObj->applyForce(fh + fb + fc + fw);
+        ibObj->applyForce(fh + fc + fw);
     }
 }
 

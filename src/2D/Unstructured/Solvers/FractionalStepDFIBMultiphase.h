@@ -44,9 +44,9 @@ protected:
 
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
 
-    ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_, &divU_;
+    ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_;
 
-    VectorFiniteVolumeField &sg_, &us_;
+    VectorFiniteVolumeField &sg_;
 
     ScalarGradient &gradGamma_, &gradRho_;
 

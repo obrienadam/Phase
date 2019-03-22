@@ -87,12 +87,14 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveGammaEqn(Scalar timeStep)
 
     gammaEqn_ == axi::src::src(gammaSrc_);
 
-    gammaEqn_.solve();
+    Scalar error = gammaEqn_.solve();
     gamma_.sendMessages();
     gamma_.interpolateFaces();
 
     gradGamma_.computeAxisymmetric(*fluid_);
     gradGamma_.sendMessages();
+
+    return error;
 }
 
 void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
@@ -131,7 +133,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_.computeFaceInterfaceForces(gamma_, gradGamma_);
     fst_.fst()->faceToCellAxisymmetric(rho_, rho_, *fluid_);
-    //fst_.fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_.fst()->sendMessages();
 }
 
@@ -200,12 +201,14 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solvePEqn(Scalar timeStep)
 {
     pEqn_ = (axi::laplacian(timeStep / rho_, p_) == axi::src::div(u_));
 
-    pEqn_.solve();
+    Scalar error = pEqn_.solve();
     p_.sendMessages();
     p_.setBoundaryFaces();
 
     gradP_.computeAxisymmetric(rho_, rho_, *fluid_);
     gradP_.sendMessages();
+
+    return error;
 }
 
 void FractionalStepAxisymmetricDFIBMultiphase::correctVelocity(Scalar timeStep)
@@ -247,12 +250,12 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_(c) * fib_(c) * c.polarVolume();
+            fh -= rho_(c) * (fib_(c) + (*fst_.fst())(c) / rho_(c) + g_) * c.polarVolume();
         }
 
         fh = grid_->comm().sum(2. * M_PI * fh);
 
-        Vector2D fc(0., 0.), fb(0., 0.), fw(0., 0.);
+        Vector2D fc(0., 0.), fw(0., 0.);
 
         contactLines_.clear();
 
@@ -281,7 +284,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
 
         contactLines_ = grid_->comm().allGatherv(contactLines_);
 
-        std::sort(contactLines_.begin(), contactLines_.end(), [&ibObj](const ContactLine &lhs, const ContactLine &rhs)
+        std::sort(contactLines_.begin(), contactLines_.end(), [](const ContactLine &lhs, const ContactLine &rhs)
         { return lhs.beta < rhs.beta; });
 
         //- Assume spherical
@@ -309,18 +312,18 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         };
 
         //- Assumes the sphere is centered on the axis
-        for(int i = 0; i < contactLines_.size() - 1; ++i)
+        for(size_t i = 0; i < contactLines_.size() - 1; ++i)
         {
             const auto &cl1 = contactLines_[i];
             const auto &cl2 = contactLines_[(i + 1) % contactLines_.size()];
 
-            if(i == 0)
-                fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
+//            if(i == 0)
+//                fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
 
-            if(i == contactLines_.size() - 2)
-                fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
+//            if(i == contactLines_.size() - 2)
+//                fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
 
-            fb += buoyancyForce(cl1, cl2);
+//            fb += buoyancyForce(cl1, cl2);
 
             Scalar g1 = cl1.gamma;
             Scalar g2 = cl2.gamma;
@@ -350,11 +353,10 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             std::cout << "Hydro force = " << fh << "\n"
                       << "Weight = " << fw << "\n"
                       << "Capillary force = " << fc << "\n"
-                      << "Buoyancy force = " << fb << "\n"
-                      << "Net force = " << fh + fw + fc + fb << "\n";
+                      << "Net force = " << fh + fw + fc << "\n";
         }
 
-        ibObj->applyForce((fh + fw + fc + fb) * ibObj->mass() / (ibObj->rho * vol));
+        ibObj->applyForce((fh + fw + fc) * ibObj->mass() / (ibObj->rho * vol));
     }
 }
 

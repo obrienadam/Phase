@@ -22,9 +22,17 @@ FractionalStepDFIB::FractionalStepDFIB(const Input &input, const std::shared_ptr
     addField<int>(ib_->cellStatus());
 }
 
+void FractionalStepDFIB::initialize()
+{
+    FractionalStep::initialize();
+    u_.savePreviousTimeStep(0, 2);
+}
+
 Scalar FractionalStepDFIB::solve(Scalar timeStep)
 {   
     grid_->comm().printf("Updating IB forces and positions...\n");
+    computIbForce(timeStep);
+    ib_->applyCollisionForce(true);
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
@@ -32,11 +40,8 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    computIbForce(timeStep);
-    ib_->applyCollisionForce(true);
-
-    grid_->comm().printf("Performing field extensions...\n");
-    solveExtEqns();
+    //grid_->comm().printf("Performing field extensions...\n");
+    //solveExtEqns();
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -51,9 +56,9 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepDFIB::ib() const
 
 Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 {
-    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
-    gradP_.sendMessages();
+    //gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    //gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    //gradP_.sendMessages();
 
     u_.savePreviousTimeStep(timeStep, 2);
     uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
@@ -101,22 +106,20 @@ void FractionalStepDFIB::computIbForce(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= fb_(c) * c.volume();
+            fh -= (fb_(c) + g_) * c.volume();
         }
 
         fh = grid_->comm().sum(rho_ * fh);
 
         Vector2D fw = ibObj->rho * ibObj->shape().area() * g_;
-        Vector2D fb = -rho_ * ibObj->shape().area() * g_;
 
         if(grid_->comm().isMainProc())
-            std::cout << "Buoyancy force = " << fb << "\n"
-                      << "Hydrodynamic force = " << fh << "\n"
+            std::cout << "Hydrodynamic force = " << fh << "\n"
                       << "Weight = " << fw << "\n"
-                      << "Net = " << fh + fb + fw << "\n";
+                      << "Net = " << fh + fw << "\n";
 
 
-        ibObj->applyForce(fh + fb + fw);
+        ibObj->applyForce(fh + fw);
     }
 }
 

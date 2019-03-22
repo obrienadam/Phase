@@ -10,6 +10,8 @@ class FractionalStepDFIB : public FractionalStep
 public:
     FractionalStepDFIB(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
+    virtual void initialize() override;
+
     virtual Scalar solve(Scalar timeStep) override;
 
     virtual std::shared_ptr<const ImmersedBoundary> ib() const override;

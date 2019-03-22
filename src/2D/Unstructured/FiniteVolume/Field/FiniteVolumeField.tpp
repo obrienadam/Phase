@@ -289,7 +289,7 @@ void FiniteVolumeField<T>::sendMessages()
 
         const std::vector<T> &buff = recvBuffers_[proc];
 
-        int i = 0;
+        std::size_t i = 0;
         for(const Cell &c: grid_->bufferGroups()[proc])
             (*this)(c) = buff[i++];
     }
