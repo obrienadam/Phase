@@ -106,7 +106,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
             for (const auto &child: ibObjectInput.second)
             {
                 if (child.first == "geometry" || child.first == "interpolation"
-                        || child.first == "motion" || child.first == "properties")
+                        || child.first == "motion" || child.first == "properties"
+                        || child.first == "Collisions")
                     continue;
 
                 ibObj->addBoundaryCondition(child.first, child.second.get<std::string>("type"), child.second.get<std::string>("value"));

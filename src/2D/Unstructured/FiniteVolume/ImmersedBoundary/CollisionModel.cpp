@@ -44,6 +44,9 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
         for (const FaceGroup &p: grid.patches())
             for (const Face &f: p.itemsCoveredBy(Circle(c.centroid(), r + range_)))
             {
+                if(!grid.localCells().isInSet(f.lCell()))
+                    continue;
+
                 const Vector2D &xq = f.centroid();
                 Scalar d = (xp - xq).mag();
 
