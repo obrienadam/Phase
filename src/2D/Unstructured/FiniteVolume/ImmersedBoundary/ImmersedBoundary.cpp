@@ -189,8 +189,8 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
 
     //- Collision model
     collisionModel_ = std::make_shared<CollisionModel>(
-                input.boundaryInput().get<Scalar>("ImmersedBoundaryCollisions.stiffness", 1e-4),
-                input.boundaryInput().get<Scalar>("ImmersedBoundaryCollisions.range", 0.)
+                input.boundaryInput().get<Scalar>("ImmersedBoundaries.Collisions.stiffness", 1e-4),
+                input.boundaryInput().get<Scalar>("ImmersedBoundaries.Collisions.range", 0.)
                 );
 }
 
