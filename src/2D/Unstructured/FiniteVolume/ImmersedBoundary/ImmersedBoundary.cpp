@@ -363,7 +363,7 @@ void ImmersedBoundary::applyCollisionForce(bool add)
             if(!ibObjP->motion())
                 continue;
 
-            Vector2D fc(0., 0.);
+            Vector2D fc = grid_->comm().sum(collisionModel_->force(*ibObjP, *grid_));
 
             //- Collisions with particles
             for (auto ibObjQ: ibObjs_)
@@ -373,12 +373,6 @@ void ImmersedBoundary::applyCollisionForce(bool add)
                 ibObjP->addForce(fc);
             else
                 ibObjP->applyForce(fc);
-
-            //- Collisions with domain boundaries
-            //            if(add)
-            //                ibObjP->addForce(collisionModel_->force(*ibObjP, *grid_));
-            //            else
-            //                ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
         }
 }
 

@@ -44,7 +44,7 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
         Scalar r = c.radius();
 
         for (const FaceGroup &p: grid.patches())
-            for (const Face &f: p.itemsCoveredBy(Circle(c.centroid(), r + range_)))
+            for (const Face &f: p.itemsCoveredBy(Circle(xp, r + range_)))
             {
                 if(!grid.localCells().isInSet(f.lCell()))
                     continue;
@@ -57,7 +57,7 @@ Vector2D CollisionModel::force(const ImmersedBoundaryObject &ibObj, const Finite
         break;
     }
     default:
-        break;
+        throw Exception("CollisionModel", "force", "unsupported shape type.");
     }
 
     return fc;
