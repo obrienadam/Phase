@@ -290,55 +290,31 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         //- Assume spherical
         const Circle &circ = static_cast<const Circle&>(ibObj->shape());
 
-        auto buoyancyForce = [this, &circ](const ContactLine &cl1, const ContactLine &cl2)
-        {
-            Scalar g1 = cl1.gamma;
-            Scalar g2 = cl2.gamma;
-
-            Scalar th1 = cl1.beta;
-            Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
-
-            Scalar rgh1 = (rho1_ + clamp(g1, 0., 1.) * (rho2_ - rho1_)) * dot(cl1.pt - circ.centroid(), g_);
-            Scalar rgh2 = (rho1_ + clamp(g2, 0., 1.) * (rho2_ - rho1_)) * dot(cl2.pt - circ.centroid(), g_);
-
-            //- Find the buoyancy
-            Scalar r = circ.radius();
-            return -Vector2D(0.,
-                             M_PI * r * r * (-rgh1 * th1 * std::cos(2. * th1) + rgh1 * th2 * std::cos(2. * th1)
-                                             + rgh1 * std::sin(2. * th1) / 2. - rgh1 * std::sin(2. * th2) / 2.
-                                             + rgh2 * th1 * std::cos(2. * th2) - rgh2 * th2 * std::cos(2. * th2)
-                                             - rgh2 * std::sin(2. * th1) / 2. + rgh2 * std::sin(2. * th2) / 2.) / (2. * (th1 - th2))
-                             );
-        };
-
         //- Assumes the sphere is centered on the axis
         for(size_t i = 0; i < contactLines_.size() - 1; ++i)
         {
             const auto &cl1 = contactLines_[i];
             const auto &cl2 = contactLines_[(i + 1) % contactLines_.size()];
 
-//            if(i == 0)
-//                fb += buoyancyForce(ContactLine{ibObj->nearestIntersect(Point2D(0., cl1.pt.y)), 0., cl1.gamma}, cl1);
-
-//            if(i == contactLines_.size() - 2)
-//                fb += buoyancyForce(cl2, ContactLine{ibObj->nearestIntersect(Point2D(0., cl2.pt.y)), 0., cl2.gamma});
-
-//            fb += buoyancyForce(cl1, cl2);
-
             Scalar g1 = cl1.gamma;
             Scalar g2 = cl2.gamma;
-            Scalar th1 = cl1.beta;
-            Scalar th2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
+            Scalar beta1 = cl1.beta;
+            Scalar beta2 = cl2.beta < cl1.beta ? cl2.beta + 2. * M_PI : cl2.beta;
 
 
             // check if contact line exists between two points
             //- sharp method
-            if(g1 <= 0.5 != g2 < 0.5)
+            if((g1 < 0.5) != (g2 <= 0.5))
             {
                 Scalar alpha = (0.5 - g2) / (g1 - g2);
-                Scalar th = alpha * th1 + (1. - alpha) * th2;
-                Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(th - th1) : cl2.tcl.rotate(th - th2);
-                Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(th - th1);
+                Scalar beta = alpha * beta1 + (1. - alpha) * beta2;
+                Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(beta - beta1) : cl2.tcl.rotate(beta - beta2);
+
+                if(grid_->comm().isMainProc())
+                    std::cout << "Beta = " << beta * 180. / M_PI << "\n"
+                              << "Contact line = " << tcl << "\n";
+
+                Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(beta - beta1);
                 Scalar r = pt.x;
 
                 fc += fst_.sigma() * 2. * M_PI * r * tcl;

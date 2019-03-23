@@ -20,6 +20,8 @@ SurfaceTensionForce::SurfaceTensionForce(const Input &input,
     kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
     kernelType_ = getKernelType(input.caseInput().get<std::string>("Solver.kernelType", "pow8"));
     eps_ = input.caseInput().get<Scalar>("Solver.eps", eps_);
+    minTheta_ = input.caseInput().get<Scalar>("Solver.minContactAngle", 0.) * M_PI / 180.;
+    maxTheta_ = input.caseInput().get<Scalar>("Solver.maxContactAngle", 180.) * M_PI / 180.;
 
     for(const Cell &cell: *fluid_)
         kernels_.push_back(SmoothingKernel(cell, kernelWidth_, kernelType_));
@@ -83,6 +85,12 @@ Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const
 {
     auto it = patchContactAngles_.find(patch.name());
     return it != patchContactAngles_.end() ? it->second : M_PI_2;
+}
+
+Scalar SurfaceTensionForce::dynamicContactAngle(Scalar thetaApp, Scalar Ca, Scalar delta, Scalar K) const
+{
+    using namespace std;
+    return acos(min(max(cos(thetaApp) + 5.63 * Ca * log(K / (delta / 2.)), cos(maxTheta_)), cos(minTheta_)));
 }
 
 void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)

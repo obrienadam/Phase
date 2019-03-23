@@ -73,6 +73,9 @@ public:
 
     Scalar theta(const FaceGroup &patch) const;
 
+    //- Helpers
+    Scalar dynamicContactAngle(Scalar thetaApp, Scalar Ca, Scalar delta, Scalar K = 0.02) const;
+
     //- Compute
     virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) = 0;
 
@@ -95,6 +98,8 @@ protected:
     Scalar sigma_, kernelWidth_, eps_ = 1e-8;
 
     SmoothingKernel::Type kernelType_;
+
+    Scalar minTheta_, maxTheta_;
 
     std::unordered_map<std::string, Scalar> patchContactAngles_;
 
