@@ -115,6 +115,42 @@ FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeForcingTerm
     return eqn;
 }
 
+FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::computeFieldExtension(VectorFiniteVolumeField &gradP) const
+{
+    FiniteVolumeEquation<Vector2D> eqn(gradP, 12);
+
+    for(const Cell& cell: gradP.cells())
+    {
+        eqn.set(cell, cell, -1.);
+
+        if(localIbCells_.isInSet(cell))
+        {
+            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(cell, *this);
+            auto beta = st.interpolationCoeffs(cell.centroid());
+
+            size_t i = 0;
+            for(const Cell *cellPtr: st.cells())
+                eqn.add(cell, *cellPtr, beta(0, i++));
+
+            for(const auto &cmpt: st.compatPts())
+                eqn.addSource(cell, beta(0, i++) * -cmpt.acceleration());
+
+            for(const Face *facePtr: st.faces())
+                eqn.addSource(cell, beta(0, i++) * gradP(*facePtr));
+        }
+        else if (localSolidCells_.isInSet(cell))
+        {
+            eqn.setSource(cell, Vector2D(0., 0.));
+        }
+        else
+        {
+            eqn.setSource(cell, gradP(cell));
+        }
+    }
+
+    return eqn;
+}
+
 FiniteVolumeEquation<Vector2D> DirectForcingImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u,
                                                                           const VectorFiniteVolumeField &uTilde,
                                                                           Scalar timeStep) const

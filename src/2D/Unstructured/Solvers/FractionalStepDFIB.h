@@ -26,7 +26,7 @@ protected:
 
     VectorFiniteVolumeField &fb_;
 
-    FiniteVolumeEquation<Vector2D> fbEqn_;
+    FiniteVolumeEquation<Vector2D> fbEqn_, extEqn_;
 
     std::shared_ptr<DirectForcingImmersedBoundary> ib_;
 };

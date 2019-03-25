@@ -15,7 +15,7 @@ FractionalStepDFIB::FractionalStepDFIB(const Input &input, const std::shared_ptr
       FractionalStep(input, grid),
       fb_(*addField<Vector2D>("fb", fluid_)),
       fbEqn_(input, fb_, "fbEqn"),
-      //extEqn_(input, gradP_, "extEqn"),
+      extEqn_(input, gradP_, "extEqn"),
       ib_(std::make_shared<DirectForcingImmersedBoundary>(input, grid, fluid_))
 {
     ib_->updateCells();
@@ -40,8 +40,8 @@ Scalar FractionalStepDFIB::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    //grid_->comm().printf("Performing field extensions...\n");
-    //solveExtEqns();
+    grid_->comm().printf("Performing field extensions...\n");
+    solveExtEqns();
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -56,9 +56,9 @@ std::shared_ptr<const ImmersedBoundary> FractionalStepDFIB::ib() const
 
 Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 {
-    //gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    //gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
-    //gradP_.sendMessages();
+    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    gradP_.sendMessages();
 
     u_.savePreviousTimeStep(timeStep, 2);
     uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
@@ -125,33 +125,7 @@ void FractionalStepDFIB::computIbForce(Scalar timeStep)
 
 void FractionalStepDFIB::solveExtEqns()
 {
-    FiniteVolumeEquation<Vector2D> eqn(gradP_);
-    eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(grid_->comm()));
-
-    for(const Cell &c: grid_->localCells())
-    {
-        if(ib_->localIbCells().isInSet(c))
-        {
-            auto st = DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil(c, *ib_);
-            auto beta = st.interpolationCoeffs(c.centroid());
-
-            eqn.add(c, c, -1.);
-
-            int i = 0;
-            for(const Cell* ptr: st.cells())
-                eqn.add(c, *ptr, beta(0, i++));
-
-            for(const auto &cmpt: st.compatPts())
-                eqn.addSource(c, -beta(0, i++) * cmpt.acceleration());
-        }
-
-        else
-        {
-            eqn.add(c, c, -1.);
-            eqn.addSource(c, gradP_(c));
-        }
-    }
-
-    eqn.solve();
+    extEqn_ = ib_->computeFieldExtension(gradP_);
+    extEqn_.solve();
     grid_->sendMessages(gradP_);
 }

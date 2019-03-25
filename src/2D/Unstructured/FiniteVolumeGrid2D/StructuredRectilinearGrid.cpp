@@ -6,8 +6,8 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(const Input &input)
 {
     Scalar width = input.caseInput().get<Scalar>("Grid.width");
     Scalar height = input.caseInput().get<Scalar>("Grid.height");
-    int nCellsX = input.caseInput().get<int>("Grid.nCellsX");
-    int nCellsY = input.caseInput().get<int>("Grid.nCellsY");
+    size_t nCellsX = input.caseInput().get<size_t>("Grid.nCellsX");
+    size_t nCellsY = input.caseInput().get<size_t>("Grid.nCellsY");
     Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
 
     std::vector<std::pair<Scalar, Scalar>> xDimRefinements, yDimRefinements;
