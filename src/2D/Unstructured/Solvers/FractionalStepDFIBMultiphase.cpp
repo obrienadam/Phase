@@ -129,8 +129,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
     const auto &fst = *fst_->fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
-    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    //gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    //gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     gradP_.sendMessages();
 
     u_.savePreviousTimeStep(timeStep, 2);
