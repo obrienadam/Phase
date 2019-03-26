@@ -32,6 +32,20 @@ void ScalarFiniteVolumeField::setBoundaryRefValues(const Input &input)
             self(face) = boundaryRefValue(patch);
 }
 
+template<>
+bool ScalarFiniteVolumeField::isfinite() const
+{
+    int isFinite = 1;
+    for(const Cell &cell: cells())
+        if(!std::isfinite((*this)(cell)))
+        {
+            isFinite = 0;
+            break;
+        }
+
+    return bool(grid_->comm().min(isFinite));
+}
+
 //- External functions
 
 ScalarFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, ScalarFiniteVolumeField rhs)

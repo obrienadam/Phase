@@ -29,19 +29,22 @@ void FractionalStepDFIB::initialize()
 }
 
 Scalar FractionalStepDFIB::solve(Scalar timeStep)
-{   
-    grid_->comm().printf("Updating IB forces and positions...\n");
-    computIbForce(timeStep);
-    ib_->applyCollisionForce(true);
+{
+    grid_->comm().printf("Updating IB positions...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
 
+    grid_->comm().printf("Solving fluid equations...\n");
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
     grid_->comm().printf("Performing field extensions...\n");
     solveExtEqns();
+
+    grid_->comm().printf("Updating IB forces...\n");
+    computIbForce(timeStep);
+    ib_->applyCollisionForce(true);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));

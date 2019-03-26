@@ -179,6 +179,20 @@ void VectorFiniteVolumeField::setBoundaryFaces()
         }
 }
 
+template<>
+bool VectorFiniteVolumeField::isfinite() const
+{
+    int isFinite = 1;
+    for(const Cell &cell: cells())
+        if(!std::isfinite((*this)(cell).x) || !std::isfinite((*this)(cell).y))
+        {
+            isFinite = 0;
+            break;
+        }
+
+    return bool(grid_->comm().min(isFinite));
+}
+
 //- External functions
 
 VectorFiniteVolumeField operator*(const ScalarFiniteVolumeField &lhs, VectorFiniteVolumeField rhs)

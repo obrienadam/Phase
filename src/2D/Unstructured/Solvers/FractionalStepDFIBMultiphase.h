@@ -46,7 +46,7 @@ protected:
 
     ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_;
 
-    VectorFiniteVolumeField &sg_, &rhoU_;
+    VectorFiniteVolumeField &sg_;
 
     ScalarGradient &gradGamma_, &gradRho_;
 

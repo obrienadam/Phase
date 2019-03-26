@@ -501,7 +501,7 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
             Vector2D ns = -face.outwardNorm(face.lCell().centroid()).unitVec();
             Vector2D ts = n(face.lCell()).tangentialComponent(ns).unitVec();
 
-            if(std::isnan(ts.x) || std::isnan(ts.y))
+            if(!std::isfinite(ts.x) || !std::isfinite(ts.y))
                 n(face) = n(face.lCell());
             else
                 n(face) = ns * std::cos(theta) + ts * std::sin(theta);

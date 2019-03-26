@@ -221,6 +221,8 @@ public:
     //- Debug
     void writeToFile(const std::string &filename) const;
 
+    bool isfinite() const;
+
 protected:
 
     typedef std::pair<Scalar, FiniteVolumeField<T>> PreviousField;

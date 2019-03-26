@@ -54,7 +54,7 @@ void CelesteImmersedBoundary::ContactLineStencil::init(const ScalarFiniteVolumeF
 
     ncl_ = nl.tangentialComponent(ns_).unitVec();
 
-    if(std::isnan(ncl_.x) || std::isnan(ncl_.y))
+    if(!std::isfinite(ncl_.x) || !std::isfinite(ncl_.y))
         ncl_ = ns_.rotate(M_PI_2);
 }
 
