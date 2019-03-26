@@ -30,9 +30,11 @@ protected:
 
     Scalar solveGammaEqn(Scalar timeStep);
 
-    Scalar solveUEqn(Scalar timeStep) override;
+    virtual Scalar solveUEqn(Scalar timeStep) override;
 
-    Scalar solvePEqn(Scalar timeStep) override;
+    virtual Scalar solvePEqn(Scalar timeStep) override;
+
+    virtual void solveExtEqns() override;
 
     void updateProperties(Scalar timeStep);
 
@@ -40,13 +42,11 @@ protected:
 
     void computeIbForces(Scalar timeStep);
 
-    void computeFieldExtenstions(Scalar timeStep);
-
     Scalar rho1_, rho2_, mu1_, mu2_, capillaryTimeStep_;
 
     ScalarFiniteVolumeField &gamma_, &rho_, &mu_, &gammaSrc_;
 
-    VectorFiniteVolumeField &sg_;
+    VectorFiniteVolumeField &sg_, &rhoU_;
 
     ScalarGradient &gradGamma_, &gradRho_;
 

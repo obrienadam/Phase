@@ -18,9 +18,9 @@ public:
 
 protected:
 
-    virtual void solveExtEqns();
-
     virtual Scalar solveUEqn(Scalar timeStep) override;
+
+    virtual void solveExtEqns();
 
     void computIbForce(Scalar timeStep);
 

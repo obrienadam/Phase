@@ -19,6 +19,7 @@ FractionalStepDirectForcingMultiphase::FractionalStepDirectForcingMultiphase(con
       mu_(*addField<Scalar>("mu", fluid_)),
       gammaSrc_(*addField<Scalar>("gammaSrc", fluid_)),
       sg_(*addField<Vector2D>("sg", fluid_)),
+      rhoU_(*addField<Vector2D>("rhoU", fluid_)),
       gradGamma_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(gamma_, fluid_)))),
       gradRho_(*std::static_pointer_cast<ScalarGradient>(addField<Vector2D>(std::make_shared<ScalarGradient>(rho_, fluid_)))),
       fst_(std::make_shared<CelesteImmersedBoundary>(input, grid_, fluid_, ib_)),
@@ -61,7 +62,12 @@ void FractionalStepDirectForcingMultiphase::initialize()
 
 Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
 {
-    //- Perform field extension
+    //- Update ib forces
+    grid_->comm().printf("Computing IB forces...\n");
+    computeIbForces(timeStep);
+    ib_->applyCollisionForce(true);
+
+    //- Update IB Positions
     grid_->comm().printf("Updating IB positions and cell categories...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
@@ -79,12 +85,9 @@ Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
     solvePEqn(timeStep);
     correctVelocity(timeStep);
 
-    grid_->comm().printf("Computing IB forces...\n");
-    computeIbForces(timeStep);
-    ib_->applyCollisionForce(true);
-
-    //    grid_->comm().printf("Performing field extensions...\n");
-    //    computeFieldExtenstions(timeStep);
+    //- Perform field extensions
+    grid_->comm().printf("Performing field extensions...\n");
+    solveExtEqns();
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -120,6 +123,10 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     gradGamma_.compute(*fluid_);
     gradGamma_.sendMessages();
 
+    rhoU_.savePreviousTimeStep(timeStep, 2);
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_, beta, rhoU_.oldField(0));
+    cicsam::computeMomentumFlux(rho1_, rho2_, u_, gamma_.oldField(0), beta, rhoU_.oldField(1));
+
     return error;
 }
 
@@ -127,23 +134,27 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
 {
     const auto &fst = *fst_->fst();
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
-    //gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    //gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
+    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
+    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     gradP_.sendMessages();
 
     u_.savePreviousTimeStep(timeStep, 2);
-    uEqn_ = (rho_ * fv::ddt(u_, timeStep) + rho_ * fv::dive(u_, u_, 0.5)
+    uEqn_ = (fv::ddt(rho_, u_, timeStep) + fv::dive(rhoU_, u_, 0.5)
              == fv::laplacian(mu_, u_, 0.5) + src::src(fst + sg_ - gradP_));
 
     Scalar error = uEqn_.solve();
     u_.sendMessages();
 
-    fbEqn_ = ib_->computeForcingTerm(u_, timeStep, fb_);
+    fbEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fb_);
     fbEqn_.solve();
     fb_.sendMessages();
 
     for(const Cell& c: *fluid_)
-        u_(c) += timeStep * (fb_(c) + gradP_(c) / rho_(c));
+        u_(c) += timeStep * (fb_(c) + gradP_(c)) / rho_(c);
+
+    if(grid_->comm().rank() == 2)
+        for(const Cell& c: ib_->solidCells())
+            std::cout << u_(c) << std::endl;
 
     u_.sendMessages();
 
@@ -196,6 +207,13 @@ Scalar FractionalStepDirectForcingMultiphase::solvePEqn(Scalar timeStep)
     gradP_.sendMessages();
 
     return error;
+}
+
+void FractionalStepDirectForcingMultiphase::solveExtEqns()
+{
+    extEqn_ = ib_->computeFieldExtension(rho_, sg_, gradP_);
+    extEqn_.solve();
+    grid_->sendMessages(gradP_);
 }
 
 void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
@@ -366,7 +384,7 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_(c) * (fb_(c) + g_) * c.volume();
+            fh -= rho_(c) * (fb_(c) / rho_(c) + g_) * c.volume();
         }
 
         fh = grid_->comm().sum(fh);
@@ -383,52 +401,4 @@ void FractionalStepDirectForcingMultiphase::computeIbForces(Scalar timeStep)
 
         ibObj->applyForce(fh + fc + fw);
     }
-}
-
-void FractionalStepDirectForcingMultiphase::computeFieldExtenstions(Scalar timeStep)
-{
-    auto extend = [](const ImmersedBoundaryObject &ibObj, const Cell &c)
-    {
-        for(const CellLink &nb: c.neighbours())
-            if(!ibObj.isInIb(nb.cell().centroid()))
-                return true;
-
-        for(const CellLink &nb: c.diagonals())
-            if(!ibObj.isInIb(nb.cell().centroid()))
-                return true;
-
-        return false;
-    };
-
-    for(const auto &ibObj: *ib_)
-        for(const Cell &c: ibObj->solidCells())
-        {
-            if(extend(*ibObj, c))
-            {
-                Point2D bp = ibObj->nearestIntersect(c.centroid());
-                Vector2D ns = ibObj->nearestEdgeUnitNormal(c.centroid());
-
-                CelesteImmersedBoundary::ContactLineStencil cl(*ibObj, c.centroid(), fst_->theta(*ibObj), gamma_);
-                CelesteImmersedBoundary::ContactLineStencil stn(*ibObj, c.centroid(), M_PI_2, gamma_);
-
-
-                Scalar ubn = dot(ibObj->velocity(bp), ns);
-                Scalar abn = dot(ibObj->acceleration(bp), ns);
-                Scalar rhob = cl.interpolate(rho_);
-                Scalar dRho = (rho_(c) - rhob) / (c.centroid() - bp).mag();
-
-                // Convert to static pressure first
-                Scalar pb = stn.interpolate(p_);
-                Scalar dP = -(2 * ubn * ubn * dRho + rhob * abn);
-
-                if(!std::isnan(dP))
-                {
-                    p_(c) = pb + dP * (c.centroid() - bp).mag();
-                }
-            }
-        }
-
-    gradP_.computeFaces();
-    gradP_.faceToCell(rho_, rho_, *fluid_);
-    gradP_.sendMessages();
 }

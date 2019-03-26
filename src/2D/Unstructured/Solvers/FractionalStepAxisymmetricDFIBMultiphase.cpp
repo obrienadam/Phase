@@ -48,6 +48,9 @@ void FractionalStepAxisymmetricDFIBMultiphase::initialize()
 
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)
 {
+    grid_->comm().printf("Computing IB forces...\n");
+    computeIbForces(timeStep);
+
     grid_->comm().printf("Updating IB positions...\n");
     ib_->updateIbPositions(timeStep);
     ib_->updateCells();
@@ -60,9 +63,6 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)
     solveUEqn(timeStep);
     solvePEqn(timeStep);
     correctVelocity(timeStep);
-
-    grid_->comm().printf("Computing IB forces...\n");
-    computeIbForces(timeStep);
 
     grid_->comm().printf("Max divergence error = %.4e\n", grid_->comm().max(maxDivergenceError()));
     grid_->comm().printf("Max CFL number = %.4lf\n", maxCourantNumber(timeStep));
@@ -152,12 +152,12 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveUEqn(Scalar timeStep)
     Scalar error = uEqn_.solve();
     u_.sendMessages();
 
-    fibEqn_ = ib_->computeForcingTerm(u_, timeStep, fib_);
+    fibEqn_ = ib_->computeForcingTerm(rho_, u_, timeStep, fib_);
     fibEqn_.solve();
     fib_.sendMessages();
 
     for(const Cell &c: *fluid_)
-        u_(c) += timeStep * (fib_(c) + gradP_(c) / rho_(c));
+        u_(c) += timeStep * (fib_(c) + gradP_(c)) / rho_(c);
 
     u_.sendMessages();
 
@@ -250,7 +250,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                         + std::max(flux1, 0.) * u_.oldField(1)(c) + std::min(flux1, 0.) * u_.oldField(1)(bd.face());
             }
 
-            fh -= rho_(c) * (fib_(c) + (*fst_.fst())(c) / rho_(c) + g_) * c.polarVolume();
+            fh -= (fib_(c) + (*fst_.fst())(c) + rho_(c) * g_) * c.polarVolume();
         }
 
         fh = grid_->comm().sum(2. * M_PI * fh);

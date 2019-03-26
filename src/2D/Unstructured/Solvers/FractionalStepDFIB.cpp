@@ -62,7 +62,7 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
 
     u_.savePreviousTimeStep(timeStep, 2);
     uEqn_ = (fv::ddt(u_, timeStep) + fv::dive(u_, u_, 0.5)
-             == fv::laplacian(mu_ / rho_, u_, 0.5) - src::src(gradP_));
+             == fv::laplacian(mu_ / rho_, u_, 0.) - src::src(gradP_));
 
     Scalar error = uEqn_.solve();
     u_.sendMessages();
@@ -71,13 +71,23 @@ Scalar FractionalStepDFIB::solveUEqn(Scalar timeStep)
     fbEqn_.solve();
     fb_.sendMessages();
 
+    uEqn_ == fv::laplacian(mu_ / rho_, u_, 0.5) - fv::laplacian(mu_ / rho_, u_, 0.) + src::src(fb_);
+    uEqn_.solve();
+
     for(const Cell &c: u_.cells())
-        u_(c) += timeStep * (fb_(c) + gradP_(c));
+        u_(c) += timeStep * gradP_(c);
 
     u_.sendMessages();
     u_.interpolateFaces();
 
     return error;
+}
+
+void FractionalStepDFIB::solveExtEqns()
+{
+    extEqn_ = ib_->computeFieldExtension(gradP_);
+    extEqn_.solve();
+    grid_->sendMessages(gradP_);
 }
 
 void FractionalStepDFIB::computIbForce(Scalar timeStep)
@@ -121,11 +131,4 @@ void FractionalStepDFIB::computIbForce(Scalar timeStep)
 
         ibObj->applyForce(fh + fw);
     }
-}
-
-void FractionalStepDFIB::solveExtEqns()
-{
-    extEqn_ = ib_->computeFieldExtension(gradP_);
-    extEqn_.solve();
-    grid_->sendMessages(gradP_);
 }
