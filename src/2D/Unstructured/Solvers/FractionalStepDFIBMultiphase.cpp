@@ -161,10 +161,10 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        //if(ib_->ibObj(l) || ib_->ibObj(r))
-        //    u_(f) = g * u_(l) + (1. - g) * u_(r);
-        //else
-        u_(f) = g * u_(l) + (1. - g) * u_(r) + timeStep / rho_(f) * (fst(f) + sg_(f));
+        if(ib_->ibObj(l) || ib_->ibObj(r))
+            u_(f) = g * u_(l) + (1. - g) * u_(r);
+        else
+            u_(f) = g * u_(l) + (1. - g) * u_(r) + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())
