@@ -45,7 +45,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::initialize()
     gradGamma_.compute(*fluid_);
     updateProperties(0.);
     updateProperties(0.);
-    computeIbForces(1e-6);
+    computeIbForces(1e-10);
 }
 
 Scalar FractionalStepAxisymmetricDFIBMultiphase::solve(Scalar timeStep)

@@ -37,7 +37,7 @@ std::vector<Scalar> cicsam::faceInterpolationWeights(const VectorFiniteVolumeFie
         Scalar gammaU = clamp(gammaA - 2. * dot(rc, gradGamma(donor)), 0., 1.);
         Scalar gammaDTilde = (gammaD - gammaU) / (gammaA - gammaU);
 
-        if(std::isnan(gammaDTilde))
+        if(!std::isfinite(gammaDTilde))
             gammaDTilde = 0.;
 
         Scalar coD = 0.; //- Cell courant number
@@ -52,7 +52,9 @@ std::vector<Scalar> cicsam::faceInterpolationWeights(const VectorFiniteVolumeFie
         Scalar gammaFTilde = psiF * hc(gammaDTilde, coD) + (1. - psiF) * uq(gammaDTilde, coD);
         Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
 
-        if(std::isnan(betaFace))
+        if(std::isfinite(betaFace))
+            betaFace = std::max(std::min(1., betaFace), 0.);
+        else
             betaFace = 0.;
 
         beta[face.id()] = betaFace;

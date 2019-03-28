@@ -492,9 +492,9 @@ void CelesteImmersedBoundary::computeInterfaceNormals()
 
         for (const Face &face: patch)
         {
-            if (n(face.lCell()).magSqr() == 0.)
+            if (n(face.lCell()).magSqr() == 0. || theta == M_PI_2)
             {
-                n(face) = Vector2D(0., 0.);
+                n(face) = n(face.lCell());
                 continue;
             }
 

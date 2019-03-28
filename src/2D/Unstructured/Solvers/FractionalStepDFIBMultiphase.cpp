@@ -53,12 +53,15 @@ void FractionalStepDirectForcingMultiphase::initialize()
 {
     FractionalStepDFIB::initialize();
 
+    //    for(const Cell& c: ib_->localSolidCells())
+    //        gamma_(c) = rho1_ > rho2_ ? 1.: 0.;
+    //    gamma_.sendMessages();
+
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
     gradGamma_.sendMessages();
     updateProperties(0.);
-    updateProperties(0.);
-    computeIbForces(1e-10);
+    //computeIbForces(1e-10);
 }
 
 Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
@@ -101,6 +104,8 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     auto beta = cicsam::faceInterpolationWeights(u_, gamma_, gradGamma_, timeStep);
 
     //- Predictor
+    if(!gamma_.isfinite())
+        std::cout << "ERROR! NON-FINITE VALUE!\n";
     gamma_.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
     Scalar error = gammaEqn_.solve();
@@ -133,8 +138,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
     fst.oldField(0).faceToCell(rho_, rho_.oldField(0), *fluid_);
     sg_.oldField(0).faceToCell(rho_, rho_.oldField(0), *fluid_);
     gradP_.faceToCell(rho_, rho_.oldField(0), *fluid_);
-    //    gradP_.fill(Vector2D(0., 0.), ib_->localIbCells());
-    //    gradP_.fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst.sendMessages();
     sg_.sendMessages();
     gradP_.sendMessages();
@@ -161,10 +164,10 @@ Scalar FractionalStepDirectForcingMultiphase::solveUEqn(Scalar timeStep)
         const Cell &l = f.lCell();
         const Cell &r = f.rCell();
 
-        if(ib_->ibObj(l) || ib_->ibObj(r))
-            u_(f) = g * u_(l) + (1. - g) * u_(r);
-        else
-            u_(f) = g * u_(l) + (1. - g) * u_(r) + timeStep / rho_(f) * (fst(f) + sg_(f));
+        //if(ib_->ibObj(l) || ib_->ibObj(r))
+        //    u_(f) = g * u_(l) + (1. - g) * u_(r);
+        //else
+        u_(f) = g * u_(l) + (1. - g) * u_(r) + timeStep / rho_(f) * (fst(f) + sg_(f));
     }
 
     for (const FaceGroup &patch: grid_->patches())
@@ -247,8 +250,13 @@ void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
     //- Update the surface tension
     fst_->fst()->savePreviousTimeStep(timeStep, 1);
     fst_->computeFaceInterfaceForces(gamma_, gradGamma_);
+
+    for(const Cell& c: ib_->solidCells())
+        for(const auto &nb: c.neighbours())
+            if(ib_->ibObj(nb.cell().centroid()))
+                (*fst_->fst())(nb.face()) = Vector2D(0., 0.);
+
     fst_->fst()->faceToCell(rho_, rho_, *fluid_);
-    fst_->fst()->fill(Vector2D(0., 0.), ib_->localSolidCells());
     fst_->fst()->sendMessages();
 }
 
