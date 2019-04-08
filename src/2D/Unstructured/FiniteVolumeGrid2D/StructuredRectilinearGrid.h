@@ -11,6 +11,8 @@ public:
 
     StructuredRectilinearGrid(const Input& input);
 
+    StructuredRectilinearGrid(const std::vector<Scalar> &xcoords, const std::vector<Scalar> &ycoords);
+
     void init(Scalar width,
               Scalar height,
               Size nCellsX,
@@ -19,6 +21,9 @@ public:
               const std::vector<Point2D> &xDimRefinements,
               const std::vector<Point2D> &yDimRefinements,
               const Point2D &origin);
+
+    void init(std::vector<Scalar> xcoords,
+              std::vector<Scalar> ycoords);
 
     Cell &operator()(Label i, Label j);
 
@@ -40,6 +45,8 @@ public:
 protected:
 
     std::vector<Scalar> refineDims(Scalar start, Scalar end, const std::vector<Scalar> &dims);
+
+    void initPatches();
 
     Size nCellsX_, nCellsY_;
 

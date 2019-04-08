@@ -13,6 +13,7 @@ public:
     {
         CGNS,
         RECTILINEAR,
+        COORDS,
         LOAD
     };
 

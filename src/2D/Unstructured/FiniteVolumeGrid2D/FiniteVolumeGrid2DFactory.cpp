@@ -1,10 +1,12 @@
+#include <fstream>
+
 #include "FiniteVolumeGrid2DFactory.h"
 #include "CgnsUnstructuredGrid.h"
 #include "StructuredRectilinearGrid.h"
 
 std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(GridType type, const Input &input)
 {
-    std::shared_ptr<FiniteVolumeGrid2D> grid;
+    std::shared_ptr<FiniteVolumeGrid2D> grid = nullptr;
 
     switch (type)
     {
@@ -14,6 +16,38 @@ std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(GridType t
         case CGNS:
             grid = std::make_shared<CgnsUnstructuredGrid>(input);
             break;
+    case COORDS:
+    {
+        std::vector<Scalar> xcoords, ycoords;
+        std::ifstream fin;
+
+        fin.open(input.caseInput().get<std::string>("Grid.xCoordFile"));
+
+        if(!fin.is_open())
+            throw Exception("FiniteVolumeGrid2DFactory", "create", "missing x-coordinate file.");
+
+        std::string line;
+        while (!fin.eof())
+        {
+            std::getline(fin, line);
+            xcoords.emplace_back(std::stod(line));
+        }
+        fin.close();
+        fin.open(input.caseInput().get<std::string>("Grid.yCoordFile"));
+
+        if(!fin.is_open())
+            throw Exception("FiniteVolumeGrid2DFactory", "create", "missing y-coordinate file.");
+
+        while (!fin.eof())
+        {
+            std::getline(fin, line);
+            ycoords.emplace_back(std::stod(line));
+        }
+        fin.close();
+
+        grid = std::make_shared<StructuredRectilinearGrid>(xcoords, ycoords);
+    }
+        break;
         case LOAD:
             auto grid = std::make_shared<CgnsUnstructuredGrid>();
             grid->load("./solution/Proc" + std::to_string(grid->comm().rank()) + "/Grid.cgns", Vector2D(0., 0.));
@@ -37,6 +71,8 @@ std::shared_ptr<FiniteVolumeGrid2D> FiniteVolumeGrid2DFactory::create(std::strin
         return create(RECTILINEAR, input);
     else if (type == "cgns")
         return create(CGNS, input);
+    else if (type == "coords")
+        return create(COORDS, input);
     else if (type == "load")
         return create(LOAD, input);
 

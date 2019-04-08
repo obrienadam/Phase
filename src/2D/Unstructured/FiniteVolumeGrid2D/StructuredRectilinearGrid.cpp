@@ -31,6 +31,12 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(const Input &input)
     init(width, height, nCellsX, nCellsY, convertToMeters, xDimRefinements, yDimRefinements, origin);
 }
 
+StructuredRectilinearGrid::StructuredRectilinearGrid(const std::vector<Scalar> &xcoords, const std::vector<Scalar> &ycoords)
+{
+    printf("Initiating grid from coordinates...\n");
+    init(xcoords, ycoords);
+}
+
 void StructuredRectilinearGrid::init(Scalar width, Scalar height,
                                      Size nCellsX, Size nCellsY,
                                      Scalar convertToMeters,
@@ -51,10 +57,10 @@ void StructuredRectilinearGrid::init(Scalar width, Scalar height,
     std::vector<Scalar> xDims, yDims;
 
     for (Label i = 0; i < nCellsX + 1; ++i)
-        xDims.push_back(i * hx0);
+        xDims.emplace_back(i * hx0);
 
     for (Label j = 0; j < nCellsY + 1; ++j)
-        yDims.push_back(j * hy0);
+        yDims.emplace_back(j * hy0);
 
     for (const auto &xDimRefinement: xDimRefinements)
         xDims = refineDims(xDimRefinement.x, xDimRefinement.y, xDims);
@@ -89,35 +95,47 @@ void StructuredRectilinearGrid::init(Scalar width, Scalar height,
         }
 
     FiniteVolumeGrid2D::init(nodes, elemInds, elems, origin);
+    initPatches();
+}
 
-    //- Construct default patches
-    std::vector<Label> xm, xp, ym, yp;
+void StructuredRectilinearGrid::init(std::vector<Scalar> xcoords,
+                                     std::vector<Scalar> ycoords)
+{
+    if(xcoords.size() < 2 || ycoords.size() < 2)
+        throw Exception("StructuredRectilinearGrid", "init", "invalid grid coordinates.");
 
-    //- x patches
+    std::sort(xcoords.begin(), xcoords.end());
+    std::sort(ycoords.begin(), ycoords.end());
+
+    width_ = xcoords.back() - xcoords.front();
+    height_ = ycoords.back() - ycoords.front();
+    nCellsX_ = xcoords.size() - 1;
+    nCellsY_ = ycoords.size() - 1;
+
+    std::vector<Point2D> nodes;
+    nodes.reserve(xcoords.size() * ycoords.size());
+
+    for(size_t j = 0; j < ycoords.size(); ++j)
+        for(size_t i = 0; i < xcoords.size(); ++i)
+            nodes.emplace_back(xcoords[i], ycoords[j]);
+
+    //- Create cells
+    std::vector<Label> elemInds(1, 0), elems;
+    elemInds.reserve(nCellsX_ * nCellsY_);
+    elems.reserve(4 * nCellsX_ * nCellsY_);
+
     for (Label j = 0; j < nCellsY_; ++j)
-    {
-        xm.push_back(
-                findFace(node(0, j).id(), node(0, j + 1).id())
-        );
-        xp.push_back(
-                findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())
-        );
-    }
-    createPatch("x-", xm);
-    createPatch("x+", xp);
+        for (Label i = 0; i < nCellsX_; ++i)
+        {
+            elemInds.emplace_back(elemInds.back() + 4);
+            elems.emplace_back(j * xcoords.size() + i);
+            elems.emplace_back(j * xcoords.size() + i + 1);
+            elems.emplace_back((j + 1) * xcoords.size() + i + 1);
+            elems.emplace_back((j + 1) * xcoords.size() + i);
+        }
 
-    //- y patches
-    for (Label i = 0; i < nCellsX_; ++i)
-    {
-        ym.push_back(
-                findFace(node(i, 0).id(), node(i + 1, 0).id())
-        );
-        yp.push_back(
-                findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())
-        );
-    }
-    createPatch("y-", ym);
-    createPatch("y+", yp);
+    FiniteVolumeGrid2D::init(nodes, elemInds, elems, Point2D(0., 0.));
+    initPatches();
 }
 
 
@@ -161,4 +179,36 @@ std::vector<Scalar> StructuredRectilinearGrid::refineDims(Scalar start, Scalar e
     newDims.emplace_back(dims.back());
 
     return newDims;
+}
+
+void StructuredRectilinearGrid::initPatches()
+{
+    //- Construct default patches
+    std::vector<Label> xm, xp, ym, yp;
+
+    //- x patches
+    for (Label j = 0; j < nCellsY_; ++j)
+    {
+        xm.push_back(
+                findFace(node(0, j).id(), node(0, j + 1).id())
+        );
+        xp.push_back(
+                findFace(node(nCellsX_, j).id(), node(nCellsX_, j + 1).id())
+        );
+    }
+    createPatch("x-", xm);
+    createPatch("x+", xp);
+
+    //- y patches
+    for (Label i = 0; i < nCellsX_; ++i)
+    {
+        ym.push_back(
+                findFace(node(i, 0).id(), node(i + 1, 0).id())
+        );
+        yp.push_back(
+                findFace(node(i, nCellsY_).id(), node(i + 1, nCellsY_).id())
+        );
+    }
+    createPatch("y-", ym);
+    createPatch("y+", yp);
 }
