@@ -13,6 +13,12 @@ public:
 
     virtual Vector2D force(const ImmersedBoundaryObject& ibObj, const FiniteVolumeGrid2D& grid) const;
 
+    Scalar eps() const
+    { return eps_; }
+
+    Scalar range() const
+    { return range_; }
+
 private:
 
     Scalar eps_, range_;

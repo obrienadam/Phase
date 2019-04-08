@@ -11,9 +11,9 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                                    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
                                    const std::shared_ptr<CellGroup> &domainCells)
     :
-      grid_(grid),
       domainCells_(domainCells),
-      cellStatus_(std::make_shared<FiniteVolumeField<int>>(grid, "cellStatus", FLUID_CELLS, false, false))
+      cellStatus_(std::make_shared<FiniteVolumeField<int>>(grid, "cellStatus", FLUID_CELLS, false, false)),
+      grid_(grid)
 {
     auto ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaries");
 
@@ -93,7 +93,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
 
                 if (ibObj->shape().type() == Shape2D::BOX)
                 {
-                    Box *box = (Box *) &ibObj->shape();
+                    Box *box = static_cast<Box*>(&ibObj->shape());
                     auto verts = box->vertices();
 
                     ibObj->initPolygon(verts.begin(), verts.end());
@@ -158,7 +158,7 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                 throw Exception("ImmersedBoundary", "ImmersedBoundary", "invalid motion type \"" + motionType + "\".");
 
             ibObj->setMotion(motion);
-            ibObjs_.push_back(ibObj);
+            ibObjs_.emplace_back(ibObj);
         }
 
     ibInput = input.boundaryInput().get_child_optional("ImmersedBoundaryGeometryFile");
@@ -185,10 +185,12 @@ ImmersedBoundary::ImmersedBoundary(const Input &input,
                                             ibFieldBcInput.second.get<std::string>("value"));
             }
 
-            ibObjs_.push_back(ibObj);
+            ibObjs_.emplace_back(ibObj);
         }
     }
 
+    grid_->comm().printf("Assembling immersed boundary r-tree...\n");
+    rTree_.insert(ibObjs_.begin(), ibObjs_.end());
 
     //- Collision model
     collisionModel_ = std::make_shared<CollisionModel>(
@@ -225,18 +227,22 @@ CellGroup ImmersedBoundary::solidCells() const
 
 std::shared_ptr<ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Point2D &pt)
 {
-    for (const auto &ibObj: ibObjs_)
-        if (ibObj->isInIb(pt))
-            return ibObj;
+    namespace bgi = boost::geometry::index;
+
+    for(auto qit = rTree_.qbegin(bgi::intersects(pt)); qit != rTree_.qend(); ++qit)
+        if((*qit)->isInIb(pt))
+            return *qit;
 
     return nullptr;
 }
 
 std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Point2D &pt) const
 {
-    for (const auto &ibObj: ibObjs_)
-        if (ibObj->isInIb(pt))
-            return ibObj;
+    namespace bgi = boost::geometry::index;
+
+    for(auto qit = rTree_.qbegin(bgi::intersects(pt)); qit != rTree_.qend(); ++qit)
+        if((*qit)->isInIb(pt))
+            return *qit;
 
     return nullptr;
 }
@@ -251,13 +257,30 @@ std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::ibObj(const Cell
     return ibObj(cell.centroid());
 }
 
+std::shared_ptr<const ImmersedBoundaryObject> ImmersedBoundary::nearestIbObjSurface(const Cell &cell) const
+{
+    throw Exception("ImmersedBoundary", "nearestIbObjSurface", "not implemented.");
+}
+
 const std::vector<std::shared_ptr<const ImmersedBoundaryObject> > &ImmersedBoundary::findAllIbObjs(const Point2D &pt) const
 {
-    query_.clear();
+    namespace bgi = boost::geometry::index;
 
-    std::copy_if(ibObjs_.begin(), ibObjs_.end(), std::back_inserter(query_),
-                 [&pt](const std::shared_ptr<ImmersedBoundaryObject> &ibObj) { return ibObj->isInIb(pt); });
+    auto isInside = [&pt](const std::shared_ptr<ImmersedBoundaryObject>& ibObj)
+    { return ibObj->isInIb(pt); };
 
+    query_.assign(rTree_.qbegin(bgi::intersects(pt) && bgi::satisfies(isInside)), rTree_.qend());
+    return query_;
+}
+
+const std::vector<std::shared_ptr<const ImmersedBoundaryObject> > &ImmersedBoundary::findAllIbObjs(const Circle &c) const
+{
+    namespace bgi = boost::geometry::index;
+
+    auto intersects = [&c](const std::shared_ptr<ImmersedBoundaryObject>& ibObj)
+    { return (ibObj->nearestIntersect(c.centroid()) - c.centroid()).magSqr() <= std::pow(c.radius(), 2); };
+
+    query_.assign(rTree_.qbegin(bgi::intersects(c.boundingBox()) && bgi::satisfies(intersects)), rTree_.qend());
     return query_;
 }
 
@@ -313,13 +336,7 @@ FiniteVolumeEquation<Vector2D> ImmersedBoundary::velocityBcs(VectorFiniteVolumeF
 
 bool ImmersedBoundary::isIbCell(const Cell &cell) const
 {
-    for (const auto &ibObj: ibObjs_)
-    {
-        if (ibObj->isInIb(cell.centroid()))
-            return true;
-    }
-
-    return false;
+    throw Exception("ImmersedBoundary", "isIbCell", "not implemented.");
 }
 
 void ImmersedBoundary::applyHydrodynamicForce(Scalar rho,
@@ -328,14 +345,7 @@ void ImmersedBoundary::applyHydrodynamicForce(Scalar rho,
                                               const ScalarFiniteVolumeField &p,
                                               const Vector2D &g)
 {   
-    if (collisionModel_)
-        for (auto ibObjP: ibObjs_)
-        {
-            for (auto ibObjQ: ibObjs_)
-                ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
-
-            ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
-        }
+    throw Exception("ImmersedBoundary", "applyHydrodynamicForce", "not implemented.");
 }
 
 void ImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
@@ -344,14 +354,7 @@ void ImmersedBoundary::applyHydrodynamicForce(const ScalarFiniteVolumeField &rho
                                               const ScalarFiniteVolumeField &p,
                                               const Vector2D &g)
 {   
-    if (collisionModel_)
-        for (auto ibObjP: ibObjs_)
-        {
-            for (auto ibObjQ: ibObjs_)
-                ibObjP->applyForce(collisionModel_->force(*ibObjP, *ibObjQ));
-
-            ibObjP->applyForce(collisionModel_->force(*ibObjP, *grid_));
-        }
+    throw Exception("ImmersedBoundary", "applyHydrodynamicForce", "not implemented.");
 }
 
 void ImmersedBoundary::applyCollisionForce(bool add)
@@ -363,10 +366,18 @@ void ImmersedBoundary::applyCollisionForce(bool add)
             if(!ibObjP->motion())
                 continue;
 
+            if(ibObjP->shape().type() != Shape2D::CIRCLE)
+            {
+                grid_->comm().printf("Non-circular shapes are not supported for collisions.\n");
+                continue;
+            }
+
             Vector2D fc = grid_->comm().sum(collisionModel_->force(*ibObjP, *grid_));
 
+            const Circle &circle = static_cast<const Circle&>(ibObjP->shape());
+
             //- Collisions with particles
-            for (auto ibObjQ: ibObjs_)
+            for (auto ibObjQ: findAllIbObjs(Circle(circle.centroid(), circle.radius() + collisionModel_->range())))
                 fc += collisionModel_->force(*ibObjP, *ibObjQ);
 
             if(add)

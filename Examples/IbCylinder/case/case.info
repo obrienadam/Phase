@@ -4,7 +4,7 @@ CaseName ImmersedBoundaryCylinder2D
 
 Solver
 {
-        type "fractional step axisymmetric direct-forcing"
+        type "fractional step direct-forcing"
 	timeStep 2.5e-3
 	maxCo 1
 	maxTime 200
@@ -31,6 +31,13 @@ LinearAlgebra
 		solver gmres
 		preconditioner DIAGONAL
 	}
+
+        extEqn
+	{
+		lib belos
+		solver gmres
+		preconditioner diagonal
+	}
 }
 
 Properties
@@ -53,8 +60,8 @@ Grid
 	minBufferWidth 0.05
 	origin (0.5,0)
 
-	;refineX (1,3)
-	;refineY (1.5,3.5)
+	refineX (1,3)
+	refineY (1.5,3.5)
 }
 
 Viewer

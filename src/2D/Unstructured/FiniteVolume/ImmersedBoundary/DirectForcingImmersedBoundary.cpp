@@ -40,7 +40,7 @@ void DirectForcingImmersedBoundary::updateCells()
 
         for(const CellLink &nb: c.neighbours())
         {
-            if((*cellStatus_)(nb.cell()) == SOLID_CELLS)
+            if(ibObj(nb.cell().centroid()))
             {
                 if(localIbCells_.add(c))
                 {

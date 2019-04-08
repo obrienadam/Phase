@@ -11,6 +11,23 @@ class ImmersedBoundary
 {
 public:
 
+    typedef boost::geometry::index::quadratic<8, 4> Parameters;
+
+    struct IndexableGetter
+    {
+        typedef boost::geometry::model::box<Point2D> result_type;
+
+        result_type operator()(const std::shared_ptr<ImmersedBoundaryObject> &ibObj) const
+        { return ibObj->shape().boundingBox(); }
+    };
+
+    struct EqualTo
+    {
+        bool operator()(const std::shared_ptr<ImmersedBoundaryObject> &lhs, const std::shared_ptr<ImmersedBoundaryObject> &rhs) const
+        { return lhs == rhs; }
+    };
+
+
     enum Type
     {
         FLUID_CELLS = 1, IB_CELLS = 2, SOLID_CELLS = 3, FRESH_CELLS = 4
@@ -44,7 +61,11 @@ public:
 
     virtual std::shared_ptr<const ImmersedBoundaryObject> ibObj(const Cell &cell) const;
 
+    virtual std::shared_ptr<const ImmersedBoundaryObject> nearestIbObjSurface(const Cell& cell) const;
+
     const std::vector<std::shared_ptr<const ImmersedBoundaryObject>> &findAllIbObjs(const Point2D &pt) const;
+
+    const std::vector<std::shared_ptr<const ImmersedBoundaryObject>> &findAllIbObjs(const Circle& c) const;
 
     std::shared_ptr<const ImmersedBoundaryObject> nearestIbObj(const Point2D &pt) const;
 
@@ -113,6 +134,9 @@ protected:
     std::shared_ptr<const FiniteVolumeGrid2D> grid_;
 
     std::vector<std::shared_ptr<ImmersedBoundaryObject>> ibObjs_;
+
+    //- Fast searching
+    boost::geometry::index::rtree<std::shared_ptr<ImmersedBoundaryObject>, Parameters, IndexableGetter, EqualTo> rTree_;
 
     //- Collision model
     std::shared_ptr<CollisionModel> collisionModel_;

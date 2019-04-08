@@ -10,13 +10,21 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(const Input &input)
     size_t nCellsY = input.caseInput().get<size_t>("Grid.nCellsY");
     Scalar convertToMeters = input.caseInput().get<Scalar>("Grid.convertToMeters", 1.);
 
-    std::vector<std::pair<Scalar, Scalar>> xDimRefinements, yDimRefinements;
+    std::vector<Point2D> xDimRefinements, yDimRefinements;
 
-    Vector2D tmp = input.caseInput().get<std::string>("Grid.refineX", "(0,0)");
-    xDimRefinements.push_back(std::make_pair(tmp.x, tmp.y));
+    //- Get children refinements, this is separated for compatibility reasons
+    printf("Applying refinements...\n");
+    auto xRefinementInput = input.caseInput().get_child_optional("Grid.refineX");
 
-    tmp = input.caseInput().get<std::string>("Grid.refineY", "(0,0)");
-    yDimRefinements.push_back(std::make_pair(tmp.x, tmp.y));
+    if(xRefinementInput)
+        for(const auto& entry: xRefinementInput.get())
+            xDimRefinements.emplace_back(entry.first);
+
+    auto yRefinementInput = input.caseInput().get_child_optional("Grid.refineY");
+
+    if(yRefinementInput)
+        for(const auto& entry: yRefinementInput.get())
+            yDimRefinements.emplace_back(entry.first);
 
     Point2D origin = input.caseInput().get<std::string>("Grid.origin", "(0,0)");
 
@@ -26,8 +34,8 @@ StructuredRectilinearGrid::StructuredRectilinearGrid(const Input &input)
 void StructuredRectilinearGrid::init(Scalar width, Scalar height,
                                      Size nCellsX, Size nCellsY,
                                      Scalar convertToMeters,
-                                     const std::vector<std::pair<Scalar, Scalar> > &xDimRefinements,
-                                     const std::vector<std::pair<Scalar, Scalar> > &yDimRefinements,
+                                     const std::vector<Point2D> &xDimRefinements,
+                                     const std::vector<Point2D> &yDimRefinements,
                                      const Point2D &origin)
 {
     width *= convertToMeters;
@@ -49,10 +57,10 @@ void StructuredRectilinearGrid::init(Scalar width, Scalar height,
         yDims.push_back(j * hy0);
 
     for (const auto &xDimRefinement: xDimRefinements)
-        refineDims(xDimRefinement.first, xDimRefinement.second, xDims);
+        xDims = refineDims(xDimRefinement.x, xDimRefinement.y, xDims);
 
     for (const auto &yDimRefinement: yDimRefinements)
-        refineDims(yDimRefinement.first, yDimRefinement.second, yDims);
+        yDims = refineDims(yDimRefinement.x, yDimRefinement.y, yDims);
 
     Size nNodesX = xDims.size();
     Size nNodesY = yDims.size();
@@ -60,21 +68,24 @@ void StructuredRectilinearGrid::init(Scalar width, Scalar height,
     nCellsY_ = nNodesY - 1;
 
     std::vector<Point2D> nodes;
+    nodes.reserve(nNodesX * nNodesY);
     for (Label j = 0; j < nNodesY; ++j)
         for (Label i = 0; i < nNodesX; ++i)
-            nodes.push_back(Point2D(xDims[i], yDims[j]));
+            nodes.emplace_back(xDims[i], yDims[j]);
 
     //- Create cells
     std::vector<Label> elemInds(1, 0), elems;
+    elemInds.reserve(nCellsX_ * nCellsY_);
+    elems.reserve(4 * nCellsX_ * nCellsY_);
 
     for (Label j = 0; j < nCellsY_; ++j)
         for (Label i = 0; i < nCellsX_; ++i)
         {
-            elemInds.push_back(elemInds.back() + 4);
-            elems.push_back(j * nNodesX + i);
-            elems.push_back(j * nNodesX + i + 1);
-            elems.push_back((j + 1) * nNodesX + i + 1);
-            elems.push_back((j + 1) * nNodesX + i);
+            elemInds.emplace_back(elemInds.back() + 4);
+            elems.emplace_back(j * nNodesX + i);
+            elems.emplace_back(j * nNodesX + i + 1);
+            elems.emplace_back((j + 1) * nNodesX + i + 1);
+            elems.emplace_back((j + 1) * nNodesX + i);
         }
 
     FiniteVolumeGrid2D::init(nodes, elemInds, elems, origin);
@@ -133,21 +144,21 @@ Scalar StructuredRectilinearGrid::h() const
     return width_ / nCellsX_;
 }
 
-void StructuredRectilinearGrid::refineDims(Scalar start, Scalar end, std::vector<Scalar> &dims)
+std::vector<Scalar> StructuredRectilinearGrid::refineDims(Scalar start, Scalar end, const std::vector<Scalar> &dims)
 {
     std::vector<Scalar> newDims;
 
+    newDims.reserve(dims.size());
     for (int i = 0; i < dims.size() - 1; ++i)
     {
         Scalar x = dims[i];
-
-        newDims.push_back(x);
+        newDims.emplace_back(x);
 
         if (x >= start && x < end)
-            newDims.push_back(x + (dims[i + 1] - x) / 2.);
+            newDims.emplace_back(x + (dims[i + 1] - x) / 2.);
     }
 
-    newDims.push_back(dims.back());
+    newDims.emplace_back(dims.back());
 
-    dims = std::move(newDims);
+    return newDims;
 }

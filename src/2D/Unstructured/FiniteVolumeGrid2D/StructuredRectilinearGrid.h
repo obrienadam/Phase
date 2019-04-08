@@ -16,8 +16,8 @@ public:
               Size nCellsX,
               Size nCellsY,
               Scalar convertToMeters,
-              const std::vector<std::pair<Scalar, Scalar>> &xDimRefinements,
-              const std::vector<std::pair<Scalar, Scalar>> &yDimRefinements,
+              const std::vector<Point2D> &xDimRefinements,
+              const std::vector<Point2D> &yDimRefinements,
               const Point2D &origin);
 
     Cell &operator()(Label i, Label j);
@@ -39,7 +39,7 @@ public:
 
 protected:
 
-    void refineDims(Scalar start, Scalar end, std::vector<Scalar> &dims);
+    std::vector<Scalar> refineDims(Scalar start, Scalar end, const std::vector<Scalar> &dims);
 
     Size nCellsX_, nCellsY_;
 
