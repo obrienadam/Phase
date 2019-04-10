@@ -88,7 +88,7 @@ Scalar FractionalStepAxisymmetricDFIBMultiphase::solveGammaEqn(Scalar timeStep)
     for(const Cell &c: *fluid_)
         gammaSrc_(c) = (gamma_(c) - gamma_.prevIteration()(c)) / timeStep;
 
-    gammaEqn_ == axi::cicsam::div(u_, gamma_, beta, 0.5) - axi::cicsam::div(u_, gamma_, beta, 0.) - axi::src::src(gammaSrc_);
+    gammaEqn_ == axi::cicsam::div(u_, gamma_, beta, 0.5) - axi::cicsam::div(u_, gamma_, beta, 0.) + axi::src::src(gammaSrc_);
 
     Scalar error = gammaEqn_.solve();
     gamma_.sendMessages();
@@ -236,10 +236,11 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         if(ibObj->shape().type() != Shape2D::CIRCLE || ibObj->shape().centroid().x != 0.)
             throw Exception("FractionalStepAxisymmetricDFIBMultiphase", "computeIbForces", "oncly circles centered at r = 0 supported.");
 
+        //- Compute the hydro force from the ib force
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
+            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
@@ -260,7 +261,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
             fh -= (fib_(c) + (*fst_.fst())(c) + rho_(c) * g_) * c.polarVolume();
         }
 
-        fh = grid_->comm().sum(2. * M_PI * fh);
+        fh = grid_->comm().sum(2 * M_PI * fh);
 
         Vector2D fc(0., 0.), fw(0., 0.);
 
@@ -316,10 +317,6 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
                 Scalar alpha = (0.5 - g2) / (g1 - g2);
                 Scalar beta = alpha * beta1 + (1. - alpha) * beta2;
                 Vector2D tcl = alpha < 0.5 ? cl1.tcl.rotate(beta - beta1) : cl2.tcl.rotate(beta - beta2);
-
-                if(grid_->comm().isMainProc())
-                    std::cout << "Beta = " << beta * 180. / M_PI << "\n"
-                              << "Contact line = " << tcl << "\n";
 
                 Point2D pt = circ.centroid() + (cl1.pt - circ.centroid()).rotate(beta - beta1);
                 Scalar r = pt.x;
