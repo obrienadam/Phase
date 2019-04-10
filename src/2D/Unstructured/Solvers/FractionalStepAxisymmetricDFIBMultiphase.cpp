@@ -240,7 +240,7 @@ void FractionalStepAxisymmetricDFIBMultiphase::computeIbForces(Scalar timeStep)
         Vector2D fh(0., 0.);
         for(const Cell &c: ibObj->cells())
         {
-            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.volume() / timeStep;
+            fh += rho_(c) * (u_(c) - u_.oldField(0)(c)) * c.polarVolume() / timeStep;
 
             for(const InteriorLink &nb: c.neighbours())
             {
