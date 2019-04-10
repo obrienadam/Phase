@@ -42,7 +42,9 @@ std::vector<Scalar> axi::cicsam::faceInterpolationWeights(const VectorFiniteVolu
         Scalar gammaFTilde = psiF * ::cicsam::hc(gammaDTilde, coD) + (1. - psiF) * ::cicsam::uq(gammaDTilde, coD);
         Scalar betaFace = (gammaFTilde - gammaDTilde) / (1. - gammaDTilde);
 
-        if(std::isnan(betaFace))
+        if(std::isfinite(betaFace))
+            betaFace = std::max(std::min(1., betaFace), 0.);
+        else
             betaFace = 0.;
 
         //- If stencil cannot be computed, default to upwind
