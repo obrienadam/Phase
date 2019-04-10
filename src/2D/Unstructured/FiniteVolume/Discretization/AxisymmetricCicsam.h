@@ -19,6 +19,11 @@ FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
                                  Scalar theta,
                                  const CellGroup &cells);
 
+FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
+                                 ScalarFiniteVolumeField &gamma,
+                                 const std::vector<Scalar> &faceInterpolationWeights,
+                                 Scalar theta);
+
 void computeMomentumFlux(Scalar rho1,
                          Scalar rho2,
                          const VectorFiniteVolumeField &u,

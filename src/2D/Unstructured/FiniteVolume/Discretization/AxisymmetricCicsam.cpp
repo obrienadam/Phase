@@ -121,3 +121,8 @@ void axi::cicsam::computeMomentumFlux(Scalar rho1,
         rhoU(f) = (rho1 + clamp(gf, 0., 1.) * (rho2 - rho1)) * u(f);
     }
 }
+
+FiniteVolumeEquation<Scalar> axi::cicsam::div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &gamma, const std::vector<Scalar> &faceInterpolationWeights, Scalar theta)
+{
+    return div(u, gamma, faceInterpolationWeights, theta, gamma.cells());
+}

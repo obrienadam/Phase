@@ -53,15 +53,10 @@ void FractionalStepDirectForcingMultiphase::initialize()
 {
     FractionalStepDFIB::initialize();
 
-    //    for(const Cell& c: ib_->localSolidCells())
-    //        gamma_(c) = rho1_ > rho2_ ? 1.: 0.;
-    //    gamma_.sendMessages();
-
     //- Ensure the computation starts with a valid gamma field
     gradGamma_.compute(*fluid_);
     gradGamma_.sendMessages();
     updateProperties(0.);
-    //computeIbForces(1e-10);
 }
 
 Scalar FractionalStepDirectForcingMultiphase::solve(Scalar timeStep)
@@ -104,8 +99,6 @@ Scalar FractionalStepDirectForcingMultiphase::solveGammaEqn(Scalar timeStep)
     auto beta = cicsam::faceInterpolationWeights(u_, gamma_, gradGamma_, timeStep);
 
     //- Predictor
-    if(!gamma_.isfinite())
-        std::cout << "ERROR! NON-FINITE VALUE!\n";
     gamma_.savePreviousTimeStep(timeStep, 1);
     gammaEqn_ = (fv::ddt(gamma_, timeStep) + cicsam::div(u_, gamma_, beta, 0.) == 0.);
     Scalar error = gammaEqn_.solve();
@@ -211,7 +204,7 @@ void FractionalStepDirectForcingMultiphase::solveExtEqns()
 {
     extEqn_ = ib_->computeFieldExtension(rho_, sg_, gradP_);
     extEqn_.solve();
-    grid_->sendMessages(gradP_);
+    gradP_.sendMessages();
 }
 
 void FractionalStepDirectForcingMultiphase::updateProperties(Scalar timeStep)
