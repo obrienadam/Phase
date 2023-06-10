@@ -1,5 +1,5 @@
 #include "trilinos/Teuchos_XMLParameterListCoreHelpers.hpp"
-#include <TpetraExt_MatrixMatrix.hpp>
+#include "trilinos/TpetraExt_MatrixMatrix.hpp"
 
 #include "TrilinosAmesosSparseMatrixSolver.h"
 

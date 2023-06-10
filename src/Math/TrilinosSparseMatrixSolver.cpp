@@ -1,4 +1,4 @@
-#include <TpetraExt_MatrixMatrix.hpp>
+#include "trilinos/TpetraExt_MatrixMatrix.hpp"
 
 #include "TrilinosSparseMatrixSolver.h"
 

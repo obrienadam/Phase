@@ -1,7 +1,7 @@
 #ifndef TRILINOS_AMESOS_SPARSE_MATRIX_SOLVER_H
 #define TRILINOS_AMESOS_SPARSE_MATRIX_SOLVER_H
 
-#include <Amesos2.hpp>
+#include "trilinos/Amesos2.hpp"
 
 #include "Matrix.h"
 #include "TrilinosSparseMatrixSolver.h"

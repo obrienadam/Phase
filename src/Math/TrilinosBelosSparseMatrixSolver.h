@@ -1,7 +1,7 @@
 #ifndef TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
 #define TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
 
-#include "BelosSolverManager.hpp"
+#include "trilinos/BelosSolverManager.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 

@@ -1,6 +1,6 @@
-#include <BelosSolverFactory.hpp>
-#include <Ifpack2_Factory.hpp>
-#include <Teuchos_XMLParameterListCoreHelpers.hpp>
+#include "trilinos/BelosSolverFactory.hpp"
+#include "trilinos/Ifpack2_Factory.hpp"
+#include "trilinos/Teuchos_XMLParameterListCoreHelpers.hpp"
 
 #include "TrilinosBelosSparseMatrixSolver.h"
 

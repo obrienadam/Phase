@@ -1,6 +1,6 @@
-#include "MueLu_CreateTpetraPreconditioner.hpp"
-#include "MueLu_ParameterListInterpreter.hpp"
-#include <BelosSolverFactory.hpp>
+#include "trilinos/MueLu_CreateTpetraPreconditioner.hpp"
+#include "trilinos/MueLu_ParameterListInterpreter.hpp"
+#include "trilinos/BelosSolverFactory.hpp"
 
 #include "TrilinosMueluSparseMatrixSolver.h"
 
