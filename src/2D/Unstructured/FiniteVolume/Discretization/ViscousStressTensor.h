@@ -5,7 +5,8 @@
 
 namespace fv {
 
-VectorFvmEquation divTau(const ScalarFiniteVolumeField &mu, VectorFiniteVolumeField &u, Scalar theta = 1.);
+VectorFvmEquation divTau(const ScalarFiniteVolumeField &mu,
+                         VectorFiniteVolumeField &u, Scalar theta = 1.);
 
 }
 

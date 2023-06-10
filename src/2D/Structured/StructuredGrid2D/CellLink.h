@@ -5,27 +5,22 @@
 
 class Cell;
 
-class CellLink
-{
+class CellLink {
 public:
-    CellLink()
-        : _cellA(nullptr), _cellB(nullptr)
-    {}
+  CellLink() : _cellA(nullptr), _cellB(nullptr) {}
 
-    CellLink(const Cell &cellA, const Cell &cellB);
+  CellLink(const Cell &cellA, const Cell &cellB);
 
-    const Cell& cellA() const;
+  const Cell &cellA() const;
 
-    const Cell& cellB() const;
+  const Cell &cellB() const;
 
-    const Vector2D &r() const
-    { return _rvec; }
+  const Vector2D &r() const { return _rvec; }
 
 protected:
+  const Cell *_cellA, *_cellB;
 
-    const Cell *_cellA, *_cellB;
-
-    Vector2D _rvec;
+  Vector2D _rvec;
 };
 
 #endif

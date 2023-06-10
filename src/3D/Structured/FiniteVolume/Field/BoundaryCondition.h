@@ -3,14 +3,11 @@
 
 #include "Structured/StructuredGrid3D/BoundaryPatch.h"
 
-template<class T>
-class BoundaryCondition
-{
+template <class T> class BoundaryCondition {
 public:
+  enum Type { FIXED, ZERO_GRADIENT, SLIP };
 
-    enum Type{FIXED, ZERO_GRADIENT, SLIP};
-
-    virtual Type type() const = 0;
+  virtual Type type() const = 0;
 };
 
 #endif

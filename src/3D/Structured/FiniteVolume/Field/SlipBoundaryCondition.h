@@ -5,12 +5,9 @@
 
 #include "BoundaryCondition.h"
 
-class SlipBoundaryCondition: public BoundaryCondition<Vector3D>
-{
+class SlipBoundaryCondition : public BoundaryCondition<Vector3D> {
 public:
-
-    Type type() const override
-    { return SLIP; }
+  Type type() const override { return SLIP; }
 };
 
 #endif

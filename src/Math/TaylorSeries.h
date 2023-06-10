@@ -5,34 +5,28 @@
 
 #include "Types/Types.h"
 
-class TaylorSeries
-{
+class TaylorSeries {
 public:
+  TaylorSeries() {}
 
-    TaylorSeries() {}
+  TaylorSeries(const std::vector<Scalar> &offsets, int derivOrder) {
+    computeTaylorCoeffs(offsets, derivOrder);
+  }
 
-    TaylorSeries(const std::vector<Scalar> &offsets, int derivOrder)
-    { computeTaylorCoeffs(offsets, derivOrder); }
+  void computeTaylorCoeffs(const std::vector<Scalar> &offsets, int derivOrder);
 
-    void computeTaylorCoeffs(const std::vector<Scalar> &offsets, int derivOrder);
+  Size size() const { return _coeffs.size(); }
 
-    Size size() const
-    { return _coeffs.size(); }
+  int derivOrder() const { return _derivOrder; }
 
-    int derivOrder() const
-    { return _derivOrder; }
+  const std::vector<Scalar> &offsets() const { return _offsets; }
 
-    const std::vector<Scalar> &offsets() const
-    { return _offsets; }
-
-    const std::vector<Scalar> &coeffs() const
-    { return _coeffs; }
+  const std::vector<Scalar> &coeffs() const { return _coeffs; }
 
 protected:
+  int _derivOrder;
 
-    int _derivOrder;
-
-    std::vector<Scalar> _offsets, _coeffs;
+  std::vector<Scalar> _offsets, _coeffs;
 };
 
 #endif

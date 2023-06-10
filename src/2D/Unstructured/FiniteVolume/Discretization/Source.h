@@ -6,21 +6,19 @@
 #include "FiniteVolume/Field/ScalarFiniteVolumeField.h"
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 
-namespace src
-{
-    Vector div(const VectorFiniteVolumeField &field, const CellGroup &cells);
+namespace src {
+Vector div(const VectorFiniteVolumeField &field, const CellGroup &cells);
 
-    Vector div(const VectorFiniteVolumeField &field);
+Vector div(const VectorFiniteVolumeField &field);
 
-    Vector laplacian(Scalar gamma,
-                     const ScalarFiniteVolumeField &phi);
+Vector laplacian(Scalar gamma, const ScalarFiniteVolumeField &phi);
 
-    Vector laplacian(const ScalarFiniteVolumeField &gamma,
-                     const ScalarFiniteVolumeField &phi);
+Vector laplacian(const ScalarFiniteVolumeField &gamma,
+                 const ScalarFiniteVolumeField &phi);
 
-    Vector src(const ScalarFiniteVolumeField &field);
+Vector src(const ScalarFiniteVolumeField &field);
 
-    Vector src(const VectorFiniteVolumeField &field);
-}
+Vector src(const VectorFiniteVolumeField &field);
+} // namespace src
 
 #endif

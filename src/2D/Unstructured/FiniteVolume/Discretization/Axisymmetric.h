@@ -3,8 +3,7 @@
 
 #include "Geometry/Point2D.h"
 
-namespace axi
-{
+namespace axi {
 
 Point2D map(const Point2D &pt, const Vector2D &zaxis);
 

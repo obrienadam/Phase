@@ -1,22 +1,18 @@
 #ifndef PHASE_POLY_1D_H
 #define PHASE_POLY_1D_H
 
-#include "Types/Types.h"
 #include "StaticMatrix.h"
+#include "Types/Types.h"
 
-template<Size N>
-class Poly1D
-{
+template <Size N> class Poly1D {
 public:
+  Poly1D(const std::initializer_list<Scalar> &x,
+         const std::initializer_list<Scalar> &rhs);
 
-    Poly1D(const std::initializer_list<Scalar> &x,
-           const std::initializer_list<Scalar> &rhs);
-
-    Scalar operator()(Scalar x) const;
+  Scalar operator()(Scalar x) const;
 
 private:
-
-    StaticMatrix _coeffs;
+  StaticMatrix _coeffs;
 };
 
 #include "Poly1D.tpp"

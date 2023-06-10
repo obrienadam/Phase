@@ -1,91 +1,83 @@
 #ifndef PHASE_MATRIX_H
 #define PHASE_MATRIX_H
 
+#include <ostream>
 #include <vector>
 
 #include "Types/Types.h"
 
-class Matrix
-{
+class Matrix {
 public:
+  Matrix(Size m = 0, Size n = 0,
+         const std::initializer_list<Scalar> &coeffs = {});
 
-    Matrix(Size m = 0, Size n = 0, const std::initializer_list<Scalar> &coeffs = {});
+  void resize(Size m, Size n);
 
-    void resize(Size m, Size n);
+  void zero();
 
-    void zero();
+  void setIdentity(Size m);
 
-    void setIdentity(Size m);
+  void init(const Scalar *begin, const Scalar *end);
 
-    void init(const Scalar *begin, const Scalar *end);
+  Size m() const { return m_; }
 
-    Size m() const
-    { return m_; }
+  Size n() const { return n_; }
 
-    Size n() const
-    { return n_; }
+  bool isSquare() const { return m_ == n_; }
 
-    bool isSquare() const
-    { return m_ == n_; }
+  void setRow(int i, const std::initializer_list<Scalar> &coeffs);
 
-    void setRow(int i, const std::initializer_list<Scalar> &coeffs);
+  void addToRow(int i, const std::initializer_list<Scalar> &coeffs);
 
-    void addToRow(int i, const std::initializer_list<Scalar> &coeffs);
+  void scaleRow(Size i, Scalar factor);
 
-    void scaleRow(Size i, Scalar factor);
+  Scalar &operator()(Size i, Size j);
 
-    Scalar &operator()(Size i, Size j);
+  Scalar operator()(Size i, Size j) const;
 
-    Scalar operator()(Size i, Size j) const;
+  Matrix &operator=(const std::initializer_list<Scalar> &list);
 
-    Matrix &operator=(const std::initializer_list<Scalar> &list);
+  Matrix &operator+=(const Matrix &rhs);
 
-    Matrix &operator+=(const Matrix &rhs);
+  Matrix &operator-=(const Matrix &rhs);
 
-    Matrix &operator-=(const Matrix &rhs);
+  Matrix &operator*=(Scalar rhs);
 
-    Matrix &operator*=(Scalar rhs);
+  Matrix &operator/=(Scalar rhs);
 
-    Matrix &operator/=(Scalar rhs);
+  Matrix &solve(Matrix &b);
 
-    Matrix &solve(Matrix &b);
+  Matrix solve(const Matrix &b);
 
-    Matrix solve(const Matrix &b);
+  Matrix &transpose();
 
-    Matrix &transpose();
+  Matrix &invert();
 
-    Matrix &invert();
+  Matrix &pinvert();
 
-    Matrix &pinvert();
+  Scalar norm(char type = 'I') const;
 
-    Scalar norm(char type = 'I') const;
+  Scalar cond(char type = 'I') const;
 
-    Scalar cond(char type = 'I') const;
+  Matrix subMatrix(size_t startRow, size_t startCol, size_t endRow,
+                   size_t endCol) const;
 
-    Matrix subMatrix(size_t startRow, size_t startCol, size_t endRow, size_t endCol) const;
+  Scalar *data() { return vals_.data(); }
 
-    Scalar *data()
-    { return vals_.data(); }
+  const Scalar *data() const { return vals_.data(); }
 
-    const Scalar *data() const
-    { return vals_.data(); }
+  std::vector<Scalar>::const_iterator begin() const { return vals_.begin(); }
 
-    std::vector<Scalar>::const_iterator begin() const
-    { return vals_.begin(); }
-
-    std::vector<Scalar>::const_iterator end() const
-    { return vals_.end(); }
+  std::vector<Scalar>::const_iterator end() const { return vals_.end(); }
 
 private:
+  static Matrix _tmp;
 
-    static Matrix _tmp;
+  Size m_, n_;
 
-    Size m_, n_;
+  std::vector<Scalar> vals_;
 
-    std::vector<Scalar> vals_;
-
-    mutable std::vector<int> ipiv_;
-
+  mutable std::vector<int> ipiv_;
 };
 
 //- External functions
@@ -115,7 +107,8 @@ Matrix operator*(const Matrix &lhs, const Matrix &rhs);
 
 Matrix operator/(Matrix lhs, Scalar rhs);
 
-Matrix multiply(const Matrix &A, const Matrix &B, bool transA = false, bool transB = false);
+Matrix multiply(const Matrix &A, const Matrix &B, bool transA = false,
+                bool transB = false);
 
 std::ostream &operator<<(std::ostream &os, const Matrix &mat);
 

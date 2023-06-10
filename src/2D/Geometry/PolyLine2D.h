@@ -3,41 +3,37 @@
 
 #include "Point2D.h"
 
-class PolyLine2D
-{
+class PolyLine2D {
 public:
+  PolyLine2D() {}
 
-    PolyLine2D() {}
+  PolyLine2D(const std::initializer_list<Point2D> &pts) : pts_(pts) {}
 
-    PolyLine2D(const std::initializer_list<Point2D> &pts) : pts_(pts) {}
+  template <class const_iterator>
+  PolyLine2D(const_iterator begin, const_iterator end) : pts_(begin, end) {}
 
-    template<class const_iterator>
-    PolyLine2D(const_iterator begin, const_iterator end) : pts_(begin, end) {}
+  //- Operators
+  PolyLine2D &operator=(const std::initializer_list<Point2D> &pts);
 
-    //- Operators
-    PolyLine2D &operator =(const std::initializer_list<Point2D> &pts);
+  const Point2D &operator[](std::size_t i) const { return pts_[i]; }
 
-    const Point2D &operator [](std::size_t i) const
-    { return pts_[i]; }
+  Size nVerts() const { return pts_.size(); }
 
-    Size nVerts() const
-    { return pts_.size(); }
+  Size nSegments() const { return pts_.size() - 1; }
 
-    Size nSegments() const
-    { return pts_.size() - 1; }
+  Scalar length() const;
 
-    Scalar length() const;
+  //- Iterators
+  typename std::vector<Point2D>::const_iterator begin() const {
+    return pts_.begin();
+  }
 
-    //- Iterators
-    typename std::vector<Point2D>::const_iterator begin() const
-    { return pts_.begin(); }
-
-    typename std::vector<Point2D>::const_iterator end() const
-    { return pts_.end(); }
+  typename std::vector<Point2D>::const_iterator end() const {
+    return pts_.end();
+  }
 
 private:
-
-    std::vector<Point2D> pts_;
+  std::vector<Point2D> pts_;
 };
 
 #endif

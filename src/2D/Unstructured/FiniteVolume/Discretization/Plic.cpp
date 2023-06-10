@@ -2,6 +2,4 @@
 #include "FiniteVolume/Field/ScalarGradient.h"
 #include "Math/Algorithm.h"
 
-namespace plic {
-
-}
+namespace plic {}

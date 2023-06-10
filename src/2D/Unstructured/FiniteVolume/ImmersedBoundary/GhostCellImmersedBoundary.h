@@ -3,42 +3,38 @@
 
 #include "ImmersedBoundary.h"
 
-class GhostCellImmersedBoundary: public ImmersedBoundary
-{
+class GhostCellImmersedBoundary : public ImmersedBoundary {
 public:
+  class BcStencil;
 
-    class BcStencil;
+  class FixedBcStencil;
 
-    class FixedBcStencil;
+  class NormalGradientBcStencil;
 
-    class NormalGradientBcStencil;
+  GhostCellImmersedBoundary(
+      const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+      const std::shared_ptr<CellGroup> &domainCells);
 
-    GhostCellImmersedBoundary(const Input &input,
-                              const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                              const std::shared_ptr<CellGroup> &domainCells);
+  void updateCells() override;
 
-    void updateCells() override;
+  FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &phi) const;
 
-    FiniteVolumeEquation<Scalar> bcs(ScalarFiniteVolumeField &phi) const;
+  FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &u) const;
 
-    FiniteVolumeEquation<Vector2D> bcs(VectorFiniteVolumeField &u) const;
+  FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
 
-    FiniteVolumeEquation<Vector2D> velocityBcs(VectorFiniteVolumeField &u) const;
+  void applyHydrodynamicForce(Scalar rho, Scalar mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.)) override;
 
-    void applyHydrodynamicForce(Scalar rho,
-                                Scalar mu,
-                                const VectorFiniteVolumeField &u,
-                                const ScalarFiniteVolumeField &p,
-                                const Vector2D &g = Vector2D(0., 0.)) override;
-
-    void applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
-                                const ScalarFiniteVolumeField &mu,
-                                const VectorFiniteVolumeField &u,
-                                const ScalarFiniteVolumeField &p,
-                                const Vector2D &g = Vector2D(0., 0.)) override;
+  void applyHydrodynamicForce(const ScalarFiniteVolumeField &rho,
+                              const ScalarFiniteVolumeField &mu,
+                              const VectorFiniteVolumeField &u,
+                              const ScalarFiniteVolumeField &p,
+                              const Vector2D &g = Vector2D(0., 0.)) override;
 
 protected:
-
 };
 
 #endif

@@ -3,14 +3,15 @@
 
 #include "System/StaticVector.h"
 
-#include "Line2D.h"
-#include "Ray2D.h"
-#include "LineSegment2D.h"
 #include "Circle.h"
+#include "Line2D.h"
+#include "LineSegment2D.h"
+#include "Ray2D.h"
 
 std::pair<Point2D, bool> intersection(const Line2D &lnA, const Line2D &lnB);
 
-std::pair<Point2D, bool> intersection(const Ray2D &ray, const LineSegment2D &ln);
+std::pair<Point2D, bool> intersection(const Ray2D &ray,
+                                      const LineSegment2D &ln);
 
 std::pair<LineSegment2D, bool> intersection(const Line2D &lnA, const Circle &c);
 

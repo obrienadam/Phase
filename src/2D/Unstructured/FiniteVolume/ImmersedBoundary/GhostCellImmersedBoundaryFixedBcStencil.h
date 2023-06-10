@@ -3,22 +3,18 @@
 
 #include "GhostCellImmersedBoundaryBcStencil.h"
 
-class GhostCellImmersedBoundary::FixedBcStencil: public GhostCellImmersedBoundary::BcStencil
-{
+class GhostCellImmersedBoundary::FixedBcStencil
+    : public GhostCellImmersedBoundary::BcStencil {
 public:
+  FixedBcStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj,
+                 const FiniteVolumeGrid2D &grid);
 
-    FixedBcStencil(const Cell &cell,
-                   const ImmersedBoundaryObject &ibObj,
-                   const FiniteVolumeGrid2D &grid);
-
-    FixedBcStencil(const Cell &cell,
-                   const ImmersedBoundaryObject &ibObj,
-                   const FiniteVolumeGrid2D &grid,
-                   const Vector2D &r);
+  FixedBcStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj,
+                 const FiniteVolumeGrid2D &grid, const Vector2D &r);
 
 protected:
-
-    void initInterpolationCoeffs(const ImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
+  void initInterpolationCoeffs(const ImmersedBoundaryObject &ibObj,
+                               const FiniteVolumeGrid2D &grid);
 };
 
 #endif

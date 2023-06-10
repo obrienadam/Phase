@@ -5,63 +5,51 @@
 #include "Geometry/Box.h"
 #include "System/StaticVector.h"
 
-#include "InteriorFaceStencil.h"
 #include "BoundaryFaceStencil.h"
+#include "InteriorFaceStencil.h"
 
 class StructuredGrid2D;
 class Face;
 
-class Cell
-{
+class Cell {
 public:
+  Cell(const StructuredGrid2D &grid, Label i, Label j);
 
-    Cell(const StructuredGrid2D &grid, Label i, Label j);
+  Cell(const StructuredGrid2D &grid, Label i, Label j, Label gid);
 
-    Cell(const StructuredGrid2D &grid, Label i, Label j, Label gid);
+  const Box &shape() const { return _shape; }
 
-    const Box& shape() const
-    { return _shape; }
+  Point2D centroid() const { return _shape.centroid(); }
 
-    Point2D centroid() const
-    { return _shape.centroid(); }
+  Label i() const { return _i; }
 
-    Label i() const
-    { return _i; }
+  Label j() const { return _j; }
 
-    Label j() const
-    { return _j; }
+  Label id() const { return _lid; }
 
-    Label id() const
-    { return _lid; }
+  Label lid() const { return _lid; }
 
-    Label lid() const
-    { return _lid; }
+  Label gid() const { return _gid; }
 
-    Label gid() const
-    { return _gid; }
+  void setgid(Label gid) { _gid = gid; }
 
-    void setgid(Label gid)
-    { _gid = gid; }
+  const StructuredGrid2D &grid() const { return _grid; }
 
-    const StructuredGrid2D &grid() const
-    { return _grid; }
+  //- Stencils
+  void initStencils();
 
-    //- Stencils
-    void initStencils();
-
-    const std::vector<InteriorFaceStencil> &faceStencils() const
-    { return _faceStencils; }
+  const std::vector<InteriorFaceStencil> &faceStencils() const {
+    return _faceStencils;
+  }
 
 protected:
+  std::vector<InteriorFaceStencil> _faceStencils;
 
-    std::vector<InteriorFaceStencil> _faceStencils;
+  Box _shape;
 
-    Box _shape;
+  Label _i, _j, _lid, _gid;
 
-    Label _i, _j, _lid, _gid;
-
-    const StructuredGrid2D &_grid;
-
+  const StructuredGrid2D &_grid;
 };
 
 #endif

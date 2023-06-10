@@ -3,19 +3,16 @@
 
 #include "Types/Types.h"
 
-class SparseEntry
-{
+class SparseEntry {
 public:
+  SparseEntry() {}
 
-    SparseEntry() {}
+  SparseEntry(Index row, Index col, Scalar val)
+      : row(row), col(col), val(val) {}
 
-    SparseEntry(Index row, Index col, Scalar val)
-        : row(row), col(col), val(val)
-    {}
+  Index row, col;
 
-    Index row, col;
-
-    Scalar val;
+  Scalar val;
 };
 
 #endif

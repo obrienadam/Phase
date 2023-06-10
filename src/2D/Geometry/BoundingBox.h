@@ -5,52 +5,48 @@
 
 #include "Point2D.h"
 
-class BoundingBox
-{
+class BoundingBox {
 public:
-    enum Quadrant{I, II, III, IV};
+  enum Quadrant { I, II, III, IV };
 
-    BoundingBox() {}
+  BoundingBox() {}
 
-    BoundingBox(const Point2D& lBound, const Point2D& uBound);
+  BoundingBox(const Point2D &lBound, const Point2D &uBound);
 
-    template<class const_iterator>
-    BoundingBox(const_iterator begin, const_iterator end)
-    {
-        if(begin != end)
-            lBound_ = uBound_ = *begin;
+  template <class const_iterator>
+  BoundingBox(const_iterator begin, const_iterator end) {
+    if (begin != end)
+      lBound_ = uBound_ = *begin;
 
-        for(auto itr = begin; itr != end; ++itr)
-        {
-            if(itr->x < lBound_.x)
-                lBound_.x = itr->x;
+    for (auto itr = begin; itr != end; ++itr) {
+      if (itr->x < lBound_.x)
+        lBound_.x = itr->x;
 
-            if(itr->y < lBound_.y)
-                lBound_.y = itr->y;
+      if (itr->y < lBound_.y)
+        lBound_.y = itr->y;
 
-            if(itr->x > uBound_.x)
-                uBound_.x = itr->x;
+      if (itr->x > uBound_.x)
+        uBound_.x = itr->x;
 
-            if(itr->y > uBound_.y)
-                uBound_.y = itr->y;
-        }
-
-        center_ = (lBound_ + uBound_) / 2.;
+      if (itr->y > uBound_.y)
+        uBound_.y = itr->y;
     }
 
-    Quadrant getQuadrant(const Point2D &point) const;
+    center_ = (lBound_ + uBound_) / 2.;
+  }
 
-    bool isInBox(const Point2D& point) const;
+  Quadrant getQuadrant(const Point2D &point) const;
 
-    const Point2D& lBound() const { return lBound_; }
+  bool isInBox(const Point2D &point) const;
 
-    const Point2D& uBound() const { return uBound_; }
+  const Point2D &lBound() const { return lBound_; }
 
-    const Point2D& center() const { return center_; }
+  const Point2D &uBound() const { return uBound_; }
+
+  const Point2D &center() const { return center_; }
 
 private:
-
-    Point2D center_, lBound_, uBound_;
+  Point2D center_, lBound_, uBound_;
 };
 
 #endif

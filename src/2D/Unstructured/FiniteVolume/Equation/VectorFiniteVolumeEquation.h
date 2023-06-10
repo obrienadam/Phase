@@ -5,4 +5,4 @@
 
 typedef FiniteVolumeEquation<Vector2D> VectorFvmEquation;
 
-#endif //PHASE_VECTORFINITEVOLUMEEQUATION_H
+#endif // PHASE_VECTORFINITEVOLUMEEQUATION_H

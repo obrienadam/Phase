@@ -5,21 +5,18 @@
 
 #include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 
-class Poisson: public Solver
-{
+class Poisson : public Solver {
 public:
+  Poisson(const Input &input, const std::shared_ptr<StructuredGrid2D> &grid);
 
-    Poisson(const Input &input, const std::shared_ptr<StructuredGrid2D> &grid);
-
-    virtual Scalar solve(Scalar timeStep) override;
+  virtual Scalar solve(Scalar timeStep) override;
 
 protected:
+  ScalarField &_phi;
 
-    ScalarField &_phi;
+  FiniteVolumeEquation<Scalar> _phiEqn;
 
-    FiniteVolumeEquation<Scalar> _phiEqn;
-
-    Scalar _gamma;
+  Scalar _gamma;
 };
 
 #endif

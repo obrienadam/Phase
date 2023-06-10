@@ -3,13 +3,11 @@
 
 #include <boost/program_options.hpp>
 
-#include "System/CommandLine.h"
 #include "System/CgnsFile.h"
+#include "System/CommandLine.h"
 
-int main(int argc, char **argv)
-{
-    using namespace std;
+int main(int argc, char **argv) {
+  using namespace std;
 
-    return 0;
+  return 0;
 }
-

@@ -5,29 +5,26 @@
 
 class DirectForcingImmersedBoundary;
 
-class FractionalStepAxisymmetricDFIB: public FractionalStepAxisymmetric
-{
+class FractionalStepAxisymmetricDFIB : public FractionalStepAxisymmetric {
 public:
+  FractionalStepAxisymmetricDFIB(
+      const Input &input,
+      const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
-    FractionalStepAxisymmetricDFIB(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+  virtual Scalar solve(Scalar timeStep) override;
 
-    virtual Scalar solve(Scalar timeStep) override;
-
-    virtual std::shared_ptr<const ImmersedBoundary> ib() const override;
+  virtual std::shared_ptr<const ImmersedBoundary> ib() const override;
 
 protected:
+  virtual Scalar solveUEqn(Scalar timeStep) override;
 
-    virtual Scalar solveUEqn(Scalar timeStep) override;
+  virtual void computeIbForces(Scalar timeStep);
 
-    virtual void computeIbForces(Scalar timeStep);
+  std::shared_ptr<DirectForcingImmersedBoundary> ib_;
 
-    std::shared_ptr<DirectForcingImmersedBoundary> ib_;
+  VectorFiniteVolumeField &fib_;
 
-    VectorFiniteVolumeField &fib_;
-
-    FiniteVolumeEquation<Vector2D> fibEqn_;
-
-
+  FiniteVolumeEquation<Vector2D> fibEqn_;
 };
 
 #endif

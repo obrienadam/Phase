@@ -3,27 +3,24 @@
 
 #include "FractionalStep.h"
 
-class FractionalStepBoussinesq : public FractionalStep
-{
+class FractionalStepBoussinesq : public FractionalStep {
 public:
+  FractionalStepBoussinesq(
+      const Input &input,
+      const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
-    FractionalStepBoussinesq(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+  Scalar solve(Scalar timeStep);
 
-    Scalar solve(Scalar timeStep);
-
-    ScalarFiniteVolumeField &T;
+  ScalarFiniteVolumeField &T;
 
 protected:
+  FiniteVolumeEquation<Scalar> TEqn_;
 
-    FiniteVolumeEquation<Scalar> TEqn_;
+  Scalar solveUEqn(Scalar timeStep);
 
-    Scalar solveUEqn(Scalar timeStep);
+  Scalar solveTEqn(Scalar timeStep);
 
-    Scalar solveTEqn(Scalar timeStep);
-
-    Scalar alpha_, T0_, kappa_;
-
+  Scalar alpha_, T0_, kappa_;
 };
-
 
 #endif

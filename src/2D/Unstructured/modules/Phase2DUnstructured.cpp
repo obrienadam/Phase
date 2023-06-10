@@ -2,35 +2,35 @@
 #include "System/RunControl.h"
 
 #include "FiniteVolumeGrid2D/FiniteVolumeGrid2DFactory.h"
-#include "Solvers/SolverFactory.h"
 #include "PostProcessing/PostProcessing.h"
+#include "Solvers/SolverFactory.h"
 
-int main(int argc, char *argv[])
-{
-    using namespace std;
+int main(int argc, char *argv[]) {
+  using namespace std;
 
-    Communicator::init(argc, argv);
+  Communicator::init(argc, argv);
 
-    CommandLine cl;
+  CommandLine cl;
 
-    cl.addSwitch("restart,r", "restart the solution from the latest time point");
-    cl.addSwitch("use-partitioned-grid,g", "use the pre-partitioned grid");
+  cl.addSwitch("restart,r", "restart the solution from the latest time point");
+  cl.addSwitch("use-partitioned-grid,g", "use the pre-partitioned grid");
 
-    cl.parseArguments(argc, argv);
+  cl.parseArguments(argc, argv);
 
-    Input input;
-    input.parseInputFile();
+  Input input;
+  input.parseInputFile();
 
-    std::shared_ptr<FiniteVolumeGrid2D> grid = FiniteVolumeGrid2DFactory::create(cl, input);
+  std::shared_ptr<FiniteVolumeGrid2D> grid =
+      FiniteVolumeGrid2DFactory::create(cl, input);
 
-    std::shared_ptr<Solver> solver = SolverFactory::create(input, grid);
+  std::shared_ptr<Solver> solver = SolverFactory::create(input, grid);
 
-    PostProcessing postProcessing(cl, input, *solver);
-    postProcessing.initIbPostProcessingObjects(input, *solver);
+  PostProcessing postProcessing(cl, input, *solver);
+  postProcessing.initIbPostProcessingObjects(input, *solver);
 
-    RunControl runControl;
+  RunControl runControl;
 
-    runControl.run(cl, input, *solver, postProcessing);
+  runControl.run(cl, input, *solver, postProcessing);
 
-    Communicator::finalize();
+  Communicator::finalize();
 }

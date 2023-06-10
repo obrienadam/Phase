@@ -4,13 +4,9 @@
 #include "BoundaryCondition.h"
 
 template <class T>
-class ZeroGradientBoundaryCondition: public BoundaryCondition<T>
-{
+class ZeroGradientBoundaryCondition : public BoundaryCondition<T> {
 public:
-
-    Type type() const override
-    { return ZERO_GRADIENT; }
-
+  Type type() const override { return ZERO_GRADIENT; }
 };
 
 #endif

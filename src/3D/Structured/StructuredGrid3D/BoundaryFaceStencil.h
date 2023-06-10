@@ -3,18 +3,14 @@
 
 #include "FaceStencil.h"
 
-class BoundaryFaceStencil: public FaceStencil
-{
+class BoundaryFaceStencil : public FaceStencil {
 public:
+  BoundaryFaceStencil(const Cell &cell, Face::Direction dir, int order);
 
-    BoundaryFaceStencil(const Cell& cell, Face::Direction dir, int order);
-
-    const std::vector<Scalar> &faceCoeffs() const
-    { return _faceCoeffs; }
+  const std::vector<Scalar> &faceCoeffs() const { return _faceCoeffs; }
 
 protected:
-
-    std::vector<Scalar> _faceCoeffs;
+  std::vector<Scalar> _faceCoeffs;
 };
 
 #endif

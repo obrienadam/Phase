@@ -2,37 +2,34 @@
 #define PHASE_FINITE_VOLUME_EQUATION_H
 
 #include "Math/Equation.h"
-#include "Structured/FiniteVolume/Field/Field.h"
 #include "Math/SparseMatrixSolver.h"
+#include "Structured/FiniteVolume/Field/Field.h"
 
-template<class T>
-class FiniteVolumeEquation: public Equation
-{
+template <class T> class FiniteVolumeEquation : public Equation {
 public:
+  FiniteVolumeEquation(Field<T> &field);
 
-    FiniteVolumeEquation(Field<T> &field);
+  FiniteVolumeEquation(const std::string &name, Field<T> &field);
 
-    FiniteVolumeEquation(const std::string &name, Field<T> &field);
+  FiniteVolumeEquation(const std::string &name, const Input &input,
+                       Field<T> &field);
 
-    FiniteVolumeEquation(const std::string &name, const Input &input, Field<T> &field);
+  FiniteVolumeEquation &operator=(const Equation &rhs);
 
-    FiniteVolumeEquation& operator=(const Equation &rhs);
+  void add(const Cell &cell, const Cell &nb, Scalar coeff);
 
-    void add(const Cell &cell, const Cell &nb, Scalar coeff);
+  void addRhs(const Cell &cell, Scalar val);
 
-    void addRhs(const Cell &cell, Scalar val);
+  void configureSparseSolver(const Input &input);
 
-    void configureSparseSolver(const Input &input);
+  //- Solve
 
-    //- Solve
-
-    Scalar solve() override;
+  Scalar solve() override;
 
 protected:
+  std::string _name;
 
-        std::string _name;
-
-        Field<T> &_field;
+  Field<T> &_field;
 };
 
 #include "FiniteVolumeEquation.tpp"

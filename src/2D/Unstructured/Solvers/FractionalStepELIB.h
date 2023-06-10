@@ -3,19 +3,17 @@
 
 #include "FractionalStep.h"
 
-class FractionalStepELIB : public FractionalStep
-{
+class FractionalStepELIB : public FractionalStep {
 public:
-    FractionalStepELIB(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+  FractionalStepELIB(const Input &input,
+                     const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
 protected:
+  virtual Scalar solveUEqn(Scalar timeStep);
 
-    virtual Scalar solveUEqn(Scalar timeStep);
+  virtual Scalar solvePEqn(Scalar timeStep);
 
-    virtual Scalar solvePEqn(Scalar timeStep);
-
-    //virtual void correctVelocity(Scalar timeStep);
+  // virtual void correctVelocity(Scalar timeStep);
 };
 
-
-#endif //PHASE_FRACTIONALSTEPLAGRANGEEULER_H
+#endif // PHASE_FRACTIONALSTEPLAGRANGEEULER_H

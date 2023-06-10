@@ -1,8 +1,8 @@
 #ifndef PHASE_CELL_SET_H
 #define PHASE_CELL_SET_H
 
-#include "Set.h"
 #include "Cell.h"
+#include "Set.h"
 
 typedef Set<Cell> CellSet;
 

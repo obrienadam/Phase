@@ -1,34 +1,30 @@
-#include "Math/Matrix.h"
 #include "FiniteVolumeGrid2D/StructuredRectilinearGrid.h"
+#include "Math/Matrix.h"
 
 #include "EulerLagrangeImmersedBoundary.h"
 
-EulerLagrangeImmersedBoundary::EulerLagrangeImmersedBoundary(const std::string &name,
-                                                                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                                                                         const std::shared_ptr<CellGroup> &domainCells)
-        :
-        ImmersedBoundary(name, grid, domainCells)
-{
-    auto eqGrid = std::dynamic_pointer_cast<const StructuredRectilinearGrid>(grid_);
+EulerLagrangeImmersedBoundary::EulerLagrangeImmersedBoundary(
+    const std::string &name,
+    const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+    const std::shared_ptr<CellGroup> &domainCells)
+    : ImmersedBoundary(name, grid, domainCells) {
+  auto eqGrid =
+      std::dynamic_pointer_cast<const StructuredRectilinearGrid>(grid_);
 
-    if (eqGrid && eqGrid->isEquidistant())
-    {
-        h_ = eqGrid->h();
-    }
-    else
-        throw Exception("EulerLagrangeImmersedBoundary",
-                        "EulerLagrangeImmersedBoundary",
-                        "must use an equidistant grid.");
+  if (eqGrid && eqGrid->isEquidistant()) {
+    h_ = eqGrid->h();
+  } else
+    throw Exception("EulerLagrangeImmersedBoundary",
+                    "EulerLagrangeImmersedBoundary",
+                    "must use an equidistant grid.");
 }
 
-void EulerLagrangeImmersedBoundary::updateCells()
-{
-    updateLagrangePoints();
-}
+void EulerLagrangeImmersedBoundary::updateCells() { updateLagrangePoints(); }
 
-//FiniteVolumeEquation<Vector2D> EulerLagrangeImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const
+// FiniteVolumeEquation<Vector2D>
+// EulerLagrangeImmersedBoundary::velocityBcs(VectorFiniteVolumeField &u) const
 //{
-//    FiniteVolumeEquation<Vector2D> eqn(u);
+//     FiniteVolumeEquation<Vector2D> eqn(u);
 
 //    Matrix D(lagrangePoints_.size(), ibCells_.size());
 
@@ -58,9 +54,10 @@ void EulerLagrangeImmersedBoundary::updateCells()
 //    return eqn;
 //}
 
-//void EulerLagrangeImmersedBoundary::correctVelocity(VectorFiniteVolumeField &u) const
+// void EulerLagrangeImmersedBoundary::correctVelocity(VectorFiniteVolumeField
+// &u) const
 //{
-//    Matrix D(lagrangePoints_.size(), ibCells_.size());
+//     Matrix D(lagrangePoints_.size(), ibCells_.size());
 
 //    for (int i = 0; i < lagrangePoints_.size(); ++i)
 //        for (int j = 0; j < ibCells_.size(); ++j)
@@ -88,49 +85,53 @@ void EulerLagrangeImmersedBoundary::updateCells()
 //        u(ibCells_[j]) += Vector2D(du(j, 0), du(j, 1));
 //}
 
-Scalar EulerLagrangeImmersedBoundary::kernel(const Point2D &x, const Point2D &xl) const
-{
-    auto dr = [](Scalar r)
-    {
-        r = std::abs(r);
+Scalar EulerLagrangeImmersedBoundary::kernel(const Point2D &x,
+                                             const Point2D &xl) const {
+  auto dr = [](Scalar r) {
+    r = std::abs(r);
 
-//        if (r <= 1.)
-//            return (3. - 2. * r + std::sqrt(1. + 4. * r - 4. * r * r)) / 8.;
-//        else if (r <= 2.)
-//            return (5. - 2. * r - std::sqrt(-7. + 12. * r - 4. * r * r)) / 8.;
-//        else
-//            return 0.;
+    //        if (r <= 1.)
+    //            return (3. - 2. * r + std::sqrt(1. + 4. * r - 4. * r * r))
+    //            / 8.;
+    //        else if (r <= 2.)
+    //            return (5. - 2. * r - std::sqrt(-7. + 12. * r - 4. * r * r))
+    //            / 8.;
+    //        else
+    //            return 0.;
 
-//        if (r < 1.)
-//            return 2. / 3. - r * r + r * r * r / 2.;
-//        else if (r < 2.)
-//            return 4. / 3. - 2. * r + r * r - r * r * r / 6.;
-//        else
-//            return 0.;
+    //        if (r < 1.)
+    //            return 2. / 3. - r * r + r * r * r / 2.;
+    //        else if (r < 2.)
+    //            return 4. / 3. - 2. * r + r * r - r * r * r / 6.;
+    //        else
+    //            return 0.;
 
-        if (r < 1.)
-            return 11. / 20. - std::pow(r, 2) / 2. + std::pow(r, 4) / 4. - std::pow(r, 5) / 12.;
-        else if (r < 2.)
-            return 17. / 40. + 5. * r / 8. - 7. * std::pow(r, 2) / 4 + 5. * std::pow(r, 3) / 4. - 3 * std::pow(r, 4) / 8
-                   + std::pow(r, 5) / 24;
-        else if (r < 3)
-            return 81. / 40. - 27. * r / 8. + 9. * std::pow(r, 2) / 4. - 3. * std::pow(r, 3) / 4. + std::pow(r, 4) / 8.
-                   - std::pow(r, 5) / 120.;
-        else
-            return 0.;
-    };
+    if (r < 1.)
+      return 11. / 20. - std::pow(r, 2) / 2. + std::pow(r, 4) / 4. -
+             std::pow(r, 5) / 12.;
+    else if (r < 2.)
+      return 17. / 40. + 5. * r / 8. - 7. * std::pow(r, 2) / 4 +
+             5. * std::pow(r, 3) / 4. - 3 * std::pow(r, 4) / 8 +
+             std::pow(r, 5) / 24;
+    else if (r < 3)
+      return 81. / 40. - 27. * r / 8. + 9. * std::pow(r, 2) / 4. -
+             3. * std::pow(r, 3) / 4. + std::pow(r, 4) / 8. -
+             std::pow(r, 5) / 120.;
+    else
+      return 0.;
+  };
 
-    Vector2D r = x - xl;
-    return dr(r.x / h_) * dr(r.y / h_) / (h_ * h_);
+  Vector2D r = x - xl;
+  return dr(r.x / h_) * dr(r.y / h_) / (h_ * h_);
 }
 
 //- Private
 
-//void EulerLagrangeImmersedBoundary::initLagrangePoints(int nLagrangePoints)
+// void EulerLagrangeImmersedBoundary::initLagrangePoints(int nLagrangePoints)
 //{
-//    lagrangePoints_.clear();
-//    lagrangeStencils_.clear();
-//    ibCells_.clear();
+//     lagrangePoints_.clear();
+//     lagrangeStencils_.clear();
+//     ibCells_.clear();
 
 //    switch (shape_->type())
 //    {
@@ -141,7 +142,8 @@ Scalar EulerLagrangeImmersedBoundary::kernel(const Point2D &x, const Point2D &xl
 
 //            for (int i = 0; i < nLagrangePoints; ++i)
 //            {
-//                Point2D pt = shape_->centroid() + radius * Vector2D(std::cos(i * dTheta), std::sin(i * dTheta));
+//                Point2D pt = shape_->centroid() + radius * Vector2D(std::cos(i
+//                * dTheta), std::sin(i * dTheta));
 //                lagrangePoints_.push_back(pt);
 
 //                if (solverCells_)
@@ -153,12 +155,14 @@ Scalar EulerLagrangeImmersedBoundary::kernel(const Point2D &x, const Point2D &xl
 //                            ))
 //                    );
 
-//                    ibCells_.add(lagrangeStencils_.back().begin(), lagrangeStencils_.back().end());
+//                    ibCells_.add(lagrangeStencils_.back().begin(),
+//                    lagrangeStencils_.back().end());
 //                }
 //            }
 //        }
 //            break;
 //        default:
-//            throw Exception("EulerLagrangeImmersedBoundary", "initLagrangePoints", "shape is not supported.");
+//            throw Exception("EulerLagrangeImmersedBoundary",
+//            "initLagrangePoints", "shape is not supported.");
 //    }
 //}

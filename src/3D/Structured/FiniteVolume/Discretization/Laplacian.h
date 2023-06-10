@@ -3,11 +3,9 @@
 
 #include "Structured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
-namespace fv
-{
+namespace fv {
 
-template<class T>
-FiniteVolumeEquation<T> lap(Field<T> &phi);
+template <class T> FiniteVolumeEquation<T> lap(Field<T> &phi);
 
 }
 

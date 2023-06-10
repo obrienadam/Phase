@@ -5,56 +5,55 @@
 
 #include "FractionalStepAxisymmetricDFIB.h"
 
-class FractionalStepAxisymmetricDFIBMultiphase: public FractionalStepAxisymmetricDFIB
-{
+class FractionalStepAxisymmetricDFIBMultiphase
+    : public FractionalStepAxisymmetricDFIB {
 public:
+  FractionalStepAxisymmetricDFIBMultiphase(
+      const Input &input,
+      const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
-    FractionalStepAxisymmetricDFIBMultiphase(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+  virtual void initialize() override;
 
-    virtual void initialize() override;
-
-    virtual Scalar solve(Scalar timeStep) override;
+  virtual Scalar solve(Scalar timeStep) override;
 
 protected:
+  struct ContactLine {
+    Point2D pt;
 
-    struct ContactLine
-    {
-        Point2D pt;
+    Scalar beta;
 
-        Scalar beta;
+    Scalar gamma;
 
-        Scalar gamma;
+    Vector2D ncl, tcl;
+  };
 
-        Vector2D ncl, tcl;
-    };
+  virtual Scalar solveGammaEqn(Scalar timeStep);
 
-    virtual Scalar solveGammaEqn(Scalar timeStep);
+  void updateProperties(Scalar timeStep);
 
-    void updateProperties(Scalar timeStep);
+  virtual Scalar solveUEqn(Scalar timeStep) override;
 
-    virtual Scalar solveUEqn(Scalar timeStep) override;
+  virtual Scalar solvePEqn(Scalar timeStep) override;
 
-    virtual Scalar solvePEqn(Scalar timeStep) override;
+  virtual void correctVelocity(Scalar timeStep) override;
 
-    virtual void correctVelocity(Scalar timeStep) override;
+  virtual void computeIbForces(Scalar timeStep) override;
 
-    virtual void computeIbForces(Scalar timeStep) override;
+  virtual void computeFieldExtenstions(Scalar timeStep);
 
-    virtual void computeFieldExtenstions(Scalar timeStep);
+  Scalar rho1_, rho2_, mu1_, mu2_;
 
-    Scalar rho1_, rho2_, mu1_, mu2_;
+  ScalarFiniteVolumeField &gamma_, &gammaSrc_, &rho_, &mu_;
 
-    ScalarFiniteVolumeField &gamma_, &gammaSrc_, &rho_, &mu_;
+  VectorFiniteVolumeField &sg_;
 
-    VectorFiniteVolumeField &sg_;
+  ScalarGradient &gradGamma_, &gradRho_;
 
-    ScalarGradient &gradGamma_, &gradRho_;
+  CelesteAxisymmetricImmersedBoundary fst_;
 
-    CelesteAxisymmetricImmersedBoundary fst_;
+  FiniteVolumeEquation<Scalar> gammaEqn_;
 
-    FiniteVolumeEquation<Scalar> gammaEqn_;
-
-    std::vector<ContactLine> contactLines_;
+  std::vector<ContactLine> contactLines_;
 };
 
 #endif

@@ -3,34 +3,28 @@
 
 #include "2D/Unstructured/FiniteVolume/Equation/FiniteVolumeEquation.h"
 
-namespace axi
-{
-namespace cicsam
-{
+namespace axi {
+namespace cicsam {
 
-std::vector<Scalar> faceInterpolationWeights(const VectorFiniteVolumeField &u,
-                                             const ScalarFiniteVolumeField &gamma,
-                                             const VectorFiniteVolumeField &gradGamma,
-                                             Scalar timeStep);
+std::vector<Scalar> faceInterpolationWeights(
+    const VectorFiniteVolumeField &u, const ScalarFiniteVolumeField &gamma,
+    const VectorFiniteVolumeField &gradGamma, Scalar timeStep);
 
-FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
-                                 ScalarFiniteVolumeField &gamma,
-                                 const std::vector<Scalar> &faceInterpolationWeights,
-                                 Scalar theta,
-                                 const CellGroup &cells);
+FiniteVolumeEquation<Scalar>
+div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &gamma,
+    const std::vector<Scalar> &faceInterpolationWeights, Scalar theta,
+    const CellGroup &cells);
 
-FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
-                                 ScalarFiniteVolumeField &gamma,
-                                 const std::vector<Scalar> &faceInterpolationWeights,
-                                 Scalar theta);
+FiniteVolumeEquation<Scalar>
+div(const VectorFiniteVolumeField &u, ScalarFiniteVolumeField &gamma,
+    const std::vector<Scalar> &faceInterpolationWeights, Scalar theta);
 
-void computeMomentumFlux(Scalar rho1,
-                         Scalar rho2,
+void computeMomentumFlux(Scalar rho1, Scalar rho2,
                          const VectorFiniteVolumeField &u,
                          const ScalarFiniteVolumeField &gamma,
                          const std::vector<Scalar> &faceInterpolationWeights,
                          VectorFiniteVolumeField &rhoU);
-}
-}
+} // namespace cicsam
+} // namespace axi
 
 #endif

@@ -9,44 +9,39 @@
 
 class Cell;
 
-class FaceStencil
-{
+class FaceStencil {
 public:
+  FaceStencil(const Cell &cell, Face::Direction dir, int forwardBias,
+              int backwardBias);
 
-    FaceStencil(const Cell& cell, Face::Direction dir, int forwardBias, int backwardBias);
+  FaceStencil(const Cell &cell, Face::Direction dir, int order);
 
-    FaceStencil(const Cell& cell, Face::Direction dir, int order);
+  Size maxForwardShift();
 
-    Size maxForwardShift();
+  Size maxBackwardShift();
 
-    Size maxBackwardShift();
+  const Cell &operator()(Size shift) const;
 
-    const Cell &operator()(Size shift) const;
+  const std::vector<Ref<const Cell>> &cells() const { return _cells; }
 
-    const std::vector<Ref<const Cell>> &cells() const
-    { return _cells; }
+  const Face &face() const { return _face; }
 
-    const Face &face() const
-    { return _face; }
-
-    const std::vector<Scalar> &coeffs() const
-    { return _taylorCoeffs.coeffs(); }
+  const std::vector<Scalar> &coeffs() const { return _taylorCoeffs.coeffs(); }
 
 protected:
+  Point3D _xf;
 
-    Point3D _xf;
+  Vector3D _sf, _rf;
 
-    Vector3D _sf, _rf;
+  const Cell &_cell;
 
-    const Cell &_cell;
+  const Face &_face;
 
-    const Face &_face;
+  Face::Direction _dir;
 
-    Face::Direction _dir;
+  std::vector<Ref<const Cell>> _cells;
 
-    std::vector<Ref<const Cell>> _cells;
-
-    TaylorSeries _taylorCoeffs;
+  TaylorSeries _taylorCoeffs;
 };
 
 #endif

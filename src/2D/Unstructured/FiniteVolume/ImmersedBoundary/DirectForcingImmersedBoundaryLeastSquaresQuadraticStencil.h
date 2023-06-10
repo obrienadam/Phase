@@ -5,89 +5,76 @@
 
 #include "DirectForcingImmersedBoundary.h"
 
-class DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil
-{
+class DirectForcingImmersedBoundary::LeastSquaresQuadraticStencil {
 public:
+  class CompatPoint {
+  public:
+    CompatPoint() {}
 
-    class CompatPoint
-    {
-    public:
+    CompatPoint(const Cell &cell, const ImmersedBoundaryObject &ibObj)
+        : _cell(&cell), _ibObj(&ibObj),
+          _pt(ibObj.nearestIntersect(cell.centroid())) {}
 
-        CompatPoint()
-        {}
+    Vector2D velocity() const { return _ibObj->velocity(_pt); }
 
-        CompatPoint(const Cell &cell, const ImmersedBoundaryObject &ibObj)
-            : _cell(&cell), _ibObj(&ibObj), _pt(ibObj.nearestIntersect(cell.centroid()))
-        {}
+    Vector2D acceleration() const { return _ibObj->acceleration(_pt); }
 
-        Vector2D velocity() const
-        { return _ibObj->velocity(_pt); }
+    const Cell &cell() const { return *_cell; }
 
-        Vector2D acceleration() const
-        { return _ibObj->acceleration(_pt); }
+    const ImmersedBoundaryObject &ibObj() const { return *_ibObj; }
 
-        const Cell &cell() const
-        { return *_cell; }
+    const Point2D &pt() const { return _pt; }
 
-        const ImmersedBoundaryObject &ibObj() const
-        { return *_ibObj; }
+    Vector2D ns() const { return _ibObj->nearestEdgeUnitNormal(_pt); }
 
-        const Point2D &pt() const
-        { return _pt; }
+  private:
+    const Cell *_cell;
 
-        Vector2D ns() const
-        { return _ibObj->nearestEdgeUnitNormal(_pt); }
+    const ImmersedBoundaryObject *_ibObj;
 
-    private:
+    Point2D _pt;
+  };
 
-        const Cell *_cell;
+  LeastSquaresQuadraticStencil(const Cell &cell,
+                               const DirectForcingImmersedBoundary &ib);
 
-        const ImmersedBoundaryObject *_ibObj;
+  Size nReconstructionPoints() const {
+    return _cells.size() + _faces.size() + _compatPts.size();
+  }
 
-        Point2D _pt;
-    };
+  const StaticVector<const Cell *, 8> &cells() const { return _cells; }
 
-    LeastSquaresQuadraticStencil(const Cell &cell,
-                                 const DirectForcingImmersedBoundary &ib);
+  const StaticVector<const Face *, 8> &faces() const { return _faces; }
 
-    Size nReconstructionPoints() const
-    { return _cells.size() + _faces.size() + _compatPts.size(); }
+  const StaticVector<CompatPoint, 8> &compatPts() const { return _compatPts; }
 
-    const StaticVector<const Cell*, 8> &cells() const
-    { return _cells; }
+  //
+  Matrix interpolationCoeffs(const Point2D &x) const;
 
-    const StaticVector<const Face*, 8> &faces() const
-    { return _faces; }
+  Matrix continuityConstrainedInterpolationCoeffs(const Point2D &pt) const;
 
-    const StaticVector<CompatPoint, 8> &compatPts() const
-    { return _compatPts; }
-
-    //
-    Matrix interpolationCoeffs(const Point2D &x) const;
-
-    Matrix continuityConstrainedInterpolationCoeffs(const Point2D &pt) const;
-
-    Matrix polarQuadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const;
+  Matrix polarQuadraticContinuityConstrainedInterpolationCoeffs(
+      const Point2D &x) const;
 
 protected:
+  static std::vector<std::vector<const ImmersedBoundaryObject *>> _ibObjSets;
 
-    static std::vector<std::vector<const ImmersedBoundaryObject*>> _ibObjSets;
+  static Matrix _A, _b;
 
-    static Matrix _A, _b;
+  Matrix linearInterpolationCoeffs(const Point2D &x) const;
 
-    Matrix linearInterpolationCoeffs(const Point2D &x) const;
+  Matrix quadraticInterpolationCoeffs(const Point2D &x) const;
 
-    Matrix quadraticInterpolationCoeffs(const Point2D &x) const;
+  Matrix subgridInterpolationCoeffs(const Point2D &x) const;
 
-    Matrix subgridInterpolationCoeffs(const Point2D &x) const;
+  Matrix
+  quadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const;
 
-    Matrix quadraticContinuityConstrainedInterpolationCoeffs(const Point2D &x) const;
+  StaticVector<const Cell *, 8> _cells;
 
-    StaticVector<const Cell*, 8> _cells;
+  StaticVector<const Face *, 8> _faces;
 
-    StaticVector<const Face*, 8> _faces;
-
-    StaticVector<CompatPoint, 8> _compatPts;
+  StaticVector<CompatPoint, 8> _compatPts;
 };
 
 #endif

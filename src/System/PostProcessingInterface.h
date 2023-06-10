@@ -7,37 +7,31 @@
 
 #include "Types/Types.h"
 
-class PostProcessingInterface
-{
+class PostProcessingInterface {
 
 public:
+  class Object {
+  public:
+    Object(int fileWriteFreq);
 
-    class Object
-    {
-    public:
+    virtual void compute(Scalar timeStep, bool force = false) = 0;
 
-        Object(int fileWriteFreq);
+    virtual bool do_update();
 
-        virtual void compute(Scalar timeStep, bool force = false) = 0;
-
-        virtual bool do_update();
-
-    protected:
-
-        void createOutputDirectory() const;
-
-        boost::filesystem::path path_;
-
-        int iter_ = 0, fileWriteFreq_ = 1;
-    };
-
-    virtual void compute(Scalar time, bool force = false);
-
-protected:
+  protected:
+    void createOutputDirectory() const;
 
     boost::filesystem::path path_;
 
-    std::vector<std::shared_ptr<Object>> objs_;
+    int iter_ = 0, fileWriteFreq_ = 1;
+  };
+
+  virtual void compute(Scalar time, bool force = false);
+
+protected:
+  boost::filesystem::path path_;
+
+  std::vector<std::shared_ptr<Object>> objs_;
 };
 
 #endif

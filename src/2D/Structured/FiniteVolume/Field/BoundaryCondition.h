@@ -1,11 +1,9 @@
 #ifndef PHASE_BOUNDARY_CONDITION_H
 #define PHASE_BOUNDARY_CONDITION_H
 
-class BoundaryCondition
-{
+class BoundaryCondition {
 public:
-
-    enum Type{FIXED, ZERO_GRADIENT};
+  enum Type { FIXED, ZERO_GRADIENT };
 
 protected:
 };

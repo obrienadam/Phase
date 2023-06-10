@@ -3,21 +3,15 @@
 
 #include "CelesteImmersedBoundary.h"
 
-class CelesteAxisymmetricImmersedBoundary: public CelesteImmersedBoundary
-{
+class CelesteAxisymmetricImmersedBoundary : public CelesteImmersedBoundary {
 public:
-
-    CelesteAxisymmetricImmersedBoundary(const Input &input,
-                                        const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                                        const std::shared_ptr<CellGroup> &fluidCells,
-                                        const std::weak_ptr<const ImmersedBoundary> &ib);
-
-
+  CelesteAxisymmetricImmersedBoundary(
+      const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+      const std::shared_ptr<CellGroup> &fluidCells,
+      const std::weak_ptr<const ImmersedBoundary> &ib);
 
 protected:
-
-    virtual void computeCurvature() override;
-
+  virtual void computeCurvature() override;
 };
 
 #endif

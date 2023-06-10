@@ -3,22 +3,18 @@
 
 #include "GhostCellImmersedBoundaryBcStencil.h"
 
-class GhostCellImmersedBoundary::NormalGradientBcStencil: public GhostCellImmersedBoundary::BcStencil
-{
+class GhostCellImmersedBoundary::NormalGradientBcStencil
+    : public GhostCellImmersedBoundary::BcStencil {
 public:
+  NormalGradientBcStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj,
+                          const FiniteVolumeGrid2D &grid);
 
-    NormalGradientBcStencil(const Cell &cell,
-                            const ImmersedBoundaryObject &ibObj,
-                            const FiniteVolumeGrid2D &grid);
-
-    NormalGradientBcStencil(const Cell &cell,
-                            const ImmersedBoundaryObject &ibObj,
-                            const FiniteVolumeGrid2D &grid,
-                            const Vector2D &r);
+  NormalGradientBcStencil(const Cell &cell, const ImmersedBoundaryObject &ibObj,
+                          const FiniteVolumeGrid2D &grid, const Vector2D &r);
 
 protected:
-
-    void initInterpolationCoeffs(const ImmersedBoundaryObject &ibObj, const FiniteVolumeGrid2D &grid);
+  void initInterpolationCoeffs(const ImmersedBoundaryObject &ibObj,
+                               const FiniteVolumeGrid2D &grid);
 };
 
 #endif

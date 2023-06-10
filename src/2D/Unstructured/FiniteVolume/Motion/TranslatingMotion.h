@@ -3,15 +3,12 @@
 
 #include "Motion.h"
 
-class TranslatingMotion: public Motion
-{
+class TranslatingMotion : public Motion {
 public:
+  TranslatingMotion(const Point2D &pos, const Vector2D &vel,
+                    const Vector2D &acc = Vector2D(0., 0.));
 
-    TranslatingMotion(const Point2D& pos,
-                      const Vector2D& vel,
-                      const Vector2D& acc = Vector2D(0., 0.));
-
-    void update(Scalar timeStep);
+  void update(Scalar timeStep);
 };
 
 #endif

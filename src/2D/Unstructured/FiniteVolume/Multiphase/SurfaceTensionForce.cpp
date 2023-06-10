@@ -3,130 +3,138 @@
 
 #include "SurfaceTensionForce.h"
 
-SurfaceTensionForce::SurfaceTensionForce(const Input &input,
-                                         const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                                         const std::shared_ptr<const CellGroup> &fluid)
-    :
-      grid_(grid),
-      fluid_(fluid),
-      fst_(std::make_shared<VectorFiniteVolumeField>(grid, "fst", 0., true, false, fluid)),
-      kappa_(std::make_shared<ScalarFiniteVolumeField>(grid, "kappa", 0., true, false, fluid)),
-      gammaTilde_(std::make_shared<ScalarFiniteVolumeField>(grid, "gammaTilde", 0., true, false, fluid)),
+SurfaceTensionForce::SurfaceTensionForce(
+    const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+    const std::shared_ptr<const CellGroup> &fluid)
+    : grid_(grid), fluid_(fluid),
+      fst_(std::make_shared<VectorFiniteVolumeField>(grid, "fst", 0., true,
+                                                     false, fluid)),
+      kappa_(std::make_shared<ScalarFiniteVolumeField>(grid, "kappa", 0., true,
+                                                       false, fluid)),
+      gammaTilde_(std::make_shared<ScalarFiniteVolumeField>(
+          grid, "gammaTilde", 0., true, false, fluid)),
       gradGammaTilde_(std::make_shared<ScalarGradient>(*gammaTilde_, fluid)),
-      n_(std::make_shared<VectorFiniteVolumeField>(grid, "n", Vector2D(0., 0.), true, false, fluid))
-{
-    //- Input properties
-    sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
-    kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
-    kernelType_ = getKernelType(input.caseInput().get<std::string>("Solver.kernelType", "pow8"));
-    eps_ = input.caseInput().get<Scalar>("Solver.eps", eps_);
-    minTheta_ = input.caseInput().get<Scalar>("Solver.minContactAngle", 0.) * M_PI / 180.;
-    maxTheta_ = input.caseInput().get<Scalar>("Solver.maxContactAngle", 180.) * M_PI / 180.;
+      n_(std::make_shared<VectorFiniteVolumeField>(grid, "n", Vector2D(0., 0.),
+                                                   true, false, fluid)) {
+  //- Input properties
+  sigma_ = input.caseInput().get<Scalar>("Properties.sigma");
+  kernelWidth_ = input.caseInput().get<Scalar>("Solver.smoothingKernelRadius");
+  kernelType_ = getKernelType(
+      input.caseInput().get<std::string>("Solver.kernelType", "pow8"));
+  eps_ = input.caseInput().get<Scalar>("Solver.eps", eps_);
+  minTheta_ =
+      input.caseInput().get<Scalar>("Solver.minContactAngle", 0.) * M_PI / 180.;
+  maxTheta_ = input.caseInput().get<Scalar>("Solver.maxContactAngle", 180.) *
+              M_PI / 180.;
 
-    for(const Cell &cell: *fluid_)
-        kernels_.push_back(SmoothingKernel(cell, kernelWidth_, kernelType_));
+  for (const Cell &cell : *fluid_)
+    kernels_.push_back(SmoothingKernel(cell, kernelWidth_, kernelType_));
 
-    //- Determine which patches contact angles will be enforced on
-    for (const FaceGroup &patch: grid->patches())
-        patchContactAngles_[patch.name()] = input.boundaryInput().get<Scalar>(
-                    "Boundaries.gamma." + patch.name() + ".contactAngle", 90.) * M_PI / 180.;
+  //- Determine which patches contact angles will be enforced on
+  for (const FaceGroup &patch : grid->patches())
+    patchContactAngles_[patch.name()] =
+        input.boundaryInput().get<Scalar>(
+            "Boundaries.gamma." + patch.name() + ".contactAngle", 90.) *
+        M_PI / 180.;
 }
 
-void SurfaceTensionForce::setCellGroup(const std::shared_ptr<const CellGroup> &fluid)
-{
-    fluid_ = fluid;
-    kappa_->setCellGroup(fluid);
-    gammaTilde_->setCellGroup(fluid);
-    n_->setCellGroup(fluid);
-    gradGammaTilde_->setCellGroup(fluid);
+void SurfaceTensionForce::setCellGroup(
+    const std::shared_ptr<const CellGroup> &fluid) {
+  fluid_ = fluid;
+  kappa_->setCellGroup(fluid);
+  gammaTilde_->setCellGroup(fluid);
+  n_->setCellGroup(fluid);
+  gradGammaTilde_->setCellGroup(fluid);
 }
 
-void SurfaceTensionForce::computeInterfaceNormals()
-{
-    const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
-    VectorFiniteVolumeField &n = *n_;
+void SurfaceTensionForce::computeInterfaceNormals() {
+  const VectorFiniteVolumeField &gradGammaTilde = *gradGammaTilde_;
+  VectorFiniteVolumeField &n = *n_;
 
-    for (const Cell &cell: *fluid_)
-        n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_ ? -gradGammaTilde(cell).unitVec() : Vector2D(0., 0.);
+  for (const Cell &cell : *fluid_)
+    n(cell) = gradGammaTilde(cell).magSqr() >= eps_ * eps_
+                  ? -gradGammaTilde(cell).unitVec()
+                  : Vector2D(0., 0.);
 
-    n.sendMessages();
+  n.sendMessages();
 
-    //- Boundary faces set from contact line orientation
-    for (const FaceGroup &patch: n.grid()->patches())
-    {
-        Scalar theta = this->theta(patch);
+  //- Boundary faces set from contact line orientation
+  for (const FaceGroup &patch : n.grid()->patches()) {
+    Scalar theta = this->theta(patch);
 
-        for (const Face &face: patch)
-        {
-            if (n(face.lCell()).magSqr() == 0.)
-            {
-                n(face) = Vector2D(0., 0.);
-                continue;
-            }
+    for (const Face &face : patch) {
+      if (n(face.lCell()).magSqr() == 0.) {
+        n(face) = Vector2D(0., 0.);
+        continue;
+      }
 
-            Vector2D ns = -face.outwardNorm(face.lCell().centroid()).unitVec();
-            Vector2D ts = n(face.lCell()).tangentialComponent(ns).unitVec();
+      Vector2D ns = -face.outwardNorm(face.lCell().centroid()).unitVec();
+      Vector2D ts = n(face.lCell()).tangentialComponent(ns).unitVec();
 
-            if(std::isnan(ts.x) || std::isnan(ts.y))
-                n(face) = n(face.lCell());
-            else
-                n(face) = ns * std::cos(theta) + ts * std::sin(theta);
-        }
+      if (std::isnan(ts.x) || std::isnan(ts.y))
+        n(face) = n(face.lCell());
+      else
+        n(face) = ns * std::cos(theta) + ts * std::sin(theta);
     }
+  }
 }
 
-void SurfaceTensionForce::setAxisymmetric(bool axisymmetric)
-{
-    for(auto &k: kernels_)
-        k.setAxisymmetric(axisymmetric);
+void SurfaceTensionForce::setAxisymmetric(bool axisymmetric) {
+  for (auto &k : kernels_)
+    k.setAxisymmetric(axisymmetric);
 }
 
-Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const
-{
-    auto it = patchContactAngles_.find(patch.name());
-    return it != patchContactAngles_.end() ? it->second : M_PI_2;
+Scalar SurfaceTensionForce::theta(const FaceGroup &patch) const {
+  auto it = patchContactAngles_.find(patch.name());
+  return it != patchContactAngles_.end() ? it->second : M_PI_2;
 }
 
-Scalar SurfaceTensionForce::dynamicContactAngle(Scalar thetaApp, Scalar Ca, Scalar delta, Scalar K) const
-{
-    using namespace std;
-    return acos(min(max(cos(thetaApp) + 5.63 * Ca * log(K / (delta / 2.)), cos(maxTheta_)), cos(minTheta_)));
+Scalar SurfaceTensionForce::dynamicContactAngle(Scalar thetaApp, Scalar Ca,
+                                                Scalar delta, Scalar K) const {
+  using namespace std;
+  return acos(min(
+      max(cos(thetaApp) + 5.63 * Ca * log(K / (delta / 2.)), cos(maxTheta_)),
+      cos(minTheta_)));
 }
 
-void SurfaceTensionForce::smoothGammaField(const ScalarFiniteVolumeField &gamma)
-{
-    auto &gammaTilde = *gammaTilde_;
+void SurfaceTensionForce::smoothGammaField(
+    const ScalarFiniteVolumeField &gamma) {
+  auto &gammaTilde = *gammaTilde_;
 
-    gammaTilde.fill(0.);
-    for(const auto &k: kernels_)
-        gammaTilde(k.cell()) = k.eval(gamma);
+  gammaTilde.fill(0.);
+  for (const auto &k : kernels_)
+    gammaTilde(k.cell()) = k.eval(gamma);
 
-    gammaTilde.sendMessages();
-    gammaTilde.setBoundaryFaces();
+  gammaTilde.sendMessages();
+  gammaTilde.setBoundaryFaces();
 }
 
-SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(std::string type)
-{
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+SurfaceTensionForce::SmoothingKernel::Type
+SurfaceTensionForce::getKernelType(std::string type) {
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
 
-    if(type == "peskin")
-        return SmoothingKernel::PESKIN;
-    else if(type == "pow6")
-        return SmoothingKernel::POW_6;
-    else if(type == "pow8")
-        return SmoothingKernel::POW_8;
-    else
-        throw Exception("SurfaceTensionForce", "getKernelType", "bad kernel type + \"" + type + "\".");
-
+  if (type == "peskin")
+    return SmoothingKernel::PESKIN;
+  else if (type == "pow6")
+    return SmoothingKernel::POW_6;
+  else if (type == "pow8")
+    return SmoothingKernel::POW_8;
+  else
+    throw Exception("SurfaceTensionForce", "getKernelType",
+                    "bad kernel type + \"" + type + "\".");
 }
 
-//Vector2D SurfaceTensionForce::computeCapillaryForce(const ScalarFiniteVolumeField &gamma,
-//                                                    const ImmersedBoundaryObject &ibObj) const
+// Vector2D SurfaceTensionForce::computeCapillaryForce(const
+// ScalarFiniteVolumeField &gamma,
+//                                                     const
+//                                                     ImmersedBoundaryObject
+//                                                     &ibObj) const
 //{
-//    typedef std::tuple<Point2D, Scalar> IbPoint;
+//     typedef std::tuple<Point2D, Scalar> IbPoint;
 
 //    std::vector<IbPoint> ibPoints(ibObj.ibCells().size());
-//    std::transform(ibObj.ibCells().begin(), ibObj.ibCells().end(), ibPoints.begin(),
+//    std::transform(ibObj.ibCells().begin(), ibObj.ibCells().end(),
+//    ibPoints.begin(),
 //                   [this, &gamma, &ibObj](const Cell &cell)
 //    {
 //        Point2D pt = ibObj.nearestIntersect(cell.centroid());
@@ -140,7 +148,8 @@ SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(st
 
 //    if (grid_->comm().isMainProc())
 //    {
-//        std::sort(ibPoints.begin(), ibPoints.end(), [&ibObj](const IbPoint &lhs, const IbPoint &rhs)
+//        std::sort(ibPoints.begin(), ibPoints.end(), [&ibObj](const IbPoint
+//        &lhs, const IbPoint &rhs)
 //        {
 //            return (std::get<0>(lhs) - ibObj.shape().centroid()).angle()
 //                    < (std::get<0>(rhs) - ibObj.shape().centroid()).angle();
@@ -153,11 +162,13 @@ SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(st
 
 //            if ((std::get<1>(a) < 0.5) != (std::get<1>(b) <= 0.5))
 //            {
-//                Scalar alpha = (0.5 - std::get<1>(b)) / (std::get<1>(a) - std::get<1>(b));
-//                Point2D xcl = ibObj.nearestIntersect(alpha * std::get<0>(a) + (1. - alpha) * std::get<0>(b));
-//                Vector2D tcl = contactLineTangent(
+//                Scalar alpha = (0.5 - std::get<1>(b)) / (std::get<1>(a) -
+//                std::get<1>(b)); Point2D xcl = ibObj.nearestIntersect(alpha *
+//                std::get<0>(a) + (1. - alpha) * std::get<0>(b)); Vector2D tcl
+//                = contactLineTangent(
 //                            std::get<1>(a) < std::get<1>(b) ?
-//                                std::get<0>(a) - std::get<0>(b) : std::get<0>(b) - std::get<0>(a),
+//                                std::get<0>(a) - std::get<0>(b) :
+//                                std::get<0>(b) - std::get<0>(a),
 //                            xcl,
 //                            ibObj);
 
@@ -171,9 +182,10 @@ SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(st
 //    return grid_->comm().broadcast(grid_->comm().mainProcNo(), force);
 //}
 
-//FiniteVolumeEquation<Scalar> SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &gamma)
+// FiniteVolumeEquation<Scalar>
+// SurfaceTensionForce::contactLineBcs(ScalarFiniteVolumeField &gamma)
 //{
-//    FiniteVolumeEquation<Scalar> eqn(gamma);
+//     FiniteVolumeEquation<Scalar> eqn(gamma);
 
 //    for (auto ibObj: *ib_.lock())
 //    {
@@ -186,16 +198,20 @@ SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(st
 
 //                for (const Cell &cell: ibObj->ibCells())
 //                {
-//                    Vector2D nw = -ibObj->nearestEdgeNormal(cell.centroid()).unitVec();
+//                    Vector2D nw =
+//                    -ibObj->nearestEdgeNormal(cell.centroid()).unitVec();
 //                    Vector2D cl1 = nw.rotate(M_PI_2 - theta);
 //                    Vector2D cl2 = nw.rotate(theta - M_PI_2);
 //                    Vector2D t1 = dot(cl1, nw.tangentVec()) * nw.tangentVec();
 //                    Vector2D t2 = dot(cl2, nw.tangentVec()) * nw.tangentVec();
 
 //                    //- m1 is more hydrophobic
-//                    GhostCellImmersedBoundaryObject::ZeroGradientStencil m1(cell, *ibObj, cl1);
-//                    GhostCellImmersedBoundaryObject::ZeroGradientStencil m2(cell, *ibObj, cl2);
-//                    Vector2D grad = BilinearInterpolator(grid_, ibObj->nearestIntersect(cell.centroid())).grad(gamma);
+//                    GhostCellImmersedBoundaryObject::ZeroGradientStencil
+//                    m1(cell, *ibObj, cl1);
+//                    GhostCellImmersedBoundaryObject::ZeroGradientStencil
+//                    m2(cell, *ibObj, cl2); Vector2D grad =
+//                    BilinearInterpolator(grid_,
+//                    ibObj->nearestIntersect(cell.centroid())).grad(gamma);
 
 //                    if (m2.bpValue(gamma) < m1.bpValue(gamma))
 //                        std::swap(m1, m2);
@@ -227,7 +243,8 @@ SurfaceTensionForce::SmoothingKernel::Type SurfaceTensionForce::getKernelType(st
 //            case ImmersedBoundaryObject::HIGH_ORDER:
 //            default:
 //                throw Exception("SurfaceTensionForce", "contactLineBcs",
-//                                "no contact line bcs for immersed boundary type.");
+//                                "no contact line bcs for immersed boundary
+//                                type.");
 //        }
 //    }
 

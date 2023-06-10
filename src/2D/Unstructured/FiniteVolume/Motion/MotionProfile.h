@@ -3,36 +3,29 @@
 
 #include "Motion.h"
 
-class MotionProfile: public Motion
-{
+class MotionProfile : public Motion {
 public:
+  MotionProfile(const Point2D &pos = Point2D(0., 0.),
+                const Vector2D &vel = Vector2D(0., 0.),
+                const Vector2D &acc = Vector2D(0., 0.), Scalar theta = 0.,
+                Scalar omega = 0., Scalar alpha = 0.);
 
-    MotionProfile(const Point2D &pos = Point2D(0., 0.),
-                  const Vector2D &vel = Vector2D(0., 0.),
-                  const Vector2D &acc = Vector2D(0., 0.),
-                  Scalar theta = 0.,
-                  Scalar omega = 0.,
-                  Scalar alpha = 0.);
+  virtual void update(Scalar timeStep) override;
 
-    virtual void update(Scalar timeStep) override;
-
-    void addMotion(Scalar startTime, const std::shared_ptr<Motion> &motion);
+  void addMotion(Scalar startTime, const std::shared_ptr<Motion> &motion);
 
 protected:
+  struct TimePoint {
+    bool operator<(const TimePoint &rhs) const { return time < rhs.time; }
 
-    struct TimePoint
-    {
-        bool operator<(const TimePoint &rhs) const
-        { return time < rhs.time; }
+    Scalar time;
 
-        Scalar time;
+    std::shared_ptr<Motion> motion;
+  };
 
-        std::shared_ptr<Motion> motion;
-    };
+  Scalar time_;
 
-    Scalar time_;
-
-    std::vector<TimePoint> timePoints_;
+  std::vector<TimePoint> timePoints_;
 };
 
 #endif

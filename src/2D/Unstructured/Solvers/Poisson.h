@@ -5,28 +5,27 @@
 
 #include "Solver.h"
 
-class Poisson : public Solver
-{
+class Poisson : public Solver {
 public:
+  Poisson(const Input &input,
+          const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
 
-    Poisson(const Input &input, const std::shared_ptr<const FiniteVolumeGrid2D> &grid);
+  void initialize();
 
-    void initialize();
+  Scalar solve(Scalar timeStep);
 
-    Scalar solve(Scalar timeStep);
+  Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const {
+    return std::numeric_limits<Scalar>::infinity();
+  }
 
-    Scalar computeMaxTimeStep(Scalar maxCo, Scalar prevTimeStep) const
-    { return std::numeric_limits<Scalar>::infinity(); }
-
-    ScalarFiniteVolumeField &phi;
+  ScalarFiniteVolumeField &phi;
 
 protected:
+  FiniteVolumeEquation<Scalar> phiEqn_;
 
-    FiniteVolumeEquation<Scalar> phiEqn_;
+  std::shared_ptr<CellGroup> solid_;
 
-    std::shared_ptr<CellGroup> solid_;
-
-    Scalar gamma_;
+  Scalar gamma_;
 };
 
 #endif

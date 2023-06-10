@@ -6,21 +6,19 @@
 
 #include "PostProcessing.h"
 
-class ImmersedBoundaryObjectContactLineTracker: public PostProcessing::Object
-{
+class ImmersedBoundaryObjectContactLineTracker : public PostProcessing::Object {
 public:
-    ImmersedBoundaryObjectContactLineTracker(int fileWriteFreq,
-                                             const std::weak_ptr<const ScalarFiniteVolumeField> &gamma,
-                                             const std::weak_ptr<const ImmersedBoundary> &ib);
+  ImmersedBoundaryObjectContactLineTracker(
+      int fileWriteFreq,
+      const std::weak_ptr<const ScalarFiniteVolumeField> &gamma,
+      const std::weak_ptr<const ImmersedBoundary> &ib);
 
-    void compute(Scalar time, bool force = false) override;
+  void compute(Scalar time, bool force = false) override;
 
 private:
+  std::weak_ptr<const ImmersedBoundary> ib_;
 
-    std::weak_ptr<const ImmersedBoundary> ib_;
-
-    std::weak_ptr<const ScalarFiniteVolumeField> gamma_;
-
+  std::weak_ptr<const ScalarFiniteVolumeField> gamma_;
 };
 
 #endif

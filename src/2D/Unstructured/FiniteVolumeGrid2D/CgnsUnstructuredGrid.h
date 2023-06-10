@@ -3,25 +3,23 @@
 
 #include "FiniteVolumeGrid2D.h"
 
-class CgnsUnstructuredGrid : public FiniteVolumeGrid2D
-{
+class CgnsUnstructuredGrid : public FiniteVolumeGrid2D {
 public:
+  CgnsUnstructuredGrid();
 
-    CgnsUnstructuredGrid();
+  CgnsUnstructuredGrid(const Input &input);
 
-    CgnsUnstructuredGrid(const Input &input);
+  void load(const std::string &filename, const Point2D &origin);
 
-    void load(const std::string& filename, const Point2D &origin);
-
-    void readPartitionData(const std::string& filename);
+  void readPartitionData(const std::string &filename);
 
 private:
+  void readNodes(int fileId, int baseId, int zoneId, int nNodes,
+                 Scalar convertToMeters, const Point2D &origin);
 
-    void readNodes(int fileId, int baseId, int zoneId, int nNodes, Scalar convertToMeters, const Point2D& origin);
+  void readElements(int fileId, int baseId, int zoneId);
 
-    void readElements(int fileId, int baseId, int zoneId);
-
-    void readBoundaries(int fileId, int baseId, int zoneId);
+  void readBoundaries(int fileId, int baseId, int zoneId);
 };
 
 #endif

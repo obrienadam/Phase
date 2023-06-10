@@ -1,76 +1,69 @@
 #ifndef PHASE_CELESTE_H
 #define PHASE_CELESTE_H
 
-#include "System/Input.h"
 #include "Math/Matrix.h"
+#include "System/Input.h"
 
 #include "SurfaceTensionForce.h"
 
-class Celeste : public SurfaceTensionForce
-{
+class Celeste : public SurfaceTensionForce {
 public:
+  Celeste(const Input &input,
+          const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+          const std::shared_ptr<CellGroup> &fluidCells);
 
-    Celeste(const Input &input,
-            const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-            const std::shared_ptr<CellGroup> &fluidCells);
+  virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma,
+                                          const ScalarGradient &gradGamma);
 
-    virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
-
-    virtual void computeInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma);
+  virtual void computeInterfaceForces(const ScalarFiniteVolumeField &gamma,
+                                      const ScalarGradient &gradGamma);
 
 protected:
+  class Stencil {
+  public:
+    Stencil() {}
 
-    class Stencil
-    {
-    public:
+    Stencil(const Cell &cell, bool weighted = false);
 
-        Stencil()
-        {}
+    void init(bool weighted = false);
 
-        Stencil(const Cell& cell, bool weighted = false);
+    void reset();
 
-        void init(bool weighted = false);
+    const Cell &cell() const { return *cellPtr_; }
 
-        void reset();
+    bool weighted() const { return weighted_; }
 
-        const Cell& cell() const
-        { return *cellPtr_; }
+    virtual Vector2D grad(const ScalarFiniteVolumeField &phi) const;
 
-        bool weighted() const
-        { return weighted_; }
+    virtual Scalar div(const VectorFiniteVolumeField &u) const;
 
-        virtual Vector2D grad(const ScalarFiniteVolumeField& phi) const;
+    virtual Scalar axiDiv(const VectorFiniteVolumeField &u) const;
 
-        virtual Scalar div(const VectorFiniteVolumeField& u) const;
+    virtual Scalar kappa(const VectorFiniteVolumeField &n) const;
 
-        virtual Scalar axiDiv(const VectorFiniteVolumeField &u) const;
+  protected:
+    virtual void initMatrix();
 
-        virtual Scalar kappa(const VectorFiniteVolumeField& n) const;
+    static Matrix b_;
 
-    protected:
+    const Cell *cellPtr_ = nullptr;
 
-        virtual void initMatrix();
+    bool weighted_;
 
-        static Matrix b_;
+    Matrix pInv_;
 
-        const Cell* cellPtr_ = nullptr;
+    std::vector<Ref<const Cell>> cells_;
 
-        bool weighted_;
+    std::vector<Ref<const Face>> faces_;
+  };
 
-        Matrix pInv_;
+  void computeGradGammaTilde(const ScalarFiniteVolumeField &gamma);
 
-        std::vector<Ref<const Cell>> cells_;
+  virtual void computeCurvature();
 
-        std::vector<Ref<const Face>> faces_;
-    };
+  virtual void computeStencils();
 
-    void computeGradGammaTilde(const ScalarFiniteVolumeField &gamma);
-
-    virtual void computeCurvature();
-
-    virtual void computeStencils();
-
-    std::vector<Stencil> kappaStencils_, gradGammaTildeStencils_;
+  std::vector<Stencil> kappaStencils_, gradGammaTildeStencils_;
 };
 
 #endif

@@ -3,13 +3,15 @@
 
 #include "FiniteVolume/Equation/VectorFiniteVolumeEquation.h"
 
-namespace fv
-{
+namespace fv {
 
-VectorFvmEquation divSigma(Scalar mu, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &u, Scalar theta);
+VectorFvmEquation divSigma(Scalar mu, const ScalarFiniteVolumeField &p,
+                           VectorFiniteVolumeField &u, Scalar theta);
 
-VectorFvmEquation divSigma(const ScalarFiniteVolumeField& mu, const ScalarFiniteVolumeField &p, VectorFiniteVolumeField &u, Scalar theta);
+VectorFvmEquation divSigma(const ScalarFiniteVolumeField &mu,
+                           const ScalarFiniteVolumeField &p,
+                           VectorFiniteVolumeField &u, Scalar theta);
 
-}
+} // namespace fv
 
 #endif

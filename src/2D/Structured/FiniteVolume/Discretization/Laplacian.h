@@ -3,30 +3,26 @@
 
 #include "FiniteVolume/Equation/FiniteVolumeEquation.h"
 
-namespace fv
-{
+namespace fv {
 
-template<class T>
-FiniteVolumeEquation<T> lap(Scalar gamma, Field<T> &phi)
-{
-    FiniteVolumeEquation<T> eqn(phi);
+template <class T> FiniteVolumeEquation<T> lap(Scalar gamma, Field<T> &phi) {
+  FiniteVolumeEquation<T> eqn(phi);
 
-    for(const Cell& cell: phi.grid()->localCells())
-    {
-//        for(const InteriorStencil &st: cell.neighbours())
-//        {
+  for (const Cell &cell : phi.grid()->localCells()) {
+    //        for(const InteriorStencil &st: cell.neighbours())
+    //        {
 
-//        }
+    //        }
 
-//        for(const BoundaryStencil &st: cell.boundaries())
-//        {
+    //        for(const BoundaryStencil &st: cell.boundaries())
+    //        {
 
-//        }
-    }
+    //        }
+  }
 
-    return eqn;
+  return eqn;
 }
 
-}
+} // namespace fv
 
 #endif

@@ -3,22 +3,19 @@
 
 #include "Viewer.h"
 
-class CompactCgnsViewer: public Viewer
-{
+class CompactCgnsViewer : public Viewer {
 public:
+  CompactCgnsViewer(const CommandLine &cl, const Input &input,
+                    const Solver &solver);
 
-    CompactCgnsViewer(const CommandLine &cl, const Input& input, const Solver& solver);
-
-    virtual void write(Scalar time) override;
+  virtual void write(Scalar time) override;
 
 protected:
+  int bid_, zid_;
 
-    int bid_, zid_;
+  std::size_t solnNo_;
 
-    std::size_t solnNo_;
-
-    std::string filename_;
-
+  std::string filename_;
 };
 
 #endif

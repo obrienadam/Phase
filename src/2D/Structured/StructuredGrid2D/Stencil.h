@@ -7,24 +7,20 @@
 
 class Cell;
 
-class Stencil
-{
+class Stencil {
 public:
+  Stencil(const Cell &cell, Coordinates::Direction zeta);
 
-    Stencil(const Cell &cell, Coordinates::Direction zeta);
+  const Cell &cell(int inc) const;
 
-    const Cell &cell(int inc) const;
+  Vector2D rc(int inc) const;
 
-    Vector2D rc(int inc) const;
-
-    Coordinates::Direction zeta() const
-    { return _zeta; }
+  Coordinates::Direction zeta() const { return _zeta; }
 
 protected:
+  const Cell &_cell;
 
-    const Cell &_cell;
-
-    Coordinates::Direction _zeta;
+  Coordinates::Direction _zeta;
 };
 
 #endif

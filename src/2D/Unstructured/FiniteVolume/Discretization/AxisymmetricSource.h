@@ -5,16 +5,14 @@
 
 #include "FiniteVolume/Field/VectorFiniteVolumeField.h"
 
-namespace axi
-{
-    namespace src
-    {
-        Vector src(const ScalarFiniteVolumeField &phi);
+namespace axi {
+namespace src {
+Vector src(const ScalarFiniteVolumeField &phi);
 
-        Vector src(const VectorFiniteVolumeField &u);
+Vector src(const VectorFiniteVolumeField &u);
 
-        Vector div(const VectorFiniteVolumeField &u);
-    }
-}
+Vector div(const VectorFiniteVolumeField &u);
+} // namespace src
+} // namespace axi
 
 #endif

@@ -5,18 +5,17 @@
 
 #include "SparseMatrixSolver.h"
 
-class SparseMatrixSolverFactory
-{
+class SparseMatrixSolverFactory {
 public:
+  enum Type { EIGEN, TRILINOS_BELOS, TRILINOS_AMESOS2, TRILINOS_MUELU };
 
-    enum Type{EIGEN, TRILINOS_BELOS, TRILINOS_AMESOS2, TRILINOS_MUELU};
+  std::shared_ptr<SparseMatrixSolver> create(Type type,
+                                             const Communicator &comm) const;
 
-    std::shared_ptr<SparseMatrixSolver> create(Type type, const Communicator &comm) const;
-
-    std::shared_ptr<SparseMatrixSolver> create(const std::string &type, const Communicator &comm) const;
+  std::shared_ptr<SparseMatrixSolver> create(const std::string &type,
+                                             const Communicator &comm) const;
 
 protected:
 };
-
 
 #endif

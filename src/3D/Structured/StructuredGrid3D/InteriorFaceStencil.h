@@ -3,11 +3,9 @@
 
 #include "FaceStencil.h"
 
-class InteriorFaceStencil: public FaceStencil
-{
+class InteriorFaceStencil : public FaceStencil {
 public:
-
-    using FaceStencil::FaceStencil;
+  using FaceStencil::FaceStencil;
 };
 
 #endif

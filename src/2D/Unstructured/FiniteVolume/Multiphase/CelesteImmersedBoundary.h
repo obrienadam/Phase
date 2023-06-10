@@ -1,125 +1,113 @@
 #ifndef PHASE_CELESTE_IMMERSED_BOUNDARY_H
 #define PHASE_CELESTE_IMMERSED_BOUNDARY_H
 
-#include "Geometry/StaticPolyLine2D.h"
 #include "FiniteVolume/ImmersedBoundary/DirectForcingImmersedBoundary.h"
+#include "Geometry/StaticPolyLine2D.h"
 
 #include "Celeste.h"
 
-class CelesteImmersedBoundary: public Celeste
-{
+class CelesteImmersedBoundary : public Celeste {
 public:
+  class ContactLineStencil {
+  public:
+    ContactLineStencil(const ImmersedBoundaryObject &ibObj, const Point2D &pt,
+                       Scalar theta, const ScalarFiniteVolumeField &gamma);
 
-    class ContactLineStencil
-    {
-    public:
+    void init();
 
-        ContactLineStencil(const ImmersedBoundaryObject &ibObj,
-                           const Point2D &pt,
-                           Scalar theta,
-                           const ScalarFiniteVolumeField &gamma);
+    bool isValid() const {
+      return ibObj_ && ((cellA_ && cellB_) || (cellA_ && face_));
+    }
 
-        void init();
+    const Cell &cellA() const { return *cellA_; }
 
-        bool isValid() const
-        { return ibObj_ && ((cellA_ && cellB_) || (cellA_ && face_)); }
+    const Cell &cellB() const { return *cellB_; }
 
-        const Cell &cellA() const
-        { return *cellA_; }
+    const Face &face() const { return *face_; }
 
-        const Cell &cellB() const
-        { return *cellB_; }
+    Scalar theta() const { return gamma_; }
 
-        const Face &face() const
-        { return *face_; }
+    Scalar alpha() const { return gamma_; }
 
-        Scalar theta() const
-        { return gamma_; }
+    Scalar gamma() const { return gamma_; }
 
-        Scalar alpha() const
-        { return gamma_; }
+    const StaticPolyLine2D<3> &cl() const { return cl_; }
 
-        Scalar gamma() const
-        { return gamma_; }
+    const Vector2D &ncl() const { return ncl_; }
 
-        const StaticPolyLine2D<3>& cl() const
-        { return cl_; }
+    Vector2D tcl() const { return (cl_[2] - cl_[0]).unitVec(); }
 
-        const Vector2D& ncl() const
-        { return ncl_; }
+    template <class T> T interpolate(const FiniteVolumeField<T> &field) const {
+      return cellB_ ? alpha_ * field(*cellA_) + (1. - alpha_) * field(*cellB_)
+                    : alpha_ * field(*cellA_) + (1. - alpha_) * field(*face_);
+    }
 
-        Vector2D tcl() const
-        { return (cl_[2] - cl_[0]).unitVec(); }
+  protected:
+    static std::queue<Ref<const Cell>> cellQueue_;
 
-        template<class T>
-        T interpolate(const FiniteVolumeField<T> &field) const
-        { return cellB_ ? alpha_ * field(*cellA_) + (1. - alpha_) * field(*cellB_) : alpha_ * field(*cellA_) + (1. - alpha_) * field(*face_); }
+    static std::unordered_set<Label> cellIdSet_;
 
-    protected:
+    void init(const ScalarFiniteVolumeField &gamma);
 
-        static std::queue<Ref<const Cell>> cellQueue_;
+    void init(const Ray2D &r1, const Ray2D &r2,
+              const ScalarFiniteVolumeField &gamma);
 
-        static std::unordered_set<Label> cellIdSet_;
+    void findStencilCells(const Ray2D &r);
 
-        void init(const ScalarFiniteVolumeField &gamma);
+    const ImmersedBoundaryObject *ibObj_;
 
-        void init(const Ray2D &r1, const Ray2D &r2, const ScalarFiniteVolumeField &gamma);
+    const Cell *cellA_, *cellB_;
 
-        void findStencilCells(const Ray2D &r);
+    const Face *face_;
 
-        const ImmersedBoundaryObject *ibObj_;
+    Scalar theta_, alpha_, gamma_;
 
-        const Cell *cellA_, *cellB_;
+    StaticPolyLine2D<3> cl_;
 
-        const Face *face_;
+    Vector2D ns_, ncl_;
+  };
 
-        Scalar theta_, alpha_, gamma_;
+  CelesteImmersedBoundary(const Input &input,
+                          const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
+                          const std::shared_ptr<CellGroup> &fluidCells,
+                          const std::weak_ptr<const ImmersedBoundary> &ib);
 
-        StaticPolyLine2D<3> cl_;
+  virtual void
+  computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma,
+                             const ScalarGradient &gradGamma) override;
 
-        Vector2D ns_, ncl_;
-    };
+  Scalar theta(const ImmersedBoundaryObject &ibObj) const;
 
-    CelesteImmersedBoundary(const Input &input,
-                            const std::shared_ptr<const FiniteVolumeGrid2D> &grid,
-                            const std::shared_ptr<CellGroup> &fluidCells,
-                            const std::weak_ptr<const ImmersedBoundary> &ib);
+  void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
 
-    virtual void computeFaceInterfaceForces(const ScalarFiniteVolumeField &gamma, const ScalarGradient &gradGamma) override;
+  ContactLineStencil
+  contactLineStencil(const Point2D &xc,
+                     const ScalarFiniteVolumeField &gamma) const;
 
-    Scalar theta(const ImmersedBoundaryObject &ibObj) const;
+  void computeContactLineStencils(const ScalarFiniteVolumeField &gamma);
 
-    void computeContactLineExtension(ScalarFiniteVolumeField &gamma) const;
+  void applyFluidForces(const ScalarFiniteVolumeField &rho,
+                        const ScalarFiniteVolumeField &mu,
+                        const VectorFiniteVolumeField &u,
+                        const ScalarFiniteVolumeField &p,
+                        const ScalarFiniteVolumeField &gamma, const Vector2D &g,
+                        DirectForcingImmersedBoundary &ib) const;
 
-    ContactLineStencil contactLineStencil(const Point2D &xc, const ScalarFiniteVolumeField &gamma) const;
-
-    void computeContactLineStencils(const ScalarFiniteVolumeField &gamma);
-
-    void applyFluidForces(const ScalarFiniteVolumeField &rho,
-                         const ScalarFiniteVolumeField &mu,
-                         const VectorFiniteVolumeField &u,
-                         const ScalarFiniteVolumeField &p,
-                         const ScalarFiniteVolumeField &gamma,
-                         const Vector2D &g,
-                         DirectForcingImmersedBoundary &ib) const;
-
-    void applyFluidForces(const ScalarFiniteVolumeField &rho,
-                          const VectorFiniteVolumeField &fb,
-                          const ScalarFiniteVolumeField &gamma,
-                          const Vector2D &g,
-                          DirectForcingImmersedBoundary &ib) const;
+  void applyFluidForces(const ScalarFiniteVolumeField &rho,
+                        const VectorFiniteVolumeField &fb,
+                        const ScalarFiniteVolumeField &gamma, const Vector2D &g,
+                        DirectForcingImmersedBoundary &ib) const;
 
 protected:
+  void computeInterfaceNormals() override;
 
-    void computeInterfaceNormals() override;
+  std::weak_ptr<const ImmersedBoundary> ib_;
 
-    std::weak_ptr<const ImmersedBoundary> ib_;
+  std::unordered_map<std::string, Scalar> ibContactAngles_;
 
-    std::unordered_map<std::string, Scalar> ibContactAngles_;
+  CellGroup contactLineExtensionCells_;
 
-    CellGroup contactLineExtensionCells_;
-
-    std::vector<ContactLineStencil> contactLineStencils_;
+  std::vector<ContactLineStencil> contactLineStencils_;
 };
 
 #endif

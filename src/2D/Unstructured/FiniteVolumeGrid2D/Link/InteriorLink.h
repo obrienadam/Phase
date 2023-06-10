@@ -5,41 +5,34 @@
 
 class Face;
 
-class InteriorLink : public CellLink
-{
+class InteriorLink : public CellLink {
 public:
+  InteriorLink(const Cell &self, const Face &face, const Cell &cell);
 
-    InteriorLink(const Cell &self, const Face &face, const Cell &cell);
+  explicit InteriorLink(const InteriorLink &other);
 
-    explicit InteriorLink(const InteriorLink &other);
+  InteriorLink &operator=(const InteriorLink &rhs);
 
-    InteriorLink &operator=(const InteriorLink &rhs);
+  const Face &face() const { return face_; }
 
-    const Face &face() const
-    { return face_; }
+  Scalar volumeWeight() const;
 
-    Scalar volumeWeight() const;
+  Scalar distanceWeight() const;
 
-    Scalar distanceWeight() const;
+  Scalar distanceSqrWeight() const;
 
-    Scalar distanceSqrWeight() const;
+  const Vector2D &sf() const { return outwardNorm_; }
 
-    const Vector2D &sf() const
-    { return outwardNorm_; }
+  const Vector2D &outwardNorm() const { return outwardNorm_; }
 
-    const Vector2D &outwardNorm() const
-    { return outwardNorm_; }
+  Vector2D polarOutwardNorm() const;
 
-    Vector2D polarOutwardNorm() const;
-
-    const Vector2D &rFaceVec() const
-    { return rFaceVec_; }
+  const Vector2D &rFaceVec() const { return rFaceVec_; }
 
 protected:
+  const Face &face_;
 
-    const Face &face_;
-
-    Vector2D outwardNorm_, rFaceVec_;
+  Vector2D outwardNorm_, rFaceVec_;
 };
 
 #endif

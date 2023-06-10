@@ -5,18 +5,20 @@
 
 namespace plic {
 
-    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField& u,
-                         const VectorFiniteVolumeField& gradGamma,
-                         ScalarFiniteVolumeField& gamma,
-                         Scalar timeStep);
+FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 ScalarFiniteVolumeField &gamma,
+                                 Scalar timeStep);
 
 /*
-FiniteVolumeEquation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField &u, const VectorFiniteVolumeField& gradGamma, ScalarFiniteVolumeField &field, Scalar timeStep,
-                                      std::vector<Polygon>& plicPolygons);
+FiniteVolumeEquation<ScalarFiniteVolumeField> div(const VectorFiniteVolumeField
+&u, const VectorFiniteVolumeField& gradGamma, ScalarFiniteVolumeField &field,
+Scalar timeStep, std::vector<Polygon>& plicPolygons);
 
-Polygon computeInterfacePolygon(const Cell& cell, Scalar &gamma, const Vector2D& normal);
-Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D& uf, Scalar timeStep, int componentNo);
+Polygon computeInterfacePolygon(const Cell& cell, Scalar &gamma, const Vector2D&
+normal); Polygon computeFluxPolygon(const BoundaryLink &link, const Vector2D&
+uf, Scalar timeStep, int componentNo);
 */
-}
+} // namespace plic
 
 #endif

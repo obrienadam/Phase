@@ -5,12 +5,11 @@
 
 namespace slic {
 
-    FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField& u,
-                         const VectorFiniteVolumeField& gradGamma,
-                         ScalarFiniteVolumeField& gamma,
-                         Scalar timeStep);
+FiniteVolumeEquation<Scalar> div(const VectorFiniteVolumeField &u,
+                                 const VectorFiniteVolumeField &gradGamma,
+                                 ScalarFiniteVolumeField &gamma,
+                                 Scalar timeStep);
 
 }
 
 #endif
-

@@ -5,12 +5,9 @@
 
 #include "BoundaryCondition.h"
 
-template<class T>
-class BoundaryConditionFactory
-{
+template <class T> class BoundaryConditionFactory {
 public:
-
-    std::unique_ptr<BoundaryCondition<T>> create(const std::string bcType);
+  std::unique_ptr<BoundaryCondition<T>> create(const std::string bcType);
 };
 
 #include "BoundaryConditionFactory.tpp"

@@ -5,22 +5,18 @@
 
 class Cell;
 
-class Link
-{
+class Link {
 public:
+  Link(const Cell &self);
 
-    Link(const Cell &self);
+  explicit Link(const Link &other);
 
-    explicit Link(const Link &other);
+  Link &operator=(const Link &rhs);
 
-    Link &operator=(const Link &rhs);
-
-    const Cell &self() const
-    { return self_; }
+  const Cell &self() const { return self_; }
 
 protected:
-
-    const Cell &self_;
+  const Cell &self_;
 };
 
 #endif

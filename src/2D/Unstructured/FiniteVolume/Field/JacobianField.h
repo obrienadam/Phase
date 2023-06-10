@@ -1,27 +1,25 @@
-#ifndef  PHASE_JACOBIAN_FIELD
-#define  PHASE_JACOBIAN_FIELD
+#ifndef PHASE_JACOBIAN_FIELD
+#define PHASE_JACOBIAN_FIELD
 
 #include "TensorFiniteVolumeField.h"
 #include "VectorFiniteVolumeField.h"
 
-class JacobianField: public TensorFiniteVolumeField
-{
+class JacobianField : public TensorFiniteVolumeField {
 public:
+  static Tensor2D computeJacobian(const VectorFiniteVolumeField &u,
+                                  const Cell &c);
 
-    static Tensor2D computeJacobian(const VectorFiniteVolumeField &u, const Cell &c);
+  explicit JacobianField(const VectorFiniteVolumeField &u,
+                         const std::shared_ptr<CellGroup> &cells);
 
-    explicit JacobianField(const VectorFiniteVolumeField& u, const std::shared_ptr<CellGroup> &cells);
+  void computeFaces();
 
-    void computeFaces();
+  void compute(const CellGroup &cells);
 
-    void compute(const CellGroup& cells);
-
-    void compute();
+  void compute();
 
 private:
-
-    const VectorFiniteVolumeField& u_;
-
+  const VectorFiniteVolumeField &u_;
 };
 
 #endif

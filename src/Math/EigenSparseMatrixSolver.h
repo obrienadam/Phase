@@ -7,62 +7,57 @@
 
 #include "SparseMatrixSolver.h"
 
-class EigenSparseMatrixSolver : public SparseMatrixSolver
-{
+class EigenSparseMatrixSolver : public SparseMatrixSolver {
 public:
+  typedef Eigen::Triplet<Scalar> Triplet;
+  typedef Eigen::SparseMatrix<Scalar> EigenSparseMatrix;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> EigenVector;
+  typedef Eigen::SparseLU<EigenSparseMatrix> SparseLUSolver;
 
-    typedef Eigen::Triplet<Scalar> Triplet;
-    typedef Eigen::SparseMatrix<Scalar> EigenSparseMatrix;
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> EigenVector;
-    typedef Eigen::SparseLU<EigenSparseMatrix> SparseLUSolver;
+  EigenSparseMatrixSolver();
 
-    EigenSparseMatrixSolver();
+  Type type() const { return EIGEN; }
 
-    Type type() const
-    { return EIGEN; }
+  void setRank(int rank);
 
-    void setRank(int rank);
+  void setRank(int rowRank, int colRank);
 
-    void setRank(int rowRank, int colRank);
+  void set(const CoefficientList &coeffs) override;
 
-    void set(const CoefficientList &coeffs) override;
+  void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds,
+           const std::vector<Scalar> &vals) override;
 
-    void set(const std::vector<Index> &rowPtr, const std::vector<Index> &colInds, const std::vector<Scalar> &vals) override;
+  void set(const std::vector<SparseEntry> &entries) override;
 
-    void set(const std::vector<SparseEntry> &entries) override;
+  void setGuess(const Vector &x0);
 
-    void setGuess(const Vector &x0);
+  void setRhs(const Vector &rhs);
 
-    void setRhs(const Vector &rhs);
+  Scalar solve();
 
-    Scalar solve();
+  Scalar solve(const Vector &x0);
 
-    Scalar solve(const Vector &x0);
+  Scalar x(Index idx) const { return x_[idx]; }
 
-    Scalar x(Index idx) const
-    { return x_[idx]; }
+  int nIters() const { return 1; }
 
-    int nIters() const
-    { return 1; }
+  Scalar error() const { return 0.; }
 
-    Scalar error() const
-    { return 0.; }
+  bool supportsMPI() const { return false; }
 
-    bool supportsMPI() const
-    { return false; }
-
-    std::shared_ptr<SparseMatrixSolver> newSparseMatrixSolver() const
-    { return std::shared_ptr<EigenSparseMatrixSolver>(new EigenSparseMatrixSolver()); }
+  std::shared_ptr<SparseMatrixSolver> newSparseMatrixSolver() const {
+    return std::shared_ptr<EigenSparseMatrixSolver>(
+        new EigenSparseMatrixSolver());
+  }
 
 private:
+  std::vector<Triplet> triplets_;
 
-    std::vector<Triplet> triplets_;
+  EigenSparseMatrix mat_;
 
-    EigenSparseMatrix mat_;
+  EigenVector x_, rhs_;
 
-    EigenVector x_, rhs_;
-
-    SparseLUSolver solver_;
+  SparseLUSolver solver_;
 };
 
 #endif

@@ -3,20 +3,14 @@
 
 #include "BoundaryCondition.h"
 
-template<class T>
-class FixedBoundaryCondition: public BoundaryCondition<T>
-{
+template <class T> class FixedBoundaryCondition : public BoundaryCondition<T> {
 public:
+  Type type() const override { return FIXED; }
 
-    Type type() const override
-    { return FIXED; }
-
-    const T &refVal() const
-    { return _refVal; }
+  const T &refVal() const { return _refVal; }
 
 protected:
-
-    T _refVal;
+  T _refVal;
 };
 
 #endif

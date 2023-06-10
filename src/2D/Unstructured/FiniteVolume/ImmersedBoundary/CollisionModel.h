@@ -3,26 +3,22 @@
 
 #include "ImmersedBoundaryObject.h"
 
-class CollisionModel
-{
+class CollisionModel {
 public:
+  CollisionModel(Scalar eps, Scalar range = 0.);
 
-    CollisionModel(Scalar eps, Scalar range = 0.);
+  virtual Vector2D force(const ImmersedBoundaryObject &ibObjP,
+                         const ImmersedBoundaryObject &ibObjQ) const;
 
-    virtual Vector2D force(const ImmersedBoundaryObject& ibObjP, const ImmersedBoundaryObject& ibObjQ) const;
+  virtual Vector2D force(const ImmersedBoundaryObject &ibObj,
+                         const FiniteVolumeGrid2D &grid) const;
 
-    virtual Vector2D force(const ImmersedBoundaryObject& ibObj, const FiniteVolumeGrid2D& grid) const;
+  Scalar eps() const { return eps_; }
 
-    Scalar eps() const
-    { return eps_; }
-
-    Scalar range() const
-    { return range_; }
+  Scalar range() const { return range_; }
 
 private:
-
-    Scalar eps_, range_;
+  Scalar eps_, range_;
 };
-
 
 #endif

@@ -5,53 +5,44 @@
 
 #include "FiniteVolumeGrid2D.h"
 
-class StructuredRectilinearGrid : public FiniteVolumeGrid2D
-{
+class StructuredRectilinearGrid : public FiniteVolumeGrid2D {
 public:
+  StructuredRectilinearGrid(const Input &input);
 
-    StructuredRectilinearGrid(const Input& input);
+  StructuredRectilinearGrid(const std::vector<Scalar> &xcoords,
+                            const std::vector<Scalar> &ycoords);
 
-    StructuredRectilinearGrid(const std::vector<Scalar> &xcoords, const std::vector<Scalar> &ycoords);
+  void init(Scalar width, Scalar height, Size nCellsX, Size nCellsY,
+            Scalar convertToMeters, const std::vector<Point2D> &xDimRefinements,
+            const std::vector<Point2D> &yDimRefinements, const Point2D &origin);
 
-    void init(Scalar width,
-              Scalar height,
-              Size nCellsX,
-              Size nCellsY,
-              Scalar convertToMeters,
-              const std::vector<Point2D> &xDimRefinements,
-              const std::vector<Point2D> &yDimRefinements,
-              const Point2D &origin);
+  void init(std::vector<Scalar> xcoords, std::vector<Scalar> ycoords);
 
-    void init(std::vector<Scalar> xcoords,
-              std::vector<Scalar> ycoords);
+  Cell &operator()(Label i, Label j);
 
-    Cell &operator()(Label i, Label j);
+  const Cell &operator()(Label i, Label j) const;
 
-    const Cell &operator()(Label i, Label j) const;
+  const Node &node(Label i, Label j) const;
 
-    const Node &node(Label i, Label j) const;
+  bool isEquidistant() const {
+    return std::abs(width_ / nCellsX_ - height_ / nCellsY_) < 1e-12;
+  }
 
-    bool isEquidistant() const
-    { return std::abs(width_ / nCellsX_ - height_ / nCellsY_) < 1e-12; }
+  Scalar hx() const { return width_ / nCellsX_; }
 
-    Scalar hx() const
-    { return width_ / nCellsX_; }
+  Scalar hy() const { return height_ / nCellsY_; }
 
-    Scalar hy() const
-    { return height_ / nCellsY_; }
-
-    Scalar h() const;
+  Scalar h() const;
 
 protected:
+  std::vector<Scalar> refineDims(Scalar start, Scalar end,
+                                 const std::vector<Scalar> &dims);
 
-    std::vector<Scalar> refineDims(Scalar start, Scalar end, const std::vector<Scalar> &dims);
+  void initPatches();
 
-    void initPatches();
+  Size nCellsX_, nCellsY_;
 
-    Size nCellsX_, nCellsY_;
-
-    Scalar width_, height_;
-
+  Scalar width_, height_;
 };
 
 #endif

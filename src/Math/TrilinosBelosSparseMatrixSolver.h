@@ -1,48 +1,47 @@
 #ifndef TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
 #define TRILINOS_BELOS_SPARSE_MATRIX_SOLVER_H
 
-#include <BelosTpetraAdapter.hpp>
-#include <BelosSolverManager.hpp>
-#include <Ifpack2_Preconditioner.hpp>
+#include "BelosSolverManager.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "Ifpack2_Preconditioner.hpp"
 
 #include "TrilinosSparseMatrixSolver.h"
 
-class TrilinosBelosSparseMatrixSolver : public TrilinosSparseMatrixSolver
-{
+class TrilinosBelosSparseMatrixSolver : public TrilinosSparseMatrixSolver {
 public:
-    TrilinosBelosSparseMatrixSolver(const Communicator &comm);
+  TrilinosBelosSparseMatrixSolver(const Communicator &comm);
 
-    Type type() const
-    { return TRILINOS_BELOS; }
+  Type type() const { return TRILINOS_BELOS; }
 
-    void setRank(int rank);
+  void setRank(int rank);
 
-    Scalar solve();
+  Scalar solve();
 
-    void setup(const boost::property_tree::ptree &parameters);
+  void setup(const boost::property_tree::ptree &parameters);
 
-    int nIters() const;
+  int nIters() const;
 
-    Scalar error() const;
+  Scalar error() const;
 
-    void printStatus(const std::string &msg) const;
+  void printStatus(const std::string &msg) const;
 
 private:
+  typedef Belos::LinearProblem<Scalar, TpetraMultiVector, TpetraOperator>
+      LinearProblem;
+  typedef Belos::SolverManager<Scalar, TpetraMultiVector, TpetraOperator>
+      Solver;
+  typedef Ifpack2::Preconditioner<Scalar, Index, Index> Preconditioner;
 
-    typedef Belos::LinearProblem<Scalar, TpetraMultiVector, TpetraOperator> LinearProblem;
-    typedef Belos::SolverManager<Scalar, TpetraMultiVector, TpetraOperator> Solver;
-    typedef Ifpack2::Preconditioner<Scalar, Index, Index> Preconditioner;
+  //- Types
+  std::string precType_;
 
-    //- Types
-    std::string precType_;
+  //- Parameters
+  Teuchos::RCP<Teuchos::ParameterList> belosParams_, ifpackParams_;
 
-    //- Parameters
-    Teuchos::RCP<Teuchos::ParameterList> belosParams_, ifpackParams_;
-
-    //- Solver data structures
-    Teuchos::RCP<LinearProblem> linearProblem_;
-    Teuchos::RCP<Solver> solver_;
-    Teuchos::RCP<Preconditioner> precon_;
+  //- Solver data structures
+  Teuchos::RCP<LinearProblem> linearProblem_;
+  Teuchos::RCP<Solver> solver_;
+  Teuchos::RCP<Preconditioner> precon_;
 };
 
 #endif

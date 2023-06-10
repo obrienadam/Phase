@@ -5,28 +5,22 @@
 
 class Face;
 
-class InteriorFaceStencil: public Stencil
-{
+class InteriorFaceStencil : public Stencil {
 public:
+  InteriorFaceStencil(const Cell &cell, Coordinates::Direction zeta);
 
-    InteriorFaceStencil(const Cell &cell, Coordinates::Direction zeta);
+  const Vector2D &rf() const { return _rf; }
 
-    const Vector2D& rf() const
-    { return _rf; }
+  const Vector2D &sf() const { return _sf; }
 
-    const Vector2D& sf() const
-    { return _sf; }
-
-    bool isBoundary() const
-    { return _isBoundary; }
+  bool isBoundary() const { return _isBoundary; }
 
 protected:
+  const Face &_face;
 
-    const Face &_face;
+  Vector2D _rf, _sf;
 
-    Vector2D _rf, _sf;
-
-    bool _isBoundary;
+  bool _isBoundary;
 };
 
 #endif

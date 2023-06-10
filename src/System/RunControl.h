@@ -3,21 +3,17 @@
 
 #include "CommandLine.h"
 #include "Input.h"
-#include "SolverInterface.h"
 #include "PostProcessingInterface.h"
+#include "SolverInterface.h"
 #include "Timer.h"
 
-class RunControl
-{
+class RunControl {
 public:
-
-    void run(const CommandLine &cl,
-             const Input &input,
-             SolverInterface &solver,
-             PostProcessingInterface &postProcessing);
+  void run(const CommandLine &cl, const Input &input, SolverInterface &solver,
+           PostProcessingInterface &postProcessing);
 
 private:
-    Timer time_;
+  Timer time_;
 };
 
 #endif

@@ -3,27 +3,22 @@
 
 #include "Point3D.h"
 
-class Shape3D
-{
+class Shape3D {
 public:
+  Shape3D(const Point3D &centroid = Point3D(0., 0., 0.))
+      : centroid_(centroid) {}
 
-    Shape3D(const Point3D &centroid = Point3D(0., 0., 0.)) : centroid_(centroid) {}
+  Scalar volume() const { return volume_; }
 
-    Scalar volume() const
-    { return volume_; }
+  const Point3D &centroid() const { return centroid_; }
 
-    const Point3D &centroid() const
-    { return centroid_; }
-
-    //- Tests
-    virtual bool isInside(const Point3D &pt) const = 0;
+  //- Tests
+  virtual bool isInside(const Point3D &pt) const = 0;
 
 protected:
+  Scalar volume_;
 
-    Scalar volume_;
-
-    Point3D centroid_;
-
+  Point3D centroid_;
 };
 
 #endif

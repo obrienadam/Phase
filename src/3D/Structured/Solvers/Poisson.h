@@ -5,22 +5,19 @@
 
 #include "Solver.h"
 
-class Poisson: public Solver
-{
+class Poisson : public Solver {
 public:
+  Poisson(const Input &input,
+          const std::shared_ptr<const StructuredGrid3D> &grid);
 
-    Poisson(const Input &input, const std::shared_ptr<const StructuredGrid3D> &grid);
-
-    Scalar solve(Scalar timeStep);
+  Scalar solve(Scalar timeStep);
 
 protected:
+  Scalar _gamma;
 
-    Scalar _gamma;
+  ScalarField &_phi;
 
-    ScalarField &_phi;
-
-    ScalarFiniteVolumeEquation _phiEqn;
-
+  ScalarFiniteVolumeEquation _phiEqn;
 };
 
 #endif

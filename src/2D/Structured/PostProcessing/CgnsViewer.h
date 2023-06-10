@@ -5,20 +5,16 @@
 
 #include "Structured/Solvers/Solver.h"
 
-class CgnsViewer
-{
+class CgnsViewer {
 public:
+  CgnsViewer(const Input &input, const Solver &solver);
 
-    CgnsViewer(const Input &input, const Solver &solver);
-
-    void write(Scalar time);
+  void write(Scalar time);
 
 protected:
+  const Solver &_solver;
 
-    const Solver &_solver;
-
-    std::unordered_set<std::string> _scalarFields, _vectorFields;
-
+  std::unordered_set<std::string> _scalarFields, _vectorFields;
 };
 
 #endif
