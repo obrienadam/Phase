@@ -1,7 +1,0 @@
-; Post-processing configuration
-
-PostProcessing
-{
-	outputInterval 50
-	outputFormat tecplot
-}

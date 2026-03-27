@@ -1,7 +1,0 @@
-; Post-processing configuration for lid driven cavity test
-
-PostProcessing
-{
-	outputInterval 10
-	outputFormat tecplot
-}

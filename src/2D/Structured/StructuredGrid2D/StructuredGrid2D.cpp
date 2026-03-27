@@ -188,6 +188,10 @@ StructuredGrid2D::computeBlockDims(bool stripPartitioning) const {
   if (stripPartitioning)
     return std::array<Size, 2>({(Size)_comm->nProcs(), 1});
 
+  // For serial runs, no partitioning needed
+  if (_comm->nProcs() == 1)
+    return std::array<Size, 2>({1, 1});
+
   Size i = 2, num = _comm->nProcs();
 
   std::deque<Size> factors(1, 1);

@@ -6,7 +6,7 @@ CaseName LidDrivenCavityTest
 
 Solver
 {
-	type "fractional step"
+	type "poisson"
 	timeStep 0.01
 	maxTime 10
 	maxCo 0.5
