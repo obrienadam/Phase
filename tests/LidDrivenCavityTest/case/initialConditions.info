@@ -1,0 +1,6 @@
+; Initial conditions for lid driven cavity test
+; Start from rest everywhere
+
+InitialConditions
+{
+}

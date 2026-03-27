@@ -1,0 +1,50 @@
+; Test case for 2D lid driven cavity - validation case
+; Simple, well-established benchmark for CFD solvers
+; Re = U*L/nu = 1*1/0.1 = 10 (creeping flow regime)
+
+CaseName LidDrivenCavityTest
+
+Solver
+{
+	type "fractional step"
+	timeStep 0.01
+	maxTime 10
+	maxCo 0.5
+}
+
+LinearAlgebra
+{
+  uEqn
+  {
+    lib eigen
+  }
+
+  pEqn
+  {
+    lib eigen
+  }
+}
+
+Properties
+{
+	rho 1.0
+	mu 0.01
+	g (0,0)
+	gamma 0.001
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 50
+	nCellsY 50
+	width 1.0
+	height 1.0
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,pCorr
+}
