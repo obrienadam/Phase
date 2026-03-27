@@ -3,6 +3,8 @@
 
 #include <vector>
 
+
+#include <cstddef>
 #include "Types/Types.h"
 
 class Vector {

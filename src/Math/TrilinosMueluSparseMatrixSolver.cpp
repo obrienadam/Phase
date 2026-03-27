@@ -24,8 +24,8 @@ void TrilinosMueluSparseMatrixSolver::setRank(int rank) {
 }
 
 Scalar TrilinosMueluSparseMatrixSolver::solve() {
-  precon_ = MueLu::CreateTpetraPreconditioner(
-      Teuchos::rcp_static_cast<TpetraOperator>(mat_), *mueluParams_, coords_);
+    precon_ = MueLu::CreateTpetraPreconditioner(
+      Teuchos::rcp_static_cast<TpetraOperator>(mat_), *mueluParams_);
 
   linearProblem_->setProblem(x_, b_);
   linearProblem_->setLeftPrec(precon_);

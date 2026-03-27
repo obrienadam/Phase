@@ -463,7 +463,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(
 
   CrsEquation eqn;
   eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(
-      grid_->comm(), Tpetra::DynamicProfile));
+      grid_->comm(), Tpetra::StaticProfile));
 
   for (auto &ibObj : ibObjs_) {
     auto nLocalCells = grid_->comm().allGather(ibObj->ibCells().size());
@@ -787,7 +787,7 @@ void DirectForcingImmersedBoundary::applyHydrodynamicForce(
     }
 
     eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(
-        grid_->comm(), Tpetra::DynamicProfile));
+        grid_->comm(), Tpetra::StaticProfile));
     eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
     eqn.solveLeastSquares();
 

@@ -33,6 +33,12 @@ set(SOURCES Matrix.cpp
         CooEquation.cpp
         Vector.cpp)
 
+
+# Add Trilinos include directories if found
+if (Trilinos_INCLUDE_DIRS)
+        include_directories(${Trilinos_INCLUDE_DIRS})
+endif ()
+
 add_library(phase_math ${HEADERS} ${SOURCES})
 
 target_link_libraries(phase_math

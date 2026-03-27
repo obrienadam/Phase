@@ -2,12 +2,12 @@ project(Phase)
 cmake_minimum_required(VERSION 3.9.0)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -xHost")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -xHost -Wall -Wextra -Wpedantic")
 
     # Look for mkl by default
     set(BLA_VENDOR Intel10_64lp)
 else ()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-reorder -Wno-sign-compare -Wno-switch -march=native")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-reorder -Wno-sign-compare -Wno-switch -march=native -Wall -Wextra -Wpedantic")
 
     if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
         message(FATAL_ERROR "Requires at least gcc-4.9. You have gcc-${CMAKE_CXX_COMPILER_VERSION}.")
@@ -36,6 +36,11 @@ find_package(OpenMP)
 
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
+# Add Trilinos include directories if found
+if (Trilinos_INCLUDE_DIRS)
+    include_directories(${Trilinos_INCLUDE_DIRS})
+endif ()
+
 if (OPENMP_FOUND)
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -59,7 +64,10 @@ message(STATUS "MPI include directory: " ${MPI_CXX_INCLUDE_PATH})
 message(STATUS "MPI libraries: " ${MPI_C_LIBRARIES})
 message(STATUS "Trilinos directory: " ${Trilinos_DIR})
 
+enable_testing()
+
 add_subdirectory(src)
 add_subdirectory(utilities)
+add_subdirectory(tests)
 
 

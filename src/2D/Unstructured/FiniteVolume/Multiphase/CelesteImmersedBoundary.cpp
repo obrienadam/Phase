@@ -221,7 +221,7 @@ void CelesteImmersedBoundary::applyFluidForces(
     }
 
     eqn.setSparseSolver(std::make_shared<TrilinosAmesosSparseMatrixSolver>(
-        grid_->comm(), Tpetra::DynamicProfile));
+        grid_->comm(), Tpetra::StaticProfile));
     eqn.setRank(eqn.rank(), 6 * ibObj->ibCells().size());
     eqn.solveLeastSquares();
 
