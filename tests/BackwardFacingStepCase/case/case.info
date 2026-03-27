@@ -1,0 +1,56 @@
+; Backward-Facing Step - 2D incompressible flow test case
+; Tests flow separation, reattachment, and pressure recovery
+; Expansion ratio: 2:1, Reynolds number: 100
+
+CaseName BackwardFacingStep2D
+
+Solver
+{
+	type "fractional step"
+	timeStep 0.005
+	maxTime 50
+	maxCo 0.5
+}
+
+LinearAlgebra
+{
+  uEqn
+  {
+    lib eigen
+  }
+
+  pEqn
+  {
+    lib eigen
+  }
+}
+
+Properties
+{
+	rho 1.0
+	mu 0.01
+	g (0,0)
+	gamma 0.001
+}
+
+Grid
+{
+	type rectilinear
+	nCellsX 200
+	nCellsY 150
+	
+	; Non-uniform spacing for step
+	; Upstream: height 1.0
+	; Downstream: height 2.0
+	; Step at x = 5.0
+	width 20.0
+	height 1.0
+	origin (0,0)
+}
+
+Viewer
+{
+	type tecplot
+	vectorFields u
+	scalarFields p,pCorr
+}

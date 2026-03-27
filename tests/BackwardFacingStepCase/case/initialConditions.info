@@ -1,0 +1,6 @@
+; Initial conditions for backward-facing step
+; Start from rest with uniform pressure
+
+InitialConditions
+{
+}
